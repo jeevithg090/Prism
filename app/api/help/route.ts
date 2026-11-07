@@ -4,7 +4,7 @@
 //        helper's `helped-newcomer` momentum event.
 import fs from "node:fs";
 import path from "node:path";
-import { nanoid } from "nanoid";
+import { createHelpRequest } from "@/lib/community/help";
 import { getStore } from "@/lib/store";
 import type { HelpRequest, Profile } from "@/lib/types";
 import {
@@ -77,18 +77,7 @@ export async function POST(req: Request) {
 async function create(body: unknown): Promise<Response> {
   const parsed = HelpCreateReqZ.safeParse(body);
   if (!parsed.success) return badRequest(parsed.error);
-  const id = `help_${nanoid(6)}`;
-  const request: HelpRequest = {
-    id,
-    fromUserId: parsed.data.fromUserId,
-    ...(parsed.data.toUserId ? { toUserId: parsed.data.toUserId } : {}),
-    kind: parsed.data.kind,
-    message: parsed.data.message,
-    status: "open",
-    createdAt: new Date().toISOString(),
-  };
-  await getStore().upsert("help", id, request, request.fromUserId);
-  return ok(HelpRequestZ.parse(request));
+  return ok(await createHelpRequest(parsed.data));
 }
 
 async function update(body: unknown): Promise<Response> {
