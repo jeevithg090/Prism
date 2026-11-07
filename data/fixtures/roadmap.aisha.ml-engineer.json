@@ -1,0 +1,552 @@
+{
+  "userId": "aisha",
+  "roleId": "ml-engineer",
+  "version": 1,
+  "readinessNow": 0.38,
+  "readinessProjected": 0.84,
+  "weeks": [
+    {
+      "week": 1,
+      "startDate": "2026-11-09",
+      "focusSkillId": "docker",
+      "isExamWeek": false,
+      "tasks": [
+        {
+          "id": "t_1_0",
+          "type": "learn",
+          "title": "Work through a Docker tutorial",
+          "resourceUrl": "https://docs.docker.com/get-started/",
+          "free": true,
+          "hours": 2
+        },
+        {
+          "id": "t_1_1",
+          "type": "practice",
+          "title": "Docker practice exercises",
+          "free": true,
+          "hours": 2
+        },
+        {
+          "id": "t_1_2",
+          "type": "build",
+          "title": "Add Docker to your pod project",
+          "free": true,
+          "hours": 4
+        }
+      ],
+      "proof": "Merge a PR that adds a Dockerfile to your pod repo",
+      "receipt": {
+        "demandPct": 41,
+        "trend": "stable",
+        "growthPerYear": 0.12,
+        "coveredByDegree": "no",
+        "evidenceIds": [],
+        "reason": "41% of ML engineer ads ask for Docker — none of your modules teach it."
+      }
+    },
+    {
+      "week": 2,
+      "startDate": "2026-11-16",
+      "focusSkillId": "pytorch",
+      "isExamWeek": false,
+      "tasks": [
+        {
+          "id": "t_2_0",
+          "type": "learn",
+          "title": "Work through a PyTorch tutorial",
+          "resourceUrl": "https://pytorch.org/tutorials/beginner/basics/intro.html",
+          "free": true,
+          "hours": 2
+        },
+        {
+          "id": "t_2_1",
+          "type": "practice",
+          "title": "PyTorch practice exercises",
+          "free": true,
+          "hours": 2
+        },
+        {
+          "id": "t_2_2",
+          "type": "build",
+          "title": "Add PyTorch to your pod project",
+          "free": true,
+          "hours": 4
+        }
+      ],
+      "proof": "Push a notebook training a small PyTorch model and share the results in your pod",
+      "degreeLink": "Builds on what you learned in Data Structures",
+      "receipt": {
+        "demandPct": 36,
+        "trend": "rising",
+        "growthPerYear": 0.24,
+        "coveredByDegree": "no",
+        "evidenceIds": [],
+        "reason": "36% of ML engineer ads ask for PyTorch, and demand is up 24% a year — none of your modules teach it."
+      }
+    },
+    {
+      "week": 3,
+      "startDate": "2026-11-23",
+      "focusSkillId": "sql",
+      "isExamWeek": false,
+      "tasks": [
+        {
+          "id": "t_3_0",
+          "type": "learn",
+          "title": "Work through a SQL tutorial",
+          "resourceUrl": "https://www.freecodecamp.org/learn/relational-database/",
+          "free": true,
+          "hours": 2
+        },
+        {
+          "id": "t_3_1",
+          "type": "practice",
+          "title": "SQL practice exercises",
+          "free": true,
+          "hours": 2
+        },
+        {
+          "id": "t_3_2",
+          "type": "build",
+          "title": "Add SQL to your pod project",
+          "free": true,
+          "hours": 4
+        }
+      ],
+      "proof": "Merge a PR that adds a SQL schema and 3 queries to your pod repo",
+      "receipt": {
+        "demandPct": 52,
+        "trend": "stable",
+        "coveredByDegree": "no",
+        "evidenceIds": [],
+        "reason": "52% of ML engineer ads ask for SQL — none of your modules teach it."
+      }
+    },
+    {
+      "week": 4,
+      "startDate": "2026-11-30",
+      "focusSkillId": "aws",
+      "isExamWeek": false,
+      "tasks": [
+        {
+          "id": "t_4_0",
+          "type": "learn",
+          "title": "Work through a AWS tutorial",
+          "resourceUrl": "https://aws.amazon.com/training/",
+          "free": true,
+          "hours": 2
+        },
+        {
+          "id": "t_4_1",
+          "type": "practice",
+          "title": "AWS practice exercises",
+          "free": true,
+          "hours": 2
+        },
+        {
+          "id": "t_4_2",
+          "type": "build",
+          "title": "Add AWS to your pod project",
+          "free": true,
+          "hours": 4
+        }
+      ],
+      "proof": "Deploy your pod project's API to AWS free tier and share the URL",
+      "receipt": {
+        "demandPct": 38,
+        "trend": "rising",
+        "growthPerYear": 0.31,
+        "coveredByDegree": "no",
+        "evidenceIds": [],
+        "reason": "38% of ML engineer ads ask for AWS, and demand is up 31% a year — none of your modules teach it."
+      }
+    },
+    {
+      "week": 5,
+      "startDate": "2026-12-07",
+      "focusSkillId": "mlops",
+      "isExamWeek": false,
+      "tasks": [
+        {
+          "id": "t_5_0",
+          "type": "learn",
+          "title": "Work through a MLOps tutorial",
+          "resourceUrl": "https://huggingface.co/learn",
+          "free": true,
+          "hours": 2
+        },
+        {
+          "id": "t_5_1",
+          "type": "practice",
+          "title": "MLOps practice exercises",
+          "free": true,
+          "hours": 2
+        },
+        {
+          "id": "t_5_2",
+          "type": "build",
+          "title": "Add MLOps to your pod project",
+          "free": true,
+          "hours": 4
+        }
+      ],
+      "proof": "Merge a PR that tracks one experiment with a logged metric",
+      "receipt": {
+        "demandPct": 30,
+        "trend": "rising",
+        "growthPerYear": 0.35,
+        "coveredByDegree": "no",
+        "evidenceIds": [],
+        "reason": "30% of ML engineer ads ask for MLOps, and demand is up 35% a year — none of your modules teach it."
+      }
+    },
+    {
+      "week": 6,
+      "startDate": "2026-12-14",
+      "focusSkillId": "llm-apps",
+      "isExamWeek": false,
+      "tasks": [
+        {
+          "id": "t_6_0",
+          "type": "learn",
+          "title": "Work through a LLM apps tutorial",
+          "resourceUrl": "https://huggingface.co/learn/llm-course",
+          "free": true,
+          "hours": 2
+        },
+        {
+          "id": "t_6_1",
+          "type": "practice",
+          "title": "LLM apps practice exercises",
+          "free": true,
+          "hours": 2
+        },
+        {
+          "id": "t_6_2",
+          "type": "build",
+          "title": "Add LLM apps to your pod project",
+          "free": true,
+          "hours": 4
+        }
+      ],
+      "proof": "Merge a PR that adds an LLM-powered feature to your pod repo",
+      "receipt": {
+        "demandPct": 31,
+        "trend": "rising",
+        "growthPerYear": 0.58,
+        "coveredByDegree": "no",
+        "evidenceIds": [],
+        "reason": "31% of ML engineer ads ask for LLM apps, and demand is up 58% a year — none of your modules teach it."
+      }
+    },
+    {
+      "week": 7,
+      "startDate": "2026-12-21",
+      "focusSkillId": "kubernetes",
+      "isExamWeek": false,
+      "tasks": [
+        {
+          "id": "t_7_0",
+          "type": "learn",
+          "title": "Work through a Kubernetes tutorial",
+          "resourceUrl": "https://www.freecodecamp.org/news/the-kubernetes-handbook/",
+          "free": true,
+          "hours": 2
+        },
+        {
+          "id": "t_7_1",
+          "type": "practice",
+          "title": "Kubernetes practice exercises",
+          "free": true,
+          "hours": 2
+        },
+        {
+          "id": "t_7_2",
+          "type": "build",
+          "title": "Add Kubernetes to your pod project",
+          "free": true,
+          "hours": 4
+        }
+      ],
+      "proof": "Run your pod's container on a local cluster and share a screenshot",
+      "receipt": {
+        "demandPct": 27,
+        "trend": "stable",
+        "growthPerYear": 0.08,
+        "coveredByDegree": "no",
+        "evidenceIds": [],
+        "reason": "27% of ML engineer ads ask for Kubernetes — none of your modules teach it."
+      }
+    },
+    {
+      "week": 8,
+      "startDate": "2026-12-28",
+      "focusSkillId": "ci-cd",
+      "isExamWeek": false,
+      "tasks": [
+        {
+          "id": "t_8_0",
+          "type": "learn",
+          "title": "Work through a CI/CD tutorial",
+          "resourceUrl": "https://github.com/features/actions",
+          "free": true,
+          "hours": 2
+        },
+        {
+          "id": "t_8_1",
+          "type": "practice",
+          "title": "CI/CD practice exercises",
+          "free": true,
+          "hours": 2
+        },
+        {
+          "id": "t_8_2",
+          "type": "build",
+          "title": "Add CI/CD to your pod project",
+          "free": true,
+          "hours": 4
+        }
+      ],
+      "proof": "Merge a PR that adds a GitHub Actions workflow running your tests",
+      "receipt": {
+        "demandPct": 24,
+        "coveredByDegree": "no",
+        "evidenceIds": [],
+        "reason": "24% of ML engineer ads ask for CI/CD — none of your modules teach it."
+      }
+    },
+    {
+      "week": 9,
+      "startDate": "2027-01-04",
+      "focusSkillId": "vector-databases",
+      "isExamWeek": false,
+      "tasks": [
+        {
+          "id": "t_9_0",
+          "type": "learn",
+          "title": "Work through a Vector databases tutorial",
+          "resourceUrl": "https://huggingface.co/learn/cookbook",
+          "free": true,
+          "hours": 2
+        },
+        {
+          "id": "t_9_1",
+          "type": "practice",
+          "title": "Vector databases practice exercises",
+          "free": true,
+          "hours": 2
+        },
+        {
+          "id": "t_9_2",
+          "type": "build",
+          "title": "Add Vector databases to your pod project",
+          "free": true,
+          "hours": 4
+        }
+      ],
+      "proof": "Merge a PR that adds semantic search over your pod's data",
+      "receipt": {
+        "demandPct": 8,
+        "trend": "rising",
+        "growthPerYear": 0.47,
+        "coveredByDegree": "no",
+        "evidenceIds": [],
+        "reason": "8% of ML engineer ads ask for Vector databases, and demand is up 47% a year — none of your modules teach it."
+      }
+    },
+    {
+      "week": 10,
+      "startDate": "2027-01-11",
+      "focusSkillId": "llm-evaluation",
+      "isExamWeek": true,
+      "tasks": [
+        {
+          "id": "t_10_0",
+          "type": "learn",
+          "title": "Skim a LLM evaluation intro",
+          "resourceUrl": "https://huggingface.co/learn/cookbook",
+          "free": true,
+          "hours": 1
+        },
+        {
+          "id": "t_10_1",
+          "type": "build",
+          "title": "Small LLM evaluation exercise in your pod repo",
+          "free": true,
+          "hours": 3
+        }
+      ],
+      "proof": "Merge a PR that adds 10 eval cases for your LLM feature",
+      "receipt": {
+        "demandPct": 10,
+        "trend": "rising",
+        "growthPerYear": 0.64,
+        "coveredByDegree": "no",
+        "evidenceIds": [],
+        "reason": "10% of ML engineer ads ask for LLM evaluation, and demand is up 64% a year — none of your modules teach it."
+      }
+    },
+    {
+      "week": 11,
+      "startDate": "2027-01-18",
+      "focusSkillId": "scikit-learn",
+      "isExamWeek": false,
+      "tasks": [
+        {
+          "id": "t_11_0",
+          "type": "learn",
+          "title": "Work through a scikit-learn tutorial",
+          "resourceUrl": "https://scikit-learn.org/stable/getting_started.html",
+          "free": true,
+          "hours": 2
+        },
+        {
+          "id": "t_11_1",
+          "type": "practice",
+          "title": "scikit-learn practice exercises",
+          "free": true,
+          "hours": 2
+        },
+        {
+          "id": "t_11_2",
+          "type": "build",
+          "title": "Add scikit-learn to your pod project",
+          "free": true,
+          "hours": 4
+        }
+      ],
+      "proof": "Push a notebook comparing two scikit-learn models on your pod data",
+      "degreeLink": "Builds on what you learned in Data Structures",
+      "receipt": {
+        "demandPct": 30,
+        "trend": "stable",
+        "coveredByDegree": "no",
+        "evidenceIds": [],
+        "reason": "30% of ML engineer ads ask for scikit-learn — none of your modules teach it."
+      }
+    },
+    {
+      "week": 12,
+      "startDate": "2027-01-25",
+      "focusSkillId": "deep-learning",
+      "isExamWeek": false,
+      "tasks": [
+        {
+          "id": "t_12_0",
+          "type": "learn",
+          "title": "Work through a Deep learning tutorial",
+          "resourceUrl": "https://www.kaggle.com/learn/intro-to-deep-learning",
+          "free": true,
+          "hours": 2
+        },
+        {
+          "id": "t_12_1",
+          "type": "practice",
+          "title": "Deep learning practice exercises",
+          "free": true,
+          "hours": 2
+        },
+        {
+          "id": "t_12_2",
+          "type": "build",
+          "title": "Add Deep learning to your pod project",
+          "free": true,
+          "hours": 4
+        }
+      ],
+      "proof": "Push a notebook training a small neural network and share the loss curve",
+      "degreeLink": "Builds on what you learned in Data Structures",
+      "receipt": {
+        "demandPct": 33,
+        "trend": "rising",
+        "growthPerYear": 0.22,
+        "coveredByDegree": "no",
+        "evidenceIds": [],
+        "reason": "33% of ML engineer ads ask for Deep learning, and demand is up 22% a year — none of your modules teach it."
+      }
+    }
+  ],
+  "skipped": [
+    {
+      "skillId": "linear-algebra",
+      "moduleCode": "COMP1xxx2",
+      "message": "Don't pay for a Linear algebra course: Mathematics for Computing (COMP1xxx2) covers it in Year 1 · Semester 1."
+    },
+    {
+      "skillId": "statistics",
+      "moduleCode": "COMP1xxx3",
+      "message": "Don't pay for a Statistics course: Probability & Statistics (COMP1xxx3) covers it in Year 1 · Semester 2."
+    },
+    {
+      "skillId": "machine-learning",
+      "moduleCode": "COMP1xxx4",
+      "message": "Don't pay for a Machine learning course: Introduction to AI & Machine Learning (COMP1xxx4) covers it in Year 1 · Semester 2."
+    },
+    {
+      "skillId": "databases",
+      "moduleCode": "COMP1xxx5",
+      "message": "Don't pay for a Databases course: Databases (COMP1xxx5) covers it in Year 1 · Semester 2."
+    },
+    {
+      "skillId": "algorithms",
+      "moduleCode": "COMP1xxx6",
+      "message": "Don't pay for a Algorithms course: Algorithms & Complexity (COMP1xxx6) covers it in Year 1 · Semester 2."
+    },
+    {
+      "skillId": "communication",
+      "moduleCode": "COMP1xxx8",
+      "message": "Don't pay for a Communication course: Software Engineering Team Project (COMP1xxx8) covers it in Year 1 · Semester 2."
+    },
+    {
+      "skillId": "teamwork",
+      "moduleCode": "COMP1xxx8",
+      "message": "Don't pay for a Teamwork course: Software Engineering Team Project (COMP1xxx8) covers it in Year 1 · Semester 2."
+    },
+    {
+      "skillId": "agile",
+      "moduleCode": "COMP1xxx8",
+      "message": "Don't pay for a Agile course: Software Engineering Team Project (COMP1xxx8) covers it in Year 1 · Semester 2."
+    },
+    {
+      "skillId": "pandas",
+      "moduleCode": "COMP1xx10",
+      "message": "Don't pay for a pandas course: Data Science Foundations (COMP1xx10) covers it in Year 1 · Semester 2."
+    },
+    {
+      "skillId": "numpy",
+      "moduleCode": "COMP1xx10",
+      "message": "Don't pay for a NumPy course: Data Science Foundations (COMP1xx10) covers it in Year 1 · Semester 2."
+    },
+    {
+      "skillId": "data-visualisation",
+      "moduleCode": "COMP1xx10",
+      "message": "Don't pay for a Data visualisation course: Data Science Foundations (COMP1xx10) covers it in Year 1 · Semester 2."
+    },
+    {
+      "skillId": "testing",
+      "moduleCode": "COMP1xxx8",
+      "message": "Don't pay for a Testing course: Software Engineering Team Project (COMP1xxx8) covers it in Year 1 · Semester 2."
+    },
+    {
+      "skillId": "code-review",
+      "moduleCode": "COMP1xxx8",
+      "message": "Don't pay for a Code review course: Software Engineering Team Project (COMP1xxx8) covers it in Year 1 · Semester 2."
+    },
+    {
+      "skillId": "rest-apis",
+      "moduleCode": "COMP1xx11",
+      "message": "Don't pay for a REST APIs course: Web Technologies (COMP1xx11) covers it in Year 1 · Semester 2."
+    },
+    {
+      "skillId": "system-design",
+      "moduleCode": "COMP1xx11",
+      "message": "Don't pay for a System design course: Web Technologies (COMP1xx11) covers it in Year 1 · Semester 2."
+    },
+    {
+      "skillId": "tensorflow",
+      "moduleCode": "COMP1xxx4",
+      "message": "Don't pay for a TensorFlow course: Introduction to AI & Machine Learning (COMP1xxx4) covers it in Year 1 · Semester 2."
+    }
+  ],
+  "generatedAt": "2026-11-07T14:30:00.000Z"
+}
