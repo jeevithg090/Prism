@@ -228,7 +228,8 @@ async function buildFromInputs(userId: string, roleId: string, now: Date): Promi
   const programme = programmeFixture(profile?.programmeId);
   const roleDemand = marketFixture(roleId);
   if (!profile?.dna || !programme || !roleDemand) return null;
-  const [evidence, pod] = await Promise.all([listEvidence(userId), podFor(userId)]);
+  // Committed evidence only: a pod proof mid-recording must not count yet, or the proof loop's before -> after jump vanishes.
+  const [evidence, pod] = await Promise.all([committedEvidence(userId), podFor(userId)]);
   return buildBridgeMap({
     profile, programme, roleDemand, evidence, trends: trendsFixture() ?? [], now,
     podLearns: pod?.members.find((m) => m.userId === userId)?.learns,
