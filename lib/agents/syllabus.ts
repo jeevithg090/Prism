@@ -2,6 +2,7 @@ import "server-only";
 // Syllabus Agent (P1): reads a programme page with Firecrawl (or pasted course text), extracts course units,
 // maps each unit onto the skill taxonomy and writes a one-line industry note.
 // Live when FIRECRAWL_API_KEY exists; otherwise, or when a page can't be read, the cached programme.
+// Demo toggle (lib/replay.ts): Live mode records each scraped page; Demo mode replays the page from a real run.
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
@@ -10,6 +11,7 @@ import { mapTextToSkills } from "@/lib/agents/skillmap";
 import { withCache } from "@/lib/cache";
 import { fcSearch } from "@/lib/connectors/firecrawl";
 import { llmJSON } from "@/lib/llm";
+import { canReplay, replayOrRecord } from "@/lib/replay";
 import type { Module, Programme, SkillId } from "@/lib/types";
 
 export class SyllabusError extends Error {}
@@ -123,17 +125,30 @@ export function toModule(u: RawUnit, skills: Module["skills"], note?: string): M
 // ---------- Firecrawl (REST, v2) ----------
 
 async function fcScrapeMarkdown(url: string): Promise<string> {
-  const key = process.env.FIRECRAWL_API_KEY;
-  if (!key) throw new SyllabusError("no_key");
-  const res = await fetch("https://api.firecrawl.dev/v2/scrape", {
-    method: "POST",
-    headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
-    body: JSON.stringify({ url, formats: ["markdown"], onlyMainContent: true }),
-    signal: AbortSignal.timeout(60_000),
-  });
-  if (!res.ok) throw new SyllabusError(`Firecrawl ${res.status}`);
-  const j = (await res.json()) as { data?: { markdown?: string } };
-  return j.data?.markdown ?? "";
+  return replayOrRecord<string>(
+    "firecrawl",
+    { op: "scrape", url, formats: ["markdown"], onlyMainContent: true },
+    async () => {
+      const key = process.env.FIRECRAWL_API_KEY;
+      if (!key) throw new SyllabusError("no_key");
+      const res = await fetch("https://api.firecrawl.dev/v2/scrape", {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
+        body: JSON.stringify({ url, formats: ["markdown"], onlyMainContent: true }),
+        signal: AbortSignal.timeout(60_000),
+      });
+      if (!res.ok) throw new SyllabusError(`Firecrawl ${res.status}`);
+      const j = (await res.json()) as { data?: { markdown?: string } };
+      return j.data?.markdown ?? "";
+    },
+    {
+      requires: ["FIRECRAWL_API_KEY"],
+      meta: { kind: "scrape", label: url },
+      loose: false,
+      validate: (v) => typeof v === "string",
+      shouldRecord: (md) => md.trim().length > 0,
+    },
+  );
 }
 
 const UnitsZ = z.object({
@@ -196,12 +211,14 @@ export async function extractProgramme(input: { url?: string; text?: string; pro
     return p;
   };
 
-  const useLLM = !input.demo && Boolean(process.env.OPENAI_API_KEY);
+  // Demo toggle: without a key, recordings from a real run can still stand in for Firecrawl and the model.
+  const replayable = !input.demo && (await canReplay());
+  const useLLM = !input.demo && (Boolean(process.env.OPENAI_API_KEY) || replayable);
   const run = async (): Promise<Programme> => {
     let text = input.text ?? "";
     let source: Programme["source"] = "manual";
     if (!text) {
-      if (!process.env.FIRECRAWL_API_KEY || !input.url) return cachedOr("no_key");
+      if (!input.url || (!process.env.FIRECRAWL_API_KEY && !replayable)) return cachedOr("no_key");
       try {
         const pages = [await fcScrapeMarkdown(input.url)];
         if (parseUnitsFromText(pages[0]).length < 3) {
