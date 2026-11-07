@@ -1,5 +1,5 @@
 import "server-only";
-// LOCAL SHIM of P4's lib/n8n.ts
+// SCAFFOLD STUB (owner: P4). Contract signature; P4 replaces it with the real implementation.
 export type WorkflowName = "market-refresh" | "monday-briefing" | "pod-kickoff" | "pod-nudge" | "opportunity-watcher" | "newcomer-welcome";
 export async function triggerWorkflow(name: WorkflowName, payload: Record<string, unknown>): Promise<boolean> {
   const base = process.env.N8N_WEBHOOK_BASE_URL; if (!base) return false;

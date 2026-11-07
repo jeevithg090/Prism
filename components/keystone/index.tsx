@@ -1,5 +1,5 @@
 "use client";
-// LOCAL SHIM of P3's components/keystone/* (contract §9.6). Replace with P3's when merged.
+// SCAFFOLD STUB (owner: P3). Minimal versions of the contract §9.6 shared components so every page can build today; P3 replaces them with the real design system.
 import * as React from "react";
 import { CheckCircle2, GraduationCap, Target, TrendingUp, TrendingDown, Minus, Users, Hammer, GitPullRequest, Milestone, Compass, Workflow, type LucideIcon } from "lucide-react";
 import type { AgentName, BadgeId, SkillStatus, TrendLabel } from "@/lib/types";
