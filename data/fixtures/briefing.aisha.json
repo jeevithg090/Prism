@@ -1,0 +1,15 @@
+{
+  "userId": "aisha",
+  "weekOf": "2026-11-09",
+  "script": "Morning Aisha! Here's your Keystone briefing for the week of 9 November. First, the market. Docker demand held steady at 41% of ML engineer ads, and LLM evaluation is the fastest riser on your map, up 38% a year. PyTorch is still in just over half of all ads, so it's next on your roadmap. Now your pod. VisionAid merged two pull requests last week, and Priya left you some really useful review comments on your Dockerfile. Your momentum is up 18% on your usual week. Nice. This week, three things. Finish your Dockerfile and get it merged. Work through the PyTorch quickstart for two hours. And answer one question in the Help a newcomer feed, because explaining things is how you really learn them. You're 38% of the way to ML engineer, and this week moves you closer. Have a great week!",
+  "audioUrl": "/demo/briefing-aisha.mp3",
+  "topTasks": [
+    "Finish your Dockerfile and get the PR merged",
+    "PyTorch quickstart: 2 hours",
+    "Answer one question in the Help a newcomer feed"
+  ],
+  "marketMoves": [
+    "LLM evaluation up 38% a year",
+    "PyTorch steady at 52% of ads"
+  ]
+}
