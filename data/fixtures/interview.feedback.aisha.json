@@ -1,0 +1,16 @@
+{
+  "userId": "aisha",
+  "roleId": "ml-engineer",
+  "scores": { "content": 4, "structure": 3, "clarity": 4, "confidence": 3 },
+  "fillerWordsPerMin": 6.2,
+  "strengths": [
+    "Clear explanation of your pod's Docker setup: base image, requirements and layer caching.",
+    "Good use of a concrete example: builds went from about four minutes to twenty seconds."
+  ],
+  "improvements": [
+    "Structure answers as situation → action → result; your first answer skipped the result.",
+    "Pause instead of saying \"um\": you used 9 filler words (6.2 a minute; aim for under 4)."
+  ],
+  "transcript": "ai: Hi Aisha. Walk me through the pull request you merged, \"Containerise the captioning API with Docker\". What did you build, and why does VisionAid need it?\nuser: Um, so my issue was to containerise the captioning API. I wrote the Dockerfile, um, from a slim Python base image and installed the requirements.\nai: Explain Docker to a first-year who has never used it. What problem does it solve in your project?\nuser: Docker packages your app and everything it needs into an image. You run the image and you get a container, so, like, it works the same on every laptop in the pod.\nai: What was the hardest part of that work, and what feedback did Priya give you in review?\nuser: Um, the build was really slow. Priya asked what happens to layer caching when COPY comes before pip install, so I moved pip install up and builds went from about four minutes to twenty seconds.\nai: You're aiming for ML engineer roles, and this week you're focusing on PyTorch. How are you learning it, and how will you prove it?\nuser: Um, basically the official tutorials, and, uh, I'll add batch inference to our API as my next pod issue.",
+  "createdAt": "2026-11-07T14:20:00.000Z"
+}

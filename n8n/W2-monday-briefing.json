@@ -1,0 +1,280 @@
+{
+  "name": "Keystone W2 · monday-briefing (Mon 08:00)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## W2 · monday-briefing\nMonday 08:00 Europe/London (or run it by hand in the demo, or POST /webhook/monday-briefing): fetches each student's Briefing from Keystone, turns the script into an MP3 with ElevenLabs text-to-speech and posts it to #briefings.\n\n**Credentials:** Header Auth `x-keystone-secret` (Keystone), Header Auth `xi-api-key` (ElevenLabs), Discord webhook for #briefings. Edit **Config** (app URL, user ids, voice id).",
+        "height": 330,
+        "width": 460
+      },
+      "id": "01d31f86-130b-5347-8246-4cdd80db21f0",
+      "name": "Setup notes",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -200,
+        -380
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * 1"
+            }
+          ]
+        }
+      },
+      "id": "9ec10cb2-1c69-5b16-8f03-729aa33c0778",
+      "name": "Every Monday 08:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        -60
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "42871fa8-7930-5b34-9d17-2035febb0d46",
+      "name": "Run it now (demo)",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "monday-briefing",
+        "authentication": "headerAuth",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "b2d8cd1d-56dc-52b9-9456-f65386796e09",
+      "name": "Webhook: monday-briefing",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        260
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_ME_keystone_secret",
+          "name": "Keystone shared secret (x-keystone-secret)"
+        }
+      },
+      "webhookId": "f665efbb-ab64-5ba2-a496-70643c577534"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Edit these once after importing (no secrets here: secrets live in n8n credentials).\nreturn [{ json: {\n  appUrl: 'https://REPLACE-WITH-YOUR-KEYSTONE-URL',   // e.g. https://keystone.vercel.app (no trailing slash)\n  userIds: ['aisha'],\n  roles: ['ml-engineer', 'software-engineer', 'data-analyst'],\n  voiceId: 'JBFqnCBsd6RMkjVDRZzb',                      // ELEVENLABS_VOICE_ID\n} }];"
+      },
+      "id": "c78e54ee-b8e4-5b34-8422-6c14106c4416",
+      "name": "Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const { userIds } = $('Config').first().json;\nreturn userIds.map((userId) => ({ json: { userId } }));"
+      },
+      "id": "cf1955c2-38ba-56b5-9f06-6afd18c84635",
+      "name": "One item per student",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Config').first().json.appUrl }}/api/briefing/{{ $json.userId }}",
+        "options": {},
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "id": "06e34b13-2604-5383-8bc5-444990f7a179",
+      "name": "GET briefing",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        100
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_ME_keystone_secret",
+          "name": "Keystone shared secret (x-keystone-secret)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.elevenlabs.io/v1/text-to-speech/{{ $('Config').first().json.voiceId }}?output_format=mp3_44100_128",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "data"
+            }
+          }
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: $json.data.script, model_id: 'eleven_multilingual_v2' }) }}"
+      },
+      "id": "5ee6f972-60b3-5f7a-9251-2db65a939ced",
+      "name": "ElevenLabs text-to-speech",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        960,
+        100
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_ME_elevenlabs",
+          "name": "ElevenLabs (xi-api-key)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "content": "=🎧 Your Keystone briefing for the week of {{ $('GET briefing').item.json.data.weekOf }}",
+        "options": {
+          "files": {
+            "values": [
+              {
+                "inputFieldName": "data"
+              }
+            ]
+          }
+        }
+      },
+      "id": "0761a356-7d01-591d-af76-3ca9d06feda0",
+      "name": "Post MP3 to #briefings",
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        100
+      ],
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "REPLACE_ME_discord_webhook",
+          "name": "Discord webhook (#pods / #briefings)"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Every Monday 08:00": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run it now (demo)": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook: monday-briefing": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "One item per student",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "One item per student": {
+      "main": [
+        [
+          {
+            "node": "GET briefing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET briefing": {
+      "main": [
+        [
+          {
+            "node": "ElevenLabs text-to-speech",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ElevenLabs text-to-speech": {
+      "main": [
+        [
+          {
+            "node": "Post MP3 to #briefings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/London",
+    "saveManualExecutions": true
+  },
+  "pinData": {},
+  "tags": [
+    {
+      "name": "keystone"
+    }
+  ],
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}
