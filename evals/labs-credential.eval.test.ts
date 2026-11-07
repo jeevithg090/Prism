@@ -47,7 +47,7 @@ describe("eval: record_skill_credential tool", () => {
     expect(summary).toMatch(/nothing was sent/);
     const bad = await tool.run(tool.input.parse({ skillIds: ["kubernetes"] }), { userId: "aisha", runId: "r", approved: true }).catch((e) => e);
     expect((bad as ToolError).code).toBe("invalid_input");
-    // No skills named: reveal only the strongest one (still behind the approval checkpoint).
+    // No skills named: reveal only their top skill on the passport (still behind the approval checkpoint).
     expect((await tool.run(tool.input.parse({}), { userId: "aisha", runId: "r" }).catch((e) => e) as ToolError).code).toBe("needs_approval");
     const auto = (await tool.run(tool.input.parse({}), { userId: "aisha", runId: "r", approved: true })) as { skills: string[] };
     expect(auto.skills).toHaveLength(1);

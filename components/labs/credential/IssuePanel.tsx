@@ -135,7 +135,7 @@ function SharesList({ shares }: { shares: ShareSummary[] }) {
   const qc = useQueryClient();
   const revoke = useMutation({
     mutationFn: (id: string) => getJSONDelete(`/api/labs/credential/share/${id}`),
-    onSuccess: () => { toast.success("Link revoked. Anyone who checks it now sees it's revoked."); void qc.invalidateQueries({ queryKey: LEDGER_KEY }); },
+    onSuccess: () => { toast.success("Link revoked. Keystone's verifier now rejects it, including any copy someone saved."); void qc.invalidateQueries({ queryKey: LEDGER_KEY }); },
     onError: (e) => toast.error(e instanceof Error ? e.message : "We couldn't revoke that link."),
   });
   if (!shares.length) return null;
@@ -227,7 +227,7 @@ export function IssuePanel({ onOpenShare }: { onOpenShare: (shareUrl: string) =>
           title="What the link proves"
           description="Keystone signs only the root. Each revealed proof carries the hashes that lead back to it."
         >
-          <MerkleTree tree={view.tree} size={view.size} chosen={chosenLeaves} root={view.root} />
+          <MerkleTree tree={view.tree} size={view.size} chosen={chosenLeaves} root={view.root} leaves={view.leaves} />
           <div className="mt-6 space-y-3 rounded-xl bg-muted/60 p-4">
             <p className="font-medium">You decide</p>
             <p className="text-sm text-muted-foreground" aria-live="polite">
@@ -243,7 +243,7 @@ export function IssuePanel({ onOpenShare }: { onOpenShare: (shareUrl: string) =>
                 ? <>Credential #{view.latest.sequence} {view.latest.current ? "covers every proof you have." : "is out of date: you've added proofs since, so signing makes a new one."}</>
                 : "This will be your first credential."}{" "}
               Issuer key <a href="/api/labs/credential/jwks" target="_blank" rel="noreferrer" className="font-mono underline underline-offset-4 outline-none focus-visible:ring-2 focus-visible:ring-ring">{shortHash(view.issuer.did.replace("did:key:", ""), 10)}<ExternalLink className="ml-0.5 inline size-3.5" aria-hidden /><span className="sr-only"> (opens in a new tab)</span></a>
-              {view.issuer.demoKey ? ", a demo key anyone can recompute." : "."}
+              {view.issuer.demoKey ? ". In the demo the key and the leaf salts come from public seeds, so anyone can recompute them; a real deployment keeps both secret." : "."}
             </p>
           </div>
         </SectionCard>

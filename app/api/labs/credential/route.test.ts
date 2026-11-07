@@ -11,6 +11,7 @@ import { recordMergedPR } from "@/lib/agents/proof";
 import { listRuns } from "@/lib/agents/harness";
 import { listMemory } from "@/lib/agents/coach/memory";
 import { resetIssuerKeyCache } from "@/lib/labs/credential/keys";
+import { resetVerifyLimits, VERIFY_LIMIT } from "@/lib/labs/credential/http";
 import { GET as ledgerGET, POST as issuePOST } from "./route";
 import { POST as verifyPOST } from "./verify/route";
 import { GET as jwksGET } from "./jwks/route";
@@ -26,6 +27,7 @@ afterAll(() => { delete process.env.DEMO_MODE; });
 beforeEach(() => {
   testStore().reset();
   resetIssuerKeyCache();
+  resetVerifyLimits();
   h.emit.mockClear();
 });
 
@@ -138,6 +140,39 @@ describe("share links, verification and the JWKS", () => {
     const revoked = await (await verifyPOST(post("/api/labs/credential/verify", { document: shared.data }))).json();
     expect(revoked.data.verdict).toBe("invalid");
     expect(revoked.data.checks.find((c: { id: string }) => c.id === "status").ok).toBe(false);
+
+    // The verifier's finding: renaming the share id in a saved copy used to dodge the revocation.
+    for (const shareId of ["ffffffffffffffffffffffff", "x"]) {
+      const renamed = await (await verifyPOST(post("/api/labs/credential/verify", { document: { ...shared.data, shareId } }))).json();
+      expect(renamed.data.verdict).toBe("invalid");
+      expect(renamed.data.checks.find((c: { id: string }) => c.id === "status")?.detail ?? "").not.toBe("Not revoked.");
+    }
+    // Trimming the revoked link's disclosures into a "smaller" link fails too.
+    const trimmed = { ...structuredClone(shared.data), disclosures: shared.data.disclosures.slice(1) };
+    expect((await (await verifyPOST(post("/api/labs/credential/verify", { document: trimmed }))).json()).data.verdict).toBe("invalid");
+  });
+
+  it("re-creating a link after revoking it in DEMO_MODE makes a new link and never revives the old one", async () => {
+    const first = (await issue(["git", "python"])).body.data;
+    const oldId = first.shareUrl.split("=")[1];
+    // Same skills while the link is active: the same link comes back (no duplicate rows).
+    expect((await issue(["python", "git"])).body.data.shareUrl).toBe(first.shareUrl);
+    expect((await shareDELETE(req(`/api/labs/credential/share/${oldId}`, { method: "DELETE" }), idCtx(oldId))).status).toBe(200);
+
+    const again = (await issue(["git", "python"])).body.data;
+    const newId = again.shareUrl.split("=")[1];
+    expect(newId).toMatch(/^[a-f0-9]{24}$/);
+    expect(newId).not.toBe(oldId);
+    expect((await shareGET(req(`/api/labs/credential/share/${oldId}`), idCtx(oldId))).status).toBe(404);
+    const oldCheck = await (await verifyPOST(post("/api/labs/credential/verify", { document: first.share }))).json();
+    expect(oldCheck.data.verdict).toBe("invalid");
+    const newCheck = await (await verifyPOST(post("/api/labs/credential/verify", { document: again.share }))).json();
+    expect(newCheck.data.verdict).toBe("valid");
+
+    const view = (await (await ledgerGET(req("/api/labs/credential"))).json()).data;
+    const byId = new Map(view.shares.map((x: { shareId: string; revoked: boolean }) => [x.shareId, x.revoked]));
+    expect(byId.get(oldId)).toBe(true);
+    expect(byId.get(newId)).toBe(false);
   });
 
   it("validates the verify body and the share id", async () => {
@@ -145,10 +180,26 @@ describe("share links, verification and the JWKS", () => {
     expect((await verifyPOST(post("/api/labs/credential/verify", { document: "{nope" }))).status).toBe(400);
     expect((await verifyPOST(post("/api/labs/credential/verify", { nothing: 1 }))).status).toBe(400);
     expect((await verifyPOST(post("/api/labs/credential/verify", { document: "x".repeat(10) + "y".repeat(200_001) }))).status).toBe(413);
+    // Counted in bytes, not characters: 70k three-byte characters is 210 kB.
+    expect((await verifyPOST(post("/api/labs/credential/verify", { document: "€".repeat(70_000) }))).status).toBe(413);
+    // A declared Content-Length over the cap is refused before the body is read.
+    const declared = new Request("http://localhost/api/labs/credential/verify", { method: "POST", body: "{}", headers: { "content-type": "application/json", "content-length": "5000000" } });
+    expect((await verifyPOST(declared)).status).toBe(413);
     const junk = await (await verifyPOST(post("/api/labs/credential/verify", { document: { hello: "world" } }))).json();
     expect(junk.data.verdict).toBe("invalid");
     expect((await shareGET(req("/api/labs/credential/share/../../etc"), idCtx("../../etc"))).status).toBe(400);
     expect((await shareGET(req(`/api/labs/credential/share/${"0".repeat(24)}`), idCtx("0".repeat(24)))).status).toBe(404);
+  });
+
+  it("rate-limits anonymous checks per caller", async () => {
+    const from = (ip: string) => new Request("http://localhost/api/labs/credential/verify", {
+      method: "POST", body: JSON.stringify({ document: { hello: "world" } }), headers: { "content-type": "application/json", "x-forwarded-for": ip },
+    });
+    for (let i = 0; i < VERIFY_LIMIT; i++) expect((await verifyPOST(from("203.0.113.7"))).status).toBe(200);
+    const limited = await verifyPOST(from("203.0.113.7"));
+    expect(limited.status).toBe(429);
+    expect((await limited.json()).error.code).toBe("rate_limited");
+    expect((await verifyPOST(from("198.51.100.2"))).status).toBe(200); // someone else is unaffected
   });
 
   it("publishes the Ed25519 public key (never the private one)", async () => {

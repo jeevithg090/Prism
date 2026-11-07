@@ -11,8 +11,8 @@ import { base58btcDecode, base58btcEncode, canonicalize, concatBytes, ed25519Fro
 import { verifyEd25519 } from "./keys";
 import { inclusionPath, leafHash, merkleRoot, verifyInclusion } from "./merkle";
 import {
-  CREDENTIAL_TYPE, CRYPTOSUITE, SHARE_TYPE, SkillCredentialZ, SkillShareZ, TREE_ALGORITHM, VC_CONTEXT, safeLink,
-  type DataIntegrityProof, type Disclosure, type Leaf, type SkillCredential, type SkillShare, type UnsignedCredential,
+  CREDENTIAL_TYPE, CRYPTOSUITE, SEAL_TYPE, SHARE_TYPE, SkillCredentialZ, SkillShareZ, TREE_ALGORITHM, VC_CONTEXT, safeLink,
+  type DataIntegrityProof, type Disclosure, type Leaf, type SealPayload, type SkillCredential, type SkillShare, type UnsignedCredential,
   type VerificationReport, type VerifiedProof, type VerifiedSkill, type VerifyCheck,
 } from "./model";
 
@@ -21,9 +21,15 @@ const sha256 = (data: Uint8Array): Uint8Array => new Uint8Array(createHash("sha2
 /** The bytes a leaf hash covers: JCS of the leaf, salt included. */
 export const hashLeaf = (leaf: Leaf): Uint8Array => leafHash(utf8(canonicalize(leaf)));
 
-/** Stable order for the tree: by skill, then rung, then evidence id. */
+/**
+ * Stable order for the tree: by salted leaf hash. Ordering by skill name would leak something: a disclosed
+ * leaf's index and the tree size would tell an employer how many hidden skills sort before and after it.
+ * A salted hash order says nothing about the hidden leaves.
+ */
 export function sortLeaves(leaves: Leaf[]): Leaf[] {
-  return [...leaves].sort((a, b) => a.skillId.localeCompare(b.skillId) || a.rung - b.rung || a.evidenceId.localeCompare(b.evidenceId));
+  return leaves.map((leaf) => ({ leaf, key: toHex(hashLeaf(leaf)) }))
+    .sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
+    .map((x) => x.leaf);
 }
 
 export function ledgerRoot(leaves: Leaf[]): { root: string; hashes: Uint8Array[] } {
@@ -36,17 +42,39 @@ export const credentialDigest = (vc: SkillCredential): string => toHex(sha256(ut
 
 export interface Signer { did: string; kid: string; sign(data: Uint8Array): Uint8Array }
 
-function hashData(unsigned: UnsignedCredential, proofOptions: Omit<DataIntegrityProof, "proofValue">): Uint8Array {
-  const proofConfig = { ...proofOptions, "@context": unsigned["@context"] };
-  return concatBytes(sha256(utf8(canonicalize(proofConfig))), sha256(utf8(canonicalize(unsigned))));
+type ProofOptions = Omit<DataIntegrityProof, "proofValue">;
+
+/** eddsa-jcs-2022 hashData: SHA-256(JCS(proofConfig)) ‖ SHA-256(JCS(document)). */
+function hashData(doc: object, proofOptions: ProofOptions): Uint8Array {
+  const context = (doc as { "@context"?: unknown })["@context"];
+  const proofConfig = context === undefined ? { ...proofOptions } : { ...proofOptions, "@context": context };
+  return concatBytes(sha256(utf8(canonicalize(proofConfig))), sha256(utf8(canonicalize(doc))));
+}
+
+function signJcs(doc: object, signer: Signer, created: string): DataIntegrityProof {
+  const options: ProofOptions = {
+    type: "DataIntegrityProof", cryptosuite: CRYPTOSUITE, created, verificationMethod: signer.kid, proofPurpose: "assertionMethod",
+  };
+  return { ...options, proofValue: `z${base58btcEncode(signer.sign(hashData(doc, options)))}` };
+}
+
+/** Checks a Data Integrity proof over `doc`, made by the key of `issuerDid`. */
+function verifyJcs(doc: object, proof: DataIntegrityProof, issuerDid: string): { ok: boolean; why?: "key" | "encoding" | "mismatch" } {
+  const vm = proof.verificationMethod;
+  if (!vm.startsWith(`${issuerDid}#`)) return { ok: false, why: "key" };
+  let pub: Uint8Array;
+  try { pub = ed25519FromDidKey(vm); } catch { return { ok: false, why: "key" }; }
+  let sig: Uint8Array;
+  try { sig = base58btcDecode(proof.proofValue.slice(1)); } catch { return { ok: false, why: "encoding" }; }
+  if (sig.length !== 64) return { ok: false, why: "encoding" };
+  const options: ProofOptions = {
+    type: proof.type, cryptosuite: proof.cryptosuite, created: proof.created, verificationMethod: proof.verificationMethod, proofPurpose: proof.proofPurpose,
+  };
+  return verifyEd25519(pub, hashData(doc, options), sig) ? { ok: true } : { ok: false, why: "mismatch" };
 }
 
 export function signCredential(unsigned: UnsignedCredential, signer: Signer, created: string): SkillCredential {
-  const options: Omit<DataIntegrityProof, "proofValue"> = {
-    type: "DataIntegrityProof", cryptosuite: CRYPTOSUITE, created, verificationMethod: signer.kid, proofPurpose: "assertionMethod",
-  };
-  const proofValue = `z${base58btcEncode(signer.sign(hashData(unsigned, options)))}`;
-  return { ...unsigned, proof: { ...options, proofValue } };
+  return { ...unsigned, proof: signJcs(unsigned, signer, created) };
 }
 
 export function buildCredential(args: {
@@ -83,8 +111,17 @@ export function discloseSkills(leaves: Leaf[], skillIds: string[]): Disclosure[]
     wanted.has(leaf.skillId) ? [{ leaf, index, path: inclusionPath(hashes, index).map(toHex) }] : []);
 }
 
-export function buildShare(shareId: string, credential: SkillCredential, disclosures: Disclosure[]): SkillShare {
-  return { type: SHARE_TYPE, version: 1, shareId, credential, disclosures };
+/**
+ * What Keystone seals for a link: its id, the credential it carries and exactly which leaf positions it reveals.
+ * The leaves themselves are already bound to the signed root by their Merkle proofs, so the positions are enough.
+ */
+export function sealPayload(shareId: string, credential: SkillCredential, disclosures: Pick<Disclosure, "index">[]): SealPayload {
+  return { type: SEAL_TYPE, shareId, credentialDigest: credentialDigest(credential), disclosed: disclosures.map((d) => d.index).sort((a, b) => a - b) };
+}
+
+/** A link: the credential, the chosen disclosures and Keystone's seal over (id, credential, positions). */
+export function buildShare(shareId: string, credential: SkillCredential, disclosures: Disclosure[], signer: Signer, created: string): SkillShare {
+  return { type: SHARE_TYPE, version: 2, shareId, credential, disclosures, proof: signJcs(sealPayload(shareId, credential, disclosures), signer, created) };
 }
 
 // ---------- verification ----------
@@ -101,20 +138,24 @@ const SKEW_MS = 5 * 60_000;
 
 function checkSignature(vc: SkillCredential): { ok: boolean; detail: string } {
   const { proof, ...unsigned } = vc;
-  const vm = proof.verificationMethod;
-  if (!vm.startsWith(`${vc.issuer.id}#`)) return { ok: false, detail: "The signing key isn't the issuer's key." };
-  let pub: Uint8Array;
-  try { pub = ed25519FromDidKey(vm); } catch { return { ok: false, detail: "The signing key isn't an Ed25519 did:key." }; }
-  let sig: Uint8Array;
-  try { sig = base58btcDecode(proof.proofValue.slice(1)); } catch { return { ok: false, detail: "The signature isn't valid base58btc." }; }
-  if (sig.length !== 64) return { ok: false, detail: "An Ed25519 signature is 64 bytes." };
-  const options: Omit<DataIntegrityProof, "proofValue"> = {
-    type: proof.type, cryptosuite: proof.cryptosuite, created: proof.created, verificationMethod: proof.verificationMethod, proofPurpose: proof.proofPurpose,
+  const r = verifyJcs(unsigned, proof, vc.issuer.id);
+  if (r.ok) return { ok: true, detail: `Ed25519 signature (${CRYPTOSUITE}) checks out over every field of the credential.` };
+  return {
+    ok: false,
+    detail: r.why === "key" ? "The signing key isn't the issuer's Ed25519 key."
+      : r.why === "encoding" ? "The signature isn't a 64-byte base58btc Ed25519 signature."
+        : "The signature doesn't match the credential: something in it was changed after signing.",
   };
-  const ok = verifyEd25519(pub, hashData(unsigned, options), sig);
-  return ok
-    ? { ok, detail: `Ed25519 signature (${CRYPTOSUITE}) checks out over every field of the credential.` }
-    : { ok, detail: "The signature doesn't match the credential: something in it was changed after signing." };
+}
+
+function checkSeal(share: SkillShare): { ok: boolean; detail: string } {
+  const r = verifyJcs(sealPayload(share.shareId, share.credential, share.disclosures), share.proof, share.credential.issuer.id);
+  if (r.ok) return { ok: true, detail: `Keystone sealed this link's id and exactly which ${share.disclosures.length} proof${share.disclosures.length === 1 ? "" : "s"} it reveals.` };
+  return {
+    ok: false,
+    detail: r.why === "key" ? "The link wasn't sealed by the credential's issuer."
+      : "The link's id or its list of revealed proofs was changed after Keystone sealed it.",
+  };
 }
 
 function verifyProof(d: Disclosure, vc: SkillCredential, seen: Set<number>): VerifiedProof {
@@ -182,8 +223,17 @@ export function verifyDocument(input: unknown, env: VerifyEnv): VerificationRepo
       : `No proofs disclosed; the tree holds ${ledger.size}.`,
   });
 
-  const revoked = asShare.success && env.isRevoked ? env.isRevoked(asShare.data.shareId) : false;
-  checks.push({ id: "status", ok: !revoked, label: "Link status", detail: revoked ? "The student revoked this link." : "Not revoked." });
+  // The share id is only trusted once the seal holds; a revocation lookup on an unsealed id could be dodged.
+  const seal = asShare.success ? checkSeal(asShare.data) : { ok: true, detail: "A bare credential reveals no proofs, so there's no link to seal." };
+  checks.push({ id: "seal", ok: seal.ok, label: "Link seal", detail: seal.detail });
+  if (!asShare.success) {
+    checks.push({ id: "status", ok: true, label: "Link status", detail: "No link to revoke." });
+  } else if (!seal.ok) {
+    checks.push({ id: "status", ok: false, label: "Link status", detail: "Can't be checked: the link's seal is broken." });
+  } else {
+    const revoked = env.isRevoked ? env.isRevoked(asShare.data.shareId) : false;
+    checks.push({ id: "status", ok: !revoked, label: "Link status", detail: revoked ? "The student revoked this link." : "Not revoked." });
+  }
 
   const flagged = proofs.filter(({ p }) => p.injection === "high").length;
   checks.push({
@@ -202,7 +252,8 @@ export function verifyDocument(input: unknown, env: VerifyEnv): VerificationRepo
     bySkill.set(d.leaf.skillId, s);
   }
   const skills = [...bySkill.values()].map((s) => ({ ...s, proofs: s.proofs.sort((a, b) => a.rung - b.rung) }))
-    .sort((a, b) => b.level - a.level || a.skillName.localeCompare(b.skillName));
+    // A skill whose proof fails goes first, so a forgery is the first thing an employer sees.
+    .sort((a, b) => (a.ok === b.ok ? 0 : a.ok ? 1 : -1) || b.level - a.level || a.skillName.localeCompare(b.skillName));
 
   const blocking = checks.filter((c) => c.id !== "injection" && !c.ok);
   const valid = blocking.length === 0;

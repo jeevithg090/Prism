@@ -8,7 +8,7 @@ import {
 } from "./encoding";
 import { inclusionPath, leafHash, merkleRoot, nodeHash, verifyInclusion } from "./merkle";
 import { safeLink, type Leaf } from "./model";
-import { buildCredential, buildShare, discloseSkills, sortLeaves, subjectId, verifyDocument, type Signer } from "./vc";
+import { buildCredential, buildShare, discloseSkills, hashLeaf, sortLeaves, subjectId, verifyDocument, type Signer } from "./vc";
 
 const h = (s: string) => new Uint8Array(createHash("sha256").update(s).digest());
 
@@ -34,8 +34,10 @@ function issue(signer = testSigner(), leaves = LEAVES) {
     signer, userId: "aisha", name: "Aisha Rahman", programme: "BSc Computer Science, University of Manchester", leaves,
     sequence: 1, previous: null, issuedAt: "2026-11-07T09:00:00.000Z", validUntil: "2027-11-07T09:00:00.000Z",
   });
-  return { signer, credential, share: buildShare("a".repeat(24), credential, discloseSkills(leaves, ["docker"])) };
+  return { signer, credential, share: buildShare("a".repeat(24), credential, discloseSkills(leaves, ["docker"]), signer, "2026-11-07T09:00:00.000Z") };
 }
+
+const check = (r: ReturnType<typeof verifyDocument>, id: string) => r.checks.find((c) => c.id === id);
 
 describe("encodings", () => {
   it("canonicalizes JSON per RFC 8785 (sorted keys, no whitespace, ES numbers)", () => {
@@ -130,7 +132,7 @@ describe("credential signing and verification", () => {
     expect(verifyDocument(share, { trustedIssuers: [signer.did], now: NOW, isRevoked: () => true }).verdict).toBe("invalid");
     const other = structuredClone(share);
     other.disclosures[0].leaf.subject = subjectId("tom");
-    expect(verifyDocument(other, { trustedIssuers: [signer.did], now: NOW }).skills[0].proofs[0].reason).toMatch(/different student/);
+    expect(verifyDocument(other, { trustedIssuers: [signer.did], now: NOW }).skills[0].proofs.find((p) => !p.ok)?.reason).toMatch(/different student/);
     const dup = structuredClone(share);
     dup.disclosures.push(structuredClone(dup.disclosures[0]));
     expect(verifyDocument(dup, { trustedIssuers: [signer.did], now: NOW }).verdict).toBe("invalid");
@@ -158,6 +160,57 @@ describe("credential signing and verification", () => {
     expect(safeLink("/map")).toBe("/map");
     expect(safeLink("//evil.example")).toBeNull();
     expect(safeLink("data:text/html,hi")).toBeNull();
+  });
+
+  it("the link seal binds its id and its disclosures: a renamed, trimmed or re-sealed link is rejected", () => {
+    const { signer, share } = issue();
+    const env = { trustedIssuers: [signer.did], now: NOW, isRevoked: (id: string) => id === "a".repeat(24) };
+    // The real (revoked) link fails on its status, with an intact seal.
+    const real = verifyDocument(share, env);
+    expect(check(real, "seal")?.ok).toBe(true);
+    expect(check(real, "status")).toMatchObject({ ok: false, detail: "The student revoked this link." });
+    // Renaming the id to dodge the revocation breaks the seal.
+    for (const shareId of ["f".repeat(24), "0123456789abcdef01234567"]) {
+      const renamed = verifyDocument({ ...structuredClone(share), shareId }, env);
+      expect(renamed.verdict).toBe("invalid");
+      expect(check(renamed, "seal")?.ok).toBe(false);
+      expect(check(renamed, "status")?.ok).toBe(false);
+    }
+    expect(verifyDocument({ ...structuredClone(share), shareId: "x" }, env).verdict).toBe("invalid"); // not even a share id
+    // Dropping a disclosure (a "smaller" link from a revoked one) breaks the seal, even with no revocation lookup.
+    const trimmed = structuredClone(share);
+    trimmed.disclosures.pop();
+    const rt = verifyDocument(trimmed, { trustedIssuers: [signer.did], now: NOW });
+    expect(rt.verdict).toBe("invalid");
+    expect(check(rt, "ledger")?.ok).toBe(true);
+    expect(check(rt, "seal")?.ok).toBe(false);
+    // A seal made with another key doesn't count, even over the same payload.
+    const other = testSigner();
+    const resealed = buildShare(share.shareId, share.credential, share.disclosures, other, "2026-11-07T09:00:00.000Z");
+    expect(check(verifyDocument(resealed, { trustedIssuers: [signer.did], now: NOW }), "seal")).toMatchObject({ ok: false, detail: expect.stringMatching(/issuer/) });
+    // An unsealed (v1-style) share isn't accepted at all.
+    const { proof: _proof, ...unsealed } = structuredClone(share);
+    void _proof;
+    expect(verifyDocument({ ...unsealed, version: 1 }, { trustedIssuers: [signer.did], now: NOW }).checks[0]).toMatchObject({ id: "format", ok: false });
+  });
+
+  it("a forged proof sorts its skill to the top of the report", () => {
+    const { signer, credential } = issue();
+    const share = buildShare("b".repeat(24), credential, discloseSkills(LEAVES, ["docker", "python"]), signer, "2026-11-07T09:00:00.000Z");
+    const forged = structuredClone(share);
+    const docker = forged.disclosures.find((d) => d.leaf.skillId === "docker") as (typeof forged.disclosures)[number];
+    docker.leaf.quote = "Taught the whole cohort";
+    const r = verifyDocument(forged, { trustedIssuers: [signer.did], now: NOW });
+    expect(r.skills.map((s) => [s.skillId, s.ok])).toEqual([["docker", false], ["python", true]]);
+    expect(r.headline).toMatch(/lead to the signed root/);
+  });
+
+  it("orders leaves by salted hash, so a disclosed index says nothing about hidden skill names", () => {
+    const order = LEAVES.map((l) => toHex(hashLeaf(l)));
+    expect(order).toEqual([...order].sort());
+    expect(sortLeaves([...LEAVES].reverse())).toEqual(LEAVES);
+    const bySkill = [...LEAVES].sort((a, b) => a.skillId.localeCompare(b.skillId) || a.rung - b.rung);
+    expect(LEAVES.map((l) => l.evidenceId)).not.toEqual(bySkill.map((l) => l.evidenceId));
   });
 
   it("signing is deterministic for a fixed key and input (Ed25519)", () => {

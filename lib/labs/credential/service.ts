@@ -163,15 +163,37 @@ function onlyChosenSkills(chosen: string[]): Guardrail<IssueResult> {
   };
 }
 
+/**
+ * A link id that never reuses a revoked one. DEMO_MODE derives it from the credential and the skills, so a
+ * fresh demo makes the same link every run; if that link was revoked, a counter moves on to a new id rather
+ * than bringing the old one back. An active link for the same skills is reused as it is.
+ */
+async function allocateShare(userId: string, credentialId: string, skillIds: string[]): Promise<{ id: string; existing: ShareDoc | null }> {
+  const store = getStore();
+  for (let n = 0; n < 1000; n++) {
+    const id = isDemoMode()
+      ? createHash("sha256").update(n === 0 ? `${credentialId}|${skillIds.join(",")}` : `${credentialId}|${skillIds.join(",")}|${n}`).digest("hex").slice(0, 24)
+      : randomBytes(12).toString("hex");
+    const doc = await store.get<ShareDoc>(SHARES, id);
+    if (!doc) return { id, existing: null };
+    if (isDemoMode() && doc.userId === userId && !doc.revoked && SkillShareZ.safeParse(doc.share).success) return { id, existing: doc };
+    // Revoked, someone else's, or (outside the demo) a collision: never overwrite it, try the next id.
+  }
+  throw new Error("could not allocate a credential link id");
+}
+
 export interface IssueInput { userId: string; skillIds: string[]; runId?: string }
 
 /**
  * Signs the student's current proof ledger (reusing the newest credential if nothing changed) and creates a
  * link that discloses only `skillIds`. The caller must have the student's explicit approval: this is the
  * human checkpoint. Nothing is sent to anyone; the student shares the link themselves.
+ * Everything is built in memory and checked by the consent guardrail before the first write, so a blocked
+ * disclosure leaves nothing behind (no credential, no link, no Coach note).
  */
 export async function issueCredential(input: IssueInput): Promise<IssueResult> {
   const skillIds = [...new Set(input.skillIds)].sort();
+  const consent = onlyChosenSkills(skillIds);
   const { output } = await runAgent<IssueResult>({
     agent: "evidence",
     runId: input.runId,
@@ -179,7 +201,7 @@ export async function issueCredential(input: IssueInput): Promise<IssueResult> {
     input: { userId: input.userId, skillIds },
     startData: { skillsChosen: skillIds.length },
     checkpoint: { kind: "student-approval", who: input.userId, note: "The student chose which skills the link reveals and approved signing" },
-    guardrails: [onlyChosenSkills(skillIds), noOutboundMessaging<IssueResult>()],
+    guardrails: [consent, noOutboundMessaging<IssueResult>()],
     run: async (ctx) => {
       const ledger = await ctx.step("hash-proofs", () => buildLedger(input.userId), (l) => ({
         message: `Hashed ${l.leaves.length} proofs from the Proof Ladder across ${new Set(l.leaves.map((x) => x.skillId)).size} skills`,
@@ -190,6 +212,7 @@ export async function issueCredential(input: IssueInput): Promise<IssueResult> {
       const unknown = skillIds.filter((s) => !known.has(s));
       if (unknown.length) throw new CredentialError(`You don't have a proof for ${unknown.join(", ")} yet, so it can't go in a link.`, "bad_request");
 
+      const key = await getIssuerKey();
       const prior = await credentialsOf(input.userId);
       const latest = prior[0];
       let doc: CredentialDoc;
@@ -198,7 +221,6 @@ export async function issueCredential(input: IssueInput): Promise<IssueResult> {
         doc = latest;
         ctx.emit("progress", `Your ledger hasn't changed since credential #${latest.sequence}, so it was reused`, { sequence: latest.sequence });
       } else {
-        const key = await getIssuerKey();
         const issuedAt = isDemoMode() ? DEMO_ISSUED_AT : new Date().toISOString();
         const sequence = (latest?.sequence ?? 0) + 1;
         const credential = await ctx.step("sign", () => buildCredential({
@@ -210,25 +232,34 @@ export async function issueCredential(input: IssueInput): Promise<IssueResult> {
           data: { sequence, root: vc.credentialSubject.evidenceLedger.root.slice(0, 12), chained: !!latest },
         }));
         doc = { id: `${input.userId}:${sequence}`, userId: input.userId, sequence, credential, leaves: ledger.leaves, createdAt: issuedAt };
-        await getStore().upsert(CREDENTIALS, doc.id, doc, input.userId);
         signedNew = true;
       }
 
       const disclosures = discloseSkills(doc.leaves, skillIds);
-      const shareId = isDemoMode()
-        ? createHash("sha256").update(`${doc.credential.id}|${skillIds.join(",")}`).digest("hex").slice(0, 24)
-        : randomBytes(12).toString("hex");
-      const share = buildShare(shareId, doc.credential, disclosures);
+      const { id: shareId, existing } = await allocateShare(input.userId, doc.credential.id, skillIds);
+      const createdAt = existing?.createdAt ?? (isDemoMode() ? DEMO_ISSUED_AT : new Date().toISOString());
+      const share = existing?.share ?? buildShare(shareId, doc.credential, disclosures, key, createdAt);
+      // Mid-run checkpoint: the consent guardrail sees the exact link before anything is stored or published.
+      const candidate = ctx.guard<IssueResult>({
+        credential: doc.credential, share, shareUrl: `${SHARE_PATH}${shareId}`, signedNew,
+        disclosed: share.disclosures.length, hidden: doc.leaves.length - share.disclosures.length,
+      }, [consent]);
+
       const result = await ctx.step("share", async () => {
-        const createdAt = isDemoMode() ? DEMO_ISSUED_AT : new Date().toISOString();
-        const shareDoc: ShareDoc = { id: shareId, userId: input.userId, credentialId: doc.credential.id, sequence: doc.sequence, skills: skillIds, share, createdAt, revoked: false };
-        await getStore().upsert(SHARES, shareId, shareDoc, input.userId);
-        return { credential: doc.credential, share, shareUrl: `${SHARE_PATH}${shareId}`, signedNew, disclosed: disclosures.length, hidden: doc.leaves.length - disclosures.length };
-      }, (r) => ({ message: `Link reveals ${r.disclosed} proofs and hides ${r.hidden}`, data: { disclosed: r.disclosed, hidden: r.hidden } }));
+        if (signedNew) await getStore().upsert(CREDENTIALS, doc.id, doc, input.userId);
+        if (!existing) {
+          const shareDoc: ShareDoc = { id: shareId, userId: input.userId, credentialId: doc.credential.id, sequence: doc.sequence, skills: skillIds, share, createdAt, revoked: false };
+          await getStore().upsert(SHARES, shareId, shareDoc, input.userId);
+        }
+        return candidate;
+      }, (r) => ({
+        message: existing ? `Your active link for these skills still stands: it reveals ${r.disclosed} proofs and hides ${r.hidden}` : `Sealed a link that reveals ${r.disclosed} proofs and hides ${r.hidden}`,
+        data: { disclosed: r.disclosed, hidden: r.hidden, reused: !!existing },
+      }));
 
       // Write-back the Coach reads (visible and deletable in the Coach's memory panel).
       try {
-        const names = [...new Set(disclosures.map((d) => d.leaf.skillName))];
+        const names = [...new Set(share.disclosures.map((d) => d.leaf.skillName))];
         await addMemory({ userId: input.userId, kind: "win", text: `You made a verifiable credential link for ${names.join(", ")} (credential #${doc.sequence}). Share it yourself when you apply.`, source: "credential" });
       } catch { /* memory is a nicety; the credential stands without it */ }
 
@@ -261,21 +292,27 @@ export async function revokeShare(userId: string, shareId: string): Promise<Shar
 
 // ---------- verification (anyone; the employer) ----------
 
+/**
+ * Anyone (the employer) can check a credential or a link. The link's revocation status is looked up by its
+ * share id, which verifyDocument trusts only once Keystone's seal over (id, credential, revealed positions)
+ * holds, so editing the id, or trimming a revoked link's disclosures, can't dodge a revocation.
+ */
 export async function verifyCredential(document: unknown, opts: { runId?: string; now?: Date } = {}): Promise<VerificationReport> {
   const key = await getIssuerKey();
-  const shareId = (document as { shareId?: unknown } | null)?.shareId;
+  const parsed = SkillShareZ.safeParse(document);
   let revoked = false;
-  if (typeof shareId === "string" && /^[a-z0-9]{8,64}$/i.test(shareId)) {
-    try { revoked = (await getStore().get<ShareDoc>(SHARES, shareId))?.revoked === true; } catch { revoked = false; }
+  if (parsed.success) {
+    try { revoked = (await getStore().get<ShareDoc>(SHARES, parsed.data.shareId))?.revoked === true; } catch { revoked = false; }
   }
+  const sealedId = parsed.success ? parsed.data.shareId : null;
   const { output } = await runAgent<VerificationReport>({
     agent: "evidence",
     runId: opts.runId,
-    purpose: "Verify a Keystone skill credential for an employer: signature, issuer key, dates and every Merkle proof",
+    purpose: "Verify a Keystone skill credential for an employer: signature, issuer key, dates, link seal and every Merkle proof",
     input: document,
     run: async (ctx) => {
       const report = await ctx.step("verify", () => verifyDocument(document, {
-        trustedIssuers: [key.did], now: opts.now ?? new Date(), isRevoked: () => revoked,
+        trustedIssuers: [key.did], now: opts.now ?? new Date(), isRevoked: (id) => id === sealedId && revoked,
       }), (r) => ({
         message: r.verdict === "valid" ? `Credential valid: ${r.disclosed} proofs checked, ${r.hidden} hidden` : `Credential rejected: ${r.checks.filter((c) => !c.ok).map((c) => c.label).join(", ")}`,
         data: { verdict: r.verdict, disclosed: r.disclosed, hidden: r.hidden, failed: r.checks.filter((c) => !c.ok).length },

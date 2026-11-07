@@ -12,6 +12,7 @@ export const CREDENTIAL_TYPE = "KeystoneSkillLedgerCredential";
 export const CRYPTOSUITE = "eddsa-jcs-2022";
 export const TREE_ALGORITHM = "RFC9162-SHA256";
 export const SHARE_TYPE = "KeystoneSkillShare";
+export const SEAL_TYPE = "KeystoneShareSeal";
 
 const Hex64 = z.string().regex(/^[0-9a-f]{64}$/, "64 hex characters");
 const Short = (n: number) => z.string().max(n);
@@ -82,15 +83,25 @@ export const DisclosureZ = z.object({
 }).strict();
 export type Disclosure = z.infer<typeof DisclosureZ>;
 
-/** What a share link serves and what an employer pastes into the verifier. */
+/**
+ * What a share link serves and what an employer pastes into the verifier. `proof` is Keystone's seal over the
+ * link itself: the share id, the digest of the credential and exactly which leaf indexes it reveals (see
+ * `sealPayload` in vc.ts). Without it the share id would be an unsigned label anyone could change to dodge a
+ * revocation, or a revoked link's disclosures could be trimmed into a "new" one.
+ */
 export const SkillShareZ = z.object({
   type: z.literal(SHARE_TYPE),
-  version: z.literal(1),
-  shareId: Short(64),
+  version: z.literal(2),
+  shareId: z.string().regex(/^[a-f0-9]{24}$/, "24 hex characters"),
   credential: SkillCredentialZ,
   disclosures: z.array(DisclosureZ).max(64),
+  proof: DataIntegrityProofZ,
 }).strict();
 export type SkillShare = z.infer<typeof SkillShareZ>;
+export type UnsealedShare = Omit<SkillShare, "proof">;
+
+/** The exact bytes Keystone seals for a link (JCS-canonicalised, then signed with eddsa-jcs-2022). */
+export type SealPayload = { type: typeof SEAL_TYPE; shareId: string; credentialDigest: string; disclosed: number[] };
 
 // ---------- the student's view (GET /api/labs/credential) ----------
 
@@ -143,7 +154,7 @@ export interface IssueResult {
 
 // ---------- verification report (POST /api/labs/credential/verify) ----------
 
-export type CheckId = "format" | "signature" | "issuer" | "validity" | "ledger" | "injection" | "status";
+export type CheckId = "format" | "signature" | "issuer" | "validity" | "ledger" | "seal" | "status" | "injection";
 
 export interface VerifyCheck { id: CheckId; ok: boolean; label: string; detail: string }
 

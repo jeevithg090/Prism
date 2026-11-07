@@ -10,7 +10,7 @@ import type { AnyTool, KeystoneTool } from "../types";
 
 const InputZ = z.object({
   skillIds: z.array(SkillIdZ).min(1).max(10).optional()
-    .describe("Skill ids the link may reveal, e.g. [\"docker\", \"python\"]. Only skills with a proof on the student's ladder; every other proof stays hidden. Omit to reveal only their strongest skill."),
+    .describe("Skill ids the link may reveal, e.g. [\"docker\", \"python\"]. Only skills with a proof on the student's ladder; every other proof stays hidden. Omit to reveal only their top skill on the passport."),
 });
 
 type Output = { shareUrl: string; sequence: number; signedNew: boolean; disclosed: number; hidden: number; skills: string[]; root: string };
