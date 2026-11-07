@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { apiGet } from "@/lib/fetcher";
 import type { HelpRequest } from "@/lib/types";
 import { AskComposer } from "./AskComposer";
+import { GuidesSection } from "./GuidesSection";
 import { HelpFeed } from "./HelpFeed";
 import { HelpersThisWeek } from "./HelpersThisWeek";
 import { isNewcomer, sortHelpFeed } from "./help";
@@ -42,6 +43,7 @@ export function CommunityView() {
           <HelpersThisWeek requests={all} profiles={profiles} isLoading={help.isPending} isError={help.isError} onRetry={retry} />
         </div>
       </div>
+      <GuidesSection viewerId={viewerId} />
     </div>
   );
 }
