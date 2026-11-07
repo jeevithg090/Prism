@@ -5,12 +5,17 @@
 import fs from "node:fs";
 import path from "node:path";
 import { nanoid } from "nanoid";
+import { z } from "zod";
 import { getStore } from "@/lib/store";
+import { scanForInjection } from "@/lib/agents/safety/injection";
 import type { HelpRequest, Profile } from "@/lib/types";
 import {
   HelpCreateReqZ, HelpRequestZ, HelpStatusZ, HelpUpdateReqZ, MomentumEventZ,
   badRequest, fail, internal, ok, type MomentumEvent,
 } from "@/lib/schemas/community";
+
+// Help requests are for humans, so a message that tries to instruct an AI is still accepted, just flagged.
+const StoredHelpZ = HelpRequestZ.extend({ flagged: z.literal(true).optional() });
 
 const KIND_PHRASE: Record<HelpRequest["kind"], string> = {
   question: "a question",
@@ -48,7 +53,7 @@ export async function GET(req: Request) {
       : await getStore().list<HelpRequest>("help");
 
     const items = source
-      .map((r) => HelpRequestZ.safeParse(r))
+      .map((r) => StoredHelpZ.safeParse(r))
       .filter((r) => r.success)
       .map((r) => r.data)
       .filter((r) => !status || r.status === status.data)
@@ -78,7 +83,7 @@ async function create(body: unknown): Promise<Response> {
   const parsed = HelpCreateReqZ.safeParse(body);
   if (!parsed.success) return badRequest(parsed.error);
   const id = `help_${nanoid(6)}`;
-  const request: HelpRequest = {
+  const request: HelpRequest & { flagged?: true } = {
     id,
     fromUserId: parsed.data.fromUserId,
     ...(parsed.data.toUserId ? { toUserId: parsed.data.toUserId } : {}),
@@ -86,9 +91,10 @@ async function create(body: unknown): Promise<Response> {
     message: parsed.data.message,
     status: "open",
     createdAt: new Date().toISOString(),
+    ...(scanForInjection(parsed.data.message).risk === "high" ? { flagged: true as const } : {}),
   };
   await getStore().upsert("help", id, request, request.fromUserId);
-  return ok(HelpRequestZ.parse(request));
+  return ok(StoredHelpZ.parse(request));
 }
 
 async function update(body: unknown): Promise<Response> {
@@ -118,5 +124,5 @@ async function update(body: unknown): Promise<Response> {
     });
     await store.upsert("momentum_events", eventId, event, toUserId);
   }
-  return ok(HelpRequestZ.parse(updated));
+  return ok(StoredHelpZ.parse(updated));
 }

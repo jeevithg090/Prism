@@ -7,11 +7,12 @@ import { llmText } from "@/lib/llm";
 import { getStore } from "@/lib/store";
 import { emit, newRunId } from "@/lib/agents/events";
 import { NotFoundError, loadPod } from "@/lib/agents/proof";
+import { UNTRUSTED_RULE, dropApprovalClaims, guardOutput, scanForInjection, wrapUntrusted } from "@/lib/agents/safety/injection";
 import type { PRReview } from "@/lib/schemas/studio";
 import type { Profile } from "@/lib/types";
 
 export const SOCRATIC_SYSTEM =
-  "You are a kind senior engineer mentoring students. Give a Socratic review: max 6 bullets, ask guiding questions and point to concepts/docs; NEVER write the full solution or large code blocks.";
+  `You are a kind senior engineer mentoring students. Give a Socratic review: max 6 bullets, ask guiding questions and point to concepts/docs; NEVER write the full solution or large code blocks. ${UNTRUSTED_RULE}`;
 export const MAX_DIFF_CHARS = 8000;
 export const MAX_CODE_LINES = 5;
 const CODE_REMOVED = "_(A longer code sample was removed here. Try writing this part yourself, then ask your reviewer.)_";
@@ -43,17 +44,30 @@ export function stripLongCodeBlocks(text: string, maxLines = MAX_CODE_LINES): st
   return out.join("\n");
 }
 
+export const INJECTION_HINT = "This PR contains text addressed to an AI reviewer; your human reviewer will check it.";
+
+/** The PR's title, body and diff (all student-written) as one neutralized <untrusted> block, plus the injection scan. */
+export function prPrompt(n: number, title: string, body: string | null | undefined, diff: string): { user: string; flagged: boolean } {
+  const raw = `PR #${n}: ${title}\n\n${body ?? ""}\n\nDIFF (may be truncated):\n${diff}`;
+  return { user: wrapUntrusted(`github-pr-${n}`, raw, MAX_DIFF_CHARS + 2000), flagged: scanForInjection(raw).risk === "high" };
+}
+
+/** Flagged PR: drop any "approved" claim the model was talked into and add one gentle human-check hint. */
+export function withInjectionHint(review: string, flagged: boolean): string {
+  return flagged ? `${dropApprovalClaims(review).trim()}\n- ${INJECTION_HINT}` : review;
+}
+
 export const REVIEW_FOOTER = "_Keystone AI Tech Lead: questions to guide you, not answers. Your pod reviewer has the final say._";
 
 /** The GitHub comment: the review with long code blocks removed, plus the footer. */
 export function formatReviewComment(review: string): string {
-  return `${stripLongCodeBlocks(review.trim())}\n\n---\n${REVIEW_FOOTER}`;
+  return `${stripLongCodeBlocks(guardOutput(review.trim()))}\n\n---\n${REVIEW_FOOTER}`;
 }
 
 /** The review's bullets as plain strings (max 6), for the UI. */
 export function extractHints(review: string, max = 6): string[] {
   const bullets: string[] = [];
-  for (const line of stripLongCodeBlocks(review).split("\n")) {
+  for (const line of stripLongCodeBlocks(guardOutput(review)).split("\n")) {
     const m = line.match(/^\s{0,3}(?:[-*+]|\d+[.)])\s+(.+)$/);
     if (m) bullets.push(m[1].trim());
     else if (bullets.length && /^\s{2,}\S/.test(line)) bullets[bullets.length - 1] += ` ${line.trim()}`;
@@ -123,12 +137,10 @@ export async function reviewPullRequest(event: unknown): Promise<{ reviewed: boo
     const diff = fullDiff.slice(0, MAX_DIFF_CHARS);
     emit({ runId, agent: "techlead", status: "progress", message: `Read ${diff.length} characters of diff${fullDiff.length > MAX_DIFF_CHARS ? " (truncated)" : ""}` });
 
+    const prompt = prPrompt(n, e.pull_request.title ?? "", e.pull_request.body, diff);
     let review: string;
     try {
-      review = await llmText({
-        agent: "techlead", runId, system: SOCRATIC_SYSTEM,
-        user: `PR #${n}: ${e.pull_request.title ?? ""}\n\n${e.pull_request.body ?? ""}\n\nDIFF (may be truncated):\n${diff}`,
-      });
+      review = withInjectionHint(await llmText({ agent: "techlead", runId, system: SOCRATIC_SYSTEM, user: prompt.user }), prompt.flagged);
     } catch {
       emit({ runId, agent: "techlead", status: "error", message: "The review model is unavailable, so no comment was posted" });
       return { reviewed: false };
@@ -238,12 +250,11 @@ export async function reviewNow(opts: { podId: string; prNumber?: number }, runI
         message: `reading PR #${pr.number} diff (${plural(lineCount(diff), "line")}${fullDiff.length > MAX_DIFF_CHARS ? ", truncated" : ""})`,
         data: { prNumber: pr.number, chars: diff.length },
       });
-      const review = await llmText({
-        agent: "techlead", runId: rid, system: SOCRATIC_SYSTEM,
-        user: `PR #${pr.number}: ${pr.title}\n\n${pr.body ?? ""}\n\nDIFF (may be truncated):\n${diff}`,
-      });
+      const prompt = prPrompt(pr.number, pr.title, pr.body, diff);
+      const raw = await llmText({ agent: "techlead", runId: rid, system: SOCRATIC_SYSTEM, user: prompt.user });
+      const review = withInjectionHint(raw, prompt.flagged);
       const comment = formatReviewComment(review);
-      const hints = extractHints(review);
+      const hints = prompt.flagged ? [...extractHints(dropApprovalClaims(raw), 5), INJECTION_HINT] : extractHints(review);
       await octokit.request("POST /repos/{owner}/{repo}/issues/{issue_number}/comments", { owner: gh.owner, repo: gh.repo, issue_number: pr.number, body: comment });
       emit({ runId: rid, agent: "techlead", status: "done", message: `posted ${plural(hints.length, "Socratic hint")}: no solutions given`, data: { prNumber: pr.number, posted: true } });
       emit({ runId: rid, agent: "orchestrator", status: "done", message: `Tech Lead review posted on PR #${pr.number}` });
@@ -264,7 +275,7 @@ export async function reviewNow(opts: { podId: string; prNumber?: number }, runI
     try {
       const out = await llmText({
         agent: "techlead", runId: rid, system: SOCRATIC_SYSTEM,
-        user: `PR #${n}: ${SAMPLE_PR.title}\n\n${SAMPLE_PR.body}\n\nDIFF:\n${SAMPLE_PR.diff}`,
+        user: prPrompt(n, SAMPLE_PR.title, SAMPLE_PR.body, SAMPLE_PR.diff).user,
       });
       review = out?.trim() ? out : null;
     } catch {
