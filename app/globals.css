@@ -7,9 +7,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-heading: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -48,73 +48,79 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* Keystone tokens: contract §9.2 is the source of truth (see DESIGN.md).
+   shadcn variable names are kept so every components/ui/* primitive picks them up.
+   Light is the default (projectors); dark mode is the .dark class. */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  color-scheme: light;
+  --background: #FAFAF9;
+  --foreground: #0F172A;
+  --card: #FFFFFF;
+  --card-foreground: #0F172A;
+  --popover: #FFFFFF;
+  --popover-foreground: #0F172A;
+  --primary: #4F46E5;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F5F5F4;
+  --secondary-foreground: #0F172A;
+  --muted: #F5F5F4;
+  --muted-foreground: #64748B;
+  --accent: #EEF2FF;
+  --accent-foreground: #3730A3;
+  --destructive: #DC2626;
+  --border: #E7E5E4;
+  --input: #D6D3D1;
+  --ring: #6366F1;
+  /* Charts: indigo, teal, fuchsia, sky, amber (never grey series on a projector) */
+  --chart-1: #6366F1;
+  --chart-2: #14B8A6;
+  --chart-3: #D946EF;
+  --chart-4: #0EA5E9;
+  --chart-5: #F59E0B;
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #0F172A;
+  --sidebar-primary: #4F46E5;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #EEF2FF;
+  --sidebar-accent-foreground: #3730A3;
+  --sidebar-border: #E7E5E4;
+  --sidebar-ring: #6366F1;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  color-scheme: dark;
+  --background: #0B0B0F;
+  --foreground: #F4F4F5;
+  --card: #14141A;
+  --card-foreground: #F4F4F5;
+  --popover: #14141A;
+  --popover-foreground: #F4F4F5;
+  --primary: #818CF8;
+  --primary-foreground: #0B0B0F;
+  --secondary: #1E1E26;
+  --secondary-foreground: #F4F4F5;
+  --muted: #1E1E26;
+  --muted-foreground: #A1A1AA;
+  --accent: #1E1B4B;
+  --accent-foreground: #E0E7FF;
+  --destructive: #F87171;
+  --border: #27272A;
+  --input: #3F3F46;
+  --ring: #A5B4FC;
+  --chart-1: #818CF8;
+  --chart-2: #2DD4BF;
+  --chart-3: #E879F9;
+  --chart-4: #38BDF8;
+  --chart-5: #FBBF24;
+  --sidebar: #14141A;
+  --sidebar-foreground: #F4F4F5;
+  --sidebar-primary: #818CF8;
+  --sidebar-primary-foreground: #0B0B0F;
+  --sidebar-accent: #1E1B4B;
+  --sidebar-accent-foreground: #E0E7FF;
+  --sidebar-border: #27272A;
+  --sidebar-ring: #A5B4FC;
 }
 
 @layer base {
@@ -135,10 +141,37 @@
 .dark {
   --status-proven: #34D399; --status-degree: #60A5FA; --status-gap: #FB7185; --status-rising: #FBBF24;
 }
+/* Type scale (contract §9.3). text-xs is raised to the 13/18 caption so no text renders under 13px. */
+@theme {
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.125rem;
+  --text-caption: 0.8125rem;
+  --text-caption--line-height: 1.125rem;
+  --text-small: 0.875rem;
+  --text-small--line-height: 1.25rem;
+  --text-body: 1rem;
+  --text-body--line-height: 1.625rem;
+  --text-h3: 1.25rem;
+  --text-h3--line-height: 1.75rem;
+  --text-h2: 1.75rem;
+  --text-h2--line-height: 2.25rem;
+  --text-h1: 2.25rem;
+  --text-h1--line-height: 2.75rem;
+  --text-display: 3rem;
+  --text-display--line-height: 3.5rem;
+}
 @theme inline {
   --color-status-proven: var(--status-proven);
   --color-status-degree: var(--status-degree);
   --color-status-gap: var(--status-gap);
   --color-status-rising: var(--status-rising);
+}
+/* Secondary text on a tinted surface steps one shade darker so it keeps 4.5:1 (§9.7).
+   #64748B is 4.76:1 on white but only 4.36:1 on --muted; this keeps every pill, chip and
+   table header that pairs text-muted-foreground with a tint AA without touching the token. */
+:root { --muted-foreground-on-tint: #536175; }
+.dark { --muted-foreground-on-tint: #B4B4BD; }
+:where([class*="bg-muted"], [class*="bg-secondary"], [class*="bg-accent"], [class*="bg-primary/"], [class*="bg-status-"]) {
+  --muted-foreground: var(--muted-foreground-on-tint);
 }
 @media (prefers-reduced-motion: reduce) { *,*::before,*::after { animation-duration:.01ms!important; transition-duration:.01ms!important } }

@@ -174,7 +174,7 @@ export function ProjectView({ podId }: { podId: string }) {
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl space-y-3">
             <div className="flex flex-wrap items-center gap-3">
-              <AvatarStack members={members} size="sm" />
+              <AvatarStack members={members} size="md" />
               <p className="text-sm font-medium text-muted-foreground">
                 {pod.name} · 3-week project · {project.issues.length} issues
               </p>

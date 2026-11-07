@@ -13,7 +13,8 @@
     "test:e2e": "playwright test",
     "warm-cache": "tsx scripts/warm-cache.ts",
     "hn-backfill": "tsx scripts/hn-backfill.ts",
-    "seed": "tsx scripts/seed.ts"
+    "seed": "tsx scripts/seed.ts",
+    "ui-gate": "node scripts/ui-gate.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

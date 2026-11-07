@@ -41,7 +41,7 @@ function HelpCard({ request, profiles, viewerId, index }: { request: HelpRequest
       initial={reduce ? false : { opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, ease: "easeOut", delay: reduce ? 0 : index * 0.04 }}
-      className="rounded-2xl border bg-card p-5 shadow-sm"
+      className="py-5 first:pt-1 last:pb-0"
       data-testid="help-card"
     >
       <div className="flex items-start gap-3">
@@ -63,6 +63,7 @@ function HelpCard({ request, profiles, viewerId, index }: { request: HelpRequest
           <p className="text-sm text-muted-foreground">This is your request. A helper will pick it up soon.</p>
         ) : (
           <Button
+            variant="outline"
             onClick={() => help.mutate()}
             disabled={help.isPending || help.isSuccess}
             aria-label={`I can help ${name}`}
@@ -107,7 +108,7 @@ export function HelpFeed({
           action={<Button variant="outline" onClick={() => document.getElementById(ASK_MESSAGE_ID)?.focus()}>Write a request</Button>}
         />
       ) : (
-        <ul aria-label="Open help requests" className="space-y-4">
+        <ul aria-label="Open help requests" className="divide-y">
           {requests.map((r, i) => <HelpCard key={r.id} request={r} profiles={profiles} viewerId={viewerId} index={i} />)}
         </ul>
       )}

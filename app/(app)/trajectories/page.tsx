@@ -124,7 +124,7 @@ function CardRow({ items, onAsk }: { items: Similar[]; onAsk: (t: Trajectory) =>
         role="region"
         aria-label="Students like you, scroll sideways for more"
         tabIndex={0}
-        className="relative flex snap-x snap-mandatory gap-4 overflow-x-auto rounded-2xl pb-3 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="relative flex snap-x snap-mandatory gap-4 overflow-x-auto rounded-2xl pb-3 outline-none focus-visible:ring-2 focus-visible:ring-ring lg:grid lg:grid-cols-3 lg:gap-6 lg:overflow-visible lg:pb-0"
       >
         {items.map(({ trajectory, similarity }, i) => (
           <motion.div
@@ -132,14 +132,14 @@ function CardRow({ items, onAsk }: { items: Similar[]; onAsk: (t: Trajectory) =>
             initial={reduce ? false : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2, delay: i * 0.04, ease: "easeOut" }}
-            className="w-[85%] max-w-[360px] shrink-0 snap-start sm:w-[340px]"
+            className="w-[85%] max-w-[360px] shrink-0 snap-start sm:w-[340px] lg:w-auto lg:max-w-none"
           >
             <TrajectoryCard trajectory={trajectory} similarity={similarity} onAsk={onAsk} />
           </motion.div>
         ))}
       </div>
       {items.length > 1 && (
-        <div className="flex justify-end gap-2">
+        <div className="flex justify-end gap-2 lg:hidden">
           <Button variant="outline" size="icon-lg" className="rounded-xl" aria-label="Scroll to previous students" onClick={() => scroll(-1)}>
             <ChevronLeft aria-hidden />
           </Button>
