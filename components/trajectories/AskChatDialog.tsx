@@ -63,19 +63,19 @@ export function AskChatDialog({
       <DialogContent className="gap-5 p-6 sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">Ask {first} for 15 minutes</DialogTitle>
-          <DialogDescription className="text-[15px]">
+          <DialogDescription className="text-base">
             We drafted a short note for you. Make it yours: a specific question gets a kinder, faster reply.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-2">
-          <Label htmlFor={textareaId} className="text-[15px]">Your message to {first}</Label>
+          <Label htmlFor={textareaId} className="text-sm font-medium">Your message to {first}</Label>
           {drafting ? (
             <div aria-busy="true" aria-live="polite" className="space-y-2">
               <span className="sr-only">Drafting your message…</span>
-              <Skeleton className="h-4 w-full rounded" />
-              <Skeleton className="h-4 w-11/12 rounded" />
-              <Skeleton className="h-4 w-2/3 rounded" />
+              <Skeleton className="h-4 w-full rounded-md" />
+              <Skeleton className="h-4 w-11/12 rounded-md" />
+              <Skeleton className="h-4 w-2/3 rounded-md" />
             </div>
           ) : (
             <Textarea
@@ -85,19 +85,19 @@ export function AskChatDialog({
               onChange={(e) => setMessage(e.target.value)}
               rows={6}
               maxLength={1000}
-              className="min-h-36 rounded-xl text-base leading-relaxed md:text-base"
+              className="min-h-36 text-base leading-relaxed md:text-base"
             />
           )}
           <p id={hintId} className="flex items-start gap-2 text-sm text-muted-foreground">
-            <Lock className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+            <Lock className="mt-0.5 size-4 shrink-0" aria-hidden />
             Keystone never sends anything outside the app. {first} will see your request in their Community feed and can reply there.
           </p>
         </div>
 
         <DialogFooter className="-mx-6 -mb-6 rounded-b-2xl px-6">
-          <Button variant="outline" size="lg" className="h-10 rounded-xl" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button size="lg" className="h-10 rounded-xl px-4" onClick={send} disabled={drafting || sending || !message.trim()}>
-            {sending ? <Loader2 className="animate-spin" aria-hidden /> : <Send aria-hidden />}
+          <Button variant="outline" size="lg" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button size="lg" onClick={send} disabled={drafting || sending || !message.trim()}>
+            {sending ? <Loader2 className="motion-safe:animate-spin" aria-hidden /> : <Send aria-hidden />}
             Send request
           </Button>
         </DialogFooter>

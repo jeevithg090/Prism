@@ -45,7 +45,7 @@ describe("summaries", () => {
   it("trend summary reads now, projection and band", () => {
     const now = llmEval.history.at(-1)!, end = llmEval.projection.at(-1)!;
     expect(trendSummary([llmEval])).toBe(
-      `LLM evaluation is rising (${growthText(llmEval.growthPerYear)}): ${pctPosts(now.share)} of Hacker News job posts in Oct 2026, projected ${pctPosts(end.share)} (${pctPosts(end.low)}–${pctPosts(end.high)}) by Oct 2027.`,
+      `LLM evaluation is rising (${growthText(llmEval.growthPerYear)}): ${pctPosts(now.share)} of Hacker News job posts in Oct 2026, projected ${pctPosts(end.share)} (${pctPosts(end.low)} to ${pctPosts(end.high)}) by Oct 2027.`,
     );
     expect(growthText(0.67)).toBe("+67% a year");
     expect(growthText(-0.21)).toBe("−21% a year");
@@ -93,7 +93,7 @@ describe("SkillDemandChart", () => {
     expect(within(docker).getByText("Rising")).toBeInTheDocument();
     expect(docker.querySelectorAll("svg").length).toBeGreaterThanOrEqual(2);
     expect(within(screen.getByRole("button", { name: /^Python,\s*62%/ })).getByText("Proven")).toBeInTheDocument();
-    expect(within(screen.getByRole("button", { name: /^Machine learning,\s*55%/ })).getByText("Degree · later")).toBeInTheDocument();
+    expect(within(screen.getByRole("button", { name: /^Machine learning,\s*55%/ })).getByText("Later in your degree")).toBeInTheDocument();
     expect(screen.getByTestId("demand-summary")).toHaveTextContent("Your biggest gap is Docker: 41% of ads");
   });
 

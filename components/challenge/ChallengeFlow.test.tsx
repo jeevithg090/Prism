@@ -95,7 +95,7 @@ describe("ChallengeFlow", () => {
     await screen.findByRole("heading", { name: DEMO_CHALLENGE.title });
     await userEvent.click(screen.getByRole("button", { name: "Check my work" }));
     const results = screen.getByRole("region", { name: "Your results" });
-    expect(await within(results).findByText("Rubric ·", { exact: false })).toHaveTextContent("1 of 4 met");
+    expect(await within(results).findByRole("heading", { name: /^Rubric/ })).toHaveTextContent("1 of 4 met");
     expect(within(results).getByText("Which layers does Docker rebuild when you change one line?")).toBeInTheDocument();
     expect(within(results).getAllByText("Not yet:", { exact: false })).toHaveLength(3);
     expect(calls.find((c) => c.url === "/api/challenges/grade")?.body).toMatchObject({ userId: "aisha", challengeId: DEMO_CHALLENGE.id, submission: DEMO_CHALLENGE.starter });
@@ -104,7 +104,7 @@ describe("ChallengeFlow", () => {
     expect(await screen.findByDisplayValue(/python:3\.12-slim/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Check my work" }));
     expect(await screen.findByRole("heading", { name: "You've tried Docker for real" })).toBeInTheDocument();
-    expect(screen.getByTestId("ladder-step")).toHaveTextContent("Rung 1 · Tried it");
+    expect(screen.getByTestId("ladder-step")).toHaveTextContent("Rung 1: Tried it");
     expect(screen.getByRole("link", { name: /Next: build it in your pod/ })).toHaveAttribute("href", "/pods");
     expect(screen.getByRole("link", { name: "See your passport" })).toHaveAttribute("href", "/profile/aisha");
     await new Promise((r) => setTimeout(r, 50));

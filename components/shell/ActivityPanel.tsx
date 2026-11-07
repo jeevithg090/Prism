@@ -5,7 +5,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { motion, useReducedMotion } from "motion/react";
-import { AlertTriangle, Check, CheckCircle2, Loader2, Sparkles, X } from "lucide-react";
+import { AlertTriangle, Check, CheckCircle2, Circle, Loader2, Sparkles, Workflow, X } from "lucide-react";
 import { toast } from "sonner";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -152,19 +152,21 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** The "Agents" button for the TopBar: opens the panel and pulses while a run is live. */
+/** The "Agents" button in the TopBar: opens the panel; while a run is live its icon turns into a spinner. */
 export function AgentsButton({ className }: { className?: string }) {
-  const { setOpen, live } = useActivity();
+  const { open, setOpen, live } = useActivity();
   return (
-    <Button variant="outline" className={cn("relative h-10 gap-2 rounded-xl px-3 text-sm", className)} onClick={() => setOpen(true)} aria-label={live ? "Agents, a run is live" : "Agents"}>
-      <Sparkles className="size-4" aria-hidden />
-      Agents
-      {live && (
-        <span className="absolute -top-1 -right-1 flex size-3" aria-hidden>
-          <span className="absolute inline-flex size-full animate-ping rounded-full bg-primary/60" />
-          <span className="relative inline-flex size-3 rounded-full bg-primary" />
-        </span>
-      )}
+    <Button
+      variant="outline"
+      className={cn("h-10 gap-2 px-3 text-sm", live && "text-foreground", className)}
+      onClick={() => setOpen(true)}
+      aria-haspopup="dialog"
+      aria-expanded={open}
+      data-live={live || undefined}
+      aria-label={live ? "Agents, a run is live" : "Agents"}
+    >
+      {live ? <Loader2 className="size-[1.125rem] animate-spin text-primary" aria-hidden /> : <Workflow className="size-[1.125rem]" aria-hidden />}
+      <span className="max-sm:sr-only">{live ? "Agents running" : "Agents"}</span>
     </Button>
   );
 }
@@ -286,19 +288,20 @@ function ActivityPanel() {
       <SheetContent side="right" showCloseButton={false} className="w-full! gap-0 p-0 sm:max-w-[420px]!" data-testid="activity-panel">
         <div className="flex items-start justify-between gap-4 border-b px-6 pt-6 pb-4">
           <div className="min-w-0 space-y-1">
-            <SheetTitle className="text-xl font-semibold">Agents at work</SheetTitle>
-            <p className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5">
-                <span className={cn("size-2 rounded-full", status === "live" || status === "connecting" ? "animate-pulse bg-status-proven" : finished ? "bg-muted-foreground" : "bg-border")} aria-hidden />
+            <SheetTitle className="text-xl font-semibold text-foreground">Agents at work</SheetTitle>
+            <p className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
+                {status === "live" || status === "connecting"
+                  ? <Loader2 className="size-4 animate-spin text-primary" aria-hidden />
+                  : finished ? <CheckCircle2 className="size-4 text-status-proven" aria-hidden /> : <Circle className="size-4 text-muted-foreground" aria-hidden />}
                 {status === "connecting" ? "Connecting" : status === "live" ? "Live" : finished ? "Finished" : "Idle"}
               </span>
-              <span aria-hidden>·</span>
               <span><span className="font-mono font-semibold tabular-nums text-foreground">{workers.length}</span> {workers.length === 1 ? "agent" : "agents"}</span>
               {isDemo && <DemoDataNote />}
             </p>
             <SheetDescription className="text-sm text-muted-foreground">Each agent reports what it read and what it found, with real numbers.</SheetDescription>
           </div>
-          <Button variant="ghost" className="size-10 shrink-0 rounded-xl" onClick={() => setOpen(false)} aria-label="Close the agent panel">
+          <Button variant="ghost" size="icon" className="size-10 shrink-0" onClick={() => setOpen(false)} aria-label="Close the agent panel">
             <X className="size-5" aria-hidden />
           </Button>
         </div>
@@ -307,24 +310,24 @@ function ActivityPanel() {
         {(end || (!finished && workers.length > 0)) && (
           <div className="space-y-3 border-b px-6 py-4">
             {readiness && (
-              <div className="rounded-xl border border-status-proven/25 bg-status-proven/10 p-4" data-testid="bridge-ready">
+              <div className="rounded-xl border border-status-proven/35 bg-status-proven/10 p-4" data-testid="bridge-ready">
                 <p className="flex items-center gap-2 text-base font-semibold text-foreground">
                   <CheckCircle2 className="size-5 text-status-proven" aria-hidden />
                   <span>Bridge ready · <span className="font-mono tabular-nums">{readiness.now}%</span> → <span className="font-mono tabular-nums">{readiness.projected}%</span></span>
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">You&apos;re {readiness.now}% of the way to your target role today, and {readiness.projected}% if you follow your plan.</p>
-                <Link href="/map" onClick={() => setOpen(false)} className={cn(buttonVariants(), "mt-3 h-11 w-full rounded-xl px-5 text-base hover:bg-primary/90")}>See my Bridge Map</Link>
+                <Link href="/map" onClick={() => setOpen(false)} className={cn(buttonVariants({ size: "lg" }), "mt-3 w-full")}>See my Bridge Map</Link>
               </div>
             )}
             {end?.status === "done" && !readiness && (
-              <div className="rounded-xl border border-status-proven/25 bg-status-proven/10 p-4 text-sm text-foreground" data-testid="run-done">
+              <div className="rounded-xl border border-status-proven/35 bg-status-proven/10 p-4 text-sm text-foreground" data-testid="run-done">
                 <p className="flex items-center gap-2 font-semibold"><CheckCircle2 className="size-4 text-status-proven" aria-hidden /><HighlightNumbers text={end.message} /></p>
               </div>
             )}
             {end?.status === "error" && (
-              <div className="rounded-xl border border-status-rising/30 bg-status-rising/10 p-4 text-sm text-foreground" role="alert">
+              <div className="rounded-xl border border-status-rising/45 bg-status-rising/12 p-4 text-sm text-foreground" role="alert">
                 <p className="flex items-center gap-2 font-semibold"><AlertTriangle className="size-4 text-status-rising" aria-hidden />{end.message}</p>
-                {end.agent === "orchestrator" && <Link href="/map" onClick={() => setOpen(false)} className={cn(buttonVariants({ variant: "outline" }), "mt-3 h-10 w-full rounded-xl")}>See the demo Bridge Map</Link>}
+                {end.agent === "orchestrator" && <Link href="/map" onClick={() => setOpen(false)} className={cn(buttonVariants({ variant: "outline" }), "mt-3 h-10 w-full")}>See the demo Bridge Map</Link>}
               </div>
             )}
             {!finished && workers.length > 0 && (
@@ -339,7 +342,7 @@ function ActivityPanel() {
               icon={Sparkles}
               title="No agents running"
               body="Start onboarding, or replay Aisha's demo run to watch the agents read her syllabus, job ads and GitHub."
-              action={<Button className="h-11 rounded-xl px-5 text-base hover:bg-primary/90" onClick={replay} disabled={replaying}>{replaying ? <><Loader2 className="size-4 animate-spin" aria-hidden />Starting…</> : "Replay demo run"}</Button>}
+              action={<Button size="lg" onClick={replay} disabled={replaying} aria-busy={replaying || undefined}>{replaying ? <><Loader2 className="size-4 animate-spin" aria-hidden />Starting…</> : "Replay demo run"}</Button>}
             />
           )}
           {runId && !events.length && (
@@ -352,7 +355,7 @@ function ActivityPanel() {
           {/* The live region: new rows are announced politely. */}
           <ol className="space-y-3" aria-live="polite" aria-relevant="additions text" data-testid="agent-timeline">
             {groups.map((g) => (
-              <li key={g.agent} className="rounded-xl bg-muted/60 p-4" data-agent={g.agent}>
+              <li key={g.agent} className="rounded-xl bg-muted p-4" data-agent={g.agent}>
                 <div className="flex items-center gap-3">
                   <span aria-hidden><AgentAvatar agent={g.agent} /></span>
                   <span className="min-w-0 flex-1 truncate font-semibold text-foreground">{AGENT_LABEL[g.agent] ?? g.agent}</span>
@@ -369,7 +372,7 @@ function ActivityPanel() {
                         className="flex items-start gap-2 text-sm text-foreground"
                         initial={reduce ? false : { opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.18, ease: "easeOut" }}
+                        transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
                       >
                         <RowIcon e={e} latest={latest} working={g.state === "working"} />
                         <span className="min-w-0 flex-1 break-words"><HighlightNumbers text={e.message} /></span>

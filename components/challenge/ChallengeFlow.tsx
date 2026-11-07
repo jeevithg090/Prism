@@ -1,17 +1,18 @@
 "use client";
-// P5 · /challenge: pick a gap skill (the roadmap week's focus first), do a 20-minute task, check it against the
+// P5, /challenge: pick a gap skill (the roadmap week's focus first), do a 20-minute task, check it against the
 // rubric, and on a pass climb rung 1 of the Proof Ladder.
 import * as React from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ExternalLink, FlaskConical, ListChecks } from "lucide-react";
+import { Circle, ExternalLink, FlaskConical, ListChecks } from "lucide-react";
 import { toast } from "sonner";
 import { EmptyState, ErrorState } from "@/components/keystone";
 import { buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useViewerId } from "@/components/community/useViewerId";
 import { useActivity } from "@/components/shell/ActivityPanel";
+import { cn } from "@/lib/utils";
 import { ProofLadder } from "@/components/ladder/ProofLadder";
 import { ApiError, getJSON, sendJSON } from "./api";
 import { ChallengeCard } from "./ChallengeCard";
@@ -21,18 +22,44 @@ import { RungCelebration } from "./RungCelebration";
 import { SkillPicker } from "./SkillPicker";
 import type { ChallengeMenu, GradeResult, PublicChallenge } from "./model";
 
+/** The challenge card's shape while it is being prepared: title and timer, the task well, the editor. */
+function ChallengeCardSkeleton({ label }: { label?: string }) {
+  return (
+    <div role={label ? "status" : undefined} aria-label={label} className="space-y-6 rounded-2xl border bg-card p-6 shadow-sm">
+      <div className="flex flex-col gap-4 sm:flex-row sm:justify-between">
+        <div className="flex-1 space-y-3"><Skeleton className="h-8 w-3/4" /><Skeleton className="h-7 w-56 rounded-md" /></div>
+        <Skeleton className="h-16 w-44 rounded-xl" />
+      </div>
+      <Skeleton className="h-28 w-full rounded-xl" />
+      <Skeleton className="h-64 w-full rounded-lg" />
+    </div>
+  );
+}
+
 export function ChallengeSkeleton() {
   return (
-    <div role="status" aria-label="Loading your micro-challenge" className="space-y-6">
-      <div className="flex flex-wrap gap-2">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-10 w-36 rounded-full" />)}</div>
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
-          <Skeleton className="h-5 w-40" />
-          <Skeleton className="h-8 w-3/4" />
-          <Skeleton className="h-28 w-full rounded-xl" />
-          <Skeleton className="h-64 w-full rounded-xl" />
+    <div role="status" aria-label="Loading your micro-challenge" className="space-y-8">
+      <div className="space-y-3">
+        <Skeleton className="h-7 w-48" />
+        <div className="flex flex-wrap gap-2">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-10 w-36 rounded-xl" />)}</div>
+      </div>
+      <div className="flex flex-col gap-6">
+        <div className="order-last rounded-2xl border bg-card p-6 shadow-sm lg:order-none">
+          <Skeleton className="h-7 w-56" />
+          <Skeleton className="mt-2 h-4 w-80 max-w-full" />
+          <div className="mt-4 grid gap-6 md:grid-cols-3">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="flex items-center gap-3">
+                <Skeleton className="size-12 shrink-0 rounded-full md:size-9" />
+                <Skeleton className="h-5 w-32" />
+              </div>
+            ))}
+          </div>
         </div>
-        <Skeleton className="h-80 w-full rounded-2xl" />
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+          <ChallengeCardSkeleton />
+          <Skeleton className="h-80 w-full rounded-2xl" />
+        </div>
       </div>
     </div>
   );
@@ -41,29 +68,32 @@ export function ChallengeSkeleton() {
 function WhatWeCheck({ challenge }: { challenge: PublicChallenge }) {
   return (
     <section aria-labelledby="rubric-title" className="rounded-2xl border bg-card p-6 shadow-sm">
-      <h2 id="rubric-title" className="flex items-center gap-2 text-lg font-semibold">
-        <ListChecks className="size-5 text-primary" aria-hidden /> What we check
+      <h2 id="rubric-title" className="flex items-center gap-2 text-xl font-semibold text-foreground">
+        <ListChecks className="size-5 shrink-0 text-muted-foreground" aria-hidden /> What we check
       </h2>
-      <ul className="mt-3 space-y-3">
-        {challenge.rubric.map((c) => (
-          <li key={c.id}>
-            <p className="font-medium">{c.title}</p>
-            <p className="text-sm text-muted-foreground">{c.description}</p>
+      <ol className="mt-4 divide-y border-t">
+        {challenge.rubric.map((c, i) => (
+          <li key={c.id} className="flex gap-3 py-3">
+            <span aria-hidden className="w-4 shrink-0 pt-0.5 font-mono text-sm text-muted-foreground tabular-nums">{i + 1}</span>
+            <div className="min-w-0">
+              <p className="font-medium text-foreground">{c.title}</p>
+              <p className="text-sm text-pretty text-muted-foreground">{c.description}</p>
+            </div>
           </li>
         ))}
-      </ul>
-      <p className="mt-4 text-sm text-muted-foreground">
+      </ol>
+      <p className="mt-4 rounded-xl bg-muted p-4 text-sm text-pretty text-foreground">
         Plus <span className="tabular-nums">{challenge.checksCount}</span> hidden tests that make sure it still works. You pass with every test
         and at least 3 of the 4 criteria.
       </p>
       {challenge.resources.length > 0 && (
-        <div className="mt-4 border-t pt-4">
-          <h3 className="text-sm font-semibold">Read after you try</h3>
-          <ul className="mt-2 space-y-1">
+        <div className="mt-5 border-t pt-4">
+          <h3 className="text-base font-semibold text-foreground">Read after you try</h3>
+          <ul className="mt-2 space-y-2">
             {challenge.resources.map((r) => (
               <li key={r.url}>
-                <a href={r.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-sm text-sm text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                  {r.title}<ExternalLink className="size-3.5" aria-hidden /><span className="sr-only">(opens in a new tab)</span>
+                <a href={r.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-start gap-1 rounded-sm text-sm text-primary underline decoration-1 underline-offset-4 transition-[color] duration-(--dur-short) hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:translate-y-px">
+                  {r.title}<ExternalLink className="mt-0.5 size-3.5 shrink-0" aria-hidden /><span className="sr-only">(opens in a new tab)</span>
                 </a>
               </li>
             ))}
@@ -111,7 +141,7 @@ export function ChallengeFlow() {
       setPicked(c.skillId);
       setResults((m) => ({ ...m, [c.id]: r }));
       if (r.passed) {
-        toast.success(`Rung 1 · Tried it: ${r.skillName}`, { description: "Saved to your Skill Passport as micro-challenge evidence." });
+        toast.success(`Rung 1, Tried it: ${r.skillName}`, { description: "Saved to your Skill Passport as micro-challenge evidence." });
         void qc.invalidateQueries({ queryKey: ["proof-ladder", userId] });
         void qc.invalidateQueries({ queryKey: ["challenge-menu", userId] });
       } else {
@@ -147,19 +177,20 @@ export function ChallengeFlow() {
         icon={FlaskConical}
         title="No micro-challenges yet"
         body="Challenges appear for the skills on your Bridge Map. Map your degree first."
-        action={<Link href="/map" className={buttonVariants()}>Open your Bridge Map</Link>}
+        action={<Link href="/map" className={cn(buttonVariants(), "active:translate-y-px")}>Open your Bridge Map</Link>}
       />
     );
   }
 
   const notFound = chQ.error instanceof ApiError && chQ.error.code === "not_found";
+  const skillName = menu.options.find((o) => o.skillId === skillId)?.skillName ?? "skill";
   return (
     <div className="space-y-8">
-      <section aria-labelledby="pick-title" className="space-y-3">
-        <div>
-          <h2 id="pick-title" className="text-xl font-semibold">Choose a skill</h2>
+      <section aria-labelledby="pick-title" className="space-y-4">
+        <div className="space-y-1">
+          <h2 id="pick-title" className="text-xl font-semibold text-foreground">Choose a skill</h2>
           <p className="text-sm text-muted-foreground">
-            {menu.focusWeek ? `Week ${menu.focusWeek} of your roadmap is first.` : "Your top gap is first."} Gaps are marked red; a tick means you&apos;ve tried it.
+            {menu.focusWeek ? `Week ${menu.focusWeek} of your roadmap is first.` : "Your top gap is first."} Skills are grouped by status; a tick means you&apos;ve tried it.
           </p>
         </div>
         <SkillPicker menu={menu} value={skillId} onChange={(id) => { setPicked(id); }} />
@@ -167,85 +198,90 @@ export function ChallengeFlow() {
 
       {result?.passed && challenge && <RungCelebration key={`${challenge.id}:${result.evidenceId}`} result={result} passportHref={`/profile/${encodeURIComponent(userId)}`} />}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
-        <div className="min-w-0 space-y-6">
-          {!demo && chQ.isPending && skillId ? (
-            <div role="status" aria-label="Preparing your challenge" className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
-              <Skeleton className="h-5 w-40" />
-              <Skeleton className="h-8 w-3/4" />
-              <Skeleton className="h-28 w-full rounded-xl" />
-              <Skeleton className="h-64 w-full rounded-xl" />
+      {/* Phones get the challenge first and the standing ladder after it; wide screens keep the compact ladder band on top. */}
+      <div className="flex flex-col gap-6">
+        {skillId && (
+          <section aria-labelledby="ladder-title" className="order-last rounded-2xl border bg-card p-6 shadow-sm lg:order-none">
+            <div className="mb-1 space-y-1">
+              <h2 id="ladder-title" className="text-xl font-semibold text-foreground">Your {skillName} ladder</h2>
+              <p className="text-sm text-muted-foreground">Each rung is proven by a different agent and confirmed by a person.</p>
             </div>
-          ) : notFound || (demo && !challenge) ? (
-            <EmptyState
-              icon={FlaskConical}
-              title="No 20-minute challenge for this skill yet"
-              body={notFound ? (chQ.error as ApiError).message : "The demo has the Docker challenge only."}
-              action={<button type="button" className={buttonVariants()} onClick={() => setPicked("docker")}>Try the Docker challenge</button>}
-            />
-          ) : !challenge ? (
-            <ErrorState
-              title="We couldn't prepare this challenge"
-              body="That's on us, not you. Your progress is safe."
-              onRetry={() => void chQ.refetch()}
-              onUseDemo={() => { setDemo(true); setPicked(DEMO_CHALLENGE.skillId); toast("Showing the demo Docker challenge"); }}
-            />
-          ) : (
-            <>
-              <ChallengeCard
-                challenge={challenge}
-                code={value}
-                onCode={(v) => setCode((m) => ({ ...m, [challenge.id]: v }))}
-                onCheck={() => grade.mutate(challenge)}
-                onSample={() => sample.mutate(challenge)}
-                checking={grade.isPending}
-                loadingSample={sample.isPending}
-                passed={!!result?.passed}
-                isDemo={demo}
-              />
-              <section aria-labelledby="results-title" aria-live="polite" className="rounded-2xl border bg-card p-6 shadow-sm">
-                <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <h2 id="results-title" className="text-xl font-semibold">Your results</h2>
-                    <p className="text-sm text-muted-foreground">
-                      {result ? (result.passed ? "Passed. Rung 1 is on your ladder." : "Not yet. Each open item has a question to think about.") : "Check your work when you're ready. You can check as often as you like."}
-                    </p>
-                  </div>
-                  {result?.runId && (
-                    <button type="button" onClick={() => activity.start(result.runId!)} className={buttonVariants({ variant: "ghost" })}>
-                      See what the agents did
-                    </button>
-                  )}
-                </div>
-                {grade.isPending ? (
-                  <div className="space-y-3" aria-hidden>{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-10 w-full rounded-xl" />)}</div>
-                ) : result ? (
-                  <GradeResults result={result} />
-                ) : (
-                  <ul className="divide-y">
-                    {challenge.rubric.map((c) => (
-                      <li key={c.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0 text-muted-foreground">
-                        <span aria-hidden className="size-5 shrink-0 rounded-full border-2 border-border" />
-                        <span>{c.title}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </section>
-            </>
-          )}
-        </div>
+            <ProofLadder userId={userId} skillId={skillId} />
+          </section>
+        )}
 
-        <aside className="space-y-6 lg:sticky lg:top-6">
-          {skillId && (
-            <section aria-labelledby="ladder-title" className="rounded-2xl border bg-card p-6 shadow-sm">
-              <h2 id="ladder-title" className="text-lg font-semibold">Your {menu.options.find((o) => o.skillId === skillId)?.skillName ?? "skill"} ladder</h2>
-              <p className="mb-4 text-sm text-muted-foreground">Each rung is proven by a different agent and confirmed by a person.</p>
-              <ProofLadder userId={userId} skillId={skillId} />
-            </section>
-          )}
-          {challenge && <WhatWeCheck challenge={challenge} />}
-        </aside>
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
+          <div className="min-w-0 space-y-6">
+            {!demo && chQ.isPending && skillId ? (
+              <ChallengeCardSkeleton label="Preparing your challenge" />
+            ) : notFound || (demo && !challenge) ? (
+              <EmptyState
+                icon={FlaskConical}
+                title="No 20-minute challenge for this skill yet"
+                body={notFound ? (chQ.error as ApiError).message : "The demo has the Docker challenge only."}
+                action={<button type="button" className={cn(buttonVariants(), "active:translate-y-px")} onClick={() => setPicked("docker")}>Try the Docker challenge</button>}
+              />
+            ) : !challenge ? (
+              <ErrorState
+                title="We couldn't prepare this challenge"
+                body="That's on us, not you. Your progress is safe."
+                onRetry={() => void chQ.refetch()}
+                onUseDemo={() => { setDemo(true); setPicked(DEMO_CHALLENGE.skillId); toast("Showing the demo Docker challenge"); }}
+              />
+            ) : (
+              <>
+                <ChallengeCard
+                  challenge={challenge}
+                  code={value}
+                  onCode={(v) => setCode((m) => ({ ...m, [challenge.id]: v }))}
+                  onCheck={() => grade.mutate(challenge)}
+                  onSample={() => sample.mutate(challenge)}
+                  checking={grade.isPending}
+                  loadingSample={sample.isPending}
+                  passed={!!result?.passed}
+                  isDemo={demo}
+                />
+                <section aria-labelledby="results-title" aria-live="polite" className="rounded-2xl border bg-card p-6 shadow-sm">
+                  <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="space-y-1">
+                      <h2 id="results-title" className="text-xl font-semibold text-foreground">Your results</h2>
+                      <p className="text-sm text-muted-foreground">
+                        {result ? (result.passed ? "Passed. Rung 1 is on your ladder." : "Not yet. Each open item has a question to think about.") : "Check your work when you're ready. You can check as often as you like."}
+                      </p>
+                    </div>
+                    {result?.runId && (
+                      <button type="button" onClick={() => activity.start(result.runId!)} className={cn(buttonVariants({ variant: "ghost" }), "active:translate-y-px")}>
+                        See what the agents did
+                      </button>
+                    )}
+                  </div>
+                  {grade.isPending ? (
+                    <div className="grid gap-8 md:grid-cols-2 md:gap-6" aria-hidden>
+                      {[0, 1].map((c) => (
+                        <div key={c} className="space-y-3"><Skeleton className="h-4 w-24" /><Skeleton className="h-9 w-32" />{[0, 1, 2].map((i) => <Skeleton key={i} className="h-6 w-full" />)}</div>
+                      ))}
+                    </div>
+                  ) : result ? (
+                    <GradeResults result={result} />
+                  ) : (
+                    <ul className="divide-y border-t">
+                      {challenge.rubric.map((c) => (
+                        <li key={c.id} className="flex items-center gap-3 py-3 text-muted-foreground">
+                          <Circle className="size-5 shrink-0 text-rule-2" aria-hidden />
+                          <span>{c.title}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </section>
+              </>
+            )}
+          </div>
+
+          <aside className="space-y-6 lg:sticky lg:top-[calc(var(--topbar-height)+1.5rem)]">
+            {challenge ? <WhatWeCheck challenge={challenge} /> : null}
+          </aside>
+        </div>
       </div>
     </div>
   );

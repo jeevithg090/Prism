@@ -1,5 +1,7 @@
 "use client";
-// P5 · where students before you went: Year-1 focus → Year 2–3 experience → where they are now.
+// P5 · where students before you went: Year-1 focus, then the Year 2 and 3 experience, then where they are now.
+// Hallmark redesign: one argued series. The outcome you follow (your goal, or the chip you pick) runs in the coral
+// signal; every other path stays a quiet neutral, so the chart makes one point at a time.
 import * as React from "react";
 import { ResponsiveContainer, Sankey } from "recharts";
 import { BarChart3, List } from "lucide-react";
@@ -9,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { DemoDataNote } from "@/components/keystone";
 import { buildSankeyData, outcomeGroup, pathRows, summarise, toChartLinks, type ChartLink, type OutcomeGroup, type SankeyNodeDatum } from "./sankey";
 
-/** Outcome colours come from the theme tokens, so P3's palette (light and dark) flows through. */
+/** Outcome colours from the theme tokens (kept for other callers; the chart itself argues one outcome in the signal). */
 export const OUTCOME_COLOR: Record<OutcomeGroup, string> = {
   ML: "var(--primary)",
   SWE: "var(--chart-2)",
@@ -23,7 +25,11 @@ const OUTCOME_LABEL: Record<OutcomeGroup, string> = {
 };
 const CHIPS = ["All", "ML", "SWE", "Data", "PhD", "Startup"] as const;
 type Filter = (typeof CHIPS)[number];
-const COLUMN_TITLES = ["Year 1 focus", "Years 2–3", "Where they are now"];
+const COLUMN_TITLES = ["Year 1 focus", "Years 2 and 3", "Where they are now"];
+
+/** The argued series wears the signal; the rest is context in the muted ink. */
+const SIGNAL = "var(--primary)";
+const CONTEXT = "var(--muted-foreground)";
 
 type NodeRenderProps = { x: number; y: number; width: number; height: number; payload: SankeyNodeDatum };
 type LinkRenderProps = {
@@ -61,25 +67,28 @@ export function JourneySankey({ trajectories, focus = "ML" }: { trajectories: Tr
   const caption = filter === "All" ? data.summary : summarise(trajectories, filter);
   const isDemo = trajectories.some((t) => t.isDemo);
   const visibleRows = filter === "All" ? rows : rows.filter((r) => r.outcome === filter);
+  // The one series the chart argues: your goal until you pick another outcome.
+  const argued: OutcomeGroup = filter === "All" ? focus : filter;
 
   const renderLink = React.useCallback(
     (p: LinkRenderProps) => {
       const { sourceX, targetX, sourceY, targetY, sourceControlX, targetControlX, linkWidth, payload } = p;
-      const active = filter === "All" || payload.outcome === filter;
+      const isArgued = payload.outcome === argued;
+      const opacity = filter === "All" ? (isArgued ? 0.72 : 0.3) : isArgued ? 0.75 : 0.12;
       return (
         <path
           d={`M${sourceX},${sourceY} C${sourceControlX},${sourceY} ${targetControlX},${targetY} ${targetX},${targetY}`}
           fill="none"
-          stroke={OUTCOME_COLOR[payload.outcome]}
+          stroke={isArgued ? SIGNAL : CONTEXT}
           strokeWidth={Math.max(1.5, linkWidth - 1)}
-          strokeOpacity={filter === "All" ? 0.38 : active ? 0.7 : 0.06}
-          style={{ transition: "stroke-opacity 200ms ease-out" }}
+          strokeOpacity={opacity}
+          className="transition-[stroke-opacity] duration-(--dur-short) ease-out motion-reduce:transition-none"
         >
           <title>{payload.label}</title>
         </path>
       );
     },
-    [filter],
+    [filter, argued],
   );
 
   const renderNode = React.useCallback(
@@ -88,46 +97,83 @@ export function JourneySankey({ trajectories, focus = "ML" }: { trajectories: Tr
       const isOutcome = payload.column === 2;
       const shown = filter === "All" ? payload.count : (payload.byOutcome[filter] ?? 0);
       const active = shown > 0;
-      const fill = isOutcome ? OUTCOME_COLOR[payload.name as OutcomeGroup] ?? "var(--foreground)" : "var(--foreground)";
+      // Only the argued outcome bar carries full weight; every other bar is context.
+      const fill = isOutcome && payload.name === argued ? SIGNAL : CONTEXT;
       const label = isOutcome ? OUTCOME_LABEL[payload.name as OutcomeGroup] ?? payload.name : payload.name;
+      // Labels never sit on bands: first-year labels left of their bar, middle labels in the gap above it,
+      // outcome labels right of their bar, where nothing follows.
+      const place = payload.column === 0 ? "left" : payload.column === 1 ? "above" : "right";
+      const nameSize = place === "above" ? 14 : 16;
       return (
-        <g style={{ opacity: active ? 1 : 0.3, transition: "opacity 200ms ease-out" }}>
-          <rect x={x} y={y} width={width} height={Math.max(2, height)} rx={3} fill={fill} />
+        <g className={cn("transition-opacity duration-(--dur-short) ease-out motion-reduce:transition-none", active ? "opacity-100" : "opacity-30")}>
+          <rect x={x} y={y} width={width} height={Math.max(2, height)} rx={2} fill={fill} />
           <text
-            x={x + width + 8}
-            y={y + height / 2}
-            dominantBaseline="middle"
+            x={place === "left" ? x - 10 : place === "above" ? x : x + width + 10}
+            y={place === "above" ? y - 6 : y + height / 2}
+            textAnchor={place === "left" ? "end" : "start"}
+            dominantBaseline={place === "above" ? "auto" : "middle"}
             stroke="var(--card)"
-            strokeWidth={5}
+            strokeWidth={place === "above" ? 3 : 5}
             strokeLinejoin="round"
             paintOrder="stroke"
             className="fill-foreground"
           >
-            <tspan fontSize={15} fontWeight={600}>{label}</tspan>
-            <tspan dx={6} fontSize={14} className="fill-muted-foreground tabular-nums">{shown}</tspan>
+            <tspan fontSize={nameSize} fontWeight={600}>{label}</tspan>
+            <tspan dx={6} fontSize={14} className="fill-muted-foreground font-mono tabular-nums">{shown}</tspan>
           </text>
         </g>
       );
     },
-    [filter],
+    [filter, argued],
   );
 
   return (
-    <section aria-labelledby="journeys-title" className="rounded-2xl border bg-card p-6 shadow-sm">
-      <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 id="journeys-title" className="text-xl font-semibold md:text-2xl">Where students before you went</h2>
-            {isDemo && <DemoDataNote />}
-          </div>
-          <p className="mt-1 max-w-2xl text-muted-foreground">
-            Each band is a real path, from first-year focus to where they are now. Pick an outcome to follow its paths.
-          </p>
+    <section aria-labelledby="journeys-title" className="flex flex-col gap-6 rounded-2xl border bg-card p-6 shadow-sm">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <h2 id="journeys-title" className="text-xl font-semibold text-foreground">Where students before you went</h2>
+          {isDemo && <DemoDataNote />}
+        </div>
+        <p id="journeys-caption" aria-live="polite" className="mt-1 max-w-[62ch] text-lg text-pretty text-foreground">
+          {caption}
+        </p>
+        <p id="journeys-howto" className="sr-only">
+          Each band is a real path, from first-year focus to where they are now. Pick an outcome to follow its paths.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div role="group" aria-label="Filter journeys by outcome" aria-describedby="journeys-howto" className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+          {CHIPS.map((c) => {
+            const pressed = filter === c;
+            const n = c === "All" ? trajectories.length : counts[c];
+            return (
+              <button
+                key={c}
+                type="button"
+                aria-pressed={pressed}
+                onClick={() => setFilter(c)}
+                className={cn(
+                  "inline-flex h-10 shrink-0 items-center justify-start gap-2 rounded-xl border px-3.5 text-sm font-medium whitespace-nowrap text-foreground outline-none",
+                  "transition-[background-color,border-color,transform] duration-(--dur-short) ease-out motion-reduce:transition-none",
+                  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:translate-y-px disabled:cursor-not-allowed disabled:opacity-55",
+                  pressed ? "border-primary font-semibold ring-1 ring-inset ring-primary" : "border-border hover:bg-accent",
+                )}
+              >
+                {c !== "All" && c === argued && (
+                  <svg aria-hidden viewBox="0 0 16 6" className="h-1.5 w-4 shrink-0">
+                    <rect width="16" height="6" rx="1.5" className="fill-primary" />
+                  </svg>
+                )}
+                {c === "All" ? "All" : OUTCOME_LABEL[c]}
+                <span className="font-mono tabular-nums text-muted-foreground">{n}</span>
+              </button>
+            );
+          })}
         </div>
         <Button
           variant="outline"
-          size="lg"
-          className="h-10 shrink-0 rounded-xl"
+          className="shrink-0 self-start"
           aria-pressed={asList}
           onClick={() => setListChoice(!asList)}
         >
@@ -136,75 +182,62 @@ export function JourneySankey({ trajectories, focus = "ML" }: { trajectories: Tr
         </Button>
       </div>
 
-      <div role="group" aria-label="Filter journeys by outcome" className="mb-5 flex flex-wrap gap-2">
-        {CHIPS.map((c) => {
-          const pressed = filter === c;
-          const n = c === "All" ? trajectories.length : counts[c];
-          return (
-            <button
-              key={c}
-              type="button"
-              aria-pressed={pressed}
-              onClick={() => setFilter(c)}
-              className={cn(
-                "inline-flex h-10 items-center gap-2 rounded-full border px-4 text-[15px] font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                pressed ? "border-foreground bg-foreground text-background" : "bg-background hover:bg-muted",
-              )}
-            >
-              {c !== "All" && <span aria-hidden className={cn("size-2.5 rounded-full", pressed && "ring-2 ring-background")} style={{ background: OUTCOME_COLOR[c] }} />}
-              {c === "All" ? "All" : OUTCOME_LABEL[c]}
-              <span className={cn("tabular-nums", pressed ? "text-background/70" : "text-muted-foreground")}>{n}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      <figure className="m-0">
+      <figure aria-describedby="journeys-caption" className="m-0 flex flex-col gap-4">
         {asList ? (
-          <div
-            role="region"
-            aria-label="Journeys table, scroll sideways for more"
-            tabIndex={0}
-            className="relative overflow-x-auto rounded-xl border outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <table className="w-full text-left text-[15px]">
-              <caption className="sr-only">Journeys by path{filter === "All" ? "" : `, ${OUTCOME_LABEL[filter]} only`}</caption>
-              <thead className="bg-muted/60 text-sm text-muted-foreground">
-                <tr>
-                  {COLUMN_TITLES.map((h) => <th key={h} scope="col" className="px-4 py-2.5 font-medium">{h}</th>)}
-                  <th scope="col" className="px-4 py-2.5 text-right font-medium">Journeys</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visibleRows.map((r) => (
-                  <tr key={`${r.y1}|${r.y23}|${r.outcome}`} className="border-t">
-                    <td className="px-4 py-2.5">{r.y1}</td>
-                    <td className="px-4 py-2.5">{r.y23}</td>
-                    <td className="px-4 py-2.5">
-                      <span className="inline-flex items-center gap-2">
-                        <span aria-hidden className="size-2.5 rounded-full" style={{ background: OUTCOME_COLOR[r.outcome] }} />
-                        {OUTCOME_LABEL[r.outcome]}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5 text-right tabular-nums">{r.count}</td>
+          <>
+            <ol aria-label="Journeys by path" className="divide-y border-y sm:hidden">
+              {visibleRows.map((r) => (
+                <li key={`${r.y1}|${r.y23}|${r.outcome}`} className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-4 py-3">
+                  <div className="min-w-0">
+                    <p className="font-medium text-foreground">{OUTCOME_LABEL[r.outcome]}</p>
+                    <p className="text-sm text-muted-foreground">{r.y1}, then {r.y23}</p>
+                  </div>
+                  <p className="font-mono text-lg tabular-nums text-foreground">
+                    {r.count}<span className="sr-only"> {r.count === 1 ? "journey" : "journeys"}</span>
+                  </p>
+                </li>
+              ))}
+            </ol>
+            <div
+              role="region"
+              aria-label="Journeys table, scroll sideways for more"
+              tabIndex={0}
+              className="relative hidden overflow-x-auto rounded-md outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:block"
+            >
+              <table className="w-full text-left text-base">
+                <caption className="sr-only">Journeys by path{filter === "All" ? "" : `, ${OUTCOME_LABEL[filter]} only`}</caption>
+                <thead className="text-sm text-muted-foreground">
+                  <tr>
+                    {COLUMN_TITLES.map((h) => <th key={h} scope="col" className="py-3 pr-4 font-medium whitespace-nowrap">{h}</th>)}
+                    <th scope="col" className="py-3 text-right font-medium whitespace-nowrap">Journeys</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {visibleRows.map((r) => (
+                    <tr key={`${r.y1}|${r.y23}|${r.outcome}`} className="border-t">
+                      <td className="py-3 pr-4 text-foreground">{r.y1}</td>
+                      <td className="py-3 pr-4 text-foreground">{r.y23}</td>
+                      <td className={cn("py-3 pr-4 text-foreground", r.outcome === argued && "font-semibold")}>{OUTCOME_LABEL[r.outcome]}</td>
+                      <td className="py-3 text-right font-mono tabular-nums text-foreground">{r.count}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         ) : (
-          <div aria-hidden>
-            <div className="mb-2 flex justify-between pr-1 text-[13px] font-medium tracking-wide text-muted-foreground uppercase">
+          <div aria-hidden className="min-w-0">
+            <div className="mb-2 grid grid-cols-3 text-sm font-medium text-muted-foreground">
               {COLUMN_TITLES.map((h, i) => <span key={h} className={cn(i === 1 && "text-center", i === 2 && "text-right")}>{h}</span>)}
             </div>
-            <ResponsiveContainer width="100%" height={420} initialDimension={{ width: 800, height: 420 }}>
+            <ResponsiveContainer width="100%" height={360} initialDimension={{ width: 800, height: 360 }}>
               <Sankey
                 data={chartData}
                 accessibilityLayer={false}
-                nodeWidth={14}
-                nodePadding={22}
+                nodeWidth={12}
+                nodePadding={20}
                 linkCurvature={0.5}
-                margin={{ top: 10, right: 104, bottom: 10, left: 2 }}
+                margin={{ top: 26, right: 112, bottom: 8, left: 124 }}
                 node={renderNode as never}
                 link={renderLink as never}
                 onClick={(item, type) => {
@@ -217,9 +250,6 @@ export function JourneySankey({ trajectories, focus = "ML" }: { trajectories: Tr
             </ResponsiveContainer>
           </div>
         )}
-        <figcaption aria-live="polite" className="mt-4 text-base font-medium md:text-lg">
-          {caption}
-        </figcaption>
       </figure>
     </section>
   );

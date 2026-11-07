@@ -85,19 +85,19 @@ describe("DashboardView", () => {
   it("renders this week, readiness, market pulse and the coach with mocked fetches", async () => {
     const fetchSpy = mockApi();
     renderDashboard();
-    expect(screen.getByRole("heading", { level: 1, name: "Hi Aisha 👋" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Hi Aisha" })).toBeInTheDocument();
     expect(await screen.findByRole("heading", { name: "This week: Docker" })).toBeInTheDocument();
     expect(screen.getByText("You're 38% of the way to ML engineer roles. Here's this week.")).toBeInTheDocument();
     expect(screen.getByRole("img", { name: "Readiness 38 percent, projected 84 percent" })).toBeInTheDocument();
-    expect(screen.getByText("→ 84% by Sep 2027")).toBeInTheDocument();
+    expect(screen.getByText("84% by Sep 2027")).toBeInTheDocument();
     // No roadmap yet (404): the first gap from the map, with a proof suggestion.
-    expect(screen.getByText(/Week 1 · from your Bridge Map/)).toBeInTheDocument();
+    expect(screen.getByText(/Week 1, from your Bridge Map/)).toBeInTheDocument();
     expect(screen.getByText("Merge a PR that adds a Dockerfile to your pod repo")).toBeInTheDocument();
     expect(screen.getByText("41% of ML engineer ads ask for Docker, and none of your modules teach it.")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Start this week's task/ })).toHaveAttribute("href", "/roadmap#skill-docker");
     // Market pulse appears once the market route answers.
     expect(await screen.findByText("214")).toBeInTheDocument();
-    expect(screen.getByText("ML engineer ads analysed · Docker in 41%")).toBeInTheDocument();
+    expect(screen.getByText("ML engineer ads analysed, with Docker in 41%")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Ask the coach/ })).toHaveAttribute("href", "/coach");
     expect(screen.getByText(/Welcome to UoM/)).toBeInTheDocument();
     expect(screen.getByText("Demo data")).toBeInTheDocument();
@@ -111,7 +111,7 @@ describe("DashboardView", () => {
     mockApi({ "/api/roadmap/aisha": json(ROADMAP) });
     renderDashboard();
     expect(await screen.findByRole("heading", { name: "This week: PyTorch" })).toBeInTheDocument();
-    expect(screen.getByText("Week 2 · from 16 Nov")).toBeInTheDocument();
+    expect(screen.getByText("Week 2, from 16 Nov")).toBeInTheDocument();
     expect(screen.getByText("PyTorch in 60 minutes")).toBeInTheDocument();
     expect(screen.getByText("Merge a PR that adds batch inference")).toBeInTheDocument();
     expect(screen.getByText(/powers your pod's captioning model/)).toBeInTheDocument();
@@ -130,7 +130,7 @@ describe("DashboardView", () => {
     renderDashboard({ userId: "priya", profile: null });
     expect(await screen.findByRole("heading", { name: "Your Bridge Map isn't built yet" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Start onboarding" })).toHaveAttribute("href", "/onboard");
-    expect(screen.getByRole("heading", { level: 1, name: "Hi Priya 👋" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Hi Priya" })).toBeInTheDocument();
   });
 
   it("shows Retry and demo data when the map fails to load", async () => {

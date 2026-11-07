@@ -1,184 +1,92 @@
+/* Hallmark · shape: app screen · genre: modern-minimal · theme: Coral (deal 1/3, seed university-learning-platform-where-273a·b61dda0e·2026-11-07·r0) · redesign: full
+ * nav: kept shell, a desk-toned sidebar with a staff group and a top bar for persona, readiness and agents · signature: the readiness ring, a coral arc for today over a ghost arc for the plan · states: loading, empty, error, full
+ * axes: light/grotesk-sans/warm · posture: restrained · contrast: pass · v2.0.0 */
+/* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V3 · weakest: V, an app shell shares its frame with every dashboard; the desk sidebar, ink actions and coral spent only on where you are and what you have proven carry the difference */
+/* Hallmark · dismissed F18 · the 32px avatar slots are shadcn's data-slot attribute on member initials, not picture slots */
+/* Hallmark · answered F13 · Geist Mono has one role, figures and code; Instrument Sans stands in for General Sans, which next/font cannot load */
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "./tokens.css";
+@import "./base.css" layer(base);
 
 @custom-variant dark (&:is(.dark *));
 
+/* shadcn names → utilities. Values live in tokens.css (light in :root, dark in .dark). */
 @theme inline {
+  --font-sans: var(--font-body);
+  --font-mono: var(--font-outlier);
+  --font-heading: var(--font-display);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
-  --font-heading: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
-}
-
-/* Keystone tokens: contract §9.2 is the source of truth (see DESIGN.md).
-   shadcn variable names are kept so every components/ui/* primitive picks them up.
-   Light is the default (projectors); dark mode is the .dark class. */
-:root {
-  color-scheme: light;
-  --background: #FAFAF9;
-  --foreground: #0F172A;
-  --card: #FFFFFF;
-  --card-foreground: #0F172A;
-  --popover: #FFFFFF;
-  --popover-foreground: #0F172A;
-  --primary: #4F46E5;
-  --primary-foreground: #FFFFFF;
-  --secondary: #F5F5F4;
-  --secondary-foreground: #0F172A;
-  --muted: #F5F5F4;
-  --muted-foreground: #64748B;
-  --accent: #EEF2FF;
-  --accent-foreground: #3730A3;
-  --destructive: #DC2626;
-  --border: #E7E5E4;
-  --input: #D6D3D1;
-  --ring: #6366F1;
-  /* Charts: indigo, teal, fuchsia, sky, amber (never grey series on a projector) */
-  --chart-1: #6366F1;
-  --chart-2: #14B8A6;
-  --chart-3: #D946EF;
-  --chart-4: #0EA5E9;
-  --chart-5: #F59E0B;
-  --radius: 0.625rem;
-  --sidebar: #FFFFFF;
-  --sidebar-foreground: #0F172A;
-  --sidebar-primary: #4F46E5;
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #EEF2FF;
-  --sidebar-accent-foreground: #3730A3;
-  --sidebar-border: #E7E5E4;
-  --sidebar-ring: #6366F1;
-}
-
-.dark {
-  color-scheme: dark;
-  --background: #0B0B0F;
-  --foreground: #F4F4F5;
-  --card: #14141A;
-  --card-foreground: #F4F4F5;
-  --popover: #14141A;
-  --popover-foreground: #F4F4F5;
-  --primary: #818CF8;
-  --primary-foreground: #0B0B0F;
-  --secondary: #1E1E26;
-  --secondary-foreground: #F4F4F5;
-  --muted: #1E1E26;
-  --muted-foreground: #A1A1AA;
-  --accent: #1E1B4B;
-  --accent-foreground: #E0E7FF;
-  --destructive: #F87171;
-  --border: #27272A;
-  --input: #3F3F46;
-  --ring: #A5B4FC;
-  --chart-1: #818CF8;
-  --chart-2: #2DD4BF;
-  --chart-3: #E879F9;
-  --chart-4: #38BDF8;
-  --chart-5: #FBBF24;
-  --sidebar: #14141A;
-  --sidebar-foreground: #F4F4F5;
-  --sidebar-primary: #818CF8;
-  --sidebar-primary-foreground: #0B0B0F;
-  --sidebar-accent: #1E1B4B;
-  --sidebar-accent-foreground: #E0E7FF;
-  --sidebar-border: #27272A;
-  --sidebar-ring: #A5B4FC;
-}
-
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-  html {
-    @apply font-sans;
-  }
-}
-/* Keystone contract tokens (§9.2) */
-:root {
-  --status-proven: #059669; --status-degree: #2563EB; --status-gap: #E11D48; --status-rising: #D97706;
-}
-.dark {
-  --status-proven: #34D399; --status-degree: #60A5FA; --status-gap: #FB7185; --status-rising: #FBBF24;
-}
-/* Type scale (contract §9.3). text-xs is raised to the 13/18 caption so no text renders under 13px. */
-@theme {
-  --text-xs: 0.8125rem;
-  --text-xs--line-height: 1.125rem;
-  --text-caption: 0.8125rem;
-  --text-caption--line-height: 1.125rem;
-  --text-small: 0.875rem;
-  --text-small--line-height: 1.25rem;
-  --text-body: 1rem;
-  --text-body--line-height: 1.625rem;
-  --text-h3: 1.25rem;
-  --text-h3--line-height: 1.75rem;
-  --text-h2: 1.75rem;
-  --text-h2--line-height: 2.25rem;
-  --text-h1: 2.25rem;
-  --text-h1--line-height: 2.75rem;
-  --text-display: 3rem;
-  --text-display--line-height: 3.5rem;
-}
-@theme inline {
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
   --color-status-proven: var(--status-proven);
   --color-status-degree: var(--status-degree);
   --color-status-gap: var(--status-gap);
   --color-status-rising: var(--status-rising);
 }
-/* Secondary text on a tinted surface steps one shade darker so it keeps 4.5:1 (§9.7).
-   #64748B is 4.76:1 on white but only 4.36:1 on --muted; this keeps every pill, chip and
-   table header that pairs text-muted-foreground with a tint AA without touching the token. */
-:root { --muted-foreground-on-tint: #536175; }
-.dark { --muted-foreground-on-tint: #B4B4BD; }
-:where([class*="bg-muted"], [class*="bg-secondary"], [class*="bg-accent"], [class*="bg-primary/"], [class*="bg-status-"]) {
-  --muted-foreground: var(--muted-foreground-on-tint);
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    @apply font-sans;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }
-@media (prefers-reduced-motion: reduce) { *,*::before,*::after { animation-duration:.01ms!important; transition-duration:.01ms!important } }
-/* sonner richColors (light) text is only 3.1–4.4:1 on its own tinted toasts; one shade darker keeps every toast AA (§9.7). */
-:root [data-sonner-toaster][data-sonner-theme="light"] {
-  --success-text: hsl(140, 100%, 25%);
-  --info-text: hsl(210, 92%, 42%);
-  --warning-text: hsl(31, 92%, 34%);
-  --error-text: hsl(360, 100%, 42%);
+
+/* Toasts: neutral paper with a status tint; the text is always the ink, so every toast keeps 4.5:1. */
+:root [data-sonner-toaster][data-sonner-theme] {
+  --normal-bg: var(--popover);
+  --normal-border: var(--border);
+  --normal-text: var(--popover-foreground);
+  --success-bg: color-mix(in oklab, var(--status-proven) 9%, var(--popover));
+  --success-border: color-mix(in oklab, var(--status-proven) 35%, var(--popover));
+  --success-text: var(--foreground);
+  --info-bg: color-mix(in oklab, var(--status-degree) 9%, var(--popover));
+  --info-border: color-mix(in oklab, var(--status-degree) 35%, var(--popover));
+  --info-text: var(--foreground);
+  --warning-bg: color-mix(in oklab, var(--status-rising) 10%, var(--popover));
+  --warning-border: color-mix(in oklab, var(--status-rising) 40%, var(--popover));
+  --warning-text: var(--foreground);
+  --error-bg: color-mix(in oklab, var(--status-gap) 9%, var(--popover));
+  --error-border: color-mix(in oklab, var(--status-gap) 35%, var(--popover));
+  --error-text: var(--foreground);
+  font-family: var(--font-body);
 }
+[data-sonner-toast][data-type="success"] [data-icon] { color: var(--status-proven); }
+[data-sonner-toast][data-type="info"] [data-icon] { color: var(--status-degree); }
+[data-sonner-toast][data-type="warning"] [data-icon] { color: var(--status-rising); }
+[data-sonner-toast][data-type="error"] [data-icon] { color: var(--status-gap); }
+[data-sonner-toast] [data-description] { color: var(--muted-foreground); }

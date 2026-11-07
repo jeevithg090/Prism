@@ -64,7 +64,7 @@ describe("GovernanceView", () => {
     expect(within(techlead).getByText("AI Tech Lead")).toBeInTheDocument();
     expect(within(techlead).getByText("OK")).toBeInTheDocument();
     expect(within(techlead).getByText("noFullSolutions")).toBeInTheDocument();
-    expect(within(techlead).getByText("· modified")).toBeInTheDocument();
+    expect(within(techlead).getByText("modified")).toBeInTheDocument();
     expect(within(techlead).getByText("2.1 s")).toBeInTheDocument();
     expect(within(rows[2]).getByText("Fallback")).toBeInTheDocument();
     expect(within(rows[2]).getByText(/You send it/)).toBeInTheDocument();
@@ -103,7 +103,7 @@ describe("GovernanceView", () => {
     const refresh = screen.getByRole("button", { name: "Refresh the run ledger" });
     refresh.focus();
     await user.keyboard("{Enter}");
-    await waitFor(() => expect(toast.success).toHaveBeenCalledWith(`Ledger refreshed · ${SAMPLE_RUNS.length} runs`));
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith(`Ledger refreshed: ${SAMPLE_RUNS.length} runs`));
   });
 
   it("formats durations for people", () => {

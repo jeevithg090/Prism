@@ -17,8 +17,8 @@ async function programmeIdFrom(searchParams: SearchParams) {
 async function ProgrammePill({ searchParams }: { searchParams: SearchParams }) {
   const programmeId = await programmeIdFrom(searchParams);
   return (
-    <span className="inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1.5 text-sm font-medium">
-      <GraduationCap className="size-4 text-status-degree" aria-hidden />
+    <span className="inline-flex min-h-9 items-center gap-2 rounded-lg border bg-card px-3 py-1.5 text-sm font-medium text-foreground">
+      <GraduationCap className="size-4 shrink-0 text-status-degree" aria-hidden />
       {PROGRAMME_LABELS[programmeId] ?? programmeId}
     </span>
   );
@@ -30,7 +30,7 @@ async function ViewFromParams({ searchParams }: { searchParams: SearchParams }) 
 
 export default function LecturerPage({ searchParams }: { searchParams: SearchParams }) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <PageHeader
         title="Lecturer Insights"
         subtitle="Anonymous cohort view for module leads. Groups of 10+ students only."

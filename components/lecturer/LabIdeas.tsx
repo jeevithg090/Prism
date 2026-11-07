@@ -1,8 +1,7 @@
 "use client";
-// "Suggested practical labs": one card per idea, each with a Copy to module plan button.
+// "Labs that would close these gaps": one hairline row per idea, headed by its module code, each with a Copy to module plan button.
 import { useEffect, useId, useRef, useState } from "react";
-import { motion, useReducedMotion } from "motion/react";
-import { Check, ClipboardCopy, FlaskConical } from "lucide-react";
+import { Check, ClipboardCopy } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
@@ -31,16 +30,12 @@ function LabCard({ idea, index }: { idea: string; index: number }) {
   }
 
   return (
-    <article className="flex h-full flex-col gap-4 rounded-2xl border bg-card p-6 shadow-sm">
-      <div className="flex items-center justify-between gap-2">
-        <span className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
-          <span className="rounded-xl bg-primary/10 p-2 text-primary"><FlaskConical className="size-4" aria-hidden /></span>
-          Lab idea {index + 1}
-        </span>
-        {code && <span className="rounded-full border bg-status-degree/10 px-2.5 py-0.5 font-mono text-sm text-foreground">{code}</span>}
-      </div>
-      <p id={textId} className="flex-1 text-base leading-relaxed">{idea}</p>
-      <Button variant="outline" size="lg" onClick={copy} aria-describedby={textId} className="self-start rounded-xl focus-visible:ring-2 focus-visible:ring-ring">
+    <article className="grid gap-x-6 gap-y-3 md:grid-cols-[9rem_minmax(0,1fr)_auto] md:items-start">
+      <p className="font-mono text-base leading-relaxed font-medium text-foreground">
+        {code ? <span>{code}</span> : <span className="sr-only">Lab idea {index + 1}</span>}
+      </p>
+      <p id={textId} className="max-w-[68ch] text-base leading-relaxed text-pretty text-foreground">{idea}</p>
+      <Button variant="outline" onClick={copy} aria-describedby={textId} className="justify-self-start focus-visible:outline-ring active:translate-y-px disabled:opacity-55 md:justify-self-end">
         {copied ? <Check aria-hidden /> : <ClipboardCopy aria-hidden />}
         {copied ? "Copied" : "Copy to module plan"}
       </Button>
@@ -49,18 +44,12 @@ function LabCard({ idea, index }: { idea: string; index: number }) {
 }
 
 export function LabIdeas({ ideas }: { ideas: string[] }) {
-  const reduce = useReducedMotion();
   return (
-    <ul className="grid gap-4 lg:grid-cols-3" aria-label="Suggested practical labs">
+    <ul className="divide-y" aria-label="Labs that would close these gaps">
       {ideas.map((idea, i) => (
-        <motion.li
-          key={idea}
-          initial={reduce ? false : { opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2, ease: "easeOut", delay: reduce ? 0 : i * 0.04 }}
-        >
+        <li key={idea} className="py-5 first:pt-0 last:pb-0">
           <LabCard idea={idea} index={i} />
-        </motion.li>
+        </li>
       ))}
     </ul>
   );

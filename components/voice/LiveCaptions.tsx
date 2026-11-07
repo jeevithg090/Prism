@@ -1,31 +1,32 @@
 "use client";
 // The running transcript: "Interviewer" / "You" turns, newest at the bottom, announced politely.
+// Set like a script: the speaker in a narrow column, the words beside it, turns split by hairlines.
 import * as React from "react";
 import type { TranscriptTurn } from "@/lib/voice/questions";
 import { cn } from "@/lib/utils";
 
 export function LiveCaptions({ turns, interim }: { turns: TranscriptTurn[]; interim?: string }) {
-  const end = React.useRef<HTMLLIElement>(null);
-  React.useEffect(() => { end.current?.scrollIntoView?.({ block: "nearest" }); }, [turns.length, interim]);
+  // Scroll only the transcript box, never the window, so the question above stays where it is.
+  const box = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => { const b = box.current; if (b) b.scrollTop = b.scrollHeight; }, [turns.length, interim]);
   return (
-    <div role="region" aria-label="Transcript" tabIndex={0} className="max-h-80 overflow-y-auto rounded-xl bg-muted/60 p-4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
+    <div ref={box} role="region" aria-label="Transcript" tabIndex={0} className="max-h-80 overflow-y-auto rounded-xl bg-muted px-4 py-2 outline-2 -outline-offset-2 outline-transparent focus-visible:outline-ring">
       {turns.length === 0 && !interim ? (
-        <p className="text-sm text-muted-foreground">The transcript appears here as you talk.</p>
+        <p className="py-2 text-sm text-muted-foreground">The transcript appears here as you talk.</p>
       ) : (
-        <ol className="space-y-3" aria-live="polite" aria-relevant="additions">
+        <ol aria-live="polite" aria-relevant="additions">
           {turns.map((t, i) => (
-            <li key={i} className={cn("flex flex-col gap-0.5", t.speaker === "user" && "items-end text-right")}>
-              <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">{t.speaker === "ai" ? "Interviewer" : "You"}</span>
-              <p className={cn("max-w-prose rounded-xl px-3 py-2 text-sm", t.speaker === "ai" ? "bg-card" : "bg-primary/10")}>{t.text}</p>
+            <li key={i} className="grid gap-1 border-t py-3 first:border-t-0 sm:grid-cols-[7rem_minmax(0,1fr)] sm:gap-4">
+              <span className={cn("text-sm font-medium", t.speaker === "ai" ? "text-muted-foreground" : "text-foreground")}>{t.speaker === "ai" ? "Interviewer" : "You"}</span>
+              <p className="max-w-prose text-pretty text-foreground">{t.text}</p>
             </li>
           ))}
           {interim && (
-            <li className="flex flex-col items-end gap-0.5 text-right">
-              <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">You (listening)</span>
-              <p className="max-w-prose rounded-xl border border-dashed bg-card px-3 py-2 text-sm text-muted-foreground">{interim}</p>
+            <li className="grid gap-1 border-t py-3 first:border-t-0 sm:grid-cols-[7rem_minmax(0,1fr)] sm:gap-4">
+              <span className="text-sm font-medium text-foreground">You (listening)</span>
+              <p className="max-w-prose text-pretty text-muted-foreground">{interim}</p>
             </li>
           )}
-          <li ref={end} aria-hidden className="h-0" />
         </ol>
       )}
     </div>

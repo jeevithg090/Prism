@@ -22,11 +22,11 @@ export function CopyText({ text, label }: { text: string; label: string }) {
     <div className="space-y-3">
       <Label htmlFor="linkedin-post">{label}</Label>
       <textarea
-        id="linkedin-post" ref={area} readOnly value={text} rows={14}
-        className="w-full resize-y rounded-xl border border-input bg-muted/60 p-4 font-mono text-sm leading-6 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        id="linkedin-post" ref={area} readOnly value={text} rows={13}
+        className="w-full resize-y rounded-lg border border-input bg-card p-4 text-base leading-7 text-foreground outline-2 -outline-offset-2 outline-transparent focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-55"
       />
       <div className="flex flex-wrap items-center gap-3">
-        <Button variant="outline" className="h-10 rounded-xl" onClick={() => void copy()}>
+        <Button variant="outline" size="lg" onClick={() => void copy()}>
           {copied === "ok" ? <Check className="size-4" aria-hidden /> : <Copy className="size-4" aria-hidden />}
           {copied === "ok" ? "Copied" : "Copy post"}
         </Button>

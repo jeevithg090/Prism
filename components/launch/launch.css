@@ -1,0 +1,6 @@
+/* Hallmark · shape: launch kit, the kept sequence recomposed (hero, posters, tour, pilot plan, waitlist, share kit) · genre: modern-minimal · theme: Coral (deal 1/3, seed university-learning-platform-where-273a·b61dda0e·2026-11-07·r0) · redesign: full · job: join the Bridge Week waitlist
+ * hero: Stage, head on the left, the week 0 plan figure beside it at the same centre · nav: a wordmark with the campaign name, the level chip and one quiet action, no links · footer: one hairline, two plain lines · signature: the week 0 plan, skip what your degree covers and learn the gap, closed by the readiness arc · posture: restrained · axes: light/grotesk-sans/warm · contrast: pass · v2.0.0 */
+/* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V3 · weakest: V, the kept sequence still reads hero then sections; the A3 posters at their print ratio, the tour as hairline rows and one split waitlist card give each seam its own rung */
+/* Hallmark · dismissed F18 · the tooltip-trigger and label slots are base-ui data-slot attributes on the level chip and the form labels, not picture slots */
+/* Hallmark · dismissed 54 · SectionTitle renders the h2 that each section's aria-labelledby names */
+/* Hallmark · dropped 1week, 2week, 3weeks, 4week · the timeline's 1 to 4 counter coins were aria-hidden decoration; the ordered list keeps the order and each row leads with its week */

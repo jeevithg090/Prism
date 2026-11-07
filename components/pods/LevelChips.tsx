@@ -1,5 +1,5 @@
 "use client";
-// Reply level-3 markers: small outline pills judges can tick off on screen.
+// Reply level-3 markers: small outline tags judges can tick off on screen.
 import * as React from "react";
 import { Megaphone, Network, Workflow, type LucideIcon } from "lucide-react";
 import {
@@ -56,14 +56,14 @@ export function LevelChips({
                   <button
                     type="button"
                     data-level={id}
-                    className="inline-flex h-6 items-center gap-1.5 rounded-full border border-primary/25 bg-background px-2 text-xs font-medium text-foreground transition-colors outline-none hover:bg-primary/5 focus-visible:ring-3 focus-visible:ring-ring/50"
+                    className="inline-flex h-7 items-center gap-1.5 rounded-md border border-rule-2 bg-card px-2 text-xs font-medium text-foreground transition-[background-color,color,transform] duration-(--dur-short) outline-none hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:translate-y-px disabled:cursor-not-allowed disabled:opacity-55"
                   />
                 }
               >
-                <span className="rounded-full bg-primary/10 px-1 text-xs font-semibold leading-4 text-primary">
+                <span className="border-r border-rule-2 pr-1.5 font-semibold">
                   L3
                 </span>
-                <Icon className="size-3.5 text-primary" aria-hidden />
+                <Icon className="size-3.5 text-muted-foreground" aria-hidden />
                 {item.label}
               </TooltipTrigger>
               <TooltipContent className="max-w-64 text-pretty">

@@ -1,0 +1,8 @@
+/* Hallmark · shape: Narrative Workflow (the product at work, step by step) · genre: modern-minimal · theme: Coral (locked, DESIGN.md) · redesign: full · job: try · hero: stage
+ * nav: edge-aligned, the wordmark and two links, no button · footer: a colophon line under a hairline · signature: Aisha's live readiness ring, 38% now and 84% by Sep 2027, from her demo data · imagery: screenshots 4 (puppeteer, demo data, cropped inside the app's cards on row boundaries)
+ * axes: light/grotesk-sans/warm · posture: restrained · contrast: pass · v2.0.0 */
+/* Hallmark · pre-emit critique: P4 H4 E4 S5 R4 V3 · weakest: V, a hero beside a picture is the common answer; the picture is the real Bridge Map and every step below shows the page it names, so the product carries the page */
+/* Hallmark · dismissed F18 · the 151 x 32px slot is the tooltip-trigger data-slot on the Reply level chips from the locked LevelChips component, a tag and not a picture slot */
+/* Hallmark · hero-review: in-thread (no subagent tool in this harness) · fix · 1 finding (the Bridge Map stood at 55% of the 1440 fold) · 1 resolved, the visual track widened to 8fr */
+/* Hallmark · finish-review: fix · 8 findings · hero now the live ReadinessPreview (key number 40px mono); Bridge Map capture moved to step 1; all four captures recropped inside their cards, ending on row boundaries, no ink buttons; steps numbered, top-aligned, 4fr/8fr so captures render at 1:1 or larger · passport kept at Tried it: the PR-approval flow writes shared demo state judges will use live, so it was not run */
+/* Hallmark · reworded "Bridge Map", "Roadmap", "Pod", "Proof" to "1 Bridge Map" ... "4 Proof" · finish review (steps lost their order); the number is aria-hidden, the ol carries order to screen readers */

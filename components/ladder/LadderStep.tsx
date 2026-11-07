@@ -1,5 +1,5 @@
 "use client";
-// P5 · <LadderStep skillName from level />: the moment a skill climbs a rung, e.g. "Docker ●●○ · Rung 2 · Built it".
+// P5 · <LadderStep skillName from level />: the moment a skill climbs a rung, e.g. "Docker ●●○, Rung 2: Built it".
 // Pure (no fetching), so the pod ProofCelebration can render it: <LadderStep skillName="Docker" from={1} level={2} />.
 import * as React from "react";
 import { motion, useReducedMotion } from "motion/react";
@@ -41,8 +41,10 @@ export function LadderStep({ skillName, level, from, className }: {
           );
         })}
       </ol>
-      <p aria-hidden className="text-base font-semibold">
-        <span className="text-muted-foreground">Rung {level} · </span>{RUNG_LABEL[level]} <Check className="inline size-4 -translate-y-px text-status-proven" /> {skillName}
+      <p aria-hidden className="flex flex-wrap items-center justify-center gap-x-1.5 text-lg font-semibold text-foreground">
+        <span className="font-medium text-muted-foreground">Rung {level}:</span> {RUNG_LABEL[level]}
+        <Check className="size-4 text-status-proven" />
+        <span>{skillName}</span>
       </p>
     </div>
   );

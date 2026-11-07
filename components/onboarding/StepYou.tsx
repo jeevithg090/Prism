@@ -7,12 +7,13 @@ import { UOM_CS_URL, type OnboardDraft, type StepErrors } from "./draft";
 
 export type StepProps = { draft: OnboardDraft; set: (patch: Partial<OnboardDraft>) => void; errors: StepErrors; touch: (field: keyof OnboardDraft) => void };
 
-const inputCls = "h-10 rounded-xl px-3 text-base md:text-base";
+const inputCls = "h-11 px-3 text-base md:text-base";
 
 export function StepYou({ draft, set, errors, touch }: StepProps) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-7">
       <StepHeading title="About you" body="Your programme page tells the Syllabus Agent what your degree already teaches." />
+      <div className="grid gap-6 sm:grid-cols-2">
       <div className="space-y-2">
         <Label htmlFor="ob-name">Your name</Label>
         <Input id="ob-name" className={inputCls} autoComplete="name" value={draft.name} onChange={(e) => set({ name: e.target.value })} onBlur={() => touch("name")}
@@ -25,14 +26,15 @@ export function StepYou({ draft, set, errors, touch }: StepProps) {
           aria-invalid={!!errors.university} aria-describedby={errors.university ? "ob-uni-error" : undefined} />
         <FieldError id="ob-uni-error" message={errors.university} />
       </div>
+      </div>
       <div className="space-y-2">
         <Label htmlFor="ob-url">Programme page URL</Label>
         <Input id="ob-url" className={cn(inputCls, "text-sm md:text-base")} type="url" inputMode="url" value={draft.programmeUrl} onChange={(e) => set({ programmeUrl: e.target.value })} onBlur={() => touch("programmeUrl")}
           aria-invalid={!!errors.programmeUrl} aria-describedby={cn("ob-url-help", errors.programmeUrl && "ob-url-error")} />
-        <p id="ob-url-help" className="text-sm text-muted-foreground">
-          The course page that lists your modules.{" "}
+        <p id="ob-url-help" className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm text-muted-foreground">
+          <span>The course page that lists your modules.</span>
           {draft.programmeUrl !== UOM_CS_URL && (
-            <button type="button" className="font-medium text-primary underline-offset-4 hover:underline focus-visible:rounded focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none" onClick={() => set({ programmeUrl: UOM_CS_URL, university: "University of Manchester" })}>
+            <button type="button" className="cursor-pointer rounded-sm font-medium whitespace-nowrap text-primary underline decoration-1 underline-offset-4 transition-[color] duration-(--dur-short) outline-none hover:decoration-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:translate-y-px" onClick={() => set({ programmeUrl: UOM_CS_URL, university: "University of Manchester" })}>
               Use the UoM BSc Computer Science page
             </button>
           )}

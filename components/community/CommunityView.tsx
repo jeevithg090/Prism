@@ -25,25 +25,29 @@ export function CommunityView() {
   const retry = () => void help.refetch();
 
   return (
-    <div className="space-y-6">
-      <div className="grid items-start gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <HelpFeed
-            requests={feed}
-            profiles={profiles}
-            viewerId={viewerId}
-            isLoading={help.isPending}
-            isError={help.isError}
-            onRetry={retry}
-            onUseDemo={() => setDemo(true)}
-          />
-        </div>
-        <div className="space-y-6 lg:sticky lg:top-6">
+    <div className="grid gap-x-6 gap-y-8 pb-16 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+      <div className="min-w-0 lg:col-start-1 lg:row-start-1">
+        <HelpFeed
+          requests={feed}
+          profiles={profiles}
+          viewerId={viewerId}
+          isLoading={help.isPending}
+          isError={help.isError}
+          onRetry={retry}
+          onUseDemo={() => setDemo(true)}
+          isDemo={demo || profiles[viewerId]?.isDemo === true}
+        />
+      </div>
+      {/* The composer and this week's helpers travel beside the feed while you read it; they stop below the shell's top bar. */}
+      <div className="min-w-0 lg:col-start-2 lg:row-start-1">
+        <div className="space-y-8 lg:sticky lg:top-[calc(var(--topbar-height)+1.5rem)] lg:z-(--z-sticky)">
           <AskComposer viewerId={viewerId} newcomer={isNewcomer(profiles[viewerId])} />
           <HelpersThisWeek requests={all} profiles={profiles} isLoading={help.isPending} isError={help.isError} onRetry={retry} />
         </div>
       </div>
-      <GuidesSection viewerId={viewerId} />
+      <div className="min-w-0 lg:col-span-2 lg:col-start-1 lg:row-start-2">
+        <GuidesSection viewerId={viewerId} />
+      </div>
     </div>
   );
 }

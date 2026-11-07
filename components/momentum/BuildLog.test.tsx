@@ -65,6 +65,6 @@ describe("BuildLog", () => {
   it("shows the empty state with no events", async () => {
     mockFetch({ ok: true, data: [] });
     render(<BuildLog userId="newbie" />);
-    expect(await screen.findByText("Your Build Log is ready for its first entry")).toBeInTheDocument();
+    expect(await screen.findByText("Your build log is ready for its first entry")).toBeInTheDocument();
   });
 });

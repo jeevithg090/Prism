@@ -70,7 +70,7 @@ describe("CoachPanel", () => {
 
     const article = await screen.findByRole("article", { name: "Coach answer" });
     const steps = within(article).getByRole("list", { name: "What the Coach did" });
-    expect(within(steps).getByText("Read your context: Aisha · readiness 38% → 84%")).toBeInTheDocument();
+    expect(within(steps).getByText("Read your context: Aisha; readiness 38% to 84%")).toBeInTheDocument();
     expect(within(steps).getByText("Read this week's roadmap plan")).toBeInTheDocument();
     expect(within(steps).getByText("Read")).toBeInTheDocument(); // effect pill
     expect(within(steps).getByText("Week 1: focus Docker.")).toBeInTheDocument();

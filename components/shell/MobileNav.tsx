@@ -1,5 +1,5 @@
 "use client";
-// App shell under 768px: a bottom tab bar (4 primary pages + More) with 44px+ targets (contract §9.4).
+// App shell under 768px: a bottom tab bar (4 primary pages + More) with 44px+ targets.
 // It publishes its height as --mobile-nav-height on <body> so sticky CTAs (pods) can sit above it.
 import * as React from "react";
 import Link from "next/link";
@@ -8,7 +8,7 @@ import { Ellipsis } from "lucide-react";
 import { useViewerId } from "@/components/community/useViewerId";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { STAFF_NAV, isActive, primaryNav, type NavItem } from "./Sidebar";
+import { LAUNCH_NAV, STAFF_NAV, isActive, primaryNav, type NavItem } from "./Sidebar";
 
 const TAB_IDS = ["dashboard", "map", "roadmap", "pods"];
 
@@ -38,12 +38,12 @@ function Tab({ item, active, onClick }: { item: NavItem; active: boolean; onClic
       onClick={onClick}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "relative flex min-h-11 flex-col items-center justify-center gap-1 rounded-xl text-xs font-medium text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        active && "text-primary",
+        "relative flex min-h-11 flex-col items-center justify-center gap-1 rounded-lg text-xs font-medium text-muted-foreground outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
+        active && "font-semibold text-foreground",
       )}
     >
-      {active && <span aria-hidden className="absolute inset-x-5 -top-2 h-[3px] rounded-b-full bg-primary" />}
-      <Icon className="size-5" aria-hidden />
+      {active && <span aria-hidden className="absolute inset-x-5 -top-2 h-[3px] rounded-b-sm bg-primary" />}
+      <Icon className={cn("size-5", active && "text-primary")} aria-hidden />
       {item.short ?? item.label}
     </Link>
   );
@@ -59,7 +59,7 @@ export function MobileNavView({ pathname, viewerId }: { pathname: string | null;
   const moreActive = [...rest, ...STAFF_NAV].some((i) => isActive(pathname, i));
 
   return (
-    <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-40 border-t bg-card pb-[env(safe-area-inset-bottom)] md:hidden">
+    <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-(--z-sticky-nav) border-t bg-card pb-[env(safe-area-inset-bottom)] md:hidden">
       <div ref={bar} className="grid h-16 grid-cols-5 gap-1 px-2 py-2">
         {tabs.map((item) => <Tab key={item.id} item={item} active={isActive(pathname, item)} />)}
         <button
@@ -68,17 +68,17 @@ export function MobileNavView({ pathname, viewerId }: { pathname: string | null;
           aria-haspopup="dialog"
           aria-expanded={moreOpen}
           className={cn(
-            "relative flex min-h-11 flex-col items-center justify-center gap-1 rounded-xl text-xs font-medium text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            moreActive && "text-primary",
+            "relative flex min-h-11 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg text-xs font-medium text-muted-foreground outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
+            moreActive && "font-semibold text-foreground",
           )}
         >
-          {moreActive && <span aria-hidden className="absolute inset-x-5 -top-2 h-[3px] rounded-b-full bg-primary" />}
-          <Ellipsis className="size-5" aria-hidden />
+          {moreActive && <span aria-hidden className="absolute inset-x-5 -top-2 h-[3px] rounded-b-sm bg-primary" />}
+          <Ellipsis className={cn("size-5", moreActive && "text-primary")} aria-hidden />
           More
         </button>
       </div>
       <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
-        <SheetContent side="bottom" className="max-h-[85dvh] overflow-y-auto rounded-t-2xl pb-[calc(1rem+env(safe-area-inset-bottom))]">
+        <SheetContent side="bottom" className="max-h-[85dvh] overflow-y-auto rounded-t-2xl bg-sidebar pb-[calc(1rem+env(safe-area-inset-bottom))]">
           <SheetHeader>
             <SheetTitle>More pages</SheetTitle>
             <SheetDescription>Everything else in Keystone.</SheetDescription>
@@ -86,9 +86,12 @@ export function MobileNavView({ pathname, viewerId }: { pathname: string | null;
           <ul className="grid grid-cols-2 gap-2 px-4">
             {rest.map((item) => <MoreLink key={item.id} item={item} active={isActive(pathname, item)} onClick={() => setMoreOpen(false)} />)}
           </ul>
-          <p className="px-4 pt-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">For staff &amp; judges</p>
+          <p className="px-4 pt-2 text-sm font-medium text-muted-foreground">For staff &amp; judges</p>
           <ul className="grid grid-cols-2 gap-2 px-4">
             {STAFF_NAV.map((item) => <MoreLink key={item.id} item={item} active={isActive(pathname, item)} onClick={() => setMoreOpen(false)} />)}
+          </ul>
+          <ul className="grid grid-cols-2 gap-2 px-4">
+            <MoreLink item={LAUNCH_NAV} active={isActive(pathname, LAUNCH_NAV)} onClick={() => setMoreOpen(false)} />
           </ul>
         </SheetContent>
       </Sheet>
@@ -105,11 +108,11 @@ function MoreLink({ item, active, onClick }: { item: NavItem; active: boolean; o
         onClick={onClick}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "flex min-h-12 items-center gap-3 rounded-xl border px-3 text-sm font-medium outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring",
-          active && "border-primary/30 bg-primary/10 text-primary",
+          "flex min-h-12 items-center gap-3 rounded-xl bg-card px-3 text-sm font-medium text-foreground shadow-stock outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+          active && "font-semibold ring-1 ring-primary/50",
         )}
       >
-        <Icon className="size-5 shrink-0" aria-hidden />
+        <Icon className={cn("size-5 shrink-0", active ? "text-primary" : "text-muted-foreground")} aria-hidden />
         {item.label}
       </Link>
     </li>

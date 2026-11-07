@@ -34,7 +34,7 @@ describe("IssueList", () => {
     render(<IssueList project={project} people={people} viewerId="aisha" />);
     const first = screen.getAllByTestId("issue-row")[0];
     expect(within(first).getByText("Add Docker support")).toBeInTheDocument();
-    expect(within(first).getByText("Assignee: Aisha")).toBeInTheDocument();
+    expect(within(first).getByText("Assigned to you")).toBeInTheDocument();
     expect(within(first).getByText("Reviewer: Priya")).toBeInTheDocument();
     expect(within(first).getByRole("img", { name: "Priya" })).toBeInTheDocument();
     expect(screen.getAllByText("Your issue")).toHaveLength(2);

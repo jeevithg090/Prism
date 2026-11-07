@@ -3,17 +3,16 @@ import OpenAI from "openai";
 import { z } from "zod";
 import type { AgentName } from "@/lib/types";
 import { emit } from "@/lib/agents/events";
+import { LLMError } from "@/lib/llm-error";
+import { formatRecordedAt, replayOrRecord, type ReplayRecord } from "@/lib/replay";
 
 // Keystone's single LLM wrapper (contract §8). OpenAI-backed when OPENAI_API_KEY is set and DEMO_MODE is
 // off; otherwise every call throws LLMError so callers use their deterministic fallbacks (demo stays instant).
 // Structured output first (json_schema from the zod schema), then JSON mode + zod parse with one repair retry.
+// The Demo toggle (lib/replay.ts): in Live mode every answer is recorded; in Demo mode the recorded answer of
+// the same call from a real run is replayed (and the Activity panel says so).
 
-export class LLMError extends Error {
-  constructor(msg: string, public cause?: unknown) {
-    super(msg);
-    this.name = "LLMError";
-  }
-}
+export { LLMError };
 
 type G = { __ksOpenAI?: OpenAI | null; __ksLLMCache?: Map<string, unknown> };
 const g = globalThis as unknown as G;
@@ -35,14 +34,25 @@ function model(o?: string) {
   return o ?? process.env.LLM_MODEL ?? "gpt-4.1-mini";
 }
 
-function progress(runId: string | undefined, agent: AgentName, message: string) {
+function progress(runId: string | undefined, agent: AgentName, message: string, data?: Record<string, unknown>) {
   if (!runId) return;
   try {
-    emit({ runId, agent, status: "progress", message });
+    emit({ runId, agent, status: "progress", message, ...(data ? { data } : {}) });
   } catch {
     /* events are best-effort */
   }
 }
+
+/** Activity panel line for a replayed answer: it came from a real run, not a template. */
+function replayed(runId: string | undefined, agent: AgentName) {
+  return (rec: ReplayRecord) =>
+    progress(runId, agent, `replayed from a real run (${rec.meta.model ?? "AI model"}, recorded ${formatRecordedAt(rec.recordedAt)})`, {
+      replay: true, recordedAt: rec.recordedAt, model: rec.meta.model ?? null,
+    });
+}
+
+/** A Demo miss without a key behaves exactly like a call without a key. */
+const REPLAY = { requires: ["OPENAI_API_KEY"], missError: () => new LLMError("no_key") };
 
 /** JSON Schema for OpenAI structured outputs; strict mode needs every property required and no extras. */
 function jsonSchemaFor(schema: z.ZodType): Record<string, unknown> {
@@ -53,14 +63,15 @@ function jsonSchemaFor(schema: z.ZodType): Record<string, unknown> {
   }
 }
 
-export async function llmJSON<T>(o: {
+type JSONCall<T> = {
   agent: AgentName; runId?: string; system: string; user: string;
   schema: z.ZodType<T>; schemaName: string; model?: string; temperature?: number; cacheKey?: string;
-}): Promise<T> {
-  if (o.cacheKey && cache.has(o.cacheKey)) return cache.get(o.cacheKey) as T;
+};
+
+async function liveJSON<T>(o: JSONCall<T>, modelName: string): Promise<T> {
   const c = client();
   progress(o.runId, o.agent, "thinking…");
-  const base = { model: model(o.model), temperature: o.temperature ?? 0.2 };
+  const base = { model: modelName, temperature: o.temperature ?? 0.2 };
   const messages = [
     { role: "system" as const, content: o.system },
     { role: "user" as const, content: o.user },
@@ -103,30 +114,62 @@ export async function llmJSON<T>(o: {
     }
     if (result === undefined) throw new LLMError(`invalid_json: ${lastErr}`);
   }
+  return result;
+}
 
+export async function llmJSON<T>(o: JSONCall<T>): Promise<T> {
+  if (o.cacheKey && cache.has(o.cacheKey)) return cache.get(o.cacheKey) as T;
+  if (isDemo()) throw new LLMError("demo_mode");
+  const m = model(o.model);
+  const result = await replayOrRecord<T>(
+    "llm",
+    { fn: "llmJSON", agent: o.agent, schemaName: o.schemaName, system: o.system, user: o.user, model: m },
+    () => liveJSON(o, m),
+    {
+      ...REPLAY,
+      meta: { agent: o.agent, schemaName: o.schemaName, model: m, label: o.user },
+      // A recording only replays while it still matches the caller's schema.
+      validate: (v) => o.schema.safeParse(v).success,
+      onReplay: replayed(o.runId, o.agent),
+    },
+  );
   if (o.cacheKey) cache.set(o.cacheKey, result);
   return result;
 }
 
 export async function llmText(o: { agent: AgentName; runId?: string; system: string; user: string; model?: string }): Promise<string> {
-  const c = client();
-  progress(o.runId, o.agent, "thinking…");
-  try {
-    const res = await c.chat.completions.create({
-      model: model(o.model),
-      temperature: 0.4,
-      messages: [
-        { role: "system", content: o.system },
-        { role: "user", content: o.user },
-      ],
-    });
-    const text = res.choices[0]?.message?.content?.trim();
-    if (!text) throw new LLMError("empty_response");
-    return text;
-  } catch (e) {
-    if (e instanceof LLMError) throw e;
-    throw new LLMError("llm_failed", e);
-  }
+  if (isDemo()) throw new LLMError("demo_mode");
+  const m = model(o.model);
+  return replayOrRecord<string>(
+    "llm",
+    { fn: "llmText", agent: o.agent, system: o.system, user: o.user, model: m },
+    async () => {
+      const c = client();
+      progress(o.runId, o.agent, "thinking…");
+      try {
+        const res = await c.chat.completions.create({
+          model: m,
+          temperature: 0.4,
+          messages: [
+            { role: "system", content: o.system },
+            { role: "user", content: o.user },
+          ],
+        });
+        const text = res.choices[0]?.message?.content?.trim();
+        if (!text) throw new LLMError("empty_response");
+        return text;
+      } catch (e) {
+        if (e instanceof LLMError) throw e;
+        throw new LLMError("llm_failed", e);
+      }
+    },
+    {
+      ...REPLAY,
+      meta: { agent: o.agent, model: m, label: o.user },
+      validate: (v) => typeof v === "string" && v.trim().length > 0,
+      onReplay: replayed(o.runId, o.agent),
+    },
+  );
 }
 
 function fnv1a(s: string) {
@@ -148,11 +191,28 @@ function hashedEmbed(texts: string[]): number[][] {
   });
 }
 
+/** 6 decimals keep cosine similarity identical to ~1e-6 and halve the size of recorded vectors. */
+const round6 = (x: number) => Math.round(x * 1e6) / 1e6;
+
 export async function embed(texts: string[]): Promise<number[][]> {
-  if (isDemo() || !process.env.OPENAI_API_KEY || texts.length === 0) return hashedEmbed(texts);
+  if (isDemo() || texts.length === 0) return hashedEmbed(texts);
+  const m = process.env.EMBEDDING_MODEL ?? "text-embedding-3-small";
   try {
-    const res = await client().embeddings.create({ model: process.env.EMBEDDING_MODEL ?? "text-embedding-3-small", input: texts });
-    return res.data.map((d) => d.embedding);
+    return await replayOrRecord<number[][]>(
+      "embed",
+      { fn: "embed", texts, model: m },
+      async () => {
+        if (!process.env.OPENAI_API_KEY) throw new LLMError("no_key");
+        const res = await client().embeddings.create({ model: m, input: texts });
+        return res.data.map((d) => d.embedding.map(round6));
+      },
+      {
+        ...REPLAY,
+        meta: { kind: "embedding", model: m, label: `${texts.length} texts: ${texts.join(" | ")}` },
+        validate: (v) => Array.isArray(v) && v.length === texts.length && v.every((row) => Array.isArray(row) && row.length > 0),
+        loose: false,
+      },
+    );
   } catch {
     return hashedEmbed(texts);
   }

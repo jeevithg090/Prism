@@ -3,11 +3,12 @@
 // and where each skill is heading (HN hiring history + projection).
 import * as React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { RefreshCw, SearchX } from "lucide-react";
+import { Loader2, RefreshCw, SearchX } from "lucide-react";
 import { toast } from "sonner";
 import { DemoDataNote, EmptyState, ErrorState, PageHeader, SectionCard } from "@/components/keystone";
 import { useActivity } from "@/components/shell/ActivityPanel";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { apiGet } from "@/lib/fetcher";
 import { skillName } from "@/lib/schemas/community";
 import type { RoleDemand, SkillId, SkillStatus, TrendSeries } from "@/lib/types";
@@ -97,8 +98,8 @@ export function MarketView({ initialRole, primaryRole, statusBySkill: known, fal
       title="Industry Radar"
       subtitle={subtitleFor(role.name)}
       actions={
-        <Button variant="outline" className="h-10 rounded-xl px-3 text-base" onClick={refresh} disabled={refreshing || !demand}>
-          <RefreshCw className={refreshing ? "animate-spin" : undefined} aria-hidden />
+        <Button size="lg" onClick={refresh} disabled={refreshing || !demand} aria-busy={refreshing || undefined}>
+          {refreshing ? <Loader2 className="motion-safe:animate-spin" aria-hidden /> : <RefreshCw aria-hidden />}
           {refreshing ? "Refreshing…" : "Refresh job data"}
         </Button>
       }
@@ -123,7 +124,7 @@ export function MarketView({ initialRole, primaryRole, statusBySkill: known, fal
       <div className="space-y-6">
         {header}
         {switcher}
-        <EmptyState icon={SearchX} title="No ads found for this role yet" body="Try another role, or refresh to read today's ads." action={<Button className="h-10 rounded-xl px-4 text-base" onClick={refresh}>Refresh job data</Button>} />
+        <EmptyState icon={SearchX} title="No ads found for this role yet" body="Try another role, or refresh to read today's ads." action={<Button variant="outline" onClick={refresh}>Refresh job data</Button>} />
       </div>
     );
   }
@@ -135,28 +136,44 @@ export function MarketView({ initialRole, primaryRole, statusBySkill: known, fal
   const months = trendList[0]?.history;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-20">
       <div className="space-y-6">
         {header}
         {switcher}
-        <MarketStats demand={d} />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+      <MarketStats demand={d} />
+
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,6fr)_minmax(0,6fr)] lg:items-start">
         <SectionCard title="What employers ask for" description={`Share of ${d.adsAnalysed} ${roleLabel} ads that mention each skill, tagged against your Bridge Map.`} actions={cached ? <span className="shrink-0 whitespace-nowrap"><DemoDataNote /></span> : undefined}>
           <SkillDemandChart demand={d} statusBySkill={statusBySkill} picked={picked} onPick={toggle} />
         </SectionCard>
-        <SectionCard title="Where skills are heading" description="Share of Hacker News “Who is hiring?” posts that mention each skill, with a 12-month projection.">
-          {trends.isPending ? (
-            <div className="h-80 animate-pulse rounded-xl bg-muted" aria-busy="true"><span className="sr-only">Loading trends…</span></div>
-          ) : trends.isError ? (
-            <ErrorState title="We couldn't load the trends" body="The job ads above are still accurate. Try again, or use the demo history." onRetry={() => trends.refetch()} onUseDemo={useDemo} />
-          ) : (
-            <TrendChart trends={trendList} options={options} picked={picked} onToggle={toggle} />
-          )}
-        </SectionCard>
+
+        {trends.isError ? (
+          <ErrorState title="We couldn't load the trends" body="The job ads on this page are still accurate. Try again, or use the demo history." onRetry={() => trends.refetch()} onUseDemo={useDemo} />
+        ) : (
+          <SectionCard className="lg:sticky lg:top-[calc(var(--topbar-height)+1.5rem)]" title="Where skills are heading" description="Share of Hacker News “Who is hiring?” posts that mention each skill, with a 12-month projection.">
+            {trends.isPending ? (
+              <div className="space-y-5" aria-busy="true">
+                <span className="sr-only">Loading trends…</span>
+                <div className="flex flex-wrap gap-2">{[0, 1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-9 w-24 rounded-lg" />)}</div>
+                <Skeleton className="h-[280px] w-full rounded-xl md:h-[26rem] lg:h-80" />
+              </div>
+            ) : (
+              <TrendChart trends={trendList} options={options} picked={picked} onToggle={toggle} />
+            )}
+          </SectionCard>
+        )}
       </div>
 
+      {trends.isPending && (
+        <div className="space-y-3 rounded-2xl border bg-card p-6 shadow-sm" aria-busy="true">
+          <span className="sr-only">Loading rising skills…</span>
+          <Skeleton className="h-7 w-1/2 rounded-lg" />
+          <Skeleton className="h-4 w-3/4" />
+          {[0, 1, 2].map((i) => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}
+        </div>
+      )}
       {trends.isSuccess && (
         <SectionCard
           title={anyCovered ? "Rising skills your roadmap already covers" : "Rising skills to plan next"}
@@ -166,14 +183,14 @@ export function MarketView({ initialRole, primaryRole, statusBySkill: known, fal
         </SectionCard>
       )}
 
-      <SectionCard title="Behind the numbers" description={`Example ${roleLabel} ads and the employers posting the most.`} actions={cached ? <span className="shrink-0 whitespace-nowrap"><DemoDataNote /></span> : undefined}>
+      <SectionCard title="Behind the numbers" description={`Example ${roleLabel} ads and the employers posting the most.`}>
         <SampleAds demand={d} />
       </SectionCard>
 
-      <footer className="flex flex-wrap items-center gap-2 border-t pt-4 text-sm text-muted-foreground">
-        <span>
+      <footer className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t pt-4 text-sm text-pretty text-muted-foreground">
+        <span className="max-w-[110ch]">
           Job ads: {cached ? `Adzuna, saved snapshot from ${new Date(d.snapshotAt).getUTCDate()} ${monthLabel(d.snapshotAt.slice(0, 7))}` : `${d.source === "reed" ? "Reed" : "Adzuna"}, read live`}.
-          {" "}Trends: Hacker News “Who is hiring?” posts{months?.length ? `, ${monthLabel(months[0].month)} – ${monthLabel(months[months.length - 1].month)}` : ""}, fitted with a straight-line trend on the log-odds of each skill&apos;s share.
+          {" "}Trends: Hacker News “Who is hiring?” posts{months?.length ? `, ${monthLabel(months[0].month)} to ${monthLabel(months[months.length - 1].month)}` : ""}, fitted with a straight-line trend on the log-odds of each skill&apos;s share.
         </span>
         {cached && <DemoDataNote />}
       </footer>

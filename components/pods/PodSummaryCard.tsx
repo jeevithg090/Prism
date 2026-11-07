@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, Users } from "lucide-react";
+import { Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ErrorState } from "@/components/keystone";
 import { buttonVariants } from "@/components/ui/button";
@@ -13,7 +13,7 @@ import { AvatarStack } from "./MemberAvatar";
 import { DEMO_POD_ID, memberIds, useMemberProfiles } from "./members";
 
 const card = "rounded-2xl border bg-card p-6 shadow-sm";
-const linkBtn = cn(buttonVariants({ size: "lg" }), "h-11 w-full rounded-xl px-5 text-base sm:w-fit");
+const linkBtn = cn(buttonVariants({ variant: "outline", size: "lg" }), "w-full sm:w-fit");
 
 function PodSummary({ pod, userId }: { pod: Pod; userId: string }) {
   const ids = memberIds(pod);
@@ -21,14 +21,18 @@ function PodSummary({ pod, userId }: { pod: Pod; userId: string }) {
   const myIssue = pod.project?.issues.find((i) => i.assigneeUserId === userId);
   return (
     <section aria-labelledby="pod-summary-title" className={card}>
-      <p className="text-sm font-medium text-muted-foreground">Your pod</p>
-      <div className="mt-1 flex flex-wrap items-center justify-between gap-4">
-        <h2 id="pod-summary-title" className="text-2xl font-semibold tracking-tight">
-          {pod.name}
-        </h2>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="min-w-0">
+          <h2 id="pod-summary-title" className="text-xl font-semibold text-foreground">
+            {pod.name}
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Your pod, <span className="font-mono tabular-nums">{ids.length}</span> students
+          </p>
+        </div>
         <AvatarStack members={ids.map((id) => people[id])} size="md" />
       </div>
-      <p className="mt-4 text-base">
+      <p className="mt-4 text-base text-foreground">
         {myIssue ? (
           <>
             <span className="text-muted-foreground">Your issue: </span>
@@ -42,7 +46,6 @@ function PodSummary({ pod, userId }: { pod: Pod; userId: string }) {
       </p>
       <Link href={`/pods/${pod.id}`} className={cn(linkBtn, "mt-5")}>
         Open pod
-        <ArrowRight className="size-4" aria-hidden />
       </Link>
     </section>
   );
@@ -59,8 +62,8 @@ export function PodSummaryCard({ userId }: { userId: string }) {
   if (q.isPending) {
     return (
       <div role="status" className={cn(card, "space-y-4")} aria-busy="true" aria-label="Loading your pod">
-        <Skeleton className="h-4 w-20" />
         <Skeleton className="h-7 w-40" />
+        <Skeleton className="h-4 w-24" />
         <Skeleton className="h-5 w-3/4" />
         <Skeleton className="h-11 w-32 rounded-xl" />
       </div>
@@ -80,22 +83,19 @@ export function PodSummaryCard({ userId }: { userId: string }) {
   if (!pod) {
     return (
       <section aria-labelledby="pod-summary-empty" className={card}>
-        <div className="flex items-start gap-4">
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <Users className="size-5" aria-hidden />
-          </span>
+        <div className="flex items-start gap-3">
+          <Users className="mt-1 size-5 shrink-0 text-muted-foreground" aria-hidden />
           <div>
-            <h2 id="pod-summary-empty" className="text-xl font-semibold">
+            <h2 id="pod-summary-empty" className="text-xl font-semibold text-foreground">
               You&apos;re not in a pod yet
             </h2>
             <p className="mt-1 text-muted-foreground">
-              Learn faster with 2–3 students who are strong where you&apos;re stuck.
+              Learn faster with 2 or 3 students who are strong where you&apos;re stuck.
             </p>
           </div>
         </div>
         <Link href="/pods" className={cn(linkBtn, "mt-5")}>
           Find my pod
-          <ArrowRight className="size-4" aria-hidden />
         </Link>
       </section>
     );

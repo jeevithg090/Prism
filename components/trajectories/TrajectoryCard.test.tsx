@@ -21,7 +21,7 @@ describe("TrajectoryCard", () => {
   it("shows name, outcome, timeline, advice, demo note and similarity", () => {
     render(<TrajectoryCard trajectory={base} similarity={0.873} />);
     expect(screen.getByRole("heading", { name: "Priya Shah" })).toBeInTheDocument();
-    expect(screen.getByText("ML engineer at a Manchester health-tech startup")).toBeInTheDocument();
+    expect(screen.getByText("ML engineer at a Manchester health\u2011tech startup")).toBeInTheDocument();
     expect(screen.getAllByRole("listitem")).toHaveLength(3);
     expect(screen.getByText("Year in industry at an ML consultancy")).toBeInTheDocument();
     expect(screen.getByText(/Ship one small thing/)).toBeInTheDocument();

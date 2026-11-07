@@ -1,14 +1,16 @@
 "use client";
 import Link from "next/link";
 import { motion, useReducedMotion } from "motion/react";
-import { ArrowLeftRight, ArrowRight, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
+import { DemoDataNote } from "@/components/keystone";
 import { Button, buttonVariants } from "@/components/ui/button";
 import type { Pod } from "@/lib/types";
-import { cn } from "@/lib/utils";
 import { AvatarStack } from "./MemberAvatar";
 import { MemberRow } from "./MemberRow";
-import { memberIds, useMemberProfiles } from "./members";
+import { DEMO_POD_ID, memberIds, useMemberProfiles } from "./members";
+import { SkillExchangeGraph } from "./SkillExchangeGraph";
 import { StartProjectButton } from "./StartProjectButton";
+import { WhyPodsWork } from "./WhyPodsWork";
 
 function CompatibilityBar({ value }: { value: number }) {
   const reduce = useReducedMotion();
@@ -17,7 +19,7 @@ function CompatibilityBar({ value }: { value: number }) {
     <div>
       <p className="flex items-baseline justify-between gap-4">
         <span className="text-sm font-medium text-muted-foreground">Compatibility</span>{" "}
-        <span className="font-mono text-5xl font-semibold tracking-tight tabular-nums">{pctValue}%</span>
+        <span className="font-mono text-5xl font-semibold tabular-nums">{pctValue}%</span>
       </p>
       <div
         role="progressbar"
@@ -26,16 +28,17 @@ function CompatibilityBar({ value }: { value: number }) {
         aria-valuemax={100}
         aria-valuenow={pctValue}
         aria-valuetext={`${pctValue}%`}
-        className="mt-3 h-3 w-full overflow-hidden rounded-full bg-muted"
+        className="mt-3 h-2 w-full overflow-hidden rounded-sm bg-muted"
       >
+        {/* scaleX, never width: the bar grows on the compositor and reduced motion skips straight to the value. */}
         <motion.div
-          className="h-full rounded-full bg-primary"
-          initial={reduce ? false : { width: 0 }}
-          animate={{ width: `${pctValue}%` }}
+          className="h-full w-full origin-left rounded-sm bg-primary"
+          initial={reduce ? false : { scaleX: 0 }}
+          animate={{ scaleX: pctValue / 100 }}
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
         />
       </div>
-      <p className="mt-2 text-sm text-muted-foreground">From skills you can teach each other, shared interests and free time.</p>
+      <p className="mt-2 text-sm text-pretty text-muted-foreground">From skills you can teach each other, shared interests and free time.</p>
     </div>
   );
 }
@@ -49,90 +52,61 @@ export type PodCardProps = {
   cta?: "start" | "open";
 };
 
-/** The match result: who's in the pod, what each person learns and teaches, and why it works. */
+/** The match result: who teaches whom and why it works, who's in the pod, and the one next step. */
 export function PodCard({ pod, viewerId, onFindDifferent, cta }: PodCardProps) {
-  const reduce = useReducedMotion();
   const ids = memberIds(pod);
   const people = useMemberProfiles(ids);
+  const names = Object.fromEntries(ids.map((id) => [id, people[id]?.name ?? id]));
   const mode = cta ?? (pod.project ? "open" : "start");
   // The viewer first, then everyone else in pod order.
   const members = [...pod.members].sort((a, b) => Number(b.userId === viewerId) - Number(a.userId === viewerId));
-  const lines = [...pod.explanations].sort(
-    (a, b) =>
-      Number(b.fromUserId === viewerId || b.toUserId === viewerId) -
-      Number(a.fromUserId === viewerId || a.toUserId === viewerId),
-  );
   const titleId = `pod-${pod.id}-title`;
 
   return (
-    <section
-      aria-labelledby={titleId}
-      data-testid="pod-card"
-      className="rounded-2xl border bg-card shadow-sm"
-    >
-      <header className="flex flex-col gap-6 rounded-t-2xl border-b bg-[linear-gradient(135deg,color-mix(in_oklch,var(--primary)_7%,transparent),transparent_60%)] p-6 md:flex-row md:items-end md:justify-between md:p-8">
-        <div className="space-y-4">
-          <p className="text-sm font-medium text-muted-foreground">Your pod · {pod.members.length} students</p>
-          <h2 id={titleId} className="text-4xl font-semibold tracking-tight md:text-5xl">
-            {pod.name}
-          </h2>
-          <AvatarStack members={ids.map((id) => people[id])} size="lg" />
+    <section aria-labelledby={titleId} data-testid="pod-card" className="rounded-2xl border bg-card shadow-sm">
+      <header className="grid gap-6 p-6 md:p-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,20rem)] lg:items-end lg:gap-12">
+        <div className="min-w-0 space-y-4">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <h2 id={titleId} className="min-w-0 text-3xl font-semibold [overflow-wrap:anywhere] md:text-4xl">
+              {pod.name}
+            </h2>
+            <WhyPodsWork />
+            {pod.id === DEMO_POD_ID && <DemoDataNote />}
+          </div>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <AvatarStack members={ids.map((id) => people[id])} size="lg" />
+            <p className="text-sm font-medium text-muted-foreground">Your pod of {pod.members.length} students</p>
+          </div>
         </div>
-        <div className="w-full md:w-80">
-          <CompatibilityBar value={pod.score} />
-        </div>
+        <CompatibilityBar value={pod.score} />
       </header>
 
-      <div className="grid gap-8 p-6 md:p-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] lg:gap-10">
-        <div>
-          <h3 className="mb-4 text-sm font-semibold tracking-wide text-muted-foreground uppercase">Who&apos;s in it</h3>
-          <ul aria-label="Members" className="divide-y">
-            {members.map((m) => (
-              <MemberRow key={m.userId} member={m} info={people[m.userId]} isViewer={m.userId === viewerId} />
-            ))}
-          </ul>
-        </div>
-        <div>
-          <h3 className="mb-4 text-sm font-semibold tracking-wide text-muted-foreground uppercase">How you&apos;ll help each other</h3>
-          {lines.length ? (
-            <ul aria-label="Why this pod works" className="space-y-3">
-              {lines.map((e, i) => (
-                <motion.li
-                  key={`${e.fromUserId}-${e.toUserId}-${i}`}
-                  initial={reduce ? false : { opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.22, ease: "easeOut", delay: 0.2 + i * 0.04 }}
-                  className="flex items-start gap-3 rounded-xl bg-muted/60 p-4"
-                >
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-card text-primary shadow-sm">
-                    <ArrowLeftRight className="size-4" aria-hidden />
-                  </span>
-                  <p className="pt-1 text-base leading-snug">{e.text}</p>
-                </motion.li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-muted-foreground">Everyone here is strong in something another member wants to learn.</p>
-          )}
-        </div>
+      <div className="border-t p-6 md:p-8">
+        <SkillExchangeGraph pod={pod} names={names} viewerId={viewerId} explanations={pod.explanations} />
       </div>
 
-      <footer className="z-10 flex flex-col-reverse gap-3 rounded-b-2xl border-t bg-card/95 p-4 backdrop-blur max-md:sticky max-md:bottom-[calc(var(--mobile-nav-height,0px)+env(safe-area-inset-bottom))] sm:flex-row sm:items-center sm:justify-end md:p-6">
+      <div className="border-t p-6 md:p-8">
+        <h3 className="mb-5 text-xl font-semibold">Who&apos;s in it</h3>
+        <ul aria-label="Members" className="divide-y">
+          {members.map((m) => (
+            <MemberRow key={m.userId} member={m} info={people[m.userId]} isViewer={m.userId === viewerId} />
+          ))}
+        </ul>
+      </div>
+
+      <footer className="z-(--z-sticky) flex items-center justify-end gap-3 rounded-b-2xl border-t bg-inherit p-4 max-md:sticky max-md:bottom-[calc(var(--mobile-nav-height,0px)+env(safe-area-inset-bottom))] sm:p-6 md:px-8">
         {onFindDifferent && (
-          <Button variant="outline" size="lg" onClick={onFindDifferent} className="h-12 rounded-xl px-5 text-base">
-            <RefreshCw className="size-4" aria-hidden />
-            Find a different pod
+          <Button variant="outline" size="lg" onClick={onFindDifferent} title="Find a different pod">
+            <RefreshCw aria-hidden />
+            {/* On phones the sticky bar keeps one row: the icon stays, the words stay for screen readers. */}
+            <span className="max-sm:sr-only">Find a different pod</span>
           </Button>
         )}
         {mode === "start" ? (
-          <StartProjectButton pod={pod} />
+          <StartProjectButton pod={pod} className="max-sm:flex-1" />
         ) : (
-          <Link
-            href={`/pods/${pod.id}`}
-            className={cn(buttonVariants({ size: "lg" }), "h-12 rounded-xl px-6 text-base")}
-          >
+          <Link href={`/pods/${pod.id}`} className={buttonVariants({ size: "lg", className: "max-sm:flex-1" })}>
             Open our project
-            <ArrowRight className="size-5" aria-hidden />
           </Link>
         )}
       </footer>

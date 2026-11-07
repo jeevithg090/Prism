@@ -87,7 +87,7 @@ describe("MergeProofButton", () => {
       podId: "pod_demo01",
       issueIndex: 0,
     });
-    expect(await screen.findByText("Merged ✓")).toBeInTheDocument();
+    expect(await screen.findByText("Merged")).toBeInTheDocument();
     expect(onProof).toHaveBeenCalledWith(proof);
     expect(start).toHaveBeenCalledWith("run_merge1");
     expect(toast.success).not.toHaveBeenCalled(); // the celebration takes over
@@ -114,7 +114,7 @@ describe("MergeProofButton", () => {
     renderWithQuery(
       <MergeProofButton podId="pod_demo01" issueIndex={0} merged />,
     );
-    expect(screen.getByText("Merged ✓")).toBeInTheDocument();
+    expect(screen.getByText("Merged")).toBeInTheDocument();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 

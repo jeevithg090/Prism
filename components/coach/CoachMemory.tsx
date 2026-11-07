@@ -36,11 +36,12 @@ export function CoachMemory({ userId: userIdProp }: { userId?: string }) {
     return <EmptyState icon={BookmarkPlus} title="Nothing remembered yet" body={'Tell the Coach things like "I prefer project-based learning" and it will note them here.'} />;
   }
   return (
-    <ul className="space-y-2" aria-label="Memory notes">
+    // One card, rows split by hairlines: the states above replace the card, so nothing nests.
+    <ul className="divide-y rounded-2xl border bg-card px-5 shadow-sm" aria-label="Memory notes">
       {notes.map((n) => (
-        <li key={n.id} className="flex items-start justify-between gap-3 rounded-xl border bg-background px-3 py-2">
-          <div className="min-w-0 text-sm">
-            <span className="mr-1.5 rounded-full bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">{n.kind}</span>
+        <li key={n.id} className="flex items-start justify-between gap-3 py-3">
+          <div className="min-w-0 pt-1 text-base text-pretty text-foreground">
+            <span className="mr-2 inline-flex h-6 items-center rounded-md border bg-muted px-1.5 text-xs font-medium text-muted-foreground">{n.kind}</span>
             {n.text}
           </div>
           <Button variant="ghost" size="icon-sm" aria-label={`Forget: ${n.text}`} onClick={() => void remove(n.id)}>

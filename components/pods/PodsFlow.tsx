@@ -20,21 +20,30 @@ type MatchedPod = Pod & { runId?: string };
 export function PodCardSkeleton() {
   return (
     <div role="status" className="rounded-2xl border bg-card shadow-sm" aria-busy="true" aria-label="Loading your pod">
-      <div className="flex flex-col gap-6 border-b p-6 md:flex-row md:justify-between md:p-8">
-        <div className="space-y-3">
-          <Skeleton className="h-4 w-32" />
-          <Skeleton className="h-11 w-56" />
+      <div className="grid gap-6 p-6 md:p-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,20rem)] lg:items-end lg:gap-12">
+        <div className="space-y-4">
+          <Skeleton className="h-10 w-56" />
           <div className="flex -space-x-2">
             {[0, 1, 2, 3].map((i) => (
               <Skeleton key={i} className="size-12 rounded-full ring-2 ring-card" />
             ))}
           </div>
         </div>
-        <Skeleton className="h-20 w-full md:w-80" />
+        <div className="space-y-3">
+          <Skeleton className="ml-auto h-12 w-28" />
+          <Skeleton className="h-2 w-full" />
+        </div>
       </div>
-      <div className="space-y-4 p-6 md:p-8">
+      <div className="space-y-5 border-t p-6 md:p-8">
+        <Skeleton className="h-7 w-32" />
         {[0, 1, 2, 3].map((i) => (
-          <Skeleton key={i} className="h-16 w-full rounded-xl" />
+          <div key={i} className="flex gap-4">
+            <Skeleton className="size-12 shrink-0 rounded-full" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-5 w-40" />
+              <Skeleton className="h-7 w-full max-w-md" />
+            </div>
+          </div>
         ))}
       </div>
     </div>
@@ -56,7 +65,7 @@ function Step({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * /pods: no pod → FindPodHero; Find my pod → MatchingAnimation → PodCard → Start our project.
+ * /pods: no pod, FindPodHero; Find my pod, then MatchingAnimation, then PodCard, then Start our project.
  * `startFresh` (from `?demo=1`) begins at the hero even if the demo user already has a pod.
  */
 export function PodsFlow({ startFresh = false }: { startFresh?: boolean }) {
@@ -77,7 +86,12 @@ export function PodsFlow({ startFresh = false }: { startFresh?: boolean }) {
   const match = useMutation({
     mutationFn: () => apiPost<MatchedPod>("/api/pods/match", { userId: viewerId }),
     onSuccess: (pod) => {
-      if (pod.runId) activity.start(pod.runId);
+      // Start the live run but keep the Agents sheet shut, so the reveal stays in view. The top bar's
+      // Agents button still shows the run, and the presenter opens it on cue.
+      if (pod.runId) {
+        activity.start(pod.runId);
+        activity.setOpen(false);
+      }
       qc.setQueryData<Pod>(["pod", pod.id], pod);
       void qc.invalidateQueries({ queryKey: ["pods", viewerId] });
     },

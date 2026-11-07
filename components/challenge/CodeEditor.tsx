@@ -26,8 +26,8 @@ export function CodeEditor({ id, label, value, onChange, disabled, className }: 
   return (
     <div className={cn("space-y-2", className)}>
       <div className="flex items-baseline justify-between gap-3">
-        <Label htmlFor={id} className="font-mono text-sm">{label}</Label>
-        <span className="text-xs text-muted-foreground tabular-nums">{lines} {lines === 1 ? "line" : "lines"}</span>
+        <Label htmlFor={id} className="font-mono text-sm font-semibold text-foreground">{label}</Label>
+        <span className="text-sm text-muted-foreground tabular-nums">{lines} {lines === 1 ? "line" : "lines"}</span>
       </div>
       <textarea
         id={id}
@@ -42,7 +42,7 @@ export function CodeEditor({ id, label, value, onChange, disabled, className }: 
         autoComplete="off"
         wrap="off"
         rows={Math.min(Math.max(lines + 2, 10), 22)}
-        className="block w-full resize-y overflow-x-auto rounded-xl border border-input bg-muted/40 px-4 py-3 font-mono text-sm leading-6 text-foreground outline-none [tab-size:2] focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 disabled:opacity-60"
+        className="block w-full resize-y overflow-x-auto rounded-lg border border-input bg-background px-4 py-3 font-mono text-sm leading-6 text-foreground caret-primary outline-none [tab-size:2] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-55"
       />
       <p id={helpId} className="text-xs text-muted-foreground">Tab indents. Press Esc, then Tab, to move on.</p>
     </div>

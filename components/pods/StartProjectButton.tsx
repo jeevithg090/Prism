@@ -1,6 +1,6 @@
 "use client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, LoaderCircle } from "lucide-react";
+import { LoaderCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -25,7 +25,7 @@ export function useStartProject(pod: Pod) {
       void qc.invalidateQueries({ queryKey: ["pods"] });
       router.push(`/pods/${pod.id}`);
       const repoUrl = brief.repoUrl;
-      toast.success("Repo is live ↗", {
+      toast.success("Repo is live", {
         description: brief.title,
         action: repoUrl
           ? { label: "Open repo", onClick: () => window.open(repoUrl, "_blank", "noopener,noreferrer") }
@@ -50,18 +50,15 @@ export function StartProjectButton({ pod, className, label = "Start our project"
       onClick={() => start.mutate()}
       disabled={busy}
       aria-busy={busy || undefined}
-      className={cn("h-12 rounded-xl px-6 text-base", className)}
+      className={cn(className)}
     >
       {busy ? (
         <>
-          <LoaderCircle className="size-5 animate-spin motion-reduce:animate-none" aria-hidden />
+          <LoaderCircle className="animate-spin motion-reduce:animate-none" aria-hidden />
           Designing your project…
         </>
       ) : (
-        <>
-          {label}
-          <ArrowRight className="size-5" aria-hidden />
-        </>
+        label
       )}
     </Button>
   );
