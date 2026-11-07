@@ -1,0 +1,26 @@
+[
+  {
+    "id": "ev_aisha_py1", "userId": "aisha", "skillId": "python", "level": 2, "confidence": 0.82, "source": "github",
+    "url": "https://github.com/aisha-rahman-demo/clinic-queue-sim/blob/main/sim/queue.py",
+    "quote": "sim/queue.py:42 models a clinic waiting room with a priority queue and dataclasses",
+    "createdAt": "2026-10-28T19:12:00.000Z"
+  },
+  {
+    "id": "ev_aisha_git1", "userId": "aisha", "skillId": "git", "level": 2, "confidence": 0.75, "source": "github",
+    "url": "https://github.com/aisha-rahman-demo/clinic-queue-sim/commits/main",
+    "quote": "23 commits across 3 repos, with feature branches and two merged pull requests",
+    "createdAt": "2026-10-28T19:12:00.000Z"
+  },
+  {
+    "id": "ev_aisha_html1", "userId": "aisha", "skillId": "html-css", "level": 2, "confidence": 0.7, "source": "github",
+    "url": "https://github.com/aisha-rahman-demo/portfolio/blob/main/index.html",
+    "quote": "index.html builds a responsive portfolio with semantic landmarks and CSS grid",
+    "createdAt": "2026-10-28T19:12:00.000Z"
+  },
+  {
+    "id": "ev_aisha_js1", "userId": "aisha", "skillId": "javascript", "level": 1, "confidence": 0.6, "source": "github",
+    "url": "https://github.com/aisha-rahman-demo/portfolio/blob/main/scripts/theme.js",
+    "quote": "scripts/theme.js toggles a dark theme and saves the choice in localStorage",
+    "createdAt": "2026-10-28T19:12:00.000Z"
+  }
+]

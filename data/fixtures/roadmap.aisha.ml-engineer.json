@@ -1,0 +1,508 @@
+{
+  "userId": "aisha",
+  "roleId": "ml-engineer",
+  "version": 1,
+  "readinessNow": 0.38,
+  "readinessProjected": 0.84,
+  "weeks": [
+    {
+      "week": 1,
+      "startDate": "2026-11-09",
+      "focusSkillId": "docker",
+      "isExamWeek": false,
+      "tasks": [
+        {
+          "type": "learn",
+          "title": "Docker's Get Started guide: images, containers and volumes",
+          "resourceUrl": "https://docs.docker.com/get-started/",
+          "free": true,
+          "hours": 2,
+          "id": "t_1_1",
+          "done": false
+        },
+        {
+          "type": "practice",
+          "title": "Run, inspect and stop three containers from Docker Hub",
+          "free": true,
+          "hours": 2,
+          "id": "t_1_2",
+          "done": false
+        },
+        {
+          "type": "build",
+          "title": "Containerise the captioning API with Docker (pod issue #1)",
+          "resourceUrl": "https://github.com/keystone-demo/pod-vision-demo/issues/1",
+          "free": true,
+          "hours": 4,
+          "id": "t_1_3",
+          "done": false
+        }
+      ],
+      "proof": "Merge a PR that adds a Dockerfile to your pod repo (VisionAid)",
+      "receipt": {
+        "demandPct": 41,
+        "coveredByDegree": "no",
+        "reason": "41% of ML engineer ads ask for Docker (and rising), and none of your modules teach it.",
+        "trend": "rising"
+      },
+      "degreeLink": "Builds on what you learned about Linux in COMP1xxx3."
+    },
+    {
+      "week": 2,
+      "startDate": "2026-11-16",
+      "focusSkillId": "pytorch",
+      "isExamWeek": false,
+      "tasks": [
+        {
+          "type": "learn",
+          "title": "PyTorch's Learn the Basics tutorial: tensors, datasets and training loops",
+          "resourceUrl": "https://pytorch.org/tutorials/beginner/basics/intro.html",
+          "free": true,
+          "hours": 2,
+          "id": "t_2_1",
+          "done": false
+        },
+        {
+          "type": "practice",
+          "title": "Train a small image classifier on FashionMNIST on your laptop",
+          "free": true,
+          "hours": 2,
+          "id": "t_2_2",
+          "done": false
+        },
+        {
+          "type": "build",
+          "title": "Add PyTorch batch inference and a caption quality check (pod issue #5)",
+          "resourceUrl": "https://github.com/keystone-demo/pod-vision-demo/issues/5",
+          "free": true,
+          "hours": 4,
+          "id": "t_2_3",
+          "done": false
+        }
+      ],
+      "proof": "Merge a PR that adds PyTorch batch inference to your pod repo (VisionAid)",
+      "receipt": {
+        "demandPct": 38,
+        "coveredByDegree": "no",
+        "reason": "38% of ML engineer ads ask for PyTorch (and rising), and none of your modules teach it.",
+        "trend": "rising"
+      },
+      "degreeLink": "Uses the Python you've already proven on GitHub; your Semester 2 maths module will explain the maths behind it."
+    },
+    {
+      "week": 3,
+      "startDate": "2026-11-23",
+      "focusSkillId": "sql",
+      "isExamWeek": false,
+      "tasks": [
+        {
+          "type": "learn",
+          "title": "Kaggle's Intro to SQL course, lessons 1 to 4",
+          "resourceUrl": "https://www.kaggle.com/learn/intro-to-sql",
+          "free": true,
+          "hours": 2,
+          "id": "t_3_1",
+          "done": false
+        },
+        {
+          "type": "practice",
+          "title": "Write five SELECT, JOIN and GROUP BY queries on a public dataset",
+          "free": true,
+          "hours": 2,
+          "id": "t_3_2",
+          "done": false
+        },
+        {
+          "type": "build",
+          "title": "Add a caption-requests table and three queries to VisionAid with Tom",
+          "free": true,
+          "hours": 4,
+          "id": "t_3_3",
+          "done": false
+        }
+      ],
+      "proof": "Merge a PR with a SQL schema and three queries to your pod repo (VisionAid)",
+      "receipt": {
+        "demandPct": 35,
+        "coveredByDegree": "no",
+        "reason": "35% of ML engineer ads ask for SQL, and none of your modules teach it.",
+        "trend": "stable"
+      }
+    },
+    {
+      "week": 4,
+      "startDate": "2026-11-30",
+      "focusSkillId": "aws",
+      "isExamWeek": false,
+      "tasks": [
+        {
+          "type": "learn",
+          "title": "AWS hands-on tutorials: launch and secure your first service",
+          "resourceUrl": "https://aws.amazon.com/getting-started/hands-on/",
+          "free": true,
+          "hours": 2,
+          "id": "t_4_1",
+          "done": false
+        },
+        {
+          "type": "practice",
+          "title": "Store and fetch images in S3 from a Python script",
+          "free": true,
+          "hours": 2,
+          "id": "t_4_2",
+          "done": false
+        },
+        {
+          "type": "build",
+          "title": "Help Priya deploy the VisionAid API to AWS on the free tier",
+          "free": true,
+          "hours": 4,
+          "id": "t_4_3",
+          "done": false
+        }
+      ],
+      "proof": "Merge a PR that documents and scripts the AWS deploy of your pod repo (VisionAid)",
+      "receipt": {
+        "demandPct": 33,
+        "coveredByDegree": "no",
+        "reason": "33% of ML engineer ads ask for AWS, and none of your modules teach it.",
+        "trend": "stable"
+      }
+    },
+    {
+      "week": 5,
+      "startDate": "2026-12-07",
+      "focusSkillId": "mlops",
+      "isExamWeek": false,
+      "tasks": [
+        {
+          "type": "learn",
+          "title": "MLOps Zoomcamp, module 1: experiment tracking",
+          "resourceUrl": "https://github.com/DataTalksClub/mlops-zoomcamp",
+          "free": true,
+          "hours": 2,
+          "id": "t_5_1",
+          "done": false
+        },
+        {
+          "type": "practice",
+          "title": "Track three captioning-model training runs and compare them",
+          "free": true,
+          "hours": 2,
+          "id": "t_5_2",
+          "done": false
+        },
+        {
+          "type": "build",
+          "title": "Add model versioning and a health check to VisionAid",
+          "free": true,
+          "hours": 4,
+          "id": "t_5_3",
+          "done": false
+        }
+      ],
+      "proof": "Merge a PR that adds model versioning to your pod repo (VisionAid)",
+      "receipt": {
+        "demandPct": 28,
+        "coveredByDegree": "no",
+        "reason": "28% of ML engineer ads ask for MLOps (and rising), and none of your modules teach it.",
+        "trend": "rising"
+      }
+    },
+    {
+      "week": 6,
+      "startDate": "2026-12-14",
+      "focusSkillId": "llm-apps",
+      "isExamWeek": false,
+      "tasks": [
+        {
+          "type": "learn",
+          "title": "Hugging Face LLM course, chapters 1 and 2",
+          "resourceUrl": "https://huggingface.co/learn/llm-course",
+          "free": true,
+          "hours": 2,
+          "id": "t_6_1",
+          "done": false
+        },
+        {
+          "type": "practice",
+          "title": "Call an open model from Python and handle its errors",
+          "free": true,
+          "hours": 2,
+          "id": "t_6_2",
+          "done": false
+        },
+        {
+          "type": "build",
+          "title": "Add an endpoint that turns a caption into a longer alt-text description",
+          "free": true,
+          "hours": 4,
+          "id": "t_6_3",
+          "done": false
+        }
+      ],
+      "proof": "Merge a PR that adds an LLM endpoint to your pod repo (VisionAid)",
+      "receipt": {
+        "demandPct": 26,
+        "coveredByDegree": "no",
+        "reason": "26% of ML engineer ads ask for LLM apps (and rising), and none of your modules teach it.",
+        "trend": "rising"
+      }
+    },
+    {
+      "week": 7,
+      "startDate": "2026-12-21",
+      "focusSkillId": "ci-cd",
+      "isExamWeek": false,
+      "tasks": [
+        {
+          "type": "learn",
+          "title": "GitHub Actions quickstart",
+          "resourceUrl": "https://docs.github.com/en/actions",
+          "free": true,
+          "hours": 2,
+          "id": "t_7_1",
+          "done": false
+        },
+        {
+          "type": "practice",
+          "title": "Write a workflow that runs your tests on every push",
+          "free": true,
+          "hours": 2,
+          "id": "t_7_2",
+          "done": false
+        },
+        {
+          "type": "build",
+          "title": "Add a CI workflow that tests every pull request in VisionAid",
+          "free": true,
+          "hours": 4,
+          "id": "t_7_3",
+          "done": false
+        }
+      ],
+      "proof": "Merge a PR that adds a GitHub Actions workflow to your pod repo (VisionAid)",
+      "receipt": {
+        "demandPct": 20,
+        "coveredByDegree": "no",
+        "reason": "20% of ML engineer ads ask for CI/CD, and none of your modules teach it."
+      }
+    },
+    {
+      "week": 8,
+      "startDate": "2026-12-28",
+      "focusSkillId": "kubernetes",
+      "isExamWeek": false,
+      "tasks": [
+        {
+          "type": "learn",
+          "title": "Kubernetes basics tutorial, modules 1 to 3",
+          "resourceUrl": "https://kubernetes.io/docs/tutorials/kubernetes-basics/",
+          "free": true,
+          "hours": 2,
+          "id": "t_8_1",
+          "done": false
+        },
+        {
+          "type": "practice",
+          "title": "Run a deployment and a service in a local cluster with kind",
+          "free": true,
+          "hours": 2,
+          "id": "t_8_2",
+          "done": false
+        },
+        {
+          "type": "build",
+          "title": "Write a Kubernetes manifest for the VisionAid API",
+          "free": true,
+          "hours": 4,
+          "id": "t_8_3",
+          "done": false
+        }
+      ],
+      "proof": "Merge a PR that adds a Kubernetes manifest to your pod repo (VisionAid)",
+      "receipt": {
+        "demandPct": 18,
+        "coveredByDegree": "no",
+        "reason": "18% of ML engineer ads ask for Kubernetes, and none of your modules teach it.",
+        "trend": "stable"
+      }
+    },
+    {
+      "week": 9,
+      "startDate": "2027-01-04",
+      "focusSkillId": "machine-learning",
+      "isExamWeek": false,
+      "tasks": [
+        {
+          "type": "learn",
+          "title": "Kaggle's Intro to Machine Learning",
+          "resourceUrl": "https://www.kaggle.com/learn/intro-to-machine-learning",
+          "free": true,
+          "hours": 2,
+          "id": "t_9_1",
+          "done": false
+        },
+        {
+          "type": "practice",
+          "title": "Train and validate a decision tree on a Kaggle dataset",
+          "free": true,
+          "hours": 2,
+          "id": "t_9_2",
+          "done": false
+        },
+        {
+          "type": "build",
+          "title": "Add a baseline caption-quality model and its accuracy to VisionAid",
+          "free": true,
+          "hours": 4,
+          "id": "t_9_3",
+          "done": false
+        }
+      ],
+      "proof": "Push a notebook training a baseline model to your pod repo (VisionAid) and share the results with your pod",
+      "receipt": {
+        "demandPct": 55,
+        "coveredByDegree": "upcoming",
+        "reason": "55% of ML engineer ads ask for Machine learning. Your degree teaches it in Year 2 · Semester 2, after your target date, so this week is a head start.",
+        "moduleCode": "COMP2xxx2"
+      },
+      "degreeLink": "Your degree goes deeper in COMP2xxx2, Year 2 · Semester 2."
+    },
+    {
+      "week": 10,
+      "startDate": "2027-01-11",
+      "focusSkillId": "vector-databases",
+      "isExamWeek": true,
+      "tasks": [
+        {
+          "type": "learn",
+          "title": "Hugging Face cookbook: retrieval and embeddings",
+          "resourceUrl": "https://huggingface.co/learn/cookbook",
+          "free": true,
+          "hours": 1,
+          "id": "t_10_1",
+          "done": false
+        },
+        {
+          "type": "practice",
+          "title": "Embed 200 captions and search them by meaning",
+          "free": true,
+          "hours": 1,
+          "id": "t_10_2",
+          "done": false
+        },
+        {
+          "type": "build",
+          "title": "Add caption search with embeddings to VisionAid",
+          "free": true,
+          "hours": 2,
+          "id": "t_10_3",
+          "done": false
+        }
+      ],
+      "proof": "Merge a PR that adds embedding search to your pod repo (VisionAid)",
+      "receipt": {
+        "demandPct": 12,
+        "coveredByDegree": "no",
+        "reason": "12% of ML engineer ads ask for Vector databases (and rising), and none of your modules teach it.",
+        "trend": "rising"
+      }
+    },
+    {
+      "week": 11,
+      "startDate": "2027-01-18",
+      "focusSkillId": "llm-evaluation",
+      "isExamWeek": true,
+      "tasks": [
+        {
+          "type": "learn",
+          "title": "Hugging Face cookbook: evaluating LLM output",
+          "resourceUrl": "https://huggingface.co/learn/cookbook",
+          "free": true,
+          "hours": 1,
+          "id": "t_11_1",
+          "done": false
+        },
+        {
+          "type": "practice",
+          "title": "Score 20 generated captions against an accessibility rubric",
+          "free": true,
+          "hours": 1,
+          "id": "t_11_2",
+          "done": false
+        },
+        {
+          "type": "primer",
+          "title": "Primer: preview statistics and linear algebra before COMP1xxx4 starts on 26 Jan",
+          "resourceUrl": "https://ocw.mit.edu/courses/18-05-introduction-to-probability-and-statistics-spring-2014/",
+          "free": true,
+          "hours": 2,
+          "id": "t_11_3",
+          "done": false
+        }
+      ],
+      "proof": "Merge a PR that adds an evaluation report to your pod repo (VisionAid)",
+      "receipt": {
+        "demandPct": 10,
+        "coveredByDegree": "no",
+        "reason": "10% of ML engineer ads ask for LLM evaluation (and rising), and none of your modules teach it.",
+        "trend": "rising"
+      }
+    },
+    {
+      "week": 12,
+      "startDate": "2027-01-25",
+      "focusSkillId": "deep-learning",
+      "isExamWeek": false,
+      "tasks": [
+        {
+          "type": "learn",
+          "title": "fast.ai Practical Deep Learning, lesson 1",
+          "resourceUrl": "https://course.fast.ai/",
+          "free": true,
+          "hours": 2,
+          "id": "t_12_1",
+          "done": false
+        },
+        {
+          "type": "practice",
+          "title": "Fine-tune a pretrained image model on 100 of your own photos",
+          "free": true,
+          "hours": 2,
+          "id": "t_12_2",
+          "done": false
+        },
+        {
+          "type": "build",
+          "title": "Compare two pretrained captioning models for VisionAid",
+          "free": true,
+          "hours": 4,
+          "id": "t_12_3",
+          "done": false
+        }
+      ],
+      "proof": "Push a notebook comparing two pretrained models to your pod repo (VisionAid) and share the results with your pod",
+      "receipt": {
+        "demandPct": 30,
+        "coveredByDegree": "upcoming",
+        "reason": "30% of ML engineer ads ask for Deep learning. Your degree teaches it in Year 3 · Semester 1, after your target date, so this week is a head start.",
+        "moduleCode": "COMP3xxx1"
+      },
+      "degreeLink": "Your degree goes deeper in COMP3xxx1, Year 3 · Semester 1."
+    }
+  ],
+  "skipped": [
+    {
+      "skillId": "statistics",
+      "moduleCode": "COMP1xxx4",
+      "message": "Don't pay for a statistics course: your Semester 2 maths module (COMP1xxx4) covers it in Year 1 · Semester 2."
+    },
+    {
+      "skillId": "linear-algebra",
+      "moduleCode": "COMP1xxx4",
+      "message": "Don't pay for a linear algebra course: the same Semester 2 maths module (COMP1xxx4) teaches it in Year 1 · Semester 2."
+    }
+  ],
+  "generatedAt": "2026-11-07T14:05:00.000Z"
+}
