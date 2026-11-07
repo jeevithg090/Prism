@@ -1,7 +1,7 @@
 {
   "id": "pod_demo01",
-  "name": "Pod Aurora",
-  "score": 0.82,
+  "name": "Pod Orbit",
+  "score": 0.73,
   "createdAt": "2026-11-07T14:40:00.000Z",
   "members": [
     {
@@ -57,32 +57,17 @@
     {
       "fromUserId": "aisha",
       "toUserId": "priya",
-      "text": "Priya reviews your Docker and PyTorch; she's a year ahead on the same ML path."
+      "text": "Priya reviews your Docker and PyTorch work, so you learn from someone a step ahead."
     },
     {
       "fromUserId": "aisha",
       "toUserId": "tom",
-      "text": "Tom reviews your SQL; you both level up in PyTorch with Priya."
+      "text": "Tom reviews your SQL; you pair up on the project and learn by doing."
     },
     {
       "fromUserId": "aisha",
       "toUserId": "mei",
-      "text": "Mei reviews your CI/CD; you review her Python."
-    },
-    {
-      "fromUserId": "priya",
-      "toUserId": "tom",
-      "text": "Priya reviews Tom's PyTorch; Tom reviews her SQL and AWS."
-    },
-    {
-      "fromUserId": "mei",
-      "toUserId": "tom",
-      "text": "Mei reviews Tom's React upload page."
-    },
-    {
-      "fromUserId": "priya",
-      "toUserId": "mei",
-      "text": "Priya and you both review Mei's Python, so she gets two kinds of feedback."
+      "text": "You review Mei's Python; teaching it is the fastest way to lock it in."
     }
   ],
   "project": {
