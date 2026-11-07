@@ -14,6 +14,7 @@ import type { BridgeMap, EvidenceItem, Programme, Roadmap } from "@/lib/types";
 vi.mock("motion/react", async (orig) => ({ ...(await orig<typeof import("motion/react")>()), useReducedMotion: () => true }));
 vi.mock("sonner", () => ({ toast: Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn() }) }));
 
+import { fmt1, signed } from "./format";
 import { ReadinessExplained } from "./ReadinessExplained";
 
 const X = explainReadiness({
@@ -24,10 +25,12 @@ const X = explainReadiness({
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
 const calls: { url: string; body?: unknown }[] = [];
 let mode: "ok" | "404" | "500" = "ok";
+let committed: { actionId: string; noteText: string; committedAt: string } | null = null;
 
 beforeEach(() => {
   calls.length = 0;
   mode = "ok";
+  committed = null;
   vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
     const url = String(input);
     calls.push({ url, body: init?.body ? JSON.parse(String(init.body)) : undefined });
@@ -36,7 +39,7 @@ beforeEach(() => {
     }
     if (mode === "404") return json({ ok: false, error: { code: "not_found", message: "No Bridge Map yet" } }, 404);
     if (mode === "500") return json({ ok: false, error: { code: "internal", message: "boom" } }, 500);
-    return json({ ok: true, data: { explanation: X, runId: "run_x", demo: true } });
+    return json({ ok: true, data: { explanation: X, runId: "run_x", committed, demo: true } });
   });
 });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
@@ -56,6 +59,26 @@ describe("ReadinessExplained", () => {
     expect(within(list).getByText("Readiness today")).toBeInTheDocument();
     expect(within(list).getByText("38.0")).toBeInTheDocument();
     expect(screen.getByText(/splits into 24\.2 points from 16 degree modules, 9\.9 points from 4 GitHub items/)).toBeInTheDocument();
+  });
+
+  it("closes the gap to the stored score with one muted row that says it isn't a source", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    const list = await screen.findByRole("list", { name: "Readiness split by source" });
+    expect(within(list).queryByText(/beyond the mapped skills/i)).not.toBeInTheDocument();
+    const row = within(list).getByRole("button", { name: /Stored score adjustment/ });
+    expect(row).toHaveTextContent("Not a source: seeded or rounded on your map");
+    expect(X.readiness.adjustmentPoints).toBeCloseTo(2.85, 2);
+    expect(within(row.closest("li")!).getByText(signed(X.readiness.adjustmentPoints))).toBeInTheDocument();
+    await user.click(row);
+    expect(within(list).getByText(/stores 38\.00 points, and the readiness formula over its 32 skills gives 35\.15/)).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(`The last ${fmt1(X.readiness.adjustmentPoints).replace(".", "\\.")} points are your stored score's adjustment, not a source\\.`))).toBeInTheDocument();
+  });
+
+  it("shows the next proof the student already chose after a reload", async () => {
+    committed = { actionId: "rm:docker", noteText: "Next proof: Docker. Merge a PR (+5.4 readiness points for about 8.0 h)", committedAt: "2026-11-07T10:00:00Z" };
+    renderPage();
+    expect(await screen.findByText(/Saved as a goal your Coach plans around/)).toHaveTextContent("Next proof: Docker.");
   });
 
   it("explains a source on demand, and switches to the per-skill split", async () => {

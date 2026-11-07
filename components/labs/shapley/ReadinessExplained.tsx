@@ -11,6 +11,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useViewerId } from "@/components/community/useViewerId";
 import { useActivity } from "@/components/shell/ActivityPanel";
+import { COVERAGE } from "@/lib/graph/readiness";
 import type { Explanation, NextAction } from "@/lib/labs/shapley/model";
 import type { ApiResult } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -65,7 +66,7 @@ export function ExplainedSkeleton() {
 }
 
 function headlineSentence(x: Explanation): string {
-  const top = x.contributors.filter((c) => c.kind !== "beyond-map" && c.points > 0);
+  const top = x.contributors.filter((c) => c.points > 0);
   const named = top.slice(0, 3).map((c) => `${c.label.replace(/ \(recorded\)$/, "")} ${signed(c.points)}`);
   const more = top.length - named.length;
   return `${Math.round(x.readiness.now * 100)}% = ${named.join(", ")}${more > 0 ? ` and ${more} more` : ""}`;
@@ -83,17 +84,22 @@ function groupSummary(x: Explanation): string {
   const parts = x.groups.filter((g) => g.points > 0.05).map((g) => {
     const what = g.kind === "module" ? `${g.count} degree ${g.count === 1 ? "module" : "modules"}`
       : g.kind === "evidence" ? `${g.count} ${EVIDENCE_NOUN[g.label]?.[g.count === 1 ? 0 : 1] ?? (g.count === 1 ? "piece of evidence" : "pieces of evidence")}`
-      : g.kind === "record" ? `${g.count} recorded ${g.count === 1 ? "skill" : "skills"}`
-      : "role demand beyond the mapped skills";
+      : `${g.count} recorded ${g.count === 1 ? "skill" : "skills"}`;
     return `${fmt1(g.points)} points from ${what}`;
   });
   if (!parts.length) return "Nothing counts toward your readiness yet.";
-  return `Your ${Math.round(x.readiness.now * 100)}% splits into ${parts.length > 1 ? `${parts.slice(0, -1).join(", ")} and ${parts.at(-1)}` : parts[0]}.`;
+  const d = x.readiness.adjustmentPoints;
+  const adj = !x.readiness.adjustmentNote ? ""
+    : d > 0 ? ` The last ${fmt1(d)} points are your stored score's adjustment, not a source.`
+    : ` Your stored score sits ${fmt1(-d)} points below that sum: an adjustment, not a source.`;
+  return `Your ${Math.round(x.readiness.now * 100)}% splits into ${parts.length > 1 ? `${parts.slice(0, -1).join(", ")} and ${parts.at(-1)}` : parts[0]}.${adj}`;
 }
 
-function Explained({ x, runId, demo, live }: { x: Explanation; runId: string | null; demo: boolean; live: boolean }) {
+interface Committed { actionId: string; noteText: string; committedAt: string }
+
+function Explained({ x, runId, demo, live, committed = null }: { x: Explanation; runId: string | null; demo: boolean; live: boolean; committed?: Committed | null }) {
   const { start } = useActivity();
-  const [saved, setSaved] = React.useState<string | null>(null);
+  const [saved, setSaved] = React.useState<string | null>(committed?.noteText ?? null);
   const commit = useMutation({
     mutationFn: (a: NextAction) =>
       request<{ noteText: string; runId: string; action: NextAction }>("/api/labs/shapley/commit", {
@@ -164,8 +170,8 @@ function Explained({ x, runId, demo, live }: { x: Explanation; runId: string | n
         <SectionCard title="How it's worked out">
           <div className="space-y-3 text-sm">
             <p>
-              Readiness adds up each skill&apos;s share of {x.roleName} job ads, times how well it&apos;s covered: proof counts 100%, a finished module 70%, a
-              module still to come 40%. When two sources cover the same skill, the Shapley value splits the overlap fairly, by averaging what each source adds
+              Readiness adds up each skill&apos;s share of {x.roleName} job ads, times how well it&apos;s covered: proof counts {Math.round(COVERAGE.proven * 100)}%, a
+              finished module {Math.round(COVERAGE["degree-done"] * 100)}%, a module still to come {Math.round(COVERAGE["degree-upcoming"] * 100)}%. When two sources cover the same skill, the Shapley value splits the overlap fairly, by averaging what each source adds
               over every order you could have gained them in.
             </p>
             <div className="flex gap-3 rounded-xl bg-muted/60 p-4">
@@ -174,7 +180,7 @@ function Explained({ x, runId, demo, live }: { x: Explanation; runId: string | n
                 <span className="font-mono tabular-nums">{x.checks.players}</span> sources across <span className="font-mono tabular-nums">{x.skills.length}</span> skills.
                 {" "}<span className="font-mono tabular-nums">{x.checks.coalitions}</span> coalitions checked one by one against the closed form, and the shares add up
                 to <span className="font-mono tabular-nums">{fmt1(x.readiness.mappedPoints)}</span> points with a gap of <span className="font-mono tabular-nums">{x.checks.efficiencyGap.toFixed(2)}</span>.
-                {Math.abs(x.readiness.beyondMapPoints) >= 0.05 && <> The remaining <span className="font-mono tabular-nums">{fmt1(x.readiness.beyondMapPoints)}</span> points are demand your map&apos;s headline counts beyond the {x.skills.length} skills it shows.</>}
+                {x.readiness.adjustmentNote && <> {x.readiness.adjustmentNote}</>}
               </p>
             </div>
             {runId && (
@@ -194,7 +200,7 @@ export function ReadinessExplained() {
   const [demo, setDemo] = React.useState<Explanation | null>(null);
   const q = useQuery({
     queryKey: ["labs-shapley", userId],
-    queryFn: () => request<{ explanation: Explanation; runId: string; demo?: boolean }>("/api/labs/shapley"),
+    queryFn: () => request<{ explanation: Explanation; runId: string; committed?: Committed | null; demo?: boolean }>("/api/labs/shapley"),
     retry: (n, e) => !(e instanceof HttpError && e.status < 500) && n < 1,
     retryDelay: 400,
   });
@@ -228,5 +234,5 @@ export function ReadinessExplained() {
       />
     );
   }
-  return <Explained x={x} runId={q.data.runId} demo={!!q.data.demo} live />;
+  return <Explained x={x} runId={q.data.runId} demo={!!q.data.demo} committed={q.data.committed ?? null} live />;
 }

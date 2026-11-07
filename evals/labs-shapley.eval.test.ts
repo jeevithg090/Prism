@@ -31,13 +31,16 @@ describe("eval: Readiness Explained", () => {
     for (const id of ids) {
       const { explanation: x } = await explainForUser(id, { quiet: true, persist: false, now: NOW });
       const sum = x.contributors.reduce((a, c) => a + c.points, 0);
-      rows.push({ student: id, readiness: Math.round(x.readiness.now * 100), sources: x.checks.players, coalitions: x.checks.coalitions, sum: Math.round(sum * 100) / 100, best: x.next.best?.skillId ?? "-" });
-      expect(sum, id).toBeCloseTo(x.readiness.now * 100, 1);
+      rows.push({ student: id, readiness: Math.round(x.readiness.now * 100), sources: x.checks.players, coalitions: x.checks.coalitions, sum: Math.round(sum * 100) / 100, adjustment: x.readiness.adjustmentPoints, best: x.next.best?.skillId ?? "-" });
+      // The shares add up to the formula exactly; the stored score is the formula plus its labelled adjustment.
+      expect(sum, id).toBeCloseTo(x.readiness.mappedPoints, 1);
+      expect(sum + x.readiness.adjustmentPoints, id).toBeCloseTo(x.readiness.now * 100, 1);
+      expect(Boolean(x.readiness.adjustmentNote), id).toBe(Math.abs(x.readiness.adjustmentPoints) >= 0.05);
       expect(x.checks.closedFormGap, id).toBeLessThan(1e-9);
       // Per skill: shares add up to the skill's own term in the readiness formula.
       for (const s of x.skills) expect(s.shares.reduce((a, h) => a + h.points, 0), `${id}/${s.skillId}`).toBeCloseTo(s.points, 1);
       // Marginality: no source is worth more alone than its share, and none is negative.
-      for (const c of x.contributors.filter((k) => k.kind !== "beyond-map")) {
+      for (const c of x.contributors) {
         expect(c.points, c.id).toBeGreaterThanOrEqual(0);
         expect(c.leaveOneOut, c.id).toBeLessThanOrEqual(c.points + 0.011);
       }

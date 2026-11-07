@@ -1,10 +1,11 @@
 // Readiness Explained · POST /api/labs/shapley/commit { actionId, approved: true } → the student's chosen next proof,
 // saved as a Coach goal note. This is the human checkpoint: the request must carry the student's explicit approval,
-// and the action is recomputed on the server, so the client can't send its own numbers.
+// and the action is recomputed on the server, so the client can't send its own numbers. Writes must be same-origin,
+// and outside DEMO_MODE only the demo student can write (the ks_uid cookie isn't signed): see lib/labs/shapley/viewer.ts.
 import { z } from "zod";
 import { commitNextProof, NoMapError, UnknownActionError } from "@/lib/labs/shapley/agent";
 import { badRequest, fail, internal, ok } from "@/lib/schemas/community";
-import { viewerOf } from "@/lib/labs/shapley/viewer";
+import { writerOf } from "@/lib/labs/shapley/viewer";
 
 const BodyZ = z.object({
   actionId: z.string().regex(/^(rm|ch):[a-z0-9]+(-[a-z0-9]+)*$/, "actionId looks like \"rm:docker\" or \"ch:docker\""),
@@ -14,11 +15,16 @@ const BodyZ = z.object({
 
 export async function POST(req: Request) {
   try {
+    const who = writerOf(req);
+    if (!who.ok) return fail(who.status, "forbidden", who.message);
+    if (!(req.headers.get("content-type") ?? "").toLowerCase().startsWith("application/json")) {
+      return fail(415, "unsupported_media_type", "Send the choice as JSON (content-type: application/json).");
+    }
     let body: unknown;
     try { body = await req.json(); } catch { return badRequest("Send a JSON body like { \"actionId\": \"rm:docker\", \"approved\": true }."); }
     const parsed = BodyZ.safeParse(body);
     if (!parsed.success) return badRequest(parsed.error);
-    const result = await commitNextProof(viewerOf(req), parsed.data.actionId, { roleId: parsed.data.roleId });
+    const result = await commitNextProof(who.userId, parsed.data.actionId, { roleId: parsed.data.roleId });
     return ok(result);
   } catch (err) {
     if (err instanceof NoMapError || err instanceof UnknownActionError) return fail(404, "not_found", err.message);

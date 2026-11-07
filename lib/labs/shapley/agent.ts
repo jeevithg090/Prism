@@ -1,8 +1,9 @@
 // Readiness Explained · the governed agent around the pure explainer. It reads the Bridge Map (loadGraph), the
 // student's evidence, the programme, the roadmap and the micro-challenge catalogue; runs inside runAgent with
-// guardrails (efficiency axiom, injection shield on evidence text, no demographic inputs); writes a compact
-// explanation to `readiness_explanations` for the Coach and other screens; and, only after the student decides,
-// saves the chosen next proof as a Coach goal note (`coach_memory`, visible and deletable).
+// guardrails (efficiency axiom, injection shield on evidence text, no demographic inputs); keeps a compact
+// explanation in `readiness_explanations` (read back to anchor the score history, written only when it changes);
+// and, only after the student decides, saves the chosen next proof as a Coach goal note (`coach_memory`, which the
+// Coach reads into its context, visible and deletable) plus `readiness_commitments`, which the page reads back.
 import "server-only";
 import { emit, newRunId } from "@/lib/agents/events";
 import { loadChallengeFixtures } from "@/lib/agents/challenges";
@@ -18,7 +19,7 @@ import { skillName } from "@/lib/schemas/community";
 import { getStore } from "@/lib/store";
 import type { BridgeMap, EvidenceItem, Profile } from "@/lib/types";
 import { explainReadiness, type ChallengeRef } from "./explain";
-import { COMMITS, EXPLANATIONS, ExplanationZ, type Explanation, type NextAction, type StoredExplanation } from "./model";
+import { COMMITS, EXPLANATIONS, ExplanationZ, type Explanation, type NextAction, type StoredCommitment, type StoredExplanation } from "./model";
 
 export class NoMapError extends Error {
   readonly code = "not_found";
@@ -72,6 +73,24 @@ function challengeRefs(): ChallengeRef[] {
 
 export interface ExplainOptions { roleId?: string; runId?: string; persist?: boolean; quiet?: boolean; now?: Date }
 
+const docId = (userId: string, roleId: string) => `${userId}:${roleId}`;
+
+async function readDoc<T>(collection: string, id: string): Promise<T | null> {
+  try { return (await getStore().get<T>(collection, id)) ?? null; } catch { return null; }
+}
+
+/** The stored explanation's anchored adjustment, if it's a sane number (anything else is ignored, never trusted). */
+function anchorOf(prev: StoredExplanation | null): { adjustment: number } | null {
+  const a = prev?.historyAdjustment;
+  return typeof a === "number" && Number.isFinite(a) && Math.abs(a) <= 1 ? { adjustment: a } : null;
+}
+
+/** The student's saved next proof for this role, or null. */
+export async function loadCommitment(userId: string, roleId: string): Promise<StoredCommitment | null> {
+  const c = await readDoc<StoredCommitment>(COMMITS, docId(userId, roleId));
+  return c && typeof c.actionId === "string" && typeof c.noteText === "string" ? c : null;
+}
+
 /** Explains the student's readiness. Throws NoMapError when they have no Bridge Map yet. */
 export async function explainForUser(userId: string, opts: ExplainOptions = {}): Promise<{ explanation: Explanation; runId: string; meta: AgentRunMeta }> {
   const runId = opts.runId ?? newRunId();
@@ -84,10 +103,12 @@ export async function explainForUser(userId: string, opts: ExplainOptions = {}):
     if (!opts.quiet) try { emit({ runId, agent, status, message, ...(data ? { data } : {}) }); } catch { /* never breaks the run */ }
   };
 
+  const prev = await readDoc<StoredExplanation>(EXPLANATIONS, docId(userId, roleId));
+  const anchor = anchorOf(prev);
   const base = (map: BridgeMap, mode: Explanation["mode"], extra: Partial<Parameters<typeof explainReadiness>[0]> = {}) =>
     explainReadiness({
       map, evidence: [], programme: null, roadmap: null, challenges: [], startedAt: profile?.startedAt,
-      hoursPerWeek: profile?.dna?.hoursPerWeek ?? null, firstName: name, roleName: role, now, skillName, mode, ...extra,
+      hoursPerWeek: profile?.dna?.hoursPerWeek ?? null, firstName: name, roleName: role, now, skillName, mode, anchor, ...extra,
     });
 
   const { output, meta } = await runAgent<Explanation>({
@@ -115,8 +136,9 @@ export async function explainForUser(userId: string, opts: ExplainOptions = {}):
         "shapley",
         () => base(map, "full", { evidence, programme, roadmap, challenges }),
         (x) => ({
-          message: `Exact Shapley values for ${x.checks.players} sources: ${x.checks.coalitions} coalitions checked, shares sum to ${fmt(x.readiness.mappedPoints)} points`,
-          data: { players: x.checks.players, coalitions: x.checks.coalitions, efficiencyGap: x.checks.efficiencyGap },
+          message: `Exact Shapley values for ${x.checks.players} sources: ${x.checks.coalitions} coalitions checked, shares sum to ${fmt(x.readiness.mappedPoints)} points`
+            + (x.readiness.adjustmentNote ? `, plus a ${fmt(x.readiness.adjustmentPoints)}-point stored-score adjustment` : ""),
+          data: { players: x.checks.players, coalitions: x.checks.coalitions, efficiencyGap: x.checks.efficiencyGap, adjustmentPoints: x.readiness.adjustmentPoints },
         }),
       );
       const top = explanation.contributors[0];
@@ -145,14 +167,19 @@ export async function explainForUser(userId: string, opts: ExplainOptions = {}):
   say("done", "orchestrator", `Readiness explained. You decide what to prove next.`);
 
   if (opts.persist !== false) {
+    const reanchored = !anchor || anchor.adjustment !== output.readiness.historyAdjustment;
     const doc: StoredExplanation = {
-      id: `${userId}:${roleId}`, userId, roleId, readinessPct: pct(output.readiness.now),
+      id: docId(userId, roleId), userId, roleId, readinessPct: pct(output.readiness.now),
       top: output.contributors.slice(0, 5).map((c) => ({ label: c.label, points: c.points })),
       weekDeltaPoints: output.week.deltaPoints,
       best: best ? { id: best.id, title: best.title, skillId: best.skillId, gainPoints: best.gainPoints, hours: best.hours, pointsPerHour: best.pointsPerHour } : null,
+      historyAdjustment: output.readiness.historyAdjustment,
+      anchoredAt: !reanchored && prev?.anchoredAt ? prev.anchoredAt : output.generatedAt,
       generatedAt: output.generatedAt,
     };
-    try { await getStore().upsert(EXPLANATIONS, doc.id, doc, userId); } catch { /* read-only store is fine */ }
+    // A page load only writes when the summary actually changed.
+    const same = prev && JSON.stringify({ ...prev, generatedAt: "" }) === JSON.stringify({ ...doc, generatedAt: "" });
+    if (!same) try { await getStore().upsert(EXPLANATIONS, doc.id, doc, userId); } catch { /* read-only store is fine */ }
   }
   return { explanation: output, runId, meta };
 }
@@ -180,10 +207,11 @@ export async function commitNextProof(userId: string, actionId: string, opts: { 
     run: async (ctx) => {
       const note = await ctx.step("save-goal", () => addMemory({ userId, kind: "goal", text, source: "Readiness Explained" }), (n) => `Saved a Coach goal note (${n.id})`);
       try {
-        await getStore().upsert(COMMITS, `${userId}:${explanation.roleId}`, {
-          id: `${userId}:${explanation.roleId}`, userId, actionId, skillId: action.skillId, gainPoints: action.gainPoints, hours: action.hours,
-          committedAt: new Date().toISOString(),
-        }, userId);
+        const doc: StoredCommitment = {
+          id: docId(userId, explanation.roleId), userId, actionId, skillId: action.skillId, gainPoints: action.gainPoints, hours: action.hours,
+          noteText: note.text, committedAt: new Date().toISOString(),
+        };
+        await getStore().upsert(COMMITS, doc.id, doc, userId);
       } catch { /* the note is what matters */ }
       ctx.done(`${explanation.firstName} chose ${action.skillName}: the Coach will plan around it`, { skillId: action.skillId });
       return { noteId: note.id, noteText: note.text };

@@ -23,13 +23,14 @@ import { recordMergedPR } from "@/lib/agents/proof";
 import { tool } from "@/lib/agents/tools/extra/shapley";
 import { feature } from "@/lib/features/items/shapley";
 import { efficiencyAxiom, explainForUser, shieldEvidence } from "@/lib/labs/shapley/agent";
-import { EXPLANATIONS, type Explanation } from "@/lib/labs/shapley/model";
+import { COMMITS, EXPLANATIONS, type Explanation, type StoredExplanation } from "@/lib/labs/shapley/model";
 import type { EvidenceItem } from "@/lib/types";
 import { GET } from "./route";
 import { POST as commit } from "./commit/route";
 
 const req = (url: string, init?: RequestInit & { uid?: string }) =>
   new Request(`http://localhost${url}`, { ...init, headers: { "content-type": "application/json", ...(init?.uid ? { cookie: `ks_uid=${init.uid}` } : {}) } });
+const sumOf = (x: Explanation) => x.contributors.reduce((a, c) => a + c.points, 0) + x.readiness.adjustmentPoints;
 
 beforeAll(() => { process.env.DEMO_MODE = "true"; });
 afterAll(() => { delete process.env.DEMO_MODE; });
@@ -43,7 +44,8 @@ describe("GET /api/labs/shapley", () => {
     const x = json.data.explanation as Explanation;
     expect(json.data.runId).toBe("run_shapley");
     expect(Math.round(x.readiness.now * 100)).toBe(38);
-    expect(x.contributors.reduce((a, c) => a + c.points, 0)).toBeCloseTo(38, 1);
+    expect(sumOf(x)).toBeCloseTo(38, 1);
+    expect(x.readiness.adjustmentNote).toMatch(/stored score itself/);
     expect(x.mode).toBe("full");
     expect(x.next.best).toMatchObject({ skillId: "docker", kind: "roadmap" });
     // Activity: the skill map agent reports real numbers, the roadmap agent the best proof, the orchestrator closes.
@@ -51,9 +53,9 @@ describe("GET /api/labs/shapley", () => {
     expect(shapleyStep?.message).toMatch(/\d+ coalitions checked/);
     expect(h.events.some((e) => e.agent === "roadmap" && /Best next proof: Docker/.test(e.message))).toBe(true);
     expect(h.events.at(-1)).toMatchObject({ agent: "orchestrator", status: "done" });
-    // Written back for the Coach and other screens, and logged in the run ledger with its guardrails.
-    const stored = await testStore().get<{ readinessPct: number; best: { skillId: string } }>(EXPLANATIONS, "aisha:ml-engineer");
-    expect(stored).toMatchObject({ readinessPct: 38, best: { skillId: "docker" } });
+    // Kept as a compact summary with the history anchor, and logged in the run ledger with its guardrails.
+    const stored = await testStore().get<StoredExplanation>(EXPLANATIONS, "aisha:ml-engineer");
+    expect(stored).toMatchObject({ readinessPct: 38, best: { skillId: "docker" }, historyAdjustment: x.readiness.historyAdjustment });
     const runs = await testStore().list<{ agent: string; guardrails: { name: string; action: string }[] }>("agent_runs");
     const run = runs.find((r) => r.agent === "skillmap")!;
     expect(run.guardrails.map((g) => g.name)).toEqual(expect.arrayContaining(["injectionShield", "shapleyEfficiency", "noDemographicSignals"]));
@@ -67,9 +69,14 @@ describe("GET /api/labs/shapley", () => {
     const after = (await (await GET(req("/api/labs/shapley"))).json()).data.explanation as Explanation;
     const mover = after.week.movers[0];
     expect(mover).toMatchObject({ contributorId: `ev:${proof.evidenceIds[0]}`, kind: "evidence" });
-    expect(after.week.deltaPoints).toBeCloseTo((proof.readinessAfter - proof.readinessBefore) * 100, 0);
+    // The week's change is exactly what the stored score moved; the PR's share and the rounding add up to it.
+    expect(after.week.deltaPoints).toBeCloseTo((proof.readinessAfter - proof.readinessBefore) * 100, 5);
     expect(after.week.deltaPoints).toBeGreaterThan(4);
-    expect(after.contributors.reduce((a, c) => a + c.points, 0)).toBeCloseTo(after.readiness.now * 100, 1);
+    expect(after.week.movers.reduce((a, m) => a + m.points, 0)).toBeCloseTo(after.week.deltaPoints, 1);
+    // History doesn't move: past weeks read the same as before the merge, anchored by the stored explanation.
+    expect(after.week.fromPoints).toBe(before.week.toPoints);
+    expect(after.timeline.slice(0, -1).map((t) => t.points)).toEqual(before.timeline.slice(0, -1).map((t) => t.points));
+    expect(sumOf(after)).toBeCloseTo(after.readiness.now * 100, 1);
     expect(before.next.best?.skillId).toBe("docker");
     expect(after.next.best?.skillId).not.toBe("docker"); // the plan moves on: the next best proof is re-ranked
   });
@@ -79,7 +86,16 @@ describe("GET /api/labs/shapley", () => {
     const x = json.data.explanation as Explanation;
     expect(x.userId).toBe("priya");
     expect(x.contributors.some((c) => c.kind === "record" && c.points > 0)).toBe(true);
-    expect(x.contributors.reduce((a, c) => a + c.points, 0)).toBeCloseTo(x.readiness.now * 100, 1);
+    expect(sumOf(x)).toBeCloseTo(x.readiness.now * 100, 1);
+  });
+
+  it("a page load only writes the stored summary when it changed", async () => {
+    await GET(req("/api/labs/shapley"));
+    const first = await testStore().get<StoredExplanation>(EXPLANATIONS, "aisha:ml-engineer");
+    await new Promise((r) => setTimeout(r, 5));
+    await GET(req("/api/labs/shapley"));
+    const second = await testStore().get<StoredExplanation>(EXPLANATIONS, "aisha:ml-engineer");
+    expect(second?.generatedAt).toBe(first?.generatedAt);
   });
 
   it("400s a malformed role and 404s a student with no map", async () => {
@@ -113,6 +129,28 @@ describe("POST /api/labs/shapley/commit (the human checkpoint)", () => {
     // Committing twice is idempotent (memory de-duplicates the same text).
     await commit(req("/api/labs/shapley/commit", { method: "POST", body: JSON.stringify({ actionId: "rm:docker", approved: true }) }));
     expect(await listMemory("aisha")).toHaveLength(1);
+    // The choice is read back: the page shows it after a reload.
+    expect(await testStore().get(COMMITS, "aisha:ml-engineer")).toMatchObject({ actionId: "rm:docker", noteText: notes[0].text });
+    const page = (await (await GET(req("/api/labs/shapley"))).json()).data;
+    expect(page.committed).toMatchObject({ actionId: "rm:docker", noteText: notes[0].text });
+  });
+
+  it("refuses cross-site posts, non-JSON bodies, and (outside DEMO_MODE) writes for a hand-set cookie", async () => {
+    const body = JSON.stringify({ actionId: "rm:docker", approved: true });
+    const raw = (headers: Record<string, string>) => new Request("http://localhost/api/labs/shapley/commit", { method: "POST", body, headers });
+    const cross = await commit(raw({ "content-type": "application/json", host: "localhost", origin: "https://evil.example" }));
+    expect(cross.status).toBe(403);
+    expect((await commit(raw({ "content-type": "text/plain", host: "localhost", origin: "http://localhost" }))).status).toBe(415);
+    delete process.env.DEMO_MODE;
+    try {
+      const other = await commit(raw({ "content-type": "application/json", cookie: "ks_uid=priya" }));
+      expect(other.status).toBe(403);
+      expect((await other.json()).error.code).toBe("forbidden");
+      expect(await listMemory("priya")).toEqual([]);
+    } finally {
+      process.env.DEMO_MODE = "true";
+    }
+    expect(await listMemory("aisha")).toEqual([]);
   });
 });
 

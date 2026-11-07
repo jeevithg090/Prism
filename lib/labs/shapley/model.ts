@@ -1,10 +1,13 @@
 // Readiness Explained · the explanation contract shared by the agent, the API route, the Coach tool and the page.
 import { z } from "zod";
 
-export const SourceKindZ = z.enum(["evidence", "module", "record", "beyond-map"]);
+export const SourceKindZ = z.enum(["evidence", "module", "record"]);
 export type SourceKind = z.infer<typeof SourceKindZ>;
+/** What can move the score in a week: a source, or the stored score's own rounding ("adjustment", never a source). */
+export const MoverKindZ = z.enum([...SourceKindZ.options, "adjustment"]);
+export type MoverKind = z.infer<typeof MoverKindZ>;
 
-/** One source of readiness: a piece of evidence, a degree module, a recorded skill, or role demand off the map. */
+/** One source of readiness: a piece of evidence, a degree module, or a skill recorded on the map. */
 export const ContributorZ = z.object({
   id: z.string(),
   kind: SourceKindZ,
@@ -53,7 +56,7 @@ export const ActionZ = z.object({
 });
 export type NextAction = z.infer<typeof ActionZ>;
 
-export const MoverZ = z.object({ contributorId: z.string(), label: z.string(), kind: SourceKindZ, points: z.number() });
+export const MoverZ = z.object({ contributorId: z.string(), label: z.string(), kind: MoverKindZ, points: z.number() });
 export type Mover = z.infer<typeof MoverZ>;
 
 export const ExplanationZ = z.object({
@@ -68,10 +71,20 @@ export const ExplanationZ = z.object({
     /** The Bridge Map's headline readiness, 0..1. */
     now: z.number(),
     projected: z.number(),
-    /** The same formula over the skills on the map, in points. */
+    /** The readiness formula (lib/graph/readiness) over the map's skills, in points. The source shares add up to exactly this. */
     mappedPoints: z.number(),
-    /** Headline minus mapped, in points: demand the map's headline counts beyond the skills it shows. */
-    beyondMapPoints: z.number(),
+    /**
+     * The stored score minus the formula, in points. Seeded maps carry a stored readiness, and every proof shifts it
+     * with 2-decimal rounding (shiftReadiness), so it can sit a little off the formula. No source earns it.
+     */
+    adjustmentPoints: z.number(),
+    /** Plain-language note on the adjustment, or null when it's under 0.05 points. */
+    adjustmentNote: z.string().nullable(),
+    /**
+     * The adjustment (0..1) the replayed history uses. It's anchored at the first explanation and stored, so a later
+     * merge that rounds the score can't rewrite past weeks; the rounding shows up as its own mover instead.
+     */
+    historyAdjustment: z.number(),
   }),
   contributors: z.array(ContributorZ),
   skills: z.array(SkillShareZ),
@@ -95,7 +108,7 @@ export const ExplanationZ = z.object({
   checks: z.object({
     players: z.number(),
     coalitions: z.number(),
-    /** |Σ shares − readiness| in points; the efficiency axiom says 0. */
+    /** |Σ shares − the formula's readiness| in points; the efficiency axiom says 0. */
     efficiencyGap: z.number(),
     /** Largest |closed form − enumeration| across skills; 0 up to float error. */
     closedFormGap: z.number(),
@@ -103,7 +116,11 @@ export const ExplanationZ = z.object({
 });
 export type Explanation = z.infer<typeof ExplanationZ>;
 
-/** What the explainer writes to the store (`readiness_explanations`) for the Coach and other screens. */
+/**
+ * What the explainer keeps in the store (`readiness_explanations`, one doc per student and role). The explainer reads
+ * it back for `historyAdjustment`, so past weeks stay put; the rest is a compact summary another screen (the Coach's
+ * context, say) can show without re-running the game. Written only when something in it changes.
+ */
 export interface StoredExplanation {
   id: string;
   userId: string;
@@ -112,7 +129,22 @@ export interface StoredExplanation {
   top: { label: string; points: number }[];
   weekDeltaPoints: number;
   best: Pick<NextAction, "id" | "title" | "skillId" | "gainPoints" | "hours" | "pointsPerHour"> | null;
+  /** The anchored stored-score adjustment (0..1) and when it was first taken. */
+  historyAdjustment: number;
+  anchoredAt: string;
   generatedAt: string;
+}
+
+/** The student's chosen next proof (`readiness_commitments`), read back so the page shows the choice after a reload. */
+export interface StoredCommitment {
+  id: string;
+  userId: string;
+  actionId: string;
+  skillId: string;
+  gainPoints: number;
+  hours: number;
+  noteText: string;
+  committedAt: string;
 }
 
 export const EXPLANATIONS = "readiness_explanations";

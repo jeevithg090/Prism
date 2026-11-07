@@ -49,7 +49,7 @@ const explainReadiness: KeystoneTool<typeof input, ReadinessExplanation> = {
     return {
       readinessPct: Math.round(x.readiness.now * 100),
       role: x.roleName,
-      top: x.contributors.filter((c) => c.kind !== "beyond-map").slice(0, 4).map((c) => ({ label: c.label, points: c.points, aloneWorth: c.leaveOneOut })),
+      top: x.contributors.slice(0, 4).map((c) => ({ label: c.label, points: c.points, aloneWorth: c.leaveOneOut })),
       skill: s ? { name: s.name, points: s.points, maxPoints: s.maxPoints, shares: s.shares.filter((h) => h.points > 0).map((h) => ({ label: h.label, points: h.points })) } : null,
       weekDeltaPoints: x.week.deltaPoints,
       weekMovers: x.week.movers.slice(0, 3).map((m) => ({ label: m.label, points: m.points })),

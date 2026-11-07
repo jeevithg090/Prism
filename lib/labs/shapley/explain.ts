@@ -12,14 +12,24 @@
 // Readiness(S) = Σ_s w_s · v_s(S). Because the game is a sum of per-skill games, Shapley linearity makes the per-skill
 // computation exact for the whole score; each skill is solved in closed form and cross-checked by enumerating every
 // coalition.
-import type { BridgeMap, BridgeNode, EvidenceItem, Programme, Roadmap, SkillStatus } from "@/lib/types";
+//
+// The stored score. A seeded map's readinessNow can sit a little off the formula, and every merged proof shifts it
+// with 2-decimal rounding (lib/graph/readiness shiftReadiness). That difference isn't a source and gets no Shapley
+// share: it's reported as readiness.adjustmentPoints, with a note. Past weeks replay with an anchored adjustment
+// (ExplainInput.anchor, stored by the agent), so later rounding can't rewrite history; it shows as its own mover.
+import type { BridgeMap, BridgeNode, EvidenceItem, Programme, Roadmap } from "@/lib/types";
+import { COVERAGE } from "@/lib/graph/readiness";
 import { isTermDone, termEnd, upcomingLabel } from "@/lib/graph/terms";
 import type { Contributor, Explanation, Mover, NextAction, SkillShare, SourceKind } from "./model";
 import { leaveOneOut, maxGame, round3, shapleyExact, shapleyMaxClosedForm } from "./shapley";
 
-export const COVERAGE: Record<SkillStatus, number> = { proven: 1, "degree-done": 0.7, "degree-upcoming": 0.4, gap: 0 };
+/** Keystone's readiness weights, read from the readiness module itself so the explanation can't drift from the score. */
+export { COVERAGE };
+/** buildBridgeMap's proof bar (lib/graph/build.ts keeps it private; shapley.test.ts pins the two together). */
 export const PROOF_LEVEL = 2;
 export const PROOF_CONFIDENCE = 0.6;
+/** An anchored adjustment more than 1 point off today's means the map was rebuilt or re-seeded: re-anchor. */
+export const ANCHOR_MAX_DRIFT = 0.01;
 /** Micro-challenges write level-1 evidence at this confidence (lib/agents/challenges.ts gradeChallenge). */
 export const CHALLENGE_EVIDENCE = { level: 1, confidence: 0.7 } as const;
 export const MAX_ENUMERATED_PLAYERS = 12;
@@ -45,6 +55,8 @@ export interface ExplainInput {
   skillName: (id: string) => string;
   /** "skills" = the fallback: no per-source detail. */
   mode?: Explanation["mode"];
+  /** The stored-score adjustment (0..1) taken at the first explanation, from `readiness_explanations`. */
+  anchor?: { adjustment: number } | null;
 }
 
 interface Player {
@@ -95,6 +107,8 @@ function buildGames(i: ExplainInput): SkillGame[] {
 
   return role.map((node) => {
     const coverage = COVERAGE[node.status] ?? 0;
+    const DONE = COVERAGE["degree-done"];
+    const UPCOMING = COVERAGE["degree-upcoming"];
     const cap = (v: number) => Math.min(v, coverage);
     const skill = node.name || i.skillName(node.skillId);
     const players: Player[] = [];
@@ -105,7 +119,7 @@ function buildGames(i: ExplainInput): SkillGame[] {
       for (const e of i.evidence) if (e.skillId === node.skillId && (!e.userId || e.userId === i.map.userId)) ev.set(e.id, e);
       for (const e of ev.values()) {
         const proof = isProof(e);
-        const value = cap(proof ? 1 : 0);
+        const value = cap(proof ? COVERAGE.proven : 0);
         const at = validDate(e.createdAt);
         players.push({
           key: `ev:${e.id}`, kind: "evidence", label: evidenceLabel(e, skill), detail: e.quote || e.url, origin: e.source,
@@ -120,19 +134,21 @@ function buildGames(i: ExplainInput): SkillGame[] {
         const m = moduleByCode.get(code);
         const linked = (node.moduleCodes ?? []).includes(code);
         let raw: number;
-        if (linked && node.status === "degree-done") raw = 0.7;
-        else if (linked && node.status === "degree-upcoming") raw = 0.4;
-        else if (m && i.startedAt) raw = isTermDone(m, i.startedAt, i.now) ? 0.7 : 0.4;
-        else raw = 0.4;
+        if (linked && node.status === "degree-done") raw = DONE;
+        else if (linked && node.status === "degree-upcoming") raw = UPCOMING;
+        else if (m && i.startedAt) raw = isTermDone(m, i.startedAt, i.now) ? DONE : UPCOMING;
+        else raw = UPCOMING;
         const value = cap(raw);
         const ended = m && i.startedAt ? termEnd(m, i.startedAt) : null;
         const term = (m ? upcomingLabel(m) : node.upcomingLabel)?.replace(/\s*·\s*/g, ", ");
         players.push({
           key: `mod:${code}`, kind: "module", label: m ? `${code} ${m.title}` : code,
-          detail: raw >= 0.7 ? `Done${term ? ` (${term})` : ""}: counts 70% of a skill it teaches` : `${term ?? "Later in your degree"}: counts 40% until you've taken it`,
+          detail: raw >= DONE
+            ? `Done${term ? ` (${term})` : ""}: counts ${Math.round(DONE * 100)}% of a skill it teaches`
+            : `${term ?? "Later in your degree"}: counts ${Math.round(UPCOMING * 100)}% until you've taken it`,
           origin: term, value,
-          // A module whose term ended inside the window counted 40% before that date.
-          valueAt: (t) => (raw >= 0.7 && ended && ended.getTime() > t.getTime() && ended.getTime() <= i.now.getTime() ? cap(0.4) : value),
+          // A module whose term ended inside the window counted as upcoming before that date.
+          valueAt: (t) => (raw >= DONE && ended && ended.getTime() > t.getTime() && ended.getTime() <= i.now.getTime() ? cap(UPCOMING) : value),
         });
       }
     }
@@ -182,12 +198,23 @@ const readinessAt = (games: SkillGame[], t: Date) =>
   games.reduce((a, g) => a + g.weight * g.players.reduce((m, p) => Math.max(m, p.valueAt(t)), 0), 0);
 
 const fmt = (x: number) => (Math.round(x * 10) / 10).toFixed(1);
+const fmt2 = (x: number) => (Math.round(x * 100) / 100).toFixed(2);
+
+function adjustmentNote(headline: number, mapped: number, skills: number): string | null {
+  const d = (headline - mapped) * 100;
+  if (Math.abs(d) < 0.05) return null;
+  return `Your Bridge Map stores ${fmt2(headline * 100)} points, and the readiness formula over its ${skills} skills gives ${fmt2(mapped * 100)}. `
+    + `The ${fmt2(Math.abs(d))}-point difference is in the stored score itself: it was set when the map was seeded, or rounded to two decimals when a proof moved it. No source earns it, so it gets no share.`;
+}
 
 export function explainReadiness(i: ExplainInput): Explanation {
   const games = buildGames(i);
   const headline = i.map.readinessNow ?? 0;
   const mapped = games.reduce((a, g) => a + g.weight * g.coverage, 0);
-  const beyond = headline - mapped;
+  const adjustment = headline - mapped;
+  const anchored = i.anchor && Number.isFinite(i.anchor.adjustment) && Math.abs(i.anchor.adjustment - adjustment) <= ANCHOR_MAX_DRIFT;
+  const history = anchored ? i.anchor!.adjustment : adjustment;
+  const drift = adjustment - history;
 
   // ---------- Shapley per skill, then per source ----------
   const acc = new Map<string, Contributor & { _p: number; _l: number }>();
@@ -224,13 +251,6 @@ export function explainReadiness(i: ExplainInput): Explanation {
     .filter((c) => c.points > 0 || c.belowBar)
     .sort((a, b) => b.points - a.points || a.label.localeCompare(b.label));
   const efficiencyGap = Math.abs([...acc.values()].reduce((a, c) => a + c._p, 0) - mapped) * 100;
-  if (Math.abs(beyond) >= 0.0005) {
-    contributors.push({
-      id: "beyond", kind: "beyond-map", label: "Role demand beyond the mapped skills",
-      detail: `Your map's headline readiness was measured over every skill in the job ads; this reconciles the ${games.length} skills the map shows.`,
-      points: pts(beyond), leaveOneOut: pts(beyond), skills: [],
-    });
-  }
   skills.sort((a, b) => b.points - a.points || b.maxPoints - a.maxPoints);
 
   // ---------- groups ----------
@@ -238,7 +258,7 @@ export function explainReadiness(i: ExplainInput): Explanation {
   for (const c of contributors) {
     const key = c.kind === "evidence" ? `evidence:${c.origin ?? "other"}` : c.kind;
     const label = c.kind === "evidence" ? GROUP_LABEL[c.origin ?? ""] ?? `${SOURCE_LABEL[c.origin ?? ""] ?? "Other"} evidence`
-      : c.kind === "module" ? "Degree modules" : c.kind === "record" ? "Recorded skills" : "Beyond the map";
+      : c.kind === "module" ? "Degree modules" : "Recorded skills";
     const g = groupMap.get(key) ?? { kind: c.kind, label, points: 0, count: 0 };
     g.points += c.points;
     g.count += 1;
@@ -247,21 +267,25 @@ export function explainReadiness(i: ExplainInput): Explanation {
   const groups = [...groupMap.values()].map((g) => ({ ...g, points: Math.round(g.points * 100) / 100 })).sort((a, b) => b.points - a.points);
 
   // ---------- week over week, and a 6-week replay from evidence dates and term ends ----------
+  // Past weeks: the formula at that date plus the anchored adjustment. Now: the stored score itself.
   const since = new Date(i.now.getTime() - WEEK_MS);
   const timeline = Array.from({ length: TIMELINE_WEEKS }, (_, k) => {
-    const t = new Date(i.now.getTime() - (TIMELINE_WEEKS - 1 - k) * WEEK_MS);
-    return { weekOf: t.toISOString().slice(0, 10), points: pts(readinessAt(games, t) + beyond) };
+    const back = TIMELINE_WEEKS - 1 - k;
+    const t = new Date(i.now.getTime() - back * WEEK_MS);
+    return { weekOf: t.toISOString().slice(0, 10), points: pts(back === 0 ? headline : readinessAt(games, t) + history) };
   });
-  const fromPoints = pts(readinessAt(games, since) + beyond);
+  const fromPoints = pts(readinessAt(games, since) + history);
   const toPoints = pts(headline);
   const before = contributionsAt(games, since);
   const after = contributionsAt(games, null);
   const movers: Mover[] = [...new Set([...before.keys(), ...after.keys()])]
     .map((key) => ({ key, d: (after.get(key) ?? 0) - (before.get(key) ?? 0) }))
+    .concat(Math.abs(drift) >= 0.0005 ? [{ key: "adjustment", d: drift }] : [])
     .filter((m) => Math.abs(m.d) >= 0.0005)
     .sort((a, b) => Math.abs(b.d) - Math.abs(a.d))
     .slice(0, 6)
-    .map((m) => {
+    .map((m): Mover => {
+      if (m.key === "adjustment") return { contributorId: "adjustment", label: "Rounding of your stored score", kind: "adjustment", points: pts(m.d) };
       const c = acc.get(m.key);
       return { contributorId: m.key, label: c?.label ?? m.key, kind: c?.kind ?? "evidence", points: pts(m.d) };
     });
@@ -282,8 +306,9 @@ export function explainReadiness(i: ExplainInput): Explanation {
     const skill = g.node.name || i.skillName(g.node.skillId);
     const mod = g.players.filter((p) => p.kind === "module").sort((a, b) => b.value - a.value)[0];
     if (g.node.status === "gap") return `No module covers ${skill}, so a proof adds its full weight: ${Math.round(g.node.demand * 100)}% of ${i.roleName} ads, +${fmt(gain)} points.`;
-    if (g.node.status === "degree-upcoming") return `${mod ? mod.label.split(" ")[0] : "Your degree"} already counts 40% of ${skill}; a proof now adds the other 60%, +${fmt(gain)} points.`;
-    if (g.node.status === "degree-done") return `${mod ? mod.label.split(" ")[0] : "A module you've done"} counts 70% of ${skill}; a proof adds the last 30%, +${fmt(gain)} points.`;
+    const has = Math.round(g.coverage * 100);
+    if (g.node.status === "degree-upcoming") return `${mod ? mod.label.split(" ")[0] : "Your degree"} already counts ${has}% of ${skill}; a proof now adds the other ${100 - has}%, +${fmt(gain)} points.`;
+    if (g.node.status === "degree-done") return `${mod ? mod.label.split(" ")[0] : "A module you've done"} counts ${has}% of ${skill}; a proof adds the last ${100 - has}%, +${fmt(gain)} points.`;
     return `${skill} is already proven.`;
   };
   const actions: NextAction[] = [];
@@ -337,7 +362,7 @@ export function explainReadiness(i: ExplainInput): Explanation {
   }
   const weak = contributors.find((c) => c.belowBar);
   if (weak?.belowBar) {
-    insights.push(`${weak.label} counts 0 points for now: readiness needs level 2 at 60% confidence, and it's level ${weak.belowBar.level} at ${Math.round(weak.belowBar.confidence * 100)}%.`);
+    insights.push(`${weak.label} counts 0 points for now: readiness needs level ${PROOF_LEVEL} at ${Math.round(PROOF_CONFIDENCE * 100)}% confidence, and it's level ${weak.belowBar.level} at ${Math.round(weak.belowBar.confidence * 100)}%.`);
   }
   const topModule = contributors.find((c) => c.kind === "module");
   if (topModule) insights.push(`${topModule.label} is worth ${fmt(topModule.points)} points across ${topModule.skills.length} ${topModule.skills.length === 1 ? "skill" : "skills"} before you write a line of code.`);
@@ -349,7 +374,10 @@ export function explainReadiness(i: ExplainInput): Explanation {
   return {
     userId: i.map.userId, roleId: i.map.roleId, roleName: i.roleName, firstName: i.firstName, generatedAt: i.now.toISOString(),
     mode: i.mode ?? "full",
-    readiness: { now: headline, projected: i.map.readinessProjected ?? headline, mappedPoints: pts(mapped), beyondMapPoints: pts(beyond) },
+    readiness: {
+      now: headline, projected: i.map.readinessProjected ?? headline, mappedPoints: pts(mapped), adjustmentPoints: pts(adjustment),
+      adjustmentNote: adjustmentNote(headline, mapped, games.length), historyAdjustment: history,
+    },
     contributors, skills, groups,
     week: { since: since.toISOString(), fromPoints, toPoints, deltaPoints, movers, lastChange },
     timeline,

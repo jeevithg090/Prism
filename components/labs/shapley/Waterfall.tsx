@@ -1,12 +1,14 @@
 "use client";
 // Readiness Explained · the waterfall: every source's exact share of readiness, stacked left to right until the
-// bars reach the headline score. "By skill" shows the same split per skill, against what the skill could add.
+// bars reach the formula's score. When the map's stored score sits off the formula (seeded or rounded), one muted,
+// non-source row closes the gap to the headline, with its reason. "By skill" shows the same split per skill.
 import * as React from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { ChevronDown, ExternalLink } from "lucide-react";
 import { StatusBadge } from "@/components/keystone";
 import { Button } from "@/components/ui/button";
-import type { Contributor, Explanation } from "@/lib/labs/shapley/model";
+import { PROOF_CONFIDENCE, PROOF_LEVEL } from "@/lib/labs/shapley/explain";
+import type { Contributor, Explanation, MoverKind } from "@/lib/labs/shapley/model";
 import { cn } from "@/lib/utils";
 import { fmt1, KIND, shortDate, signed } from "./format";
 
@@ -31,41 +33,35 @@ function SourceDetail({ c }: { c: Contributor }) {
   const external = c.url?.startsWith("https://");
   return (
     <div className="mt-2 space-y-2 rounded-xl bg-muted/60 p-4 text-sm">
-      {c.kind === "beyond-map" ? (
-        <p>{c.detail}</p>
+      {c.belowBar ? (
+        <p>
+          This counts 0 points for now. It&apos;s level {c.belowBar.level} at {Math.round(c.belowBar.confidence * 100)}% confidence, and readiness
+          counts proof from level {PROOF_LEVEL} at {Math.round(PROOF_CONFIDENCE * 100)}% confidence.
+        </p>
       ) : (
-        <>
-          {c.belowBar ? (
-            <p>
-              This counts 0 points for now. It&apos;s level {c.belowBar.level} at {Math.round(c.belowBar.confidence * 100)}% confidence, and readiness
-              counts proof from level 2 at 60% confidence.
-            </p>
-          ) : (
-            <p>
-              Its fair share is <span className="font-mono tabular-nums">{fmt1(c.points)}</span> points. If it were the only source you lost,
-              readiness would drop <span className="font-mono tabular-nums">{fmt1(c.leaveOneOut)}</span> points
-              {c.leaveOneOut < c.points - 0.05 ? ", because another source covers part of the same skill." : "."}
-            </p>
-          )}
-          {c.skills.length > 0 && (
-            <ul className="flex flex-wrap gap-2" aria-label="Skills it covers">
-              {c.skills.map((s) => (
-                <li key={s.skillId} className="rounded-full border bg-card px-2.5 py-0.5 text-sm">
-                  {s.name} <span className="font-mono tabular-nums text-muted-foreground">{signed(s.points)}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-          <p className="text-muted-foreground">
-            {c.detail}
-            {c.createdAt ? ` Added ${shortDate(c.createdAt)}.` : ""}
-          </p>
-          {external && (
-            <a href={c.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-sm text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-              Open the evidence <ExternalLink className="size-3.5" aria-hidden /><span className="sr-only">(opens in a new tab)</span>
-            </a>
-          )}
-        </>
+        <p>
+          Its fair share is <span className="font-mono tabular-nums">{fmt1(c.points)}</span> points. If it were the only source you lost,
+          readiness would drop <span className="font-mono tabular-nums">{fmt1(c.leaveOneOut)}</span> points
+          {c.leaveOneOut < c.points - 0.05 ? ", because another source covers part of the same skill." : "."}
+        </p>
+      )}
+      {c.skills.length > 0 && (
+        <ul className="flex flex-wrap gap-2" aria-label="Skills it covers">
+          {c.skills.map((s) => (
+            <li key={s.skillId} className="rounded-full border bg-card px-2.5 py-0.5 text-sm">
+              {s.name} <span className="font-mono tabular-nums text-muted-foreground">{signed(s.points)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="text-muted-foreground">
+        {c.detail}
+        {c.createdAt ? ` Added ${shortDate(c.createdAt)}.` : ""}
+      </p>
+      {external && (
+        <a href={c.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-sm text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          Open the evidence <ExternalLink className="size-3.5" aria-hidden /><span className="sr-only">(opens in a new tab)</span>
+        </a>
       )}
     </div>
   );
@@ -74,33 +70,34 @@ function SourceDetail({ c }: { c: Contributor }) {
 function kindLine(c: Contributor): string {
   if (c.kind === "evidence") return c.belowBar ? "Evidence below the proof bar" : `Evidence for ${c.skills.map((s) => s.name).join(", ")}`;
   if (c.kind === "module") return `Module: ${c.skills.length} ${c.skills.length === 1 ? "skill" : "skills"}${c.origin ? `, ${c.origin}` : ""}`;
-  if (c.kind === "record") return "Recorded on your Bridge Map";
-  return "Reconciles the headline score";
+  return "Recorded on your Bridge Map";
 }
 
 function BySource({ x, showAll }: { x: Explanation; showAll: boolean }) {
   const [open, setOpen] = React.useState<string | null>(null);
   const total = Math.max(x.readiness.now * 100, 0.01);
-  const regular = x.contributors.filter((c) => c.kind !== "beyond-map");
-  const beyond = x.contributors.filter((c) => c.kind === "beyond-map");
-  const shown = showAll ? regular : regular.slice(0, TOP_SOURCES);
-  const rest = showAll ? [] : regular.slice(TOP_SOURCES);
+  const shown = showAll ? x.contributors : x.contributors.slice(0, TOP_SOURCES);
+  const rest = showAll ? [] : x.contributors.slice(TOP_SOURCES);
   const restPoints = rest.reduce((a, c) => a + c.points, 0);
   let cursor = 0;
-  const rows: { key: string; c?: Contributor; label: string; sub: string; points: number; left: number; width: number; bar: string }[] = [];
-  const push = (key: string, label: string, sub: string, points: number, bar: string, c?: Contributor) => {
-    const left = points >= 0 ? cursor : cursor + points;
-    rows.push({ key, c, label, sub, points, left: (left / total) * 100, width: (Math.abs(points) / total) * 100, bar });
-    cursor += points;
+  type Row = { key: string; c?: Contributor; note?: string; label: string; sub: string; points: number; left: number; width: number; bar: string };
+  const rows: Row[] = [];
+  const push = (r: Omit<Row, "left" | "width">) => {
+    const left = r.points >= 0 ? cursor : cursor + r.points;
+    rows.push({ ...r, left: (Math.max(left, 0) / total) * 100, width: (Math.abs(r.points) / total) * 100 });
+    cursor += r.points;
   };
-  for (const c of shown) push(c.id, c.label, kindLine(c), c.points, KIND[c.kind].bar, c);
-  if (rest.length) push("rest", `${rest.length} more sources`, "Smaller shares, each under the ones above", restPoints, "bg-chart-4");
-  for (const c of beyond) push(c.id, c.label, kindLine(c), c.points, KIND[c.kind].bar, c);
+  for (const c of shown) push({ key: c.id, c, label: c.label, sub: kindLine(c), points: c.points, bar: KIND[c.kind].bar });
+  if (rest.length) push({ key: "rest", label: `${rest.length} more sources`, sub: "Smaller shares, each under the ones above", points: restPoints, bar: "bg-chart-4" });
+  // Not a source: the stored score's own offset from the formula, so the rows still reach the headline.
+  if (x.readiness.adjustmentNote) {
+    push({ key: "adjustment", note: x.readiness.adjustmentNote, label: KIND.adjustment.label, sub: "Not a source: seeded or rounded on your map", points: x.readiness.adjustmentPoints, bar: KIND.adjustment.bar });
+  }
 
   return (
     <ol className="divide-y" aria-label="Readiness split by source">
       {rows.map((r, i) => {
-        const expandable = !!r.c;
+        const expandable = !!r.c || !!r.note;
         const isOpen = open === r.key;
         const label = (
           <span className="min-w-0">
@@ -127,9 +124,10 @@ function BySource({ x, showAll }: { x: Explanation; showAll: boolean }) {
               <span className="relative order-last col-span-2 h-3 rounded-full bg-muted sm:order-none sm:col-span-1">
                 <Bar left={r.left} width={r.width} className={r.bar} index={i} />
               </span>
-              <span className="text-right font-mono font-semibold tabular-nums">{signed(r.points)}</span>
+              <span className={cn("text-right font-mono font-semibold tabular-nums", r.note && "font-normal text-muted-foreground")}>{signed(r.points)}</span>
             </div>
             {isOpen && r.c && <SourceDetail c={r.c} />}
+            {isOpen && r.note && <p className="mt-2 rounded-xl bg-muted/60 p-4 text-sm">{r.note}</p>}
           </li>
         );
       })}
@@ -189,9 +187,10 @@ function BySkill({ x, showAll }: { x: Explanation; showAll: boolean }) {
 export function Waterfall({ x }: { x: Explanation }) {
   const [view, setView] = React.useState<"source" | "skill">("source");
   const [showAll, setShowAll] = React.useState(false);
-  const regular = x.contributors.filter((c) => c.kind !== "beyond-map").length;
+  const regular = x.contributors.length;
   const hidden = view === "source" ? Math.max(0, regular - TOP_SOURCES) : Math.max(0, x.skills.length - TOP_SKILLS);
-  const kinds = [...new Set(x.contributors.map((c) => c.kind))];
+  const kinds: MoverKind[] = [...new Set(x.contributors.map((c) => c.kind))];
+  if (view === "source" && x.readiness.adjustmentNote) kinds.push("adjustment");
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
