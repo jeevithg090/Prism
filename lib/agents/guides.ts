@@ -11,6 +11,7 @@ import { maxItems, noOutboundMessaging, redactForLLM } from "@/lib/agents/guardr
 import { runAgent, type AgentCtx, type Checkpoint } from "@/lib/agents/harness";
 import { fcSearch } from "@/lib/connectors/firecrawl";
 import { llmJSON } from "@/lib/llm";
+import { UNTRUSTED_RULE, guardOutput, scanForInjection, wrapUntrusted } from "@/lib/agents/safety/injection";
 import { GuideSuggestionZ, skillName } from "@/lib/schemas/community";
 import type { BridgeMap, BridgeNode, GuideSuggestion, Profile } from "@/lib/types";
 
@@ -138,6 +139,7 @@ const SYSTEM = [
   "(a warm, short first message under 90 words that the student will copy and send themselves).",
   "Never invent facts about the person, never flatter, never claim the student knows them, never mention",
   "demographics. Plain, kind English. Return the publicUrl unchanged for each person.",
+  UNTRUSTED_RULE,
 ].join(" ");
 
 /**
@@ -188,7 +190,7 @@ export async function findGuides(profile: Profile, map: BridgeMap): Promise<Guid
         const payload = redactForLLM(ctx, {
           student: { firstName: studentFirst, intro: tpl.studentIntro, interests: profile.interests, targetRole: tpl.roleName },
           topGap: { skill, demandPct: tpl.demandPct },
-          people: people.map(({ name, publicUrl, source, context }) => ({ name, publicUrl, source, context })),
+          people: people.map(({ name, publicUrl, source, context }) => ({ name, publicUrl, source, context: wrapUntrusted(`${source}:${publicUrl}`, context, 400) })),
         }, ["publicUrl"]);
         const out = await ctx.step("draft messages", () => llmJSON({
           agent: "guides",
@@ -205,10 +207,13 @@ export async function findGuides(profile: Profile, map: BridgeMap): Promise<Guid
         ctx.emit("progress", "Writing drafts from a template (AI writer unavailable)");
       }
 
+      // A scraped page or bio that tries to instruct the AI gets the deterministic template, never the model's draft.
+      const flagged = new Set(people.filter((c) => scanForInjection(`${c.name}\n${c.context}`).risk === "high").map((c) => c.publicUrl));
+      if (flagged.size) ctx.emit("progress", `${flagged.size === 1 ? "1 page" : `${flagged.size} pages`} contained text aimed at an AI, so a safe template wrote ${flagged.size === 1 ? "that draft" : "those drafts"}`);
       const suggestions = people.flatMap((c, i) => {
         const t = templateFor(c, tpl);
-        const d = drafts.find((x) => x.publicUrl === c.publicUrl) ?? (drafts.length === people.length ? drafts[i] : undefined);
-        const pickText = (v: string | undefined, fallback: string, max: number) => (v?.trim() ? v.trim().slice(0, max) : fallback);
+        const d = flagged.has(c.publicUrl) ? undefined : drafts.find((x) => x.publicUrl === c.publicUrl) ?? (drafts.length === people.length ? drafts[i] : undefined);
+        const pickText = (v: string | undefined, fallback: string, max: number) => (v?.trim() ? guardOutput(v.trim()).slice(0, max) : fallback);
         const parsed = GuideSuggestionZ.safeParse({
           name: c.name,
           publicUrl: c.publicUrl,

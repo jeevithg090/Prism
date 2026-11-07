@@ -4,6 +4,7 @@
 //        helper's `helped-newcomer` momentum event.
 import fs from "node:fs";
 import path from "node:path";
+import { z } from "zod";
 import { createHelpRequest } from "@/lib/community/help";
 import { getStore } from "@/lib/store";
 import type { HelpRequest, Profile } from "@/lib/types";
@@ -11,6 +12,9 @@ import {
   HelpCreateReqZ, HelpRequestZ, HelpStatusZ, HelpUpdateReqZ, MomentumEventZ,
   badRequest, fail, internal, ok, type MomentumEvent,
 } from "@/lib/schemas/community";
+
+// Help requests are for humans, so a message that tries to instruct an AI is still accepted, just flagged.
+const StoredHelpZ = HelpRequestZ.extend({ flagged: z.literal(true).optional() });
 
 const KIND_PHRASE: Record<HelpRequest["kind"], string> = {
   question: "a question",
@@ -48,7 +52,7 @@ export async function GET(req: Request) {
       : await getStore().list<HelpRequest>("help");
 
     const items = source
-      .map((r) => HelpRequestZ.safeParse(r))
+      .map((r) => StoredHelpZ.safeParse(r))
       .filter((r) => r.success)
       .map((r) => r.data)
       .filter((r) => !status || r.status === status.data)
@@ -77,7 +81,7 @@ export async function POST(req: Request) {
 async function create(body: unknown): Promise<Response> {
   const parsed = HelpCreateReqZ.safeParse(body);
   if (!parsed.success) return badRequest(parsed.error);
-  return ok(await createHelpRequest(parsed.data));
+  return ok(StoredHelpZ.parse(await createHelpRequest(parsed.data)));
 }
 
 async function update(body: unknown): Promise<Response> {
@@ -107,5 +111,5 @@ async function update(body: unknown): Promise<Response> {
     });
     await store.upsert("momentum_events", eventId, event, toUserId);
   }
-  return ok(HelpRequestZ.parse(updated));
+  return ok(StoredHelpZ.parse(updated));
 }
