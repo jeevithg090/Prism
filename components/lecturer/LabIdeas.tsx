@@ -37,7 +37,7 @@ function LabCard({ idea, index }: { idea: string; index: number }) {
           <span className="rounded-xl bg-primary/10 p-2 text-primary"><FlaskConical className="size-4" aria-hidden /></span>
           Lab idea {index + 1}
         </span>
-        {code && <span className="rounded-full border bg-status-degree/10 px-2.5 py-0.5 font-mono text-sm text-status-degree">{code}</span>}
+        {code && <span className="rounded-full border bg-status-degree/10 px-2.5 py-0.5 font-mono text-sm text-foreground">{code}</span>}
       </div>
       <p id={textId} className="flex-1 text-base leading-relaxed">{idea}</p>
       <Button variant="outline" size="lg" onClick={copy} aria-describedby={textId} className="self-start rounded-xl focus-visible:ring-2 focus-visible:ring-ring">

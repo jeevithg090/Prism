@@ -90,4 +90,17 @@ describe("GET /api/projects/progress", () => {
     expect((await progress("")).status).toBe(400);
     expect((await progress("?podId=")).status).toBe(400);
   });
+
+  it("returns 404 for a pod that doesn't exist (like every other pod route)", async () => {
+    const res = await progress("?podId=pod_nope");
+    expect(res.status).toBe(404);
+    expect(await res.json()).toMatchObject({ ok: false, error: { code: "not_found" } });
+  });
+
+  it("still serves the seeded demo pod when the store doesn't have it (fresh serverless instance)", async () => {
+    h.docs.delete("pods/pod_demo01");
+    const res = await progress("?podId=pod_demo01");
+    expect(res.status).toBe(200);
+    expect((await res.json()).data).toEqual({ podId: "pod_demo01", merged: [] });
+  });
 });
