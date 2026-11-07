@@ -9,6 +9,8 @@ import { QueryClientContext } from "@tanstack/react-query";
 import { Info } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { REPLAY_HEADER, replayInfoOf, type ReplayInfo } from "@/lib/replay-info";
+import { ReplayNote } from "./ReplayNote";
 import { Popover, PopoverContent, PopoverDescription, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
 
 export type RunMode = "demo" | "live";
@@ -34,6 +36,35 @@ const NS_LABEL: Record<string, [string, string]> = {
 };
 
 export const MODE_EVENT = "keystone:mode";
+/** Fired with a ReplayInfo for every /api answer that carries x-keystone-replay (see watchReplay). */
+export const REPLAY_EVENT = "keystone:replay";
+
+/**
+ * Once per page: watches fetch responses for the x-keystone-replay header and re-dispatches where the answer came
+ * from (the envelope's `replay`), so the toggle can say "Last answer: replayed from a real run · model · time"
+ * on any screen. It only reads a clone of the response, after the caller already has it.
+ */
+function watchReplay() {
+  if (typeof window === "undefined" || typeof window.fetch !== "function") return;
+  const w = window as Window & { __ksReplayWatch?: boolean };
+  if (w.__ksReplayWatch) return;
+  w.__ksReplayWatch = true;
+  const original = window.fetch.bind(window);
+  window.fetch = async (...args: Parameters<typeof fetch>) => {
+    const res = await original(...args);
+    try {
+      const source = res.headers?.get?.(REPLAY_HEADER);
+      if (source && source !== "off") {
+        const send = (info: ReplayInfo | null) => window.dispatchEvent(new CustomEvent(REPLAY_EVENT, { detail: info }));
+        if ((res.headers.get("content-type") ?? "").includes("json")) void res.clone().json().then((j) => send(replayInfoOf(j)), () => undefined);
+        else if (source === "replayed" || source === "live") send({ mode: source === "replayed" ? "demo" : "live", source, replayed: source === "replayed" ? 1 : 0, recorded: 0, live: source === "live" ? 1 : 0, missed: 0, kinds: ["tts"] });
+      }
+    } catch {
+      /* watching is best-effort */
+    }
+    return res;
+  };
+}
 
 function when(iso: string | null | undefined): string | null {
   if (!iso) return null;
@@ -88,7 +119,18 @@ export function ModeToggle({ className, initial }: { className?: string; initial
   const [mode, setMode] = React.useState<RunMode | null>(initial?.mode ?? null);
   const [busy, setBusy] = React.useState(false);
   const [live, setLive] = React.useState("");
+  const [last, setLast] = React.useState<ReplayInfo | null>(null);
   const [, startTransition] = React.useTransition();
+
+  React.useEffect(() => {
+    watchReplay();
+    const onReplay = (e: Event) => {
+      const info = (e as CustomEvent<ReplayInfo | null>).detail;
+      if (info) setLast(info);
+    };
+    window.addEventListener(REPLAY_EVENT, onReplay);
+    return () => window.removeEventListener(REPLAY_EVENT, onReplay);
+  }, []);
 
   React.useEffect(() => {
     let alive = true;
@@ -150,6 +192,12 @@ export function ModeToggle({ className, initial }: { className?: string; initial
             <Segments mode={mode} busy={busy} onChoose={choose} idPrefix="ks-mode-sheet" />
           </div>
           <p className="text-sm leading-6 text-muted-foreground">{recordingsSummary(state)}</p>
+          {last && (
+            <div className="flex flex-col gap-1.5">
+              <p className="text-sm font-medium text-foreground">Last answer on this page</p>
+              <ReplayNote replay={last} />
+            </div>
+          )}
           {state?.demoModeEnv && (
             <p className="text-sm leading-6 text-muted-foreground">This server runs the offline demo, so both options show Keystone&apos;s built-in demo data here.</p>
           )}

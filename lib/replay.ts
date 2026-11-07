@@ -55,6 +55,15 @@ export function strictFromCookieHeader(header: string | null | undefined): boole
   return strictCookieAllowed() && /(?:^|;\s*)ks_replay=strict(?:;|$)/.test(header ?? "");
 }
 
+/**
+ * Recording ("fill") Demo, dev-only via the ks_replay=fill cookie (scripts/record-demo.mjs): replay exact
+ * recordings only, and call live + record on any miss. A chain of calls (a coach conversation) then builds on
+ * the very answers Demo will replay, so every later step's key matches on stage.
+ */
+export function fillFromCookieHeader(header: string | null | undefined): boolean {
+  return strictCookieAllowed() && /(?:^|;\s*)ks_replay=fill(?:;|$)/.test(header ?? "");
+}
+
 /** The mode in a raw Cookie header (for route handlers that hold the request), else the default. */
 export function modeFromCookieHeader(header: string | null | undefined): RunMode {
   const m = (header ?? "").match(/(?:^|;\s*)ks_mode=([^;]*)/);
@@ -94,22 +103,25 @@ export function currentReplayEvents(): ReplayEvent[] {
   return [...(als.getStore()?.events ?? [])];
 }
 
-/** The viewer's mode and whether Demo is strict (never calls live), from the scope, cookies and env. */
-async function runContext(): Promise<{ mode: RunMode; strict: boolean }> {
+/** The viewer's mode, and whether Demo is strict (never calls live) or filling (records misses), from scope, cookies and env. */
+async function runContext(): Promise<{ mode: RunMode; strict: boolean; fill: boolean }> {
   const forced = als.getStore()?.mode;
   let mode: RunMode | undefined = forced;
   let strict = strictFromEnv();
+  let fill = false;
   try {
     const jar = await cookies();
     if (!mode) {
       const v = jar.get(MODE_COOKIE)?.value;
       if (isRunMode(v)) mode = v;
     }
-    if (!strict && strictCookieAllowed() && jar.get(STRICT_COOKIE)?.value === "strict") strict = true;
+    const flag = strictCookieAllowed() ? jar.get(STRICT_COOKIE)?.value : undefined;
+    if (flag === "strict") strict = true;
+    if (flag === "fill" && !strict) fill = true;
   } catch {
     /* no request scope (tests, scripts, a cache scope): fall back */
   }
-  return { mode: mode ?? defaultRunMode(), strict };
+  return { mode: mode ?? defaultRunMode(), strict, fill };
 }
 
 /** The viewer's mode: a forced scope mode, else the ks_mode cookie, else the default (outside a request too). */
@@ -414,13 +426,14 @@ function note(e: ReplayEvent) {
 
 async function run<T>(ns: string, keyParts: unknown, fn: () => Promise<T>, opts: ReplayOptions<T>, codec: Codec<T>): Promise<T> {
   if (!enabled() || !NS_RE.test(ns)) return fn();
-  const { mode, strict } = await runContext();
+  const { mode, strict, fill } = await runContext();
   const key = replayKey(keyParts);
   const loose = opts.loose === false ? undefined : looseReplayKey(keyParts);
   const alt = opts.alt === undefined ? undefined : altReplayKey({ ns, alt: opts.alt });
   const meta = cleanMeta(opts.meta ?? {});
   if (mode === "demo") {
-    const hit = lookup(ns, key, loose, alt, codec, opts.validate);
+    // Filling (recording) matches exactly; on stage, Demo also accepts a loose or alt match.
+    const hit = fill ? lookup(ns, key, undefined, undefined, codec, opts.validate) : lookup(ns, key, loose, alt, codec, opts.validate);
     if (hit) {
       note({ ns, key, mode, kind: "replayed", match: hit.match, recordedAt: hit.recordedAt, meta: hit.meta });
       try { opts.onReplay?.(hit, hit.match); } catch { /* reporting never breaks the replay */ }

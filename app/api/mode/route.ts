@@ -8,7 +8,7 @@
 // whether each service is configured.
 import { z } from "zod";
 import {
-  defaultRunMode, MODE_COOKIE, MODE_MAX_AGE_S, modeFromCookieHeader, replayStats, strictFromCookieHeader, type RunMode,
+  defaultRunMode, fillFromCookieHeader, MODE_COOKIE, MODE_MAX_AGE_S, modeFromCookieHeader, replayStats, strictFromCookieHeader, type RunMode,
 } from "@/lib/replay";
 import { badRequest, fail, internal, ok } from "@/lib/schemas/community";
 import { resetStore } from "@/lib/store";
@@ -28,6 +28,8 @@ function state(mode: RunMode, cookie: string | null) {
     demoModeEnv: process.env.DEMO_MODE === "true",
     /** Demo never calls a service live (KEYSTONE_REPLAY_STRICT, or the dev-only ks_replay=strict cookie). */
     strict: strictFromCookieHeader(cookie),
+    /** Dev-only recording Demo (ks_replay=fill): exact recordings replay, misses are called live and recorded. */
+    fill: !strictFromCookieHeader(cookie) && fillFromCookieHeader(cookie),
     /** Which live services are configured here (true/false only). */
     services: { openai: set("OPENAI_API_KEY"), firecrawl: set("FIRECRAWL_API_KEY"), elevenlabs: set("ELEVENLABS_API_KEY"), github: set("GITHUB_TOKEN") },
     /** Live AI here creates GitHub repos and posts PR comments ("Start our project", "Review my PR"). */
@@ -61,6 +63,8 @@ export async function POST(req: Request) {
     if (reset) {
       if (!canReset()) return fail(403, "forbidden", "Resetting the demo data needs DEMO_MODE=true.");
       resetStore();
+      // A fresh instance has no cached AI answers either (llmJSON cacheKey), so the next call replays or records.
+      (globalThis as { __ksLLMCache?: Map<string, unknown> }).__ksLLMCache?.clear();
     }
     const res = ok({ ...state(mode, req.headers.get("cookie")), ...(reset ? { reset: true } : {}) });
     const secure = new URL(req.url).protocol === "https:" ? "; Secure" : "";
