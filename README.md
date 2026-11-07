@@ -25,9 +25,16 @@ These files exist so every page builds and tests today. Each keeps the exact con
 | `lib/graph/build.ts` (`loadGraph`) | P2 | Reads `data/fixtures/bridgemap.<user>.<role>.json` |
 | `app/api/profile/[id]/route.ts` | P2 | Reads `profiles` from the store |
 | `data/fixtures/profile.aisha.json`, `bridgemap.aisha.ml-engineer.json` | P2 | Minimal Aisha fixtures |
-| `lib/cache.ts`, `lib/connectors/firecrawl.ts`, `data/skills.json` | P1 | Fixture-first `withCache`; `fcSearch` returns `[]` without a key; the 43 core skills |
 | `lib/n8n.ts` | P4 | Posts to `N8N_WEBHOOK_BASE_URL/<workflow>` if set, else `false` |
 | `components/keystone/index.tsx`, `components/shell/ActivityPanel.tsx`, `app/providers.tsx`, `app/(app)/layout.tsx` | P3 | Minimal shared components, `useActivity`, React Query + sonner providers |
+
+## Data agents (P1)
+
+| Data | Where it comes from |
+|---|---|
+| `data/cache/syllabus-uom-bsc-cs.json` | Real unit codes, titles, credits and mandatory/optional status from the Manchester course page for 2027 entry, via Firecrawl. Semesters come from the last digit of each code. Skills are inferred from unit titles; topics and outcomes were not scraped. |
+| `data/cache/trends*.json` | Real: 36 months of Hacker News "Who is hiring?" threads, rebuilt by `npm run hn-backfill` (no key needed). Mostly US and startup jobs, not UK graduate roles. |
+| `data/fixtures/market.*.json` | **Invented demo data.** Companies are fictional and links go to example.com. Run `npm run warm-cache` with Adzuna keys to replace it. |
 
 ## CI/CD (GitLab)
 Pipelines run on GitLab (`.gitlab-ci.yml`), not GitHub Actions: secret scan → typecheck → lint → test → DEMO_MODE build → e2e (non-blocking) → Vercel deploy (only if `VERCEL_TOKEN` is set) → a GitHub commit status named `ci` (only if `GITHUB_STATUS_TOKEN` is set), so GitHub branch protection can require it.

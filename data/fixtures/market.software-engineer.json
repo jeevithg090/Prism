@@ -1,0 +1,159 @@
+{
+  "roleId": "software-engineer",
+  "roleName": "Software engineer",
+  "location": "UK",
+  "adsAnalysed": 238,
+  "skills": [
+    {
+      "skillId": "git",
+      "share": 0.71
+    },
+    {
+      "skillId": "javascript",
+      "share": 0.58
+    },
+    {
+      "skillId": "testing",
+      "share": 0.52
+    },
+    {
+      "skillId": "sql",
+      "share": 0.5,
+      "trend": "stable"
+    },
+    {
+      "skillId": "typescript",
+      "share": 0.47
+    },
+    {
+      "skillId": "python",
+      "share": 0.46,
+      "trend": "stable"
+    },
+    {
+      "skillId": "rest-apis",
+      "share": 0.45
+    },
+    {
+      "skillId": "react",
+      "share": 0.44,
+      "trend": "stable"
+    },
+    {
+      "skillId": "java",
+      "share": 0.39
+    },
+    {
+      "skillId": "aws",
+      "share": 0.38,
+      "trend": "stable"
+    },
+    {
+      "skillId": "communication",
+      "share": 0.37
+    },
+    {
+      "skillId": "teamwork",
+      "share": 0.36
+    },
+    {
+      "skillId": "docker",
+      "share": 0.35,
+      "trend": "stable"
+    },
+    {
+      "skillId": "nodejs",
+      "share": 0.34
+    },
+    {
+      "skillId": "agile",
+      "share": 0.33
+    },
+    {
+      "skillId": "ci-cd",
+      "share": 0.31
+    },
+    {
+      "skillId": "data-structures",
+      "share": 0.28
+    },
+    {
+      "skillId": "algorithms",
+      "share": 0.27
+    },
+    {
+      "skillId": "linux",
+      "share": 0.24
+    },
+    {
+      "skillId": "code-review",
+      "share": 0.22
+    },
+    {
+      "skillId": "kubernetes",
+      "share": 0.19,
+      "trend": "stable"
+    },
+    {
+      "skillId": "system-design",
+      "share": 0.17
+    }
+  ],
+  "salary": {
+    "p25": 33000,
+    "median": 39000,
+    "p75": 47000,
+    "currency": "GBP"
+  },
+  "topCompanies": [
+    {
+      "name": "Ledgerline",
+      "count": 15
+    },
+    {
+      "name": "Harbourgate Software",
+      "count": 11
+    },
+    {
+      "name": "Quayside Data",
+      "count": 9
+    },
+    {
+      "name": "Oxford Road Systems",
+      "count": 8
+    },
+    {
+      "name": "Tidewell",
+      "count": 6
+    }
+  ],
+  "sampleAds": [
+    {
+      "title": "Graduate Software Engineer",
+      "company": "Ledgerline",
+      "url": "https://example.com/jobs/software-engineer-1"
+    },
+    {
+      "title": "Junior Full-Stack Developer",
+      "company": "Harbourgate Software",
+      "url": "https://example.com/jobs/software-engineer-2"
+    },
+    {
+      "title": "Software Engineer, Payments",
+      "company": "Tidewell",
+      "url": "https://example.com/jobs/software-engineer-3"
+    },
+    {
+      "title": "Associate Backend Engineer",
+      "company": "Oxford Road Systems",
+      "url": "https://example.com/jobs/software-engineer-4"
+    },
+    {
+      "title": "Graduate Developer",
+      "company": "Quayside Data",
+      "url": "https://example.com/jobs/software-engineer-5"
+    }
+  ],
+  "snapshotAt": "2026-11-06T09:00:00.000Z",
+  "source": "cache"
+}

@@ -1,0 +1,554 @@
+{
+  "id": "uom-bsc-cs",
+  "university": "University of Manchester",
+  "name": "BSc Computer Science",
+  "url": "https://www.manchester.ac.uk/study/undergraduate/courses/2027/00560/bsc-computer-science/",
+  "extractedAt": "2026-11-07T14:00:00.000Z",
+  "source": "cache",
+  "modules": [
+    {
+      "code": "COMP1xx01",
+      "title": "Introduction to Programming 1",
+      "year": 1,
+      "semester": "1",
+      "credits": 10,
+      "compulsory": true,
+      "topics": [
+        "Variables and control flow",
+        "Functions",
+        "Lists and dictionaries",
+        "Debugging"
+      ],
+      "learningOutcomes": [
+        "Write small programs in Python",
+        "Trace and debug program behaviour"
+      ],
+      "assessment": "Coursework and exam",
+      "skills": [
+        {
+          "skillId": "python",
+          "level": 2
+        },
+        {
+          "skillId": "git",
+          "level": 1
+        },
+        {
+          "skillId": "problem-solving",
+          "level": 2
+        }
+      ],
+      "industryNote": "Used for scripting, automation and data tooling in most tech teams."
+    },
+    {
+      "code": "COMP1xx02",
+      "title": "Fundamentals of Computation",
+      "year": 1,
+      "semester": "1",
+      "credits": 10,
+      "compulsory": true,
+      "topics": [
+        "Logic and proof",
+        "Sets and relations",
+        "Automata",
+        "Complexity basics"
+      ],
+      "learningOutcomes": [
+        "Reason formally about programs",
+        "Explain basic models of computation"
+      ],
+      "assessment": "Exam",
+      "skills": [
+        {
+          "skillId": "algorithms",
+          "level": 1
+        },
+        {
+          "skillId": "data-structures",
+          "level": 1
+        }
+      ],
+      "industryNote": "Underpins parsers, search engines and reliable software reasoning."
+    },
+    {
+      "code": "COMP1xx03",
+      "title": "Introduction to Programming 2",
+      "year": 1,
+      "semester": "2",
+      "credits": 10,
+      "compulsory": true,
+      "topics": [
+        "Object-oriented design",
+        "Classes and interfaces",
+        "Exceptions",
+        "Unit tests"
+      ],
+      "learningOutcomes": [
+        "Design small object-oriented systems",
+        "Write automated tests for your own code"
+      ],
+      "assessment": "Coursework",
+      "skills": [
+        {
+          "skillId": "java",
+          "level": 2
+        },
+        {
+          "skillId": "testing",
+          "level": 2
+        },
+        {
+          "skillId": "git",
+          "level": 2
+        }
+      ],
+      "industryNote": "Enterprise back ends and Android apps use these design habits."
+    },
+    {
+      "code": "COMP1xx04",
+      "title": "Mathematics for Computer Science",
+      "year": 1,
+      "semester": "2",
+      "credits": 10,
+      "compulsory": true,
+      "topics": [
+        "Probability and statistics",
+        "Hypothesis testing",
+        "Vectors and matrices",
+        "Eigenvalues"
+      ],
+      "learningOutcomes": [
+        "Apply statistical reasoning to data",
+        "Use linear algebra to solve problems"
+      ],
+      "assessment": "Exam",
+      "skills": [
+        {
+          "skillId": "statistics",
+          "level": 2
+        },
+        {
+          "skillId": "linear-algebra",
+          "level": 2
+        }
+      ],
+      "industryNote": "The maths behind machine learning, analytics and A/B testing."
+    },
+    {
+      "code": "COMP1xx05",
+      "title": "Computer Systems",
+      "year": 1,
+      "semester": "2",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [
+        "Binary representation",
+        "Memory hierarchy",
+        "Assembly basics",
+        "Command line"
+      ],
+      "learningOutcomes": [
+        "Explain how programs run on hardware",
+        "Use a Unix shell confidently"
+      ],
+      "assessment": "Coursework and exam",
+      "skills": [
+        {
+          "skillId": "linux",
+          "level": 1
+        },
+        {
+          "skillId": "c",
+          "level": 1
+        }
+      ],
+      "industryNote": "Helps with performance tuning and low-level debugging."
+    },
+    {
+      "code": "COMP2xx01",
+      "title": "Algorithms and Data Structures",
+      "year": 2,
+      "semester": "1",
+      "credits": 10,
+      "compulsory": true,
+      "topics": [
+        "Trees and graphs",
+        "Sorting and searching",
+        "Dynamic programming",
+        "Asymptotic analysis"
+      ],
+      "learningOutcomes": [
+        "Choose suitable data structures",
+        "Analyse algorithm running time"
+      ],
+      "assessment": "Coursework and exam",
+      "skills": [
+        {
+          "skillId": "algorithms",
+          "level": 3
+        },
+        {
+          "skillId": "data-structures",
+          "level": 3
+        },
+        {
+          "skillId": "java",
+          "level": 2
+        }
+      ],
+      "industryNote": "Used in route planning, search ranking and technical interviews."
+    },
+    {
+      "code": "COMP2xx02",
+      "title": "Database Systems",
+      "year": 2,
+      "semester": "1",
+      "credits": 10,
+      "compulsory": true,
+      "topics": [
+        "Relational modelling",
+        "SQL queries",
+        "Transactions",
+        "Indexing"
+      ],
+      "learningOutcomes": [
+        "Design normalised schemas",
+        "Write efficient SQL queries"
+      ],
+      "assessment": "Coursework and exam",
+      "skills": [
+        {
+          "skillId": "sql",
+          "level": 3
+        },
+        {
+          "skillId": "databases",
+          "level": 3
+        },
+        {
+          "skillId": "postgresql",
+          "level": 2
+        }
+      ],
+      "industryNote": "Nearly every product stores and queries relational data."
+    },
+    {
+      "code": "COMP2xx03",
+      "title": "Software Engineering",
+      "year": 2,
+      "semester": "full-year",
+      "credits": 20,
+      "compulsory": true,
+      "topics": [
+        "Agile teamwork",
+        "Version control workflows",
+        "Code review",
+        "Requirements and testing"
+      ],
+      "learningOutcomes": [
+        "Deliver software in a team",
+        "Review and improve others' code"
+      ],
+      "assessment": "Group project",
+      "skills": [
+        {
+          "skillId": "agile",
+          "level": 2
+        },
+        {
+          "skillId": "teamwork",
+          "level": 3
+        },
+        {
+          "skillId": "code-review",
+          "level": 2
+        },
+        {
+          "skillId": "git",
+          "level": 3
+        },
+        {
+          "skillId": "testing",
+          "level": 2
+        },
+        {
+          "skillId": "communication",
+          "level": 2
+        }
+      ],
+      "industryNote": "Mirrors how professional engineering teams plan and ship work."
+    },
+    {
+      "code": "COMP2xx04",
+      "title": "Operating Systems",
+      "year": 2,
+      "semester": "2",
+      "credits": 10,
+      "compulsory": true,
+      "topics": [
+        "Processes and threads",
+        "Scheduling",
+        "Virtual memory",
+        "File systems"
+      ],
+      "learningOutcomes": [
+        "Explain how an OS manages resources",
+        "Write concurrent C programs"
+      ],
+      "assessment": "Coursework and exam",
+      "skills": [
+        {
+          "skillId": "linux",
+          "level": 2
+        },
+        {
+          "skillId": "c",
+          "level": 2
+        }
+      ],
+      "industryNote": "Foundation for backend performance, infrastructure and embedded work."
+    },
+    {
+      "code": "COMP2xx05",
+      "title": "Web Development",
+      "year": 2,
+      "semester": "2",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [
+        "HTML and CSS",
+        "JavaScript",
+        "HTTP and REST",
+        "Client-server apps"
+      ],
+      "learningOutcomes": [
+        "Build a dynamic web application",
+        "Design a simple REST API"
+      ],
+      "assessment": "Coursework",
+      "skills": [
+        {
+          "skillId": "html-css",
+          "level": 2
+        },
+        {
+          "skillId": "javascript",
+          "level": 2
+        },
+        {
+          "skillId": "rest-apis",
+          "level": 2
+        },
+        {
+          "skillId": "nodejs",
+          "level": 1
+        }
+      ],
+      "industryNote": "The everyday toolkit for full-stack product engineers."
+    },
+    {
+      "code": "COMP3xx01",
+      "title": "Machine Learning",
+      "year": 3,
+      "semester": "1",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [
+        "Supervised learning",
+        "Model selection",
+        "Regularisation",
+        "Clustering"
+      ],
+      "learningOutcomes": [
+        "Train and evaluate classical models",
+        "Compare models using suitable metrics"
+      ],
+      "assessment": "Coursework and exam",
+      "skills": [
+        {
+          "skillId": "machine-learning",
+          "level": 3
+        },
+        {
+          "skillId": "scikit-learn",
+          "level": 2
+        },
+        {
+          "skillId": "python",
+          "level": 3
+        },
+        {
+          "skillId": "numpy",
+          "level": 2
+        },
+        {
+          "skillId": "pandas",
+          "level": 2
+        },
+        {
+          "skillId": "statistics",
+          "level": 3
+        }
+      ],
+      "industryNote": "Powers recommendations, fraud detection and forecasting systems."
+    },
+    {
+      "code": "COMP3xx02",
+      "title": "Deep Learning",
+      "year": 3,
+      "semester": "2",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [
+        "Neural networks",
+        "Backpropagation",
+        "Convolutional networks",
+        "Sequence models"
+      ],
+      "learningOutcomes": [
+        "Implement and train neural networks",
+        "Explain common network architectures"
+      ],
+      "assessment": "Coursework and exam",
+      "skills": [
+        {
+          "skillId": "deep-learning",
+          "level": 3
+        },
+        {
+          "skillId": "pytorch",
+          "level": 2
+        },
+        {
+          "skillId": "machine-learning",
+          "level": 3
+        }
+      ],
+      "industryNote": "Behind vision, speech and modern language models."
+    },
+    {
+      "code": "COMP3xx03",
+      "title": "AI and Games",
+      "year": 3,
+      "semester": "1",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [
+        "Search and planning",
+        "Game trees",
+        "Monte Carlo methods",
+        "Heuristics"
+      ],
+      "learningOutcomes": [
+        "Implement search-based game agents",
+        "Evaluate heuristic strategies"
+      ],
+      "assessment": "Coursework",
+      "skills": [
+        {
+          "skillId": "algorithms",
+          "level": 3
+        },
+        {
+          "skillId": "machine-learning",
+          "level": 1
+        },
+        {
+          "skillId": "python",
+          "level": 2
+        }
+      ],
+      "industryNote": "Search and planning methods appear in logistics and robotics."
+    },
+    {
+      "code": "COMP3xx04",
+      "title": "Distributed Systems",
+      "year": 3,
+      "semester": "2",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [
+        "Consistency models",
+        "Replication",
+        "Fault tolerance",
+        "Cloud architectures"
+      ],
+      "learningOutcomes": [
+        "Reason about failure in distributed systems",
+        "Design a scalable service"
+      ],
+      "assessment": "Exam",
+      "skills": [
+        {
+          "skillId": "system-design",
+          "level": 2
+        },
+        {
+          "skillId": "cloud-computing",
+          "level": 2
+        }
+      ],
+      "industryNote": "How large online services stay available under heavy load."
+    },
+    {
+      "code": "COMP3xx05",
+      "title": "Computer Security",
+      "year": 3,
+      "semester": "1",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [
+        "Threat modelling",
+        "Web vulnerabilities",
+        "Applied cryptography",
+        "Secure design"
+      ],
+      "learningOutcomes": [
+        "Identify common security weaknesses",
+        "Apply secure design principles"
+      ],
+      "assessment": "Coursework and exam",
+      "skills": [
+        {
+          "skillId": "security-basics",
+          "level": 3
+        }
+      ],
+      "industryNote": "Every engineering team needs people who spot security risks."
+    },
+    {
+      "code": "COMP3xx99",
+      "title": "Third Year Project",
+      "year": 3,
+      "semester": "full-year",
+      "credits": 40,
+      "compulsory": true,
+      "topics": [
+        "Project planning",
+        "Independent research",
+        "Implementation",
+        "Report and demonstration"
+      ],
+      "learningOutcomes": [
+        "Plan and deliver a substantial project",
+        "Present and justify technical work"
+      ],
+      "assessment": "Project report and demonstration",
+      "skills": [
+        {
+          "skillId": "system-design",
+          "level": 3
+        },
+        {
+          "skillId": "communication",
+          "level": 3
+        },
+        {
+          "skillId": "testing",
+          "level": 2
+        }
+      ],
+      "industryNote": "Closest university experience to owning a real product feature."
+    }
+  ]
+}
