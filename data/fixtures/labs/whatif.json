@@ -1,0 +1,50 @@
+{
+  "runs": 200,
+  "confidence": 0.8,
+  "seed": "keystone-whatif-v1",
+  "demoNow": "2026-11-07T09:00:00.000Z",
+  "maxHoursPerWeek": 40,
+  "followThrough": [0.6, 1.0],
+  "effortSpread": [0.8, 1.4],
+  "defaultEffortHours": 10,
+  "effortHours": {
+    "docker": 10, "pytorch": 14, "sql": 8, "aws": 12, "mlops": 14, "llm-apps": 12, "ci-cd": 6, "kubernetes": 14,
+    "machine-learning": 20, "vector-databases": 8, "llm-evaluation": 8, "deep-learning": 24, "tensorflow": 12,
+    "pandas": 8, "numpy": 6, "scikit-learn": 10, "statistics": 12, "linear-algebra": 12, "databases": 10,
+    "testing": 6, "system-design": 12, "security-basics": 8, "rest-apis": 8, "git": 4, "linux": 6, "react": 12,
+    "typescript": 8, "javascript": 10, "nodejs": 10, "cloud-computing": 10, "data-visualisation": 6
+  },
+  "placement": { "startMonthDay": "06-21", "weeks": 10, "learningHoursPerWeek": 6 },
+  "notes": [
+    {
+      "id": "effort",
+      "label": "Hours to a first merged PR",
+      "text": "Each skill needs a planning estimate of learn, practice and build hours before its first merged PR (rung 2 of the Proof Ladder), from 4 hours for Git to 24 for deep learning. Every future draws its own 0.8 to 1.4 times that, because skills usually take longer than planned.",
+      "source": "Keystone planning estimate"
+    },
+    {
+      "id": "pace",
+      "label": "Weeks rarely go to plan",
+      "text": "Each simulated week delivers 60 to 100% of the hours you plan. People reliably underestimate how long their own work takes (the planning fallacy).",
+      "source": "Buehler, Griffin and Ross (1994), Journal of Personality and Social Psychology 67(3)"
+    },
+    {
+      "id": "demand",
+      "label": "Demand keeps moving",
+      "text": "Each skill's share of job ads moves with the Trend Forecaster's 12-month projection, sampled inside its 95% prediction band, so readiness can change even in weeks you don't study.",
+      "source": "Trend Forecaster: OLS on logit share of Hacker News Who is hiring posts"
+    },
+    {
+      "id": "rules",
+      "label": "The Roadmap Agent's rules",
+      "text": "Exam weeks get half your hours. A skill started before its prerequisites are covered takes 1 / 0.6 as long, the same 0.6 the Roadmap Agent uses to rank it. Degree skills count as done when their module's term ends.",
+      "source": "lib/graph/plan.ts and lib/graph/terms.ts"
+    },
+    {
+      "id": "placement",
+      "label": "Summer placement",
+      "text": "A 10-week placement from 21 June replaces self-study with about 6 hours a week of on-the-job learning on your next roadmap skill, and turns communication and teamwork into proven skills when it ends.",
+      "source": "Keystone planning estimate"
+    }
+  ]
+}
