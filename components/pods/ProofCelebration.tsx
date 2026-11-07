@@ -14,6 +14,7 @@ import type { ProofResult } from "@/lib/schemas/studio";
 import { BadgePill, StatusBadge } from "@/components/keystone";
 import { LadderStep } from "@/components/ladder/LadderStep";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { useActivity } from "@/components/shell/ActivityPanel";
 import {
   Dialog,
   DialogContent,
@@ -94,6 +95,7 @@ function CelebrationBody({
   onClose: () => void;
   mapHref: string;
 }) {
+  const activity = useActivity();
   const reduce = useReducedMotion() === true;
   const before = Math.round(result.readinessBefore * 100);
   const after = Math.round(result.readinessAfter * 100);
@@ -237,6 +239,20 @@ function CelebrationBody({
           Back to the project
         </Button>
       </div>
+      {result.runId && activity.runId === result.runId && (
+        <div className="mt-3 flex justify-center">
+          <Button
+            variant="ghost"
+            onClick={() => {
+              onClose();
+              // Open after the dialog's exit, so the two overlays never stack.
+              window.setTimeout(() => activity.setOpen(true), 150);
+            }}
+          >
+            See what the agents did
+          </Button>
+        </div>
+      )}
     </>
   );
 }

@@ -69,7 +69,8 @@ export function PersonaSwitcher({ className }: { className?: string }) {
       >
         <span className="sr-only">Viewing as</span>{" "}
         <span aria-hidden className="shrink-0"><MemberAvatar member={me} size="sm" /></span>
-        <span className="min-w-0 sm:shrink-0">
+        {/* Below sm the top bar has no room for a name ("Ai…"): avatar and chevron only, name for screen readers. */}
+        <span className="min-w-0 max-sm:sr-only sm:shrink-0">
           <span className="block truncate text-sm font-semibold text-foreground">
             <span className="sm:hidden">{me.firstName}</span>
             <span className="hidden sm:inline">{me.name}</span>

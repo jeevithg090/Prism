@@ -10,7 +10,7 @@ import { z } from "zod";
 import { llmJSON, llmText } from "@/lib/llm";
 import { getStore } from "@/lib/store";
 import { emit, newRunId } from "@/lib/agents/events";
-import { skillName } from "@/lib/schemas/community";
+import { isKnownSkill, skillName } from "@/lib/schemas/community";
 import type { MomentumEvent } from "@/lib/schemas/community";
 import type { EvidenceItem } from "@/lib/types";
 import { currentRoadmapWeek, getProofLadder, loadProfile, loadUserMap, NotFoundError, roleName } from "@/lib/agents/ladder";
@@ -250,6 +250,11 @@ function toPublic(ch: StoredChallenge, extra: { roadmapWeek?: number; runId?: st
  */
 export async function generateChallenge(userId: string, skillId: string, runId: string = newRunId()): Promise<PublicChallenge> {
   const skill = skillName(skillId);
+  // Only skills Keystone tracks get a challenge: an unknown id must not spend a model call on junk.
+  const fixtureSkill = loadChallengeFixtures().some((c) => c.skillId === skillId);
+  if (!fixtureSkill && !isKnownSkill(skillId)) {
+    throw new NotFoundError(`We don't have challenges for ${skill} yet. Try Docker, PyTorch, SQL, AWS, Python or Git.`);
+  }
   const [profile, week, map] = await Promise.all([loadProfile(userId), currentRoadmapWeek(userId), loadUserMap(userId)]);
   const node = map?.nodes.find((n) => n.skillId === skillId);
   const role = roleName(profile?.dna?.targetRoles?.[0]);

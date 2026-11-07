@@ -1,13 +1,14 @@
 "use client";
 import * as React from "react";
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Hammer, MessageCircle, RotateCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { DemoDataNote, EmptyState, ErrorState, PageHeader, SectionCard } from "@/components/keystone";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { apiGet } from "@/lib/fetcher";
+import { toast } from "sonner";
+import { apiGet, apiPost } from "@/lib/fetcher";
 import { skillName } from "@/lib/schemas/community";
 import type { ProofResult } from "@/lib/schemas/studio";
 import type { Pod } from "@/lib/types";
@@ -19,7 +20,7 @@ import { DEMO_POD_ID, fallbackMember, memberIds, useMemberProfiles } from "./mem
 import { PRReviewPanel } from "./PRReviewPanel";
 import { ProofCelebration } from "./ProofCelebration";
 import { StartProjectButton } from "./StartProjectButton";
-import { useProjectProgress } from "./useProjectProgress";
+import { projectProgressKey, useProjectProgress } from "./useProjectProgress";
 
 const HOW_PODS_WORK = [
   "Pick your issue.",
@@ -145,6 +146,29 @@ function MergedTally({
 }
 
 /** /pods/[podId]: the pod's project brief, milestones and issues, and the merge that turns an issue into proof. */
+/**
+ * Presenter reset: /pods/pod_demo01?reset=1 undoes every "Mark as merged" on the demo pod
+ * (POST /api/projects/reset), so the proof moment can be shown again. Then it drops the param.
+ */
+function usePresenterReset(podId: string) {
+  const qc = useQueryClient();
+  const router = useRouter();
+  React.useEffect(() => {
+    if (podId !== DEMO_POD_ID) return;
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("reset") !== "1") return;
+    url.searchParams.delete("reset");
+    apiPost<{ cleared: number }>("/api/projects/reset", { podId })
+      .then(({ cleared }) => {
+        void qc.invalidateQueries({ queryKey: projectProgressKey(podId) });
+        void qc.invalidateQueries({ queryKey: ["graph"] });
+        toast.success("Demo pod reset", { description: `${cleared} ${cleared === 1 ? "merge" : "merges"} undone.` });
+      })
+      .catch(() => toast.error("We couldn't reset the demo pod", { description: "Please try again in a moment." }))
+      .finally(() => router.replace(`${url.pathname}${url.search}`));
+  }, [podId, qc, router]);
+}
+
 export function ProjectView({ podId }: { podId: string }) {
   const router = useRouter();
   const viewerId = useViewerId();
@@ -153,6 +177,7 @@ export function ProjectView({ podId }: { podId: string }) {
     queryFn: () => apiGet<Pod>(`/api/pods/${encodeURIComponent(podId)}`),
   });
   const progress = useProjectProgress(podId);
+  usePresenterReset(podId);
   const [proof, setProof] = React.useState<ProofResult | null>(null);
   const pod = q.data;
   const people = useMemberProfiles(pod ? memberIds(pod) : []);

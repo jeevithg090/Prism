@@ -5,5 +5,5 @@ import { Toaster } from "sonner";
 import { ActivityProvider } from "@/components/shell/ActivityPanel";
 export function Providers({ children }: { children: React.ReactNode }) {
   const [qc] = React.useState(() => new QueryClient({ defaultOptions: { queries: { staleTime: 30_000, retry: 1 } } }));
-  return <QueryClientProvider client={qc}><ActivityProvider>{children}<Toaster richColors position="top-center" /></ActivityProvider></QueryClientProvider>;
+  return <QueryClientProvider client={qc}><ActivityProvider>{children}<Toaster richColors position="top-center" style={{ zIndex: "var(--z-toast)" } as React.CSSProperties} /></ActivityProvider></QueryClientProvider>;
 }

@@ -23,7 +23,7 @@ vi.mock("@/lib/store", () => ({
   }),
 }));
 
-import { NotFoundError, proofFromPullRequestEvent, readinessFormula, recordMergedPR, referencedIssueNumber } from "./proof";
+import { NotFoundError, proofFromPullRequestEvent, readinessFormula, recordMergedPR, referencedIssueNumber, resetPodProofs } from "./proof";
 
 const dna = { targetRoles: ["ml-engineer"] } as Profile["dna"];
 const profiles: Profile[] = [
@@ -203,5 +203,26 @@ describe("proofFromPullRequestEvent", () => {
     expect(await proofFromPullRequestEvent(event({ title: "misc" }))).toBeNull();
     expect(await proofFromPullRequestEvent({ zen: "hi" })).toBeNull();
     expect(h.upsert).not.toHaveBeenCalled();
+  });
+});
+
+describe("resetPodProofs (presenter reset for the demo pod)", () => {
+  it("undoes a merge so the same issue can be merged again with the same readiness jump", async () => {
+    const first = await recordMergedPR({ podId: "pod_demo01", issueIndex: 0 });
+    expect(doc("pod_progress", "pod_demo01")).toBeTruthy();
+    const out = await resetPodProofs("pod_demo01");
+    expect(out).toEqual({ podId: "pod_demo01", cleared: 1 });
+    expect(doc("pod_progress", "pod_demo01")).toBeUndefined();
+    expect(doc("proofs", "pod_demo01:0")).toBeUndefined();
+    expect(doc("maps", "aisha:ml-engineer")).toBeUndefined();
+    expect([...h.docs.keys()].some((k) => k.startsWith("evidence/ev_pod_pod_demo01_0"))).toBe(false);
+    const again = await recordMergedPR({ podId: "pod_demo01", issueIndex: 0 });
+    expect(again.readinessBefore).toBe(first.readinessBefore);
+    expect(again.readinessAfter).toBe(first.readinessAfter);
+  });
+
+  it("is a no-op on a clean pod and a NotFoundError for an unknown pod", async () => {
+    expect(await resetPodProofs("pod_demo01")).toEqual({ podId: "pod_demo01", cleared: 0 });
+    await expect(resetPodProofs("pod_nope")).rejects.toBeInstanceOf(NotFoundError);
   });
 });

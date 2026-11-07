@@ -102,7 +102,7 @@ describe("PRReviewPanel", () => {
     ).toHaveAttribute("href", review.prUrl);
     expect(screen.getByText("Hints, not answers")).toBeInTheDocument();
     expect(screen.getByText("Posted on GitHub")).toBeInTheDocument();
-    expect(start).toHaveBeenCalledWith("run_review1");
+    expect(start).toHaveBeenCalledWith("run_review1", { open: false });
     expect(onReviewed).toHaveBeenCalledWith(review);
     expect(toast.success).toHaveBeenCalled();
   });

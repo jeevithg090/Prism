@@ -56,7 +56,8 @@ export function PRReviewPanel({
   const mutation = useMutation({
     mutationFn: () => apiPost<PRReview>("/api/projects/review", { podId }),
     onSuccess: (review) => {
-      if (review.runId) activity.start(review.runId);
+      // Stream in the background so the hints stay readable; the top bar's Agents pill pulses.
+      if (review.runId) activity.start(review.runId, { open: false });
       toast.success(
         review.posted
           ? "The Tech Lead left hints on your pull request"

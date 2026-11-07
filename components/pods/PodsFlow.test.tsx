@@ -32,8 +32,7 @@ describe("PodsFlow", () => {
     expect(await screen.findByText(/Comparing 12 students/)).toBeInTheDocument();
     expect(apiPost).toHaveBeenCalledWith("/api/pods/match", { userId: "aisha" });
     expect(await screen.findByTestId("pod-card", {}, { timeout: 2000 })).toBeInTheDocument();
-    expect(start).toHaveBeenCalledWith("run_123");
-    expect(setOpen).toHaveBeenLastCalledWith(false);
+    expect(start).toHaveBeenCalledWith("run_123", { open: false });
     // A fresh match always offers to start the project.
     expect(screen.getByRole("button", { name: /Start our project/ })).toBeEnabled();
   });

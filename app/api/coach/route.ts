@@ -4,7 +4,8 @@ import { newRunId } from "@/lib/agents/events";
 import { runCoach } from "@/lib/agents/coach/loop";
 import { TOOLS } from "@/lib/agents/tools/registry";
 import { CoachReqZ } from "@/lib/schemas/coach";
-import { badRequest, internal, ok } from "@/lib/schemas/community";
+import { getProfile } from "@/lib/graph/data";
+import { badRequest, fail, internal, ok } from "@/lib/schemas/community";
 
 /** The client may pick the runId so the Activity panel can stream the run live. */
 const RUN_ID = /^run_[a-z0-9]{6,16}$/;
@@ -22,6 +23,10 @@ export async function POST(req: Request) {
   const requested = (body as { runId?: unknown }).runId;
   const runId = typeof requested === "string" && RUN_ID.test(requested) ? requested : newRunId();
   try {
+    // Same contract as every user-scoped route: an unknown student is a 404, not a model call.
+    if (!(await getProfile(parsed.data.userId))) {
+      return fail(404, "not_found", `No profile ${parsed.data.userId}. Finish onboarding first.`);
+    }
     const res = await runCoach({
       ...parsed.data,
       tools: TOOLS,
