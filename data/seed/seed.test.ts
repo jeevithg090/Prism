@@ -80,7 +80,7 @@ describe("trajectories.json", () => {
 });
 
 describe("pod.aisha.json", () => {
-  it("is Pod Aurora with aisha, priya, tom and mei", () => {
+  it("is Pod Orbit with aisha, priya, tom and mei", () => {
     expect(pod.id).toBe("pod_demo01");
     expect(pod.members.map((m) => m.userId)).toEqual(["aisha", "priya", "tom", "mei"]);
     expect(pod.members.find((m) => m.userId === "aisha")?.learns).toContain("docker");
