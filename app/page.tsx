@@ -1,10 +1,21 @@
 import Link from "next/link";
+import { ArrowRight, BookOpen, BriefcaseBusiness, Github, Network } from "lucide-react";
+import { AgentAvatar } from "@/components/keystone";
+const agents = ["syllabus", "market", "evidence", "skillmap", "roadmap", "trends", "matchmaker", "architect", "orchestrator"] as const;
+const steps = [["We read your degree", "See what your modules already teach."], ["We read industry", "Find what employers ask for and where demand is moving."], ["We build your bridge and your team", "Get a plan that builds on your degree, with peers to learn alongside."]];
 export default function Home() {
-  return (
-    <main className="mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center gap-4 px-4 text-center">
-      <h1 className="text-5xl font-semibold tracking-tight">Keystone</h1>
-      <p className="text-lg text-muted-foreground">Your degree is the foundation. Keystone builds the bridge to industry.</p>
-      <Link href="/pods?demo=1" className="rounded-xl bg-primary px-4 py-2 text-primary-foreground">Try the demo</Link>
-    </main>
-  );
+  return <main className="min-h-screen overflow-hidden">
+    <nav className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5"><Link href="/" className="text-lg font-semibold">⌂ Keystone</Link><Link href="/onboard" className="rounded-xl border border-border px-4 py-2 text-sm">Build my bridge</Link></nav>
+    <section className="relative mx-auto grid min-h-[70vh] max-w-7xl items-center gap-12 px-5 py-16 lg:grid-cols-[1.1fr_.9fr]"><div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_20%_20%,rgba(99,102,241,.16),transparent_55%)]"/>
+      <div><p className="mb-4 text-sm font-semibold uppercase tracking-[.18em] text-primary">Reply · AI on Campus</p><h1 className="max-w-3xl text-5xl font-semibold leading-[1.08] tracking-tight sm:text-6xl">Your degree is the foundation. <span className="text-primary">Keystone builds the bridge to industry.</span></h1>
+        <p className="mt-6 max-w-2xl text-lg leading-8 text-muted-foreground">AI agents read your syllabus, the job market and your real work, then build a roadmap that adds to your degree instead of repeating it.</p>
+        <div className="mt-8 flex flex-wrap gap-3"><Link href="/onboard" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 py-2 font-medium text-primary-foreground">Build my bridge <ArrowRight size={16}/></Link><Link href="/dashboard?demo=1" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 font-medium">Try the demo <ArrowRight size={16}/></Link></div>
+      </div>
+      <div className="rounded-[2rem] border border-primary/15 bg-card/80 p-6 shadow-xl"><div className="mx-auto grid max-w-sm grid-cols-3 gap-3 text-center"><div className="rounded-xl bg-status-degree/10 p-4 text-status-degree"><BookOpen className="mx-auto"/><span className="mt-2 block text-xs">Your degree</span></div><div className="rounded-xl bg-status-proven/10 p-4 text-status-proven"><Github className="mx-auto"/><span className="mt-2 block text-xs">Your proof</span></div><div className="rounded-xl bg-status-rising/10 p-4 text-status-rising"><BriefcaseBusiness className="mx-auto"/><span className="mt-2 block text-xs">Industry</span></div></div><div className="my-5 flex justify-center text-primary"><Network size={28}/></div><div className="rounded-2xl bg-primary p-5 text-center text-primary-foreground"><p className="text-sm opacity-80">A clear next step, with a reason</p><p className="mt-1 font-mono text-4xl font-semibold">38% → 84%</p><p className="mt-2 text-sm">A degree-aware bridge to your goal</p></div></div>
+    </section>
+    <section className="mx-auto max-w-7xl px-5 py-12"><div className="grid gap-5 md:grid-cols-3">{steps.map(([title, body], index) => <article key={title} className="rounded-2xl border border-border bg-card p-6"><span className="font-mono text-sm text-primary">0{index + 1}</span><h2 className="mt-4 text-xl font-semibold">{title}</h2><p className="mt-2 text-muted-foreground">{body}</p></article>)}</div></section>
+    <section className="border-y border-border bg-card/60 py-8"><h2 className="text-center text-lg font-semibold">A team of agents builds your bridge</h2><div className="mx-auto mt-5 flex max-w-7xl flex-wrap items-center justify-center gap-5 px-5">{agents.map((agent) => <div key={agent} className="flex items-center gap-2"><AgentAvatar agent={agent} size={32}/><span className="text-sm capitalize">{agent}</span></div>)}</div></section>
+    <section className="mx-auto max-w-7xl px-5 py-10 text-center"><p className="text-2xl font-semibold">77% of employers say students with real work experience arrive better prepared.</p><p className="mt-2 text-sm text-muted-foreground">ISE Student Development Survey 2025</p></section>
+    <footer className="mx-auto max-w-7xl px-5 py-8 text-sm text-muted-foreground">Keystone · Your degree is the foundation. Build the bridge.</footer>
+  </main>;
 }

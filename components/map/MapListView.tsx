@@ -1,0 +1,9 @@
+"use client";
+import { useMemo, useState } from "react";
+import type { BridgeNode } from "@/lib/types";
+import { StatusBadge } from "@/components/keystone";
+export function MapListView({ nodes, onSelect }: { nodes: BridgeNode[]; onSelect: (id: string) => void }) {
+  const [descending, setDescending] = useState(true);
+  const rows = useMemo(() => [...nodes].sort((a, b) => descending ? b.demand - a.demand : a.demand - b.demand), [nodes, descending]);
+  return <div className="overflow-x-auto"><table className="w-full min-w-[620px] text-left text-sm"><caption className="sr-only">Skills in your Bridge Map</caption><thead><tr className="border-b border-border text-muted-foreground"><th scope="col" className="p-3">Skill</th><th scope="col" className="p-3">Status</th><th scope="col" className="p-3"><button type="button" aria-label={`Sort demand ${descending ? "ascending" : "descending"}`} onClick={() => setDescending(!descending)}>Demand {descending ? "↓" : "↑"}</button></th><th scope="col" className="p-3">Trend</th><th scope="col" className="p-3">Covered by</th><th scope="col" className="p-3">Evidence</th></tr></thead><tbody>{rows.map((node) => <tr key={node.skillId} className="border-b border-border last:border-0"><th scope="row" className="p-3 font-medium"><button className="text-primary underline-offset-4 hover:underline" onClick={() => onSelect(node.skillId)}>{node.name}</button></th><td className="p-3"><StatusBadge status={node.status}/></td><td className="p-3 font-mono tabular-nums">{Math.round(node.demand * 100)}%</td><td className="p-3">{node.trend ? <StatusBadge status={node.trend} size="sm"/> : "—"}</td><td className="p-3">{node.moduleCodes.join(", ") || "Not in your modules"}</td><td className="p-3">{node.evidenceIds.length ? `${node.evidenceIds.length} item(s)` : "None yet"}</td></tr>)}</tbody></table></div>;
+}
