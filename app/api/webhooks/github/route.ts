@@ -1,17 +1,21 @@
-// STUB (P5 PR1): POST /api/webhooks/github → {reviewed:false}. Replaced by the AI Tech Lead (PR8).
-import { z } from "zod";
-import { badRequest, internal, ok } from "@/lib/schemas/community";
-
-const GithubEventZ = z.record(z.string(), z.unknown());
+// P5 · POST /api/webhooks/github: HMAC-verified GitHub webhook → Socratic PR review → { reviewed }
+import { reviewPullRequest, verifySignature } from "@/lib/agents/techlead";
+import { badRequest, fail, internal, ok } from "@/lib/schemas/community";
 
 export async function POST(req: Request) {
   try {
     const raw = await req.text();
-    let body: unknown = null;
-    try { body = JSON.parse(raw); } catch { /* invalid JSON → 400 below */ }
-    const parsed = GithubEventZ.safeParse(body);
-    if (!parsed.success) return badRequest("Expected a GitHub webhook JSON payload");
-    return ok({ reviewed: false });
+    if (!verifySignature(raw, req.headers.get("x-hub-signature-256"), process.env.GITHUB_WEBHOOK_SECRET ?? "")) {
+      return fail(401, "unauthorized", "The webhook signature didn't match.");
+    }
+    if (req.headers.get("x-github-event") !== "pull_request") return ok({ reviewed: false });
+    let payload: unknown;
+    try {
+      payload = JSON.parse(raw);
+    } catch {
+      return badRequest("Body must be JSON");
+    }
+    return ok(await reviewPullRequest(payload));
   } catch {
     return internal();
   }
