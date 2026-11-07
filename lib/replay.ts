@@ -3,6 +3,7 @@ import "server-only";
 // Hacker News backfill) goes through replayOrRecord():
 //  - Live: call the service, then record exactly what it returned: data/replay/<ns>/<key>.json when that folder
 //    is writable (the Mac), else /tmp/keystone-replay/<ns>/<key>.json (Vercel's filesystem is read-only).
+//    The first recording of a key is kept, so a replayed chain of calls stays consistent.
 //  - Demo: return the recording of that same call from a real run (bundled data/replay first, then /tmp).
 //    On a miss, call the service live when its key exists (and record it); otherwise throw
 //    LLMError("not_recorded") so the caller's existing fallback runs. Demo never invents data.
@@ -282,6 +283,8 @@ function lookup<T>(ns: string, key: string, loose: string | undefined, codec: Co
   return null;
 }
 
+const exists = (ns: string, key: string) => [replayDir(), replayTmpDir()].some((dir) => fs.existsSync(path.join(dir, ns, `${key}.json`)));
+
 function cleanMeta(meta: ReplayMeta): ReplayMeta {
   const out: ReplayMeta = {};
   for (const k of ["agent", "schemaName", "model", "kind"] as const) if (typeof meta[k] === "string" && meta[k]) out[k] = meta[k]!.slice(0, 80);
@@ -349,7 +352,10 @@ async function run<T>(ns: string, keyParts: unknown, fn: () => Promise<T>, opts:
   const value = await fn();
   let recordedAt: string | null = null;
   try {
-    if (!opts.shouldRecord || opts.shouldRecord(value)) recordedAt = record(ns, key, loose, value, opts.meta ?? {}, codec);
+    // The first recording of a key is kept (KEYSTONE_REPLAY_OVERWRITE=true replaces it): later answers in a
+    // replayed chain were recorded from that first answer, so replacing it would break the chain.
+    const keep = process.env.KEYSTONE_REPLAY_OVERWRITE !== "true" && exists(ns, key);
+    if (!keep && (!opts.shouldRecord || opts.shouldRecord(value))) recordedAt = record(ns, key, loose, value, opts.meta ?? {}, codec);
   } catch {
     recordedAt = null; // recording is best-effort; the live value still goes back
   }
@@ -381,8 +387,7 @@ export async function canReplay(): Promise<boolean> {
 /** True when a recording exists for these key parts (exact, or loose unless `loose: false`). */
 export function hasRecording(ns: string, keyParts: unknown, opts: { loose?: boolean } = {}): boolean {
   if (!enabled() || !NS_RE.test(ns)) return false;
-  const key = replayKey(keyParts);
-  if ([replayDir(), replayTmpDir()].some((dir) => fs.existsSync(path.join(dir, ns, `${key}.json`)))) return true;
+  if (exists(ns, replayKey(keyParts))) return true;
   if (opts.loose === false) return false;
   const loose = looseReplayKey(keyParts);
   return nsFiles(ns).some((file) => readHeader(file)?.loose === loose);

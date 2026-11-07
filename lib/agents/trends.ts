@@ -7,6 +7,7 @@ import { emit } from "@/lib/agents/events";
 import { matchSkills } from "@/lib/agents/skillmap";
 import { withCache } from "@/lib/cache";
 import { getComments, listWhoIsHiring, monthlyShares } from "@/lib/connectors/hn";
+import { canReplay, formatRecordedAt, hasRecording, replayOrRecord } from "@/lib/replay";
 import type { SkillId, TrendLabel, TrendPoint, TrendSeries } from "@/lib/types";
 
 /** Growth thresholds per year: above +15% is rising, below −15% is declining. */
@@ -118,27 +119,48 @@ export function recordedHistory(): Record<SkillId, TrendPoint[]> {
 let liveMemo: { at: number; data: TrendSeries[] } | null = null;
 const LIVE_TTL_MS = 6 * 60 * 60 * 1000;
 
+type HNShares = { threads: number; posts: number; months: number; shares: Record<SkillId, TrendPoint[]> };
+const LIVE_MONTHS = 36;
+/** Demo toggle key for the live HN backfill: Live mode records the monthly shares it read; Demo replays them. */
+const hnKey = (months: number) => ({ op: "whoishiring-shares", months, skills: TREND_SKILLS });
+
 /** Live HN backfill (opt-in with TRENDS_LIVE=true: ~36 threads × hundreds of posts, so it's slow and memoised). */
-async function liveTrends(runId?: string, months = 36): Promise<TrendSeries[]> {
+async function liveTrends(runId?: string, months = LIVE_MONTHS): Promise<TrendSeries[]> {
   if (liveMemo && Date.now() - liveMemo.at < LIVE_TTL_MS) return liveMemo.data;
-  const threads = await listWhoIsHiring(months);
-  if (runId) emit({ runId, agent: "trends", status: "progress", message: `Trend Forecaster: found ${threads.length} monthly hiring threads`, data: { threads: threads.length } });
-  const withComments: { month: string; comments: string[] }[] = [];
-  for (let i = 0; i < threads.length; i += 4) {
-    const batch = await Promise.all(threads.slice(i, i + 4).map(async (t) => ({ month: t.month, comments: await getComments(t.id).catch(() => []) })));
-    withComments.push(...batch);
-  }
-  const posts = withComments.reduce((a, t) => a + t.comments.length, 0);
-  if (posts === 0) throw new Error("no HN posts");
-  const shares = monthlyShares(withComments, TREND_SKILLS, (text) => matchSkills(text).keys());
-  if (runId) emit({ runId, agent: "trends", status: "progress", message: `Trend Forecaster: read ${posts} job posts across ${withComments.length} months`, data: { posts, months: withComments.length } });
-  const data = Object.entries(shares).filter(([, h]) => h.length >= 6).map(([id, h]) => toSeries(id, h));
+  const hn = await replayOrRecord<HNShares>(
+    "hn",
+    hnKey(months),
+    async () => {
+      const threads = await listWhoIsHiring(months);
+      if (runId) emit({ runId, agent: "trends", status: "progress", message: `Trend Forecaster: found ${threads.length} monthly hiring threads`, data: { threads: threads.length } });
+      const withComments: { month: string; comments: string[] }[] = [];
+      for (let i = 0; i < threads.length; i += 4) {
+        const batch = await Promise.all(threads.slice(i, i + 4).map(async (t) => ({ month: t.month, comments: await getComments(t.id).catch(() => []) })));
+        withComments.push(...batch);
+      }
+      const posts = withComments.reduce((a, t) => a + t.comments.length, 0);
+      if (posts === 0) throw new Error("no HN posts");
+      const shares = monthlyShares(withComments, TREND_SKILLS, (text) => matchSkills(text).keys());
+      return { threads: threads.length, posts, months: withComments.length, shares };
+    },
+    {
+      meta: { kind: "hn-whoishiring", label: `${months} months of HN Who is hiring? threads` },
+      loose: false,
+      validate: (v) => !!v && typeof v === "object" && typeof (v as HNShares).shares === "object",
+      onReplay: (rec) => {
+        if (runId) emit({ runId, agent: "trends", status: "progress", message: `Trend Forecaster: replayed ${rec.value.threads} monthly hiring threads from a real run (recorded ${formatRecordedAt(rec.recordedAt)})`, data: { threads: rec.value.threads, replay: true, recordedAt: rec.recordedAt } });
+      },
+    },
+  );
+  if (runId) emit({ runId, agent: "trends", status: "progress", message: `Trend Forecaster: read ${hn.posts} job posts across ${hn.months} months`, data: { posts: hn.posts, months: hn.months } });
+  const data = Object.entries(hn.shares).filter(([, h]) => h.length >= 6).map(([id, h]) => toSeries(id, h));
   liveMemo = { at: Date.now(), data };
   return data;
 }
 
 async function buildTrends(runId?: string): Promise<TrendSeries[]> {
-  if (process.env.TRENDS_LIVE === "true") {
+  // Demo mode replays a recorded live backfill when one exists, even without TRENDS_LIVE.
+  if (process.env.TRENDS_LIVE === "true" || ((await canReplay()) && hasRecording("hn", hnKey(LIVE_MONTHS), { loose: false }))) {
     try {
       return await liveTrends(runId);
     } catch {

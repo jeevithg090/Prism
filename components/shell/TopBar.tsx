@@ -5,6 +5,7 @@ import * as React from "react";
 import Link from "next/link";
 import type { BridgeMap } from "@/lib/types";
 import { roleName, useBridgeMap } from "@/components/dashboard/data";
+import { ModeToggle } from "@/components/mode/ModeToggle";
 import { AgentsButton } from "./ActivityPanel";
 import { KeystoneMark } from "./Sidebar";
 import { PersonaSwitcher } from "./PersonaSwitcher";
@@ -57,6 +58,7 @@ export function TopBar({ readiness }: { readiness?: React.ReactNode }) {
         <PersonaSwitcher className="max-w-[11rem] sm:max-w-none" />
         <div className="ml-auto flex items-center gap-2">
           {readiness}
+          <ModeToggle />
           <AgentsButton />
           <ThemeToggle />
         </div>
