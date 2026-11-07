@@ -1,15 +1,14 @@
-// STUB (P5 PR1): GET /api/trajectories?programmeId= → seeded trajectories from the store.
-import { getStore } from "@/lib/store";
-import { TrajectoriesQueryZ, badRequest, internal, ok } from "@/lib/schemas/community";
-import type { Trajectory } from "@/lib/types";
+// P5 · GET /api/trajectories?programmeId= → Trajectory[] (contract §6)
+import { loadTrajectories } from "@/lib/agents/trajectories";
+import { badRequest, internal, ok, TrajectoriesQueryZ } from "@/lib/schemas/community";
 
 export async function GET(req: Request) {
   try {
-    const parsed = TrajectoriesQueryZ.safeParse(Object.fromEntries(new URL(req.url).searchParams));
+    const sp = new URL(req.url).searchParams;
+    const parsed = TrajectoriesQueryZ.safeParse({ programmeId: sp.get("programmeId") ?? undefined });
     if (!parsed.success) return badRequest(parsed.error);
-    const { programmeId } = parsed.data;
-    const all = await getStore().list<Trajectory>("trajectories");
-    return ok(programmeId ? all.filter((t) => t.programmeId === programmeId) : all);
+    const trajectories = await loadTrajectories({ programmeId: parsed.data.programmeId, demo: sp.get("demo") === "1" });
+    return ok(trajectories);
   } catch {
     return internal();
   }
