@@ -20,7 +20,7 @@ vi.mock("@/lib/store", () => ({
   }),
 }));
 
-import { MAX_DIFF_CHARS, reviewPullRequest, stripLongCodeBlocks, verifySignature } from "./techlead";
+import { DEMO_HINTS, MAX_DIFF_CHARS, SAMPLE_PR, extractHints, parseRepo, reviewNow, reviewPullRequest, stripLongCodeBlocks, verifySignature } from "./techlead";
 
 const SECRET = "s3cret";
 const sign = (body: string, secret = SECRET) => `sha256=${createHmac("sha256", secret).update(body).digest("hex")}`;
@@ -45,7 +45,7 @@ beforeEach(() => {
   h.profiles = [];
   process.env.GITHUB_TOKEN = "t";
 });
-afterEach(() => { delete process.env.GITHUB_TOKEN; });
+afterEach(() => { delete process.env.GITHUB_TOKEN; delete process.env.DEMO_MODE; });
 
 describe("verifySignature", () => {
   const body = JSON.stringify({ action: "opened" });
@@ -133,5 +133,95 @@ describe("reviewPullRequest", () => {
     h.profiles = [{ id: "priya", githubLogin: "priya-real" }];
     expect(await reviewPullRequest(prEvent("closed", { merged: false }))).toEqual({ reviewed: false });
     expect(h.upsert).not.toHaveBeenCalled();
+  });
+});
+
+describe("reviewNow (Review my PR now)", () => {
+  const REPO = "https://github.com/keystone-demo/pod-vision-demo";
+  const openPRs = [
+    { number: 8, title: "Add a Dockerfile", body: "Closes #1", html_url: `${REPO}/pull/8` },
+    { number: 11, title: "Postgres schema", body: "Closes #2", html_url: `${REPO}/pull/11` },
+  ];
+  const liveMock = (diff = "diff --git a/Dockerfile b/Dockerfile\n+FROM python:3.12\n+COPY . .") =>
+    h.request.mockImplementation(async (route: string) => {
+      if (route === "GET /repos/{owner}/{repo}/pulls") return { data: openPRs };
+      if (route === "GET /repos/{owner}/{repo}/pulls/{pull_number}") return { data: diff };
+      if (route === "POST /repos/{owner}/{repo}/issues/{issue_number}/comments") return { data: { id: 1 } };
+      throw new Error(`unexpected ${route}`);
+    });
+
+  it("live: lists open PRs, fetches the newest PR's diff, posts the Socratic comment", async () => {
+    liveMock("d".repeat(MAX_DIFF_CHARS + 100));
+    h.llmText.mockResolvedValueOnce(`- Why copy everything before installing?\n${block(9)}\n- Which user runs the app?`);
+    const out = await reviewNow({ podId: "pod_demo01" }, "run_live");
+    const routes = h.request.mock.calls.map((c) => c[0]);
+    expect(routes).toEqual([
+      "GET /repos/{owner}/{repo}/pulls",
+      "GET /repos/{owner}/{repo}/pulls/{pull_number}",
+      "POST /repos/{owner}/{repo}/issues/{issue_number}/comments",
+    ]);
+    expect(h.request.mock.calls[0][1]).toMatchObject({ owner: "keystone-demo", repo: "pod-vision-demo", state: "open" });
+    expect(h.request.mock.calls[1][1]).toMatchObject({ pull_number: 11, mediaType: { format: "diff" } });
+    expect(h.llmText.mock.calls[0][0].user).not.toContain("d".repeat(MAX_DIFF_CHARS + 1));
+    const posted = h.request.mock.calls[2][1];
+    expect(posted.issue_number).toBe(11);
+    expect(longestFencedBlock(posted.body)).toBeLessThanOrEqual(5);
+    expect(out).toMatchObject({ prUrl: `${REPO}/pull/11`, prTitle: "Postgres schema", posted: true, source: "live", runId: "run_live" });
+    expect(out.hints).toEqual(["Why copy everything before installing?", "Which user runs the app?"]);
+    expect(out.comment).toBe(posted.body);
+  });
+
+  it("live: reviews the requested prNumber", async () => {
+    liveMock();
+    h.llmText.mockResolvedValueOnce("- Why this base image?");
+    const out = await reviewNow({ podId: "pod_demo01", prNumber: 8 });
+    expect(h.request.mock.calls[1][1].pull_number).toBe(8);
+    expect(out.prUrl).toBe(`${REPO}/pull/8`);
+  });
+
+  it("falls back to the sample PR (not posted) when the LLM fails live; tries the LLM on the sample first", async () => {
+    liveMock();
+    h.llmText.mockRejectedValue(new Error("no_key"));
+    const out = await reviewNow({ podId: "pod_demo01" });
+    expect(h.request.mock.calls.some((c) => String(c[0]).includes("/comments"))).toBe(false);
+    expect(h.llmText).toHaveBeenCalledTimes(2);
+    expect(h.llmText.mock.calls[1][0].user).toContain(SAMPLE_PR.title);
+    expect(out).toMatchObject({ source: "demo", posted: false, prUrl: `${REPO}/pull/1`, prTitle: SAMPLE_PR.title });
+    expect(out.hints).toEqual([...DEMO_HINTS]);
+    h.llmText.mockReset();
+  });
+
+  it("no token: uses the LLM's review of the sample diff when it works", async () => {
+    delete process.env.GITHUB_TOKEN;
+    h.llmText.mockResolvedValueOnce("- What does each layer cache?\n- Who is the container user?\n- Where should weights live?");
+    const out = await reviewNow({ podId: "pod_demo01" });
+    expect(h.request).not.toHaveBeenCalled();
+    expect(out).toMatchObject({ source: "demo", posted: false });
+    expect(out.hints).toHaveLength(3);
+  });
+
+  it("DEMO_MODE: instant deterministic review with 5 hints, no network, no LLM", async () => {
+    process.env.DEMO_MODE = "true";
+    const out = await reviewNow({ podId: "pod_demo01" });
+    expect(h.request).not.toHaveBeenCalled();
+    expect(h.llmText).not.toHaveBeenCalled();
+    expect(out.hints).toHaveLength(5);
+    expect(longestFencedBlock(out.comment)).toBeLessThanOrEqual(5);
+    expect(SAMPLE_PR.diff.split("\n")).toHaveLength(24);
+    for (const needle of ["FROM python:3.12", "COPY . .", "COPY models/"]) expect(SAMPLE_PR.diff).toContain(needle);
+    expect(SAMPLE_PR.diff).not.toContain("USER ");
+    expect(SAMPLE_PR.diff).not.toContain(".dockerignore");
+  });
+
+  it("throws for an unknown pod", async () => {
+    await expect(reviewNow({ podId: "pod_nope" })).rejects.toThrow(/couldn't find pod/);
+  });
+
+  it("helpers: extractHints caps at 6 and parseRepo reads owner/repo", () => {
+    expect(extractHints(Array.from({ length: 9 }, (_, i) => `- q${i}?`).join("\n"))).toHaveLength(6);
+    expect(extractHints("1. First?\n2) Second?")).toEqual(["First?", "Second?"]);
+    expect(parseRepo("https://github.com/keystone-demo/pod-x-ab12/")).toEqual({ owner: "keystone-demo", repo: "pod-x-ab12" });
+    expect(parseRepo("https://github.com/o/r.git")).toEqual({ owner: "o", repo: "r" });
+    expect(parseRepo("not a url")).toBeNull();
   });
 });
