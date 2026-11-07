@@ -44,6 +44,15 @@ describe("GET /api/pods?userId=", () => {
     expect(json.data.map((p: Pod) => p.id)).toEqual(["pod_new", "pod_old"]);
   });
 
+  it("lists the demo pod once the user has been matched into it (pod_claims)", async () => {
+    await fakeStore.upsert("pods", "pod_demo01", pod("pod_demo01", "2026-11-07T13:00:00Z", ["aisha", "priya", "tom", "mei"]), "aisha");
+    await fakeStore.upsert("pod_claims", "aisha:pod_demo01", { id: "aisha:pod_demo01", userId: "aisha", podId: "pod_demo01" }, "aisha");
+    const mine = await (await listPods(new Request("http://localhost/api/pods?userId=aisha"))).json();
+    expect(mine.data.map((p: Pod) => p.id)).toEqual(["pod_demo01", "pod_new", "pod_old"]);
+    const tom = await (await listPods(new Request("http://localhost/api/pods?userId=tom"))).json();
+    expect(tom.data.map((p: Pod) => p.id)).toEqual(["pod_new", "pod_old"]);
+  });
+
   it("returns 400 without a userId", async () => {
     const res = await listPods(new Request("http://localhost/api/pods"));
     expect(res.status).toBe(400);

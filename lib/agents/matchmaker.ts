@@ -364,11 +364,14 @@ async function embeddingSim(cands: CandidateSkills[]): Promise<InterestSim> {
 export const DEMO_FIXTURE_POD_ID = "pod_demo01";
 
 export async function listPodsForUser(userId: string): Promise<Pod[]> {
-  const all = await getStore().list<Pod>("pods");
+  const store = getStore();
+  const all = await store.list<Pod>("pods");
+  // The demo pod counts as the user's own only once they've been matched into it.
+  const claimed = new Set((await store.list<{ podId: string }>("pod_claims", { userId })).map((c) => c.podId));
   return all
     .map((p) => PodZ.safeParse(p))
     .flatMap((r) => (r.success ? [r.data] : []))
-    .filter((p) => p.id !== DEMO_FIXTURE_POD_ID)
+    .filter((p) => p.id !== DEMO_FIXTURE_POD_ID || claimed.has(p.id))
     .filter((p) => p.members.some((m) => m.userId === userId))
     .sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0));
 }
@@ -460,6 +463,8 @@ async function runMatch(userId: string, ctx: AgentCtx, demo: boolean): Promise<P
     const ids = new Set(team.map((t) => t.userId));
     if (fixture && fixture.members.length === ids.size && fixture.members.every((m) => ids.has(m.userId))) {
       await store.upsert("pods", fixture.id, fixture, userId);
+      // Record that this user has joined the demo pod, so it shows up as *their* pod from now on.
+      await store.upsert("pod_claims", `${userId}:${fixture.id}`, { id: `${userId}:${fixture.id}`, userId, podId: fixture.id }, userId);
       ctx.done(`${fixture.name} is ready: ${team.map((t) => firstName(t.userId, names)).join(", ")}`, {
         podId: fixture.id, score: fixture.score, memberIds: team.map((t) => t.userId),
       });
