@@ -10,7 +10,7 @@ const emit = vi.fn();
 vi.mock("@/lib/agents/events", () => ({ emit }));
 
 import {
-  canonicalJSON, defaultRunMode, hasRecording, listRecordings, looseReplayKey, modeFromCookieHeader, normaliseVolatile, replayKey,
+  canonicalJSON, defaultRunMode, fillFromCookieHeader, hasRecording, listRecordings, looseReplayKey, modeFromCookieHeader, normaliseVolatile, replayKey,
   replayOrRecord, replayOrRecordBinary, replayStats, strictFromCookieHeader, withReplayInfo, withReplayTrace,
 } from "./replay";
 import { replayInfoOf, replayNoteText } from "./replay-info";
@@ -143,11 +143,14 @@ describe("replayOrRecord", () => {
     expect(strictFromCookieHeader(null)).toBe(true);
   });
 
-  it("the dev-only ks_replay=strict cookie makes Demo strict outside production", () => {
+  it("the dev-only ks_replay=strict / ks_replay=fill cookies only count outside production", () => {
     expect(strictFromCookieHeader("ks_mode=demo; ks_replay=strict")).toBe(true);
     expect(strictFromCookieHeader("ks_mode=demo")).toBe(false);
+    expect(fillFromCookieHeader("ks_mode=demo; ks_replay=fill; ks_uid=aisha")).toBe(true);
+    expect(fillFromCookieHeader("ks_mode=demo; ks_replay=strict")).toBe(false);
     vi.stubEnv("NODE_ENV", "production");
     expect(strictFromCookieHeader("ks_mode=demo; ks_replay=strict")).toBe(false);
+    expect(fillFromCookieHeader("ks_mode=demo; ks_replay=fill")).toBe(false);
   });
 
   it("an alt key replays the same question recorded in another app state, only in Demo and only as a last resort", async () => {

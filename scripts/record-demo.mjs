@@ -60,8 +60,12 @@ const STANDALONE = [...STARTERS, "Start our project", "Review my PR", "How's my 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const runId = () => `run_${Math.random().toString(36).slice(2, 12).padEnd(10, "0")}`;
 
-let MODE = "live"; // "live" while recording, "demo" (strict) while verifying
-const cookie = () => (MODE === "live" ? `ks_mode=live; ks_uid=${encodeURIComponent(USER)}` : `ks_mode=demo; ks_replay=strict; ks_uid=${encodeURIComponent(USER)}`);
+// Recording uses the dev-only "fill" Demo (ks_replay=fill): calls whose exact recording exists replay it, every
+// other call goes to the live service and is recorded. So a chain (a Coach conversation, a pod explanation fed
+// into the next coach step) is recorded on top of the very answers Demo replays, and every later key matches.
+// Verifying uses the strict Demo (ks_replay=strict): nothing is called live, so any gap shows as a template.
+let MODE = "live"; // "live" while recording (fill), "demo" (strict) while verifying
+const cookie = () => `ks_mode=demo; ks_replay=${MODE === "live" ? "fill" : "strict"}; ks_uid=${encodeURIComponent(USER)}`;
 
 async function call(method, route, body, { timeoutMs = 240_000, binary = false } = {}) {
   const t0 = Date.now();
@@ -387,12 +391,12 @@ async function main() {
   if (args.record) {
     MODE = "live";
     const s = await modeState();
-    if (s?.mode !== "live") {
-      console.error(`${BASE} didn't take the ks_mode=live cookie (mode is ${s?.mode}).`);
+    if (!s?.fill) {
+      console.error(`${BASE} didn't take the ks_replay=fill cookie (a production server, or code without the recording mode). Record against a dev server from this checkout.`);
       process.exit(1);
     }
     const services = Object.entries(start.services ?? {}).map(([k, v]) => `${k} ${v ? "on" : "off"}`).join(", ");
-    console.log(`Recording the demo story from ${BASE} as ${USER} (Live AI). ${start.total ?? 0} recordings before. Services: ${services || "?"}.`);
+    console.log(`Recording the demo story from ${BASE} as ${USER} (live calls for everything not yet recorded). ${start.total ?? 0} recordings before. Services: ${services || "?"}.`);
     if (start.githubWrites) console.log(args.github ? "Heads-up: this server has GITHUB_TOKEN + GITHUB_ORG, so approvals create a real repo and post a real PR comment." : "This server writes to GitHub, so approvals are skipped (--no-github).");
     console.log("");
     await story();

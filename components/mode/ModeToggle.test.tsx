@@ -57,6 +57,21 @@ describe("ModeToggle", () => {
     expect(refresh).not.toHaveBeenCalled();
   });
 
+  it("says where the last answer on the page came from (x-keystone-replay)", async () => {
+    delete (window as Window & { __ksReplayWatch?: boolean }).__ksReplayWatch;
+    const replay = { mode: "demo", source: "replayed", replayed: 2, recorded: 0, live: 0, missed: 0, recordedAt: "2026-11-07T15:20:00Z", model: "gpt-4.1-mini", kinds: ["llm"] };
+    fetchMock.mockImplementation(async (url: string) =>
+      url === "/api/coach"
+        ? new Response(JSON.stringify({ ok: true, data: {}, replay }), { headers: { "content-type": "application/json", "x-keystone-replay": "replayed" } })
+        : envelope(state("demo")));
+    const user = userEvent.setup();
+    render(<ModeToggle />);
+    await waitFor(() => expect(screen.getByRole("button", { name: "Demo" })).toHaveAttribute("aria-pressed", "true"));
+    await window.fetch("/api/coach");
+    await user.click(screen.getByRole("button", { name: /About Demo and Live AI/ }));
+    expect(await screen.findByText(/^Replayed from a real run · gpt-4\.1-mini · 7 Nov/)).toBeInTheDocument();
+  });
+
   it("explains what each mode does and what has been recorded", async () => {
     const user = userEvent.setup();
     render(<ModeToggle />);
