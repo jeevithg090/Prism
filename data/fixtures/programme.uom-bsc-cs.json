@@ -1,0 +1,138 @@
+{
+  "id": "uom-bsc-cs",
+  "university": "University of Manchester",
+  "name": "BSc Computer Science",
+  "url": "https://www.manchester.ac.uk/study/undergraduate/courses/2026/00560/bsc-computer-science/",
+  "extractedAt": "2026-11-07T09:00:00.000Z",
+  "source": "cache",
+  "modules": [
+    {
+      "code": "COMP1xxx1", "title": "Algorithms and Data Structures", "year": 1, "semester": "1", "credits": 20, "compulsory": true,
+      "topics": ["Arrays, linked lists, stacks and queues", "Hash tables and collision handling", "Binary search trees and heaps", "Sorting and searching", "Graph traversal and shortest paths", "Big-O complexity analysis"],
+      "learningOutcomes": ["Choose an appropriate data structure for a given problem and justify the choice", "Implement classic sorting and graph algorithms and analyse their running time", "Reason about the correctness of an algorithm using invariants"],
+      "assessment": "Coursework 40%, exam 60%",
+      "skills": [{ "skillId": "data-structures", "level": 2 }, { "skillId": "algorithms", "level": 2 }],
+      "industryNote": "Used in search ranking, route planning and almost every coding interview."
+    },
+    {
+      "code": "COMP1xxx2", "title": "Object-Oriented Programming with Java", "year": 1, "semester": "1", "credits": 20, "compulsory": true,
+      "topics": ["Classes, objects and encapsulation", "Inheritance, interfaces and polymorphism", "Generics and the collections framework", "Exceptions and defensive programming", "Event-driven programming"],
+      "learningOutcomes": ["Design small object-oriented programs from a written specification", "Write readable Java code that uses the standard collections", "Explain how inheritance and interfaces support reuse"],
+      "assessment": "Lab exercises 50%, exam 50%",
+      "skills": [{ "skillId": "java", "level": 2 }],
+      "industryNote": "Java still runs much of banking, Android and large back-end systems."
+    },
+    {
+      "code": "COMP1xxx3", "title": "Computer Systems and the Command Line", "year": 1, "semester": "1", "credits": 10, "compulsory": true,
+      "topics": ["Binary, number representation and logic gates", "Processor architecture and memory", "Linux shell, files and processes", "Introductory C and pointers"],
+      "learningOutcomes": ["Explain how a program is executed by a processor", "Work confidently at a Linux command line", "Write and debug short C programs that manipulate memory"],
+      "assessment": "Lab exercises 60%, exam 40%",
+      "skills": [{ "skillId": "linux", "level": 1 }, { "skillId": "c", "level": 1 }],
+      "industryNote": "Most servers run Linux; comfort at the terminal pays off in every engineering job."
+    },
+    {
+      "code": "COMP1xxx4", "title": "Mathematics for Computer Science: Statistics and Linear Algebra", "year": 1, "semester": "2", "credits": 20, "compulsory": true,
+      "topics": ["Probability, random variables and distributions", "Estimation and hypothesis testing", "Vectors, matrices and matrix operations", "Eigenvalues and eigenvectors", "Least squares and linear regression"],
+      "learningOutcomes": ["Apply probability and statistical inference to data from computing problems", "Manipulate vectors and matrices and interpret them geometrically", "Fit and interpret a least-squares model"],
+      "assessment": "Weekly quizzes 30%, exam 70%",
+      "skills": [{ "skillId": "statistics", "level": 2 }, { "skillId": "linear-algebra", "level": 2 }],
+      "industryNote": "The maths behind every machine learning model and A/B test you'll meet at work."
+    },
+    {
+      "code": "COMP1xxx5", "title": "Introduction to Programming (Python)", "year": 1, "semester": "1", "credits": 20, "compulsory": true,
+      "topics": ["Variables, control flow and functions", "Lists, dictionaries and files", "Decomposing problems into functions", "Debugging and reading error messages"],
+      "learningOutcomes": ["Write Python programs that solve well-specified problems", "Use lists and dictionaries to organise data", "Debug a program systematically"],
+      "assessment": "Programming exercises 70%, exam 30%",
+      "skills": [{ "skillId": "python", "level": 2 }],
+      "industryNote": "Python is in 62% of UK ML engineer ads and most data roles."
+    },
+    {
+      "code": "COMP1xxx6", "title": "First Year Team Project", "year": 1, "semester": "full-year", "credits": 20, "compulsory": true,
+      "topics": ["Working in a project team of five or six", "Requirements and user stories", "Shared repositories on GitLab, branches and merge requests", "Building a small web application", "Demonstrating a product to a client"],
+      "learningOutcomes": ["Contribute to a shared code base using branches and merge requests", "Plan work in short iterations with a team", "Present a working product and reflect on the process"],
+      "assessment": "Team product 60%, individual reflection 40%",
+      "skills": [{ "skillId": "git", "level": 2 }, { "skillId": "agile", "level": 1 }, { "skillId": "html-css", "level": 1 }, { "skillId": "javascript", "level": 1 }],
+      "industryNote": "Branches and code review are how every software team ships, every day."
+    },
+    {
+      "code": "COMP1xxx7", "title": "Fundamentals of Computation", "year": 1, "semester": "2", "credits": 10, "compulsory": true,
+      "topics": ["Propositional and predicate logic", "Finite automata and regular expressions", "Context-free grammars", "Proof by induction"],
+      "learningOutcomes": ["Model simple systems as finite automata", "Write precise specifications in logic", "Prove properties of programs by induction"],
+      "assessment": "Exam 100%",
+      "skills": [{ "skillId": "algorithms", "level": 1 }],
+      "industryNote": "Regular expressions and parsers are everyday tools in compilers, linters and data cleaning."
+    },
+    {
+      "code": "COMP2xxx1", "title": "Database Systems", "year": 2, "semester": "1", "credits": 20, "compulsory": true,
+      "topics": ["The relational model and relational algebra", "Entity-relationship modelling", "Normalisation", "Transactions, concurrency and recovery", "Indexing and query processing"],
+      "learningOutcomes": ["Design a normalised relational schema from requirements", "Express queries in relational algebra and a declarative query language", "Explain how transactions keep data consistent under concurrency"],
+      "assessment": "Coursework 30%, exam 70%",
+      "skills": [{ "skillId": "databases", "level": 2 }],
+      "industryNote": "Schema design is everyday work; job ads also expect fluent, hands-on SQL."
+    },
+    {
+      "code": "COMP2xxx2", "title": "Machine Learning", "year": 2, "semester": "2", "credits": 20, "compulsory": false,
+      "topics": ["Supervised learning: linear models, decision trees, k-nearest neighbours", "Unsupervised learning: clustering and PCA", "Overfitting, regularisation and cross-validation", "Data preparation with pandas and NumPy", "Building pipelines with scikit-learn"],
+      "learningOutcomes": ["Apply supervised and unsupervised learning methods to real datasets", "Evaluate a model fairly with held-out data and cross-validation", "Use pandas, NumPy and scikit-learn to build a reproducible analysis"],
+      "assessment": "Coursework 50%, exam 50%",
+      "skills": [{ "skillId": "machine-learning", "level": 2 }, { "skillId": "pandas", "level": 2 }, { "skillId": "numpy", "level": 2 }, { "skillId": "scikit-learn", "level": 2 }],
+      "industryNote": "The core of every ML engineer role; 55% of UK ML engineer ads ask for it."
+    },
+    {
+      "code": "COMP2xxx3", "title": "Software Engineering", "year": 2, "semester": "1", "credits": 20, "compulsory": true,
+      "topics": ["Working with a large existing code base", "Unit and integration testing", "Refactoring and code smells", "Iterative development in a team"],
+      "learningOutcomes": ["Add features to a large unfamiliar code base safely", "Write automated unit and integration tests", "Refactor code to improve its design without changing behaviour"],
+      "assessment": "Team coursework 100%",
+      "skills": [{ "skillId": "testing", "level": 2 }, { "skillId": "agile", "level": 1 }],
+      "industryNote": "Testing and refactoring legacy code is most of what junior engineers do."
+    },
+    {
+      "code": "COMP2xxx4", "title": "Cyber Security", "year": 2, "semester": "2", "credits": 10, "compulsory": false,
+      "topics": ["Threat modelling", "Symmetric and public-key cryptography", "Authentication and access control", "Common web vulnerabilities"],
+      "learningOutcomes": ["Identify threats to a system and propose mitigations", "Explain how cryptographic primitives protect data", "Find and fix common web vulnerabilities"],
+      "assessment": "Coursework 40%, exam 60%",
+      "skills": [{ "skillId": "security-basics", "level": 2 }],
+      "industryNote": "Secure-by-default habits are expected in every engineering team."
+    },
+    {
+      "code": "COMP2xxx5", "title": "Operating Systems", "year": 2, "semester": "1", "credits": 10, "compulsory": true,
+      "topics": ["Processes, threads and scheduling", "Memory management and virtual memory", "File systems", "Synchronisation and deadlock"],
+      "learningOutcomes": ["Explain how an operating system shares the processor and memory", "Write concurrent C programs that avoid race conditions", "Compare scheduling and memory management strategies"],
+      "assessment": "Lab exercises 40%, exam 60%",
+      "skills": [{ "skillId": "linux", "level": 2 }, { "skillId": "c", "level": 2 }],
+      "industryNote": "Concurrency and memory bugs are what separate good back-end engineers."
+    },
+    {
+      "code": "COMP3xxx1", "title": "Deep Learning", "year": 3, "semester": "1", "credits": 10, "compulsory": false,
+      "topics": ["Multi-layer perceptrons and backpropagation", "Convolutional neural networks for images", "Recurrent networks and sequence modelling", "Optimisation and regularisation for deep networks"],
+      "learningOutcomes": ["Derive and implement backpropagation from first principles", "Design convolutional networks for image classification", "Diagnose training problems such as vanishing gradients"],
+      "assessment": "Coursework 50%, exam 50%",
+      "skills": [{ "skillId": "deep-learning", "level": 2 }],
+      "industryNote": "Behind computer vision and speech products; industry builds these in a framework like PyTorch."
+    },
+    {
+      "code": "COMP3xxx2", "title": "Distributed Systems", "year": 3, "semester": "2", "credits": 10, "compulsory": false,
+      "topics": ["Communication and remote procedure calls", "Replication and consistency models", "Consensus and fault tolerance", "Designing scalable services"],
+      "learningOutcomes": ["Explain the trade-offs between consistency, availability and partition tolerance", "Design a fault-tolerant service from requirements", "Analyse how a system behaves under failure"],
+      "assessment": "Coursework 30%, exam 70%",
+      "skills": [{ "skillId": "system-design", "level": 2 }],
+      "industryNote": "The theory behind system design interviews and every large web service."
+    },
+    {
+      "code": "COMP3xxx3", "title": "Natural Language Processing", "year": 3, "semester": "2", "credits": 10, "compulsory": false,
+      "topics": ["Tokenisation and n-gram models", "Word embeddings", "Attention and the transformer architecture", "Text classification and sequence labelling"],
+      "learningOutcomes": ["Explain how modern neural models represent text", "Build a text classifier and analyse its errors", "Discuss the limitations and biases of language technologies"],
+      "assessment": "Coursework 60%, exam 40%",
+      "skills": [{ "skillId": "deep-learning", "level": 2 }, { "skillId": "machine-learning", "level": 2 }],
+      "industryNote": "The theory under chat assistants; building and testing LLM apps isn't covered here."
+    },
+    {
+      "code": "COMP3xxx4", "title": "Third Year Project", "year": 3, "semester": "full-year", "credits": 40, "compulsory": true,
+      "topics": ["Choosing and scoping an individual project", "Literature review", "Design, implementation and testing", "Writing a dissertation and giving a demonstration"],
+      "learningOutcomes": ["Plan and deliver a substantial individual software project", "Test and critically evaluate your own work", "Write a clear technical report and present it"],
+      "assessment": "Report 70%, demonstration 30%",
+      "skills": [{ "skillId": "testing", "level": 2 }, { "skillId": "git", "level": 2 }],
+      "industryNote": "A finished project you can explain is the strongest thing on a graduate CV."
+    }
+  ]
+}

@@ -1,0 +1,209 @@
+{
+  "roleId": "ml-engineer",
+  "roleName": "ML engineer",
+  "location": "UK",
+  "adsAnalysed": 214,
+  "skills": [
+    {
+      "skillId": "python",
+      "share": 0.62,
+      "trend": "stable"
+    },
+    {
+      "skillId": "machine-learning",
+      "share": 0.55,
+      "trend": "stable"
+    },
+    {
+      "skillId": "docker",
+      "share": 0.41,
+      "trend": "rising"
+    },
+    {
+      "skillId": "pytorch",
+      "share": 0.38,
+      "trend": "rising"
+    },
+    {
+      "skillId": "sql",
+      "share": 0.35,
+      "trend": "stable"
+    },
+    {
+      "skillId": "pandas",
+      "share": 0.34,
+      "trend": "stable"
+    },
+    {
+      "skillId": "aws",
+      "share": 0.33,
+      "trend": "stable"
+    },
+    {
+      "skillId": "git",
+      "share": 0.3
+    },
+    {
+      "skillId": "statistics",
+      "share": 0.3
+    },
+    {
+      "skillId": "deep-learning",
+      "share": 0.3
+    },
+    {
+      "skillId": "numpy",
+      "share": 0.3
+    },
+    {
+      "skillId": "mlops",
+      "share": 0.28,
+      "trend": "rising"
+    },
+    {
+      "skillId": "scikit-learn",
+      "share": 0.27,
+      "trend": "stable"
+    },
+    {
+      "skillId": "llm-apps",
+      "share": 0.26,
+      "trend": "rising"
+    },
+    {
+      "skillId": "databases",
+      "share": 0.25
+    },
+    {
+      "skillId": "data-structures",
+      "share": 0.22
+    },
+    {
+      "skillId": "algorithms",
+      "share": 0.2
+    },
+    {
+      "skillId": "linear-algebra",
+      "share": 0.2
+    },
+    {
+      "skillId": "ci-cd",
+      "share": 0.2,
+      "trend": "stable"
+    },
+    {
+      "skillId": "linux",
+      "share": 0.18
+    },
+    {
+      "skillId": "kubernetes",
+      "share": 0.18,
+      "trend": "stable"
+    },
+    {
+      "skillId": "tensorflow",
+      "share": 0.16,
+      "trend": "declining"
+    },
+    {
+      "skillId": "testing",
+      "share": 0.15
+    },
+    {
+      "skillId": "communication",
+      "share": 0.15
+    },
+    {
+      "skillId": "system-design",
+      "share": 0.12
+    },
+    {
+      "skillId": "vector-databases",
+      "share": 0.12,
+      "trend": "rising"
+    },
+    {
+      "skillId": "teamwork",
+      "share": 0.12
+    },
+    {
+      "skillId": "javascript",
+      "share": 0.1
+    },
+    {
+      "skillId": "llm-evaluation",
+      "share": 0.1,
+      "trend": "rising"
+    },
+    {
+      "skillId": "java",
+      "share": 0.08,
+      "trend": "declining"
+    },
+    {
+      "skillId": "security-basics",
+      "share": 0.06
+    },
+    {
+      "skillId": "html-css",
+      "share": 0.05
+    }
+  ],
+  "salary": {
+    "p25": 44000,
+    "median": 52000,
+    "p75": 63000,
+    "currency": "GBP"
+  },
+  "topCompanies": [
+    {
+      "name": "Arm",
+      "count": 12
+    },
+    {
+      "name": "Ocado Technology",
+      "count": 9
+    },
+    {
+      "name": "BBC",
+      "count": 7
+    },
+    {
+      "name": "Auto Trader UK",
+      "count": 6
+    },
+    {
+      "name": "THG",
+      "count": 6
+    }
+  ],
+  "sampleAds": [
+    {
+      "title": "Machine Learning Engineer",
+      "company": "Arm",
+      "url": "https://www.adzuna.co.uk/jobs/search?q=Machine%20Learning%20Engineer%20Arm&w=Manchester"
+    },
+    {
+      "title": "Graduate ML Engineer",
+      "company": "Ocado Technology",
+      "url": "https://www.adzuna.co.uk/jobs/search?q=Graduate%20ML%20Engineer%20Ocado%20Technology&w=Hatfield"
+    },
+    {
+      "title": "Machine Learning Engineer, Recommendations",
+      "company": "BBC",
+      "url": "https://www.adzuna.co.uk/jobs/search?q=Machine%20Learning%20Engineer%2C%20Recommendations%20BBC&w=Salford"
+    },
+    {
+      "title": "Junior MLOps Engineer",
+      "company": "Auto Trader UK",
+      "url": "https://www.adzuna.co.uk/jobs/search?q=Junior%20MLOps%20Engineer%20Auto%20Trader%20UK&w=Manchester"
+    },
+    {
+      "title": "Applied Scientist, LLM Evaluation",
+      "company": "THG",
+      "url": "https://www.adzuna.co.uk/jobs/search?q=Applied%20Scientist%2C%20LLM%20Evaluation%20THG&w=Manchester"
+    }
+  ],
+  "snapshotAt": "2026-11-07T09:00:00.000Z",
+  "source": "cache"
+}
