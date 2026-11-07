@@ -1,5 +1,5 @@
 "use client";
-import { ArrowLeftRight, GitPullRequest, ShieldCheck, Sparkles, Users, type LucideIcon } from "lucide-react";
+import { ArrowLeftRight, GitPullRequest, ShieldCheck, Users, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const POINTS: { icon: LucideIcon; title: string; body: string }[] = [
@@ -12,13 +12,9 @@ const POINTS: { icon: LucideIcon; title: string; body: string }[] = [
 export function FindPodHero({ onFind, pending = false }: { onFind: () => void; pending?: boolean }) {
   return (
     <section aria-labelledby="find-pod-title" className="overflow-hidden rounded-2xl border bg-card shadow-sm">
-      <div className="grid gap-10 p-6 md:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] md:p-12">
+      <div className="grid gap-8 p-6 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] md:items-center md:gap-12 md:p-10">
         <div className="flex flex-col gap-5">
-          <p className="inline-flex w-fit items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
-            <Sparkles className="size-4" aria-hidden />
-            Peer learning
-          </p>
-          <h2 id="find-pod-title" className="text-4xl font-semibold tracking-tight text-balance md:text-5xl">
+          <h2 id="find-pod-title" className="text-3xl font-semibold tracking-tight text-balance md:text-4xl">
             Learn faster in a pod
           </h2>
           <p className="max-w-xl text-lg leading-relaxed text-muted-foreground">
@@ -40,10 +36,10 @@ export function FindPodHero({ onFind, pending = false }: { onFind: () => void; p
             </p>
           </div>
         </div>
-        <ul className="flex flex-col justify-center gap-4" aria-label="What you get in a pod">
+        <ul className="flex flex-col justify-center divide-y rounded-2xl bg-muted/60 px-6 py-2" aria-label="What you get in a pod">
           {POINTS.map(({ icon: Icon, title, body }) => (
-            <li key={title} className="flex gap-4 rounded-2xl border bg-background/60 p-5">
-              <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <li key={title} className="flex gap-4 py-5">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-card text-primary shadow-sm">
                 <Icon className="size-5" aria-hidden />
               </span>
               <div>
