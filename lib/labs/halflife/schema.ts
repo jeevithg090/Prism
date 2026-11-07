@@ -61,6 +61,14 @@ export const RefreshNoteZ = z.object({
   learningOutcomeIndex: z.number().int().min(0),
   learningOutcome: z.string(),
   source: z.enum(["template", "llm"]),
+  /** For a rebalance note: the rising skill demand is moving to, with the numbers the note quotes (its receipt). */
+  successor: z.object({
+    skillId: z.string(),
+    name: z.string(),
+    growthPerYear: z.number(),
+    /** Share of hiring posts that mention it today (fitted value at the last month), 0..1. */
+    shareNow: z.number(),
+  }).optional(),
 });
 export type RefreshNote = z.infer<typeof RefreshNoteZ>;
 
@@ -136,6 +144,10 @@ export const DecideReqZ = z.object({
   decision: z.enum(["adopted", "dismissed"]),
   /** The module lead's edited note (optional; defaults to the drafted note). */
   note: z.string().trim().min(1).max(600).optional(),
+  /** The horizon the module lead was looking at, so the stored urgency matches what they saw. */
+  horizonYears: z.number().int().min(1).max(6).default(3),
+  /** true when the page was on the recorded demo data (?demo=1), so the decision uses the same numbers. */
+  demo: z.boolean().optional(),
 });
 export type DecideReq = z.infer<typeof DecideReqZ>;
 

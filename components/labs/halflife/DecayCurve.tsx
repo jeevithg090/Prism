@@ -3,7 +3,7 @@
 // extended forward. Today = 100; the dashed line at 50 is the half-life threshold.
 import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { ModuleHalfLife } from "@/lib/labs/halflife/schema";
-import { monthLabel } from "./format";
+import { horizonLineLabel, monthLabel } from "./format";
 
 const toT = (month: string) => { const [y, m] = month.split("-").map(Number); return y + (m - 1) / 12; };
 
@@ -31,7 +31,16 @@ function CurveTip({ active, payload }: { active?: boolean; payload?: { payload: 
   );
 }
 
-export function DecayCurve({ module: m, lastDataMonth, horizonMonth }: { module: ModuleHalfLife; lastDataMonth: string; horizonMonth: string }) {
+/**
+ * Where the two vertical labels sit. "Today" always goes left of its line (over the recorded history) and the
+ * horizon label right of its line, so they never meet between the lines on a phone. When the horizon is near
+ * the right edge of the curve, its label flips to the left of its line, which is then far from "Today".
+ */
+export function horizonLabelSide(horizonT: number, lastT: number): "insideTopLeft" | "insideTopRight" {
+  return lastT - horizonT >= 1.5 ? "insideTopLeft" : "insideTopRight";
+}
+
+export function DecayCurve({ module: m, lastDataMonth, horizonMonth, horizonYears }: { module: ModuleHalfLife; lastDataMonth: string; horizonMonth: string; horizonYears: number }) {
   const rows = curveRows(m.curve);
   const maxY = Math.max(120, ...rows.map((r) => Math.max(r.history ?? 0, r.forecast ?? 0)));
   const top = Math.ceil(maxY / 50) * 50;
@@ -52,8 +61,9 @@ export function DecayCurve({ module: m, lastDataMonth, horizonMonth }: { module:
               tick={{ fill: "var(--muted-foreground)", fontSize: 13 }} stroke="var(--border)" />
             <YAxis domain={[0, top]} ticks={yTicks} tick={{ fill: "var(--muted-foreground)", fontSize: 13 }} stroke="var(--border)" width={44} />
             <ReferenceLine y={50} stroke="var(--status-gap)" strokeDasharray="6 4" label={{ value: "Half of today", position: "insideBottomRight", fill: "var(--foreground)", fontSize: 13 }} />
-            <ReferenceLine x={toT(lastDataMonth)} stroke="var(--muted-foreground)" label={{ value: "Today", position: "insideTopLeft", fill: "var(--muted-foreground)", fontSize: 13 }} />
-            <ReferenceLine x={toT(horizonMonth)} stroke="var(--status-degree)" strokeDasharray="2 3" label={{ value: "Graduation", position: "insideTopRight", fill: "var(--foreground)", fontSize: 13 }} />
+            <ReferenceLine x={toT(lastDataMonth)} stroke="var(--muted-foreground)" label={{ value: "Today", position: "insideTopRight", fill: "var(--muted-foreground)", fontSize: 13 }} />
+            <ReferenceLine x={toT(horizonMonth)} stroke="var(--status-degree)" strokeDasharray="2 3"
+              label={{ value: horizonLineLabel(horizonYears), position: horizonLabelSide(toT(horizonMonth), rows[rows.length - 1]?.t ?? toT(horizonMonth)), fill: "var(--foreground)", fontSize: 13 }} />
             <Line dataKey="history" name="Recorded" stroke="var(--chart-1)" strokeWidth={2} dot={false} connectNulls isAnimationActive={false} />
             <Line dataKey="forecast" name="Trend" stroke="var(--chart-2)" strokeWidth={2.5} strokeDasharray="6 4" dot={false} connectNulls isAnimationActive={false} />
             <Tooltip content={<CurveTip />} />

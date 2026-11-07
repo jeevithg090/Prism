@@ -9,14 +9,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { apiGet } from "@/lib/fetcher";
 import { REFRESH_AT, type HalfLifeReport } from "@/lib/labs/halflife/schema";
 import { cn } from "@/lib/utils";
-import { andList, monthLabel, roleName, signedPct, yrs } from "./format";
+import { andList, isGraduation, monthLabel, roleName, signedPct, yrs } from "./format";
 import { ModuleDetail } from "./ModuleDetail";
 import { ModuleRanking } from "./ModuleRanking";
 import { UrgencyRadar } from "./UrgencyRadar";
 
 const HORIZONS = [2, 3, 5] as const;
 
-function Loading() {
+/** The page skeleton: also the Suspense fallback while the page reads its query string. */
+export function HalfLifeSkeleton() {
   return (
     <div role="status" aria-busy="true" aria-label="Reading the syllabus and hiring trends" className="space-y-6">
       <div className="grid gap-4 md:grid-cols-3">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-36 rounded-2xl" />)}</div>
@@ -42,7 +43,9 @@ function Stats({ r }: { r: HalfLifeReport }) {
         hint={fastest ? `${fastest.code} ${fastest.title}${falling ? `: ${falling.name} is falling ${signedPct(falling.growthPerYear ?? 0).replace("−", "")} a year in hiring posts` : ""}` : "No module's topics are losing hiring demand."} />
       <StatCard label="Modules to refresh" icon={ListChecks}
         value={`${r.stats.needsRefresh} of ${r.stats.modules}`}
-        hint={`Urgency ${REFRESH_AT} or more before ${monthLabel(r.horizonMonth)}, when this year's first-years graduate.`} />
+        hint={isGraduation(r.horizonYears)
+          ? `Urgency ${REFRESH_AT} or more before ${monthLabel(r.horizonMonth)}, when this year's first-years graduate.`
+          : `Urgency ${REFRESH_AT} or more within ${r.horizonYears} years, by ${monthLabel(r.horizonMonth)}.`} />
       <StatCard label="Fastest-rising skill next door" icon={TrendingUp}
         value={top ? `${signedPct(top.d.growthPerYear)}` : "None"}
         hint={top ? `${top.d.name} a year, next to ${andList(nextTo)}. No module teaches it.` : "Every rising skill next to a module is already taught."} />
@@ -50,9 +53,10 @@ function Stats({ r }: { r: HalfLifeReport }) {
   );
 }
 
-export function HalfLifeView({ programmeId }: { programmeId: string }) {
+/** `demo` (from ?demo=1) starts on the recorded demo data: fixed trends and template notes, no model call. */
+export function HalfLifeView({ programmeId, demo = false }: { programmeId: string; demo?: boolean }) {
   const [horizon, setHorizon] = useState<number>(3);
-  const [forceDemo, setForceDemo] = useState(false);
+  const [forceDemo, setForceDemo] = useState(demo);
   const [picked, setPicked] = useState<string | null>(null);
 
   const q = useQuery({
@@ -80,7 +84,7 @@ export function HalfLifeView({ programmeId }: { programmeId: string }) {
   if (q.isError && !r) {
     return <ErrorState title="We couldn't build the radar" body="The syllabus or the hiring trends didn't load. Try again, or use the recorded demo data." onRetry={() => q.refetch()} onUseDemo={() => setForceDemo(true)} />;
   }
-  if (!r) return <Loading />;
+  if (!r) return <HalfLifeSkeleton />;
   if (!r.modules.length) {
     return <EmptyState icon={RadarIcon} title="This programme has no modules yet" body="Read the syllabus on the onboarding page, then come back to see how fast each module goes stale." action={<Link href="/onboard" className="font-medium text-primary underline-offset-4 hover:underline focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Read a syllabus</Link>} />;
   }
@@ -101,7 +105,7 @@ export function HalfLifeView({ programmeId }: { programmeId: string }) {
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
         <SectionCard title="Refresh radar" description={`Each spoke is a module, Year 1 at the top. Points out to ${monthLabel(r.horizonMonth)}.`}>
-          <UrgencyRadar modules={r.modules} selected={selectedCode} />
+          <UrgencyRadar modules={r.modules} selected={selectedCode} horizonYears={r.horizonYears} horizonMonth={r.horizonMonth} />
         </SectionCard>
         <SectionCard title="Modules by refresh urgency" description="Pick one to see its receipts and the drafted note.">
           <div role="region" tabIndex={0} aria-label="Ranked modules" className="max-h-[30rem] overflow-y-auto rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
@@ -110,7 +114,10 @@ export function HalfLifeView({ programmeId }: { programmeId: string }) {
         </SectionCard>
       </div>
 
-      {selected && <ModuleDetail key={`${selected.code}-${horizon}`} module={selected} programmeId={r.programmeId} lastDataMonth={r.lastDataMonth} horizonMonth={r.horizonMonth} />}
+      {selected && (
+        <ModuleDetail key={`${selected.code}-${horizon}`} module={selected} programmeId={r.programmeId} demo={forceDemo}
+          lastDataMonth={r.lastDataMonth} horizonMonth={r.horizonMonth} horizonYears={r.horizonYears} />
+      )}
 
       <details className="rounded-2xl border bg-card p-6 shadow-sm">
         <summary className="cursor-pointer rounded font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">How the agent worked this out</summary>

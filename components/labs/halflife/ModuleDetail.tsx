@@ -35,6 +35,9 @@ function headline(m: ModuleHalfLife, horizonMonth: string): string {
 function Receipts({ m, horizonMonth }: { m: ModuleHalfLife; horizonMonth: string }) {
   const tracked = m.taught.filter((t) => t.tracked);
   const untracked = m.taught.filter((t) => !t.tracked);
+  // A rebalance note names where demand is moving; show that skill's own numbers so the note has a receipt.
+  const succ = m.refreshNote?.kind === "rebalance" ? m.refreshNote.successor : undefined;
+  const fromName = succ ? m.taught.find((t) => t.skillId === m.refreshNote?.skillIds[0])?.name : undefined;
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <Panel title="What it teaches" icon={Hourglass}>
@@ -65,6 +68,18 @@ function Receipts({ m, horizonMonth }: { m: ModuleHalfLife; horizonMonth: string
         )}
       </Panel>
       <Panel title="Rising next door" icon={TrendingUp}>
+        {succ && (
+          <div className="mb-3 space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-medium">{succ.name}</span>
+              <StatusBadge status="rising" size="sm" />
+              <span className="font-mono text-sm tabular-nums">{signedPct(succ.growthPerYear)} a year</span>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {fromName ? `Often replaces ${fromName}. ` : ""}In {share(succ.shareNow)} of hiring posts today; the refresh note suggests one lab in it, so it isn&apos;t counted as drift.
+            </p>
+          </div>
+        )}
         {m.drift.length ? (
           <ul className="space-y-3">
             {m.drift.map((d) => (
@@ -82,18 +97,20 @@ function Receipts({ m, horizonMonth }: { m: ModuleHalfLife; horizonMonth: string
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-muted-foreground">No rising skill sits next to this module untaught.</p>
+          <p className="text-sm text-muted-foreground">{succ ? "No other rising skill sits next to this module untaught." : "No rising skill sits next to this module untaught."}</p>
         )}
       </Panel>
     </div>
   );
 }
 
-function NoteEditor({ m, programmeId }: { m: ModuleHalfLife; programmeId: string }) {
+function NoteEditor({ m, programmeId, horizonYears, demo }: { m: ModuleHalfLife; programmeId: string; horizonYears: number; demo: boolean }) {
   const [text, setText] = useState(m.decision?.note ?? m.refreshNote?.text ?? "");
   const qc = useQueryClient();
   const decide = useMutation({
-    mutationFn: (decision: "adopted" | "dismissed") => apiPost<Decision>("/api/labs/halflife/decide", { programmeId, moduleCode: m.code, decision, note: text.trim() || undefined }),
+    mutationFn: (decision: "adopted" | "dismissed") => apiPost<Decision>("/api/labs/halflife/decide", {
+      programmeId, moduleCode: m.code, decision, note: text.trim() || undefined, horizonYears, ...(demo ? { demo: true } : {}),
+    }),
     onSuccess: (d) => {
       toast.success(d.decision === "adopted" ? `Saved the ${m.code} refresh note for the next module review` : `Dismissed the ${m.code} note`);
       void qc.invalidateQueries({ queryKey: ["labs-halflife"] });
@@ -134,7 +151,9 @@ function NoteEditor({ m, programmeId }: { m: ModuleHalfLife; programmeId: string
   );
 }
 
-export function ModuleDetail({ module: m, programmeId, lastDataMonth, horizonMonth }: { module: ModuleHalfLife; programmeId: string; lastDataMonth: string; horizonMonth: string }) {
+export function ModuleDetail({ module: m, programmeId, lastDataMonth, horizonMonth, horizonYears, demo = false }: {
+  module: ModuleHalfLife; programmeId: string; lastDataMonth: string; horizonMonth: string; horizonYears: number; demo?: boolean;
+}) {
   const b = band(m.urgency);
   return (
     <section aria-labelledby="module-heading" className="rounded-2xl border bg-card p-6 shadow-sm">
@@ -157,7 +176,7 @@ export function ModuleDetail({ module: m, programmeId, lastDataMonth, horizonMon
         )}
         <Panel title="Demand for its topics, today = 100" icon={ScanSearch}>
           {m.curve.length ? (
-            <DecayCurve module={m} lastDataMonth={lastDataMonth} horizonMonth={horizonMonth} />
+            <DecayCurve module={m} lastDataMonth={lastDataMonth} horizonMonth={horizonMonth} horizonYears={horizonYears} />
           ) : (
             <p className="text-sm text-muted-foreground">No curve: none of {m.code}&apos;s skills has a hiring trend yet. Its urgency comes only from rising skills next door.</p>
           )}
@@ -167,7 +186,7 @@ export function ModuleDetail({ module: m, programmeId, lastDataMonth, horizonMon
           Urgency {m.urgency} of 100: {Math.round(m.urgencyParts.decay)} points for demand its own topics lose by {monthLabel(horizonMonth)}, plus {Math.round(m.urgencyParts.drift)} for rising demand next door that no module teaches.
         </p>
         {m.refreshNote ? (
-          <NoteEditor key={m.code} m={m} programmeId={programmeId} />
+          <NoteEditor key={m.code} m={m} programmeId={programmeId} horizonYears={horizonYears} demo={demo} />
         ) : (
           <p className="rounded-xl bg-muted/60 p-4 text-sm text-muted-foreground">No refresh needed: nothing it teaches is losing demand and no rising skill next to it is untaught.</p>
         )}

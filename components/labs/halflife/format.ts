@@ -33,3 +33,13 @@ export const andList = (xs: string[]) => (xs.length <= 1 ? (xs[0] ?? "") : `${xs
 
 const ROLE_NAMES: Record<string, string> = { "ml-engineer": "ML engineer", "software-engineer": "software engineer", "data-analyst": "data analyst" };
 export const roleName = (id: string) => ROLE_NAMES[id] ?? id.replace(/-/g, " ");
+
+/** A 3-year horizon is when this year's first-years graduate (3-year BSc); other horizons are named by their date. */
+export const GRADUATION_YEARS = 3;
+export const isGraduation = (horizonYears: number) => horizonYears === GRADUATION_YEARS;
+/** "by graduation" at 3 years, else "by Oct 2031". */
+export const byHorizon = (horizonYears: number, horizonMonth: string) =>
+  isGraduation(horizonYears) ? "by graduation" : `by ${monthLabel(horizonMonth)}`;
+/** The label on the horizon line of the decay curve: "Graduation" or "In 5 years". */
+export const horizonLineLabel = (horizonYears: number) =>
+  isGraduation(horizonYears) ? "Graduation" : `In ${horizonYears} ${horizonYears === 1 ? "year" : "years"}`;

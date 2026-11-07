@@ -14,7 +14,8 @@ vi.mock("@/lib/llm", () => ({ llmJSON: vi.fn(async () => { throw new Error("no_k
 import { buildHalfLifeReport } from "@/lib/labs/halflife/agent";
 import { HalfLifeView } from "./HalfLifeView";
 import { radarSummary } from "./UrgencyRadar";
-import { curveRows } from "./DecayCurve";
+import { curveRows, horizonLabelSide } from "./DecayCurve";
+import { byHorizon, horizonLineLabel } from "./format";
 
 let REPORT: HalfLifeReport;
 beforeAll(async () => {
@@ -26,9 +27,9 @@ beforeAll(async () => {
 beforeEach(() => vi.clearAllMocks());
 afterEach(cleanup);
 
-const renderView = () => {
+const renderView = (props: { demo?: boolean } = {}) => {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
-  return render(<QueryClientProvider client={qc}><HalfLifeView programmeId="uom-bsc-cs" /></QueryClientProvider>);
+  return render(<QueryClientProvider client={qc}><HalfLifeView programmeId="uom-bsc-cs" {...props} /></QueryClientProvider>);
 };
 
 describe("HalfLifeView", () => {
@@ -62,7 +63,7 @@ describe("HalfLifeView", () => {
     await user.clear(box);
     await user.type(box, "Pilot an LLM apps lab in week 9.");
     await user.click(screen.getByRole("button", { name: /adopt note/i }));
-    await waitFor(() => expect(apiPost).toHaveBeenCalledWith("/api/labs/halflife/decide", { programmeId: "uom-bsc-cs", moduleCode: "COMP3xxx3", decision: "adopted", note: "Pilot an LLM apps lab in week 9." }));
+    await waitFor(() => expect(apiPost).toHaveBeenCalledWith("/api/labs/halflife/decide", { programmeId: "uom-bsc-cs", moduleCode: "COMP3xxx3", decision: "adopted", note: "Pilot an LLM apps lab in week 9.", horizonYears: 3 }));
     expect(toastSuccess).toHaveBeenCalled();
   });
 
@@ -73,6 +74,40 @@ describe("HalfLifeView", () => {
     await screen.findByText("Fastest half-life");
     await user.click(screen.getByRole("button", { name: "5 years" }));
     await waitFor(() => expect(apiGet).toHaveBeenCalledWith(expect.stringContaining("horizonYears=5")));
+  });
+
+  it("starts on the recorded demo data when the page was opened with ?demo=1, and decides on the same data", async () => {
+    apiGet.mockResolvedValue(REPORT);
+    apiPost.mockResolvedValue({ ...REPORT.modules[0], decision: "dismissed", decidedAt: new Date().toISOString() });
+    const user = userEvent.setup();
+    renderView({ demo: true });
+    await screen.findByText("Fastest half-life");
+    expect(apiGet).toHaveBeenCalledWith("/api/labs/halflife?programmeId=uom-bsc-cs&horizonYears=3&demo=1");
+    await user.click(screen.getByRole("button", { name: /dismiss/i }));
+    await waitFor(() => expect(apiPost).toHaveBeenCalledWith("/api/labs/halflife/decide", expect.objectContaining({ moduleCode: "COMP1xxx2", decision: "dismissed", horizonYears: 3, demo: true })));
+  });
+
+  it("names graduation only at the 3-year horizon, and the date at 5 years", async () => {
+    const r5 = (await buildHalfLifeReport({ programmeId: "uom-bsc-cs", horizonYears: 5 })).report;
+    apiGet.mockImplementation(async (url: string) => (url.includes("horizonYears=5") ? r5 : REPORT));
+    const user = userEvent.setup();
+    renderView();
+    await screen.findByText("Fastest half-life");
+    expect(screen.getByText(/when this year's first-years graduate/)).toBeInTheDocument();
+    expect(screen.getByText("Losing demand by graduation")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "5 years" }));
+    expect(await screen.findByText("Losing demand by Oct 2031")).toBeInTheDocument();
+    expect(screen.getByText(/within 5 years, by Oct 2031/)).toBeInTheDocument();
+    expect(screen.queryByText(/graduat/i)).not.toBeInTheDocument();
+  });
+
+  it("shows the successor skill a rebalance note quotes, with its own numbers", async () => {
+    apiGet.mockResolvedValue(REPORT);
+    renderView();
+    await screen.findByText("Fastest half-life");
+    const succ = REPORT.modules[0].refreshNote!.successor!;
+    expect(screen.getByText(/Often replaces Java\. In 19% of hiring posts today/)).toBeInTheDocument();
+    expect(screen.getAllByText(`+${Math.round(succ.growthPerYear * 100)}% a year`).length).toBeGreaterThan(0);
   });
 
   it("shows an error with Retry and a demo fallback", async () => {
@@ -93,6 +128,17 @@ describe("HalfLifeView", () => {
 });
 
 describe("chart helpers", () => {
+  it("label the horizon by date unless it is graduation, and keep the two vertical labels apart", () => {
+    expect(byHorizon(3, "2029-10")).toBe("by graduation");
+    expect(byHorizon(5, "2031-10")).toBe("by Oct 2031");
+    expect(horizonLineLabel(3)).toBe("Graduation");
+    expect(horizonLineLabel(2)).toBe("In 2 years");
+    expect(radarSummary([], "by Oct 2031")).toBe("None of the 0 modules needs a refresh by Oct 2031.");
+    // curve ends 6 years out: room to the right at 2 and 3 years, flip left at 5
+    expect(horizonLabelSide(2028.75, 2032.75)).toBe("insideTopLeft");
+    expect(horizonLabelSide(2031.75, 2032.75)).toBe("insideTopRight");
+  });
+
   it("summarise the radar in words and merge the curve into one row per month", () => {
     expect(radarSummary(REPORT.modules)).toMatch(/^COMP1xxx2 Object-Oriented Programming with Java spikes furthest \(urgency \d+ of 100\)/);
     const rows = curveRows(REPORT.modules[0].curve);

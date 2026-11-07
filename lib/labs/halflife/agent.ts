@@ -43,16 +43,17 @@ export const CHECKPOINT: Checkpoint = {
 
 const isDemo = () => process.env.DEMO_MODE === "true";
 
-function readJSON<T>(rel: string): T | undefined {
+/** Reads a fixture under data/fixtures (path scoped statically, so the build traces only that folder). */
+function readFixture<T>(rel: string): T | undefined {
   try {
-    return JSON.parse(fs.readFileSync(path.join(process.cwd(), rel), "utf8")) as T;
+    return JSON.parse(fs.readFileSync(path.join(process.cwd(), "data", "fixtures", rel), "utf8")) as T;
   } catch {
     return undefined;
   }
 }
 
 export function loadConfig(): HalfLifeConfig {
-  const raw = readJSON<Partial<HalfLifeConfig>>("data/fixtures/labs/halflife.json") ?? {};
+  const raw = readFixture<Partial<HalfLifeConfig>>("labs/halflife.json") ?? {};
   return { pairs: Array.isArray(raw.pairs) ? raw.pairs : [], successors: raw.successors ?? {}, keywords: raw.keywords ?? {} };
 }
 
@@ -101,7 +102,7 @@ async function cohortContext(programmeId: string) {
 function equalMix() {
   const demand: Record<string, Record<string, number>> = {};
   for (const r of FALLBACK_ROLES) {
-    const d = readJSON<{ skills?: { skillId: string; share: number }[] }>(`data/fixtures/market.${r}.json`);
+    const d = readFixture<{ skills?: { skillId: string; share: number }[] }>(`market.${r}.json`);
     if (d?.skills) demand[r] = Object.fromEntries(d.skills.map((s) => [s.skillId, s.share]));
   }
   const roles = Object.keys(demand);
@@ -292,8 +293,9 @@ export async function buildHalfLifeReport(q: Omit<HalfLifeQuery, "demo">, opts: 
         const n = await polishNotes(report, programme, ctx);
         if (n) say(`Polished ${n} refresh notes with the language model (numbers checked against the receipts)`);
       }
-      say(`Ranked ${modules.length} modules: ${needsRefresh} need a refresh, ${report.stats.decaying} are losing demand`);
-      ctx.done(`Half-life Radar: ${needsRefresh} of ${modules.length} modules need a refresh`, { needsRefresh, modules: modules.length, decaying: report.stats.decaying });
+      const decaying = report.stats.decaying;
+      say(`Ranked ${modules.length} modules: ${needsRefresh} ${needsRefresh === 1 ? "needs" : "need"} a refresh, ${decaying} ${decaying === 1 ? "is" : "are"} losing demand`);
+      ctx.done(`Half-life Radar: ${needsRefresh} of ${modules.length} modules ${needsRefresh === 1 ? "needs" : "need"} a refresh`, { needsRefresh, modules: modules.length, decaying: report.stats.decaying });
       return report;
     },
   });
@@ -308,7 +310,10 @@ export async function decideRefresh(req: DecideReq, opts: { runId?: string } = {
     const scan = scanForInjection(req.note);
     if (scan.risk === "high") throw new HalfLifeError("That note reads like an instruction to an AI, so it wasn't saved. Rephrase it as a note for colleagues.", "bad_input");
   }
-  const { report } = await buildHalfLifeReport({ programmeId: req.programmeId, horizonYears: 3 }, { runId, quiet: true, polish: false });
+  const { report } = await buildHalfLifeReport(
+    { programmeId: req.programmeId, horizonYears: req.horizonYears ?? 3 },
+    { runId, quiet: true, polish: false, ...(req.demo ? { demo: true } : {}) },
+  );
   const mod = report.modules.find((m) => m.code === req.moduleCode);
   if (!mod) throw new HalfLifeError(`Module ${req.moduleCode} isn't in ${report.programmeName}.`, "not_found");
   const note = req.note ? neutralize(req.note) : mod.refreshNote?.text;

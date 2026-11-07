@@ -234,7 +234,11 @@ export function draftNote(input: {
     } else {
       text = `${lo ? `Review learning outcome ${i + 1} ('${clipLO(lo)}'): k` : "K"}eep the transferable ideas and spend less lab time on ${D}-specific detail. ${facts}.`;
     }
-    return { kind: "rebalance", text, skillIds: succ ? [d, succ] : [d], learningOutcomeIndex: i, learningOutcome: lo, source: "template" };
+    const sf = succ ? fits.get(succ) : undefined;
+    return {
+      kind: "rebalance", text, skillIds: succ ? [d, succ] : [d], learningOutcomeIndex: i, learningOutcome: lo, source: "template",
+      ...(succ && sf ? { successor: { skillId: succ, name: skillName(succ), growthPerYear: r3(sf.growthPerYear), shareNow: Number(sf.shareNow.toFixed(4)) } } : {}),
+    };
   }
 
   const x = drift.find((s) => s.points > 0);
