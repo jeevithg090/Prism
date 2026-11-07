@@ -1,0 +1,184 @@
+{
+  "defaultChallengeId": "ch_docker_01",
+  "packs": [
+    {
+      "challengeId": "ch_docker_01",
+      "concepts": {
+        "deps-layer": "layer caching",
+        "slim-base": "base image size",
+        "non-root": "running as a non-root user",
+        "pip-cache": "pip's download cache",
+        "serves-8000": "the listening address",
+        "exec-form": "the exec-form CMD",
+        "workdir": "the working directory"
+      },
+      "difficulty": {
+        "deps-layer": { "meanMin": 7, "neverP": 0.5 },
+        "slim-base": { "meanMin": 2.5, "neverP": 0.05 },
+        "non-root": { "meanMin": 5, "neverP": 0.12 },
+        "pip-cache": { "meanMin": 4, "neverP": 0.1 }
+      },
+      "breaks": {
+        "exec-form": { "p": 0.15, "forMin": 3 },
+        "serves-8000": { "p": 0.1, "forMin": 2.5 }
+      },
+      "mutations": {
+        "deps-layer": [{ "find": "COPY requirements.txt .\nRUN pip install --no-cache-dir -r requirements.txt\nCOPY --chown=app:app . .\n", "replace": "COPY --chown=app:app . .\nRUN pip install --no-cache-dir -r requirements.txt\n" }],
+        "slim-base": [{ "find": "FROM python:3.12-slim", "replace": "FROM python:3.12" }],
+        "non-root": [{ "find": "USER app\n", "replace": "" }],
+        "pip-cache": [{ "find": "pip install --no-cache-dir -r", "replace": "pip install -r" }],
+        "serves-8000": [{ "find": "\"0.0.0.0\"", "replace": "\"127.0.0.1\"" }],
+        "exec-form": [{ "find": "CMD [\"uvicorn\", \"app.main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\"]", "replace": "CMD uvicorn app.main:app --host 0.0.0.0 --port 8000" }],
+        "workdir": [{ "find": "WORKDIR /app\n", "replace": "" }]
+      },
+      "explainers": {
+        "deps-layer": [
+          "Docker builds an image one instruction at a time and saves each result as a layer. On the next build it reuses a layer only when that instruction, and every instruction above it, is unchanged.",
+          "Draw the Dockerfile as a stack on the board. Change one line of app code, then cross out that step and every step below it: those are the steps Docker runs again.",
+          "So for each step, ask how often its input changes. What changes rarely belongs near the top; what you edit every few minutes belongs near the bottom."
+        ],
+        "slim-base": [
+          "Everything in the base image ships with your API, including compilers, documentation and tools a web server never runs.",
+          "Official images come in variants. Which variant contains only what Python needs at runtime?",
+          "A smaller image downloads faster on every machine that runs it and carries fewer packages that might need a security patch."
+        ],
+        "non-root": [
+          "Unless the Dockerfile says otherwise, the process inside a container runs as root.",
+          "If someone found a bug in the API and got a shell, they would be root inside the container. Which instruction decides who runs the process, and where does it have to sit?",
+          "The user has to exist before you switch to it, and it needs permission to read the app files."
+        ],
+        "pip-cache": [
+          "When pip installs a package it keeps the downloaded file in a cache, so the next install can reuse it.",
+          "Inside an image there is no next install: the cache only makes the layer bigger.",
+          "pip can be told not to keep that cache. Where would you look in pip's help to find out how?"
+        ],
+        "serves-8000": [
+          "Inside a container, 127.0.0.1 means the container itself, so nothing outside it can reach a server that listens there.",
+          "Publishing a port forwards traffic to the container's network interface. Which address listens on every interface?"
+        ],
+        "exec-form": [
+          "A CMD written as a plain string runs inside a shell, and the shell receives the stop signal instead of uvicorn.",
+          "Written as a JSON array, the command runs directly, so uvicorn hears the signal and shuts down cleanly."
+        ],
+        "workdir": [
+          "Relative paths in COPY and CMD resolve against the current working directory.",
+          "Without one, files land in the root of the filesystem and the start command may not find the app package."
+        ]
+      }
+    },
+    {
+      "challengeId": "ch_python_01",
+      "concepts": {
+        "closes-file": "closing files with a context manager",
+        "rgb": "normalising the colour mode",
+        "clear-error": "failing with a clear error",
+        "typed": "type hints on the signature",
+        "same-name": "keeping the function signature",
+        "returns": "returning the image",
+        "no-print": "raising instead of printing"
+      },
+      "difficulty": {
+        "closes-file": { "meanMin": 5, "neverP": 0.35 },
+        "rgb": { "meanMin": 3, "neverP": 0.1 },
+        "clear-error": { "meanMin": 6.5, "neverP": 0.45 },
+        "typed": { "meanMin": 3, "neverP": 0.05 }
+      },
+      "breaks": {
+        "no-print": { "p": 0.2, "forMin": 3 }
+      },
+      "mutations": {
+        "closes-file": [{ "find": "with Image.open(path) as img:", "replace": "img = Image.open(path)" }],
+        "rgb": [{ "find": "img.convert(\"RGB\").resize", "replace": "img.resize" }],
+        "clear-error": [{ "find": "raise ValueError(f\"{path} is not an image we can read\") from err", "replace": "return None" }],
+        "typed": [{ "find": "def load_image(path: str | Path, size: int = 224) -> Image.Image:", "replace": "def load_image(path, size=224):" }],
+        "no-print": [{ "find": "    try:\n", "replace": "    print(\"loading\", path)\n    try:\n" }]
+      },
+      "explainers": {
+        "closes-file": [
+          "Every open file holds an operating-system handle until something closes it. A busy API that leaks one per request eventually runs out.",
+          "Python has a statement that closes a resource for you when its block ends, even if an exception is raised inside it.",
+          "Ask: in your version, what closes the file when an upload turns out to be corrupt?"
+        ],
+        "rgb": [
+          "Uploads arrive in different colour modes: greyscale, RGBA with transparency, palette images.",
+          "The model expects three channels every time, so the image needs one consistent mode before resizing."
+        ],
+        "clear-error": [
+          "When a function can't do its job, the caller needs to know why, in words it can show to a user.",
+          "Catch the specific errors the image library raises for unreadable files, then raise one clear error of your own that keeps the original as its cause.",
+          "Ask: what does your caller receive today when the upload is a PDF?"
+        ],
+        "typed": [
+          "Type hints document what goes in and what comes out, and let editors and checkers catch mistakes before the code runs.",
+          "Look at the signature: what type is path, what type is size, and what does the function hand back?"
+        ],
+        "same-name": [
+          "Other code already calls this function by its name and arguments, so the signature is a contract."
+        ],
+        "returns": [
+          "A function that prepares an image has to hand that image back to its caller."
+        ],
+        "no-print": [
+          "A print in a web API goes to a log nobody reads, and the caller never learns that something failed.",
+          "Errors should travel to the caller as exceptions, where they can be handled."
+        ]
+      }
+    },
+    {
+      "challengeId": "ch_sql_01",
+      "concepts": {
+        "join-key": "joining on the request key",
+        "filter-rows": "filtering rows with WHERE",
+        "aggregate": "grouping one row per user",
+        "having": "filtering after grouping",
+        "selects-user": "selecting the user id",
+        "sorted": "sorting busiest first",
+        "no-star": "naming the columns"
+      },
+      "difficulty": {
+        "join-key": { "meanMin": 3.5, "neverP": 0.1 },
+        "filter-rows": { "meanMin": 4.5, "neverP": 0.2 },
+        "aggregate": { "meanMin": 5, "neverP": 0.15 },
+        "having": { "meanMin": 7, "neverP": 0.5 }
+      },
+      "breaks": {
+        "sorted": { "p": 0.2, "forMin": 3 }
+      },
+      "mutations": {
+        "join-key": [{ "find": "FROM caption_requests r\nJOIN captions c ON c.request_id = r.id\n", "replace": "FROM caption_requests r, captions c\n" }],
+        "filter-rows": [{ "find": "\n  AND r.created_at >= NOW() - INTERVAL '7 days'\n", "replace": "\n" }],
+        "aggregate": [{ "find": "GROUP BY r.user_id\n", "replace": "" }],
+        "having": [{ "find": "HAVING COUNT(DISTINCT r.id) >= 3\n", "replace": "" }],
+        "sorted": [{ "find": "ORDER BY completed_requests DESC", "replace": "ORDER BY completed_requests" }]
+      },
+      "explainers": {
+        "join-key": [
+          "A join pairs rows from two tables. Without a join condition, every request is paired with every caption, and the counts explode.",
+          "Which column in captions points back to the request it belongs to?"
+        ],
+        "filter-rows": [
+          "WHERE runs before grouping: it decides which rows are allowed into the groups at all.",
+          "The task asks about one week of completed requests. Which two conditions describe that?"
+        ],
+        "aggregate": [
+          "Aggregates like COUNT and AVG collapse many rows into one. GROUP BY decides what each output row stands for.",
+          "The question asks for one row per user. What does that tell you to group by?"
+        ],
+        "having": [
+          "SQL filters at two moments. WHERE filters individual rows before they are grouped; a second clause filters whole groups after the counts exist.",
+          "Draw the pipeline on the board: FROM and JOIN, then WHERE, then GROUP BY, then the group filter, then SELECT and ORDER BY.",
+          "Ask: at the moment WHERE runs, has anyone counted the requests per user yet?"
+        ],
+        "selects-user": [
+          "The result has to say who each row is about, so the user id belongs in the select list."
+        ],
+        "sorted": [
+          "ORDER BY sorts from smallest to largest unless told otherwise. Busiest first means the other direction."
+        ],
+        "no-star": [
+          "Naming columns keeps the result stable when someone adds a column to the table later."
+        ]
+      }
+    }
+  ]
+}
