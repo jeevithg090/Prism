@@ -1,17 +1,36 @@
 import "server-only";
-import type { AgentEvent } from "@/lib/types";
-type G = { __ksEvents?: Map<string, AgentEvent[]>; __ksSubs?: Map<string, Set<(e: AgentEvent) => void>> };
-const g = globalThis as unknown as G;
-const logs: Map<string, AgentEvent[]> = (g.__ksEvents ??= new Map());
-const subs: Map<string, Set<(e: AgentEvent) => void>> = (g.__ksSubs ??= new Map());
+import { EventEmitter } from "node:events";
+import { nanoid } from "nanoid";
+import type { AgentEvent, AgentName } from "@/lib/types";
+
+const g = globalThis as unknown as { __ksBus?: EventEmitter; __ksLog?: Map<string, AgentEvent[]> };
+const bus = (g.__ksBus ??= new EventEmitter().setMaxListeners(100));
+const log = (g.__ksLog ??= new Map<string, AgentEvent[]>());
+
+export const newRunId = () => `run_${nanoid(10)}`;
+
 export function emit(e: Omit<AgentEvent, "ts">): void {
   const ev: AgentEvent = { ...e, ts: new Date().toISOString() };
-  const log = logs.get(e.runId) ?? []; log.push(ev); if (log.length > 200) log.shift(); logs.set(e.runId, log);
-  subs.get(e.runId)?.forEach((cb) => cb(ev));
+  const arr = log.get(e.runId) ?? [];
+  arr.push(ev);
+  if (arr.length > 200) arr.shift();
+  log.set(e.runId, arr);
+  bus.emit(e.runId, ev);
 }
+
+/** No-op when runId is undefined, so agents can call it unconditionally. */
+export function emitIf(
+  runId: string | undefined, agent: AgentName, status: AgentEvent["status"],
+  message: string, data?: Record<string, unknown>,
+): void {
+  if (runId) emit({ runId, agent, status, message, data });
+}
+
 export function subscribe(runId: string, cb: (e: AgentEvent) => void): () => void {
-  (logs.get(runId) ?? []).forEach(cb);
-  const set = subs.get(runId) ?? new Set(); set.add(cb); subs.set(runId, set);
-  return () => set.delete(cb);
+  [...(log.get(runId) ?? [])].forEach(cb); // replay for late subscribers
+  bus.on(runId, cb);
+  return () => { bus.off(runId, cb); };
 }
-export function newRunId(): string { return `run_${Math.random().toString(36).slice(2, 10)}`; }
+
+/** Logged events for a run (used by the SSE poll mode). */
+export const getLog = (runId: string): AgentEvent[] => [...(log.get(runId) ?? [])];
