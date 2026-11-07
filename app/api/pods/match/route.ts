@@ -1,9 +1,10 @@
 import { newRunId } from "@/lib/agents/events";
 import { matchPod, NotFoundError } from "@/lib/agents/matchmaker";
 import { badRequest, fail, internal, ok, PodMatchReqZ } from "@/lib/schemas/community";
+import { withReplayInfo } from "@/lib/replay";
 
 // POST /api/pods/match {userId} → Pod (+ runId for useActivity().start). Contract §6.
-export async function POST(req: Request) {
+async function handlePOST(req: Request) {
   let body: unknown;
   try {
     body = await req.json();
@@ -21,3 +22,6 @@ export async function POST(req: Request) {
     return internal();
   }
 }
+
+/** Demo toggle: the envelope says whether its AI / connector values were replayed from a real run (lib/replay.ts). */
+export const POST = withReplayInfo(handlePOST);

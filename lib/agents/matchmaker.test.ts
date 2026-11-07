@@ -230,6 +230,34 @@ describe("matchPod", () => {
     expect(mocks.llmJSON).not.toHaveBeenCalled();
   });
 
+  it("a match equal to the seeded demo pod keeps its id, and the model writes its explanations outside DEMO_MODE", async () => {
+    const fixture: Pod = {
+      id: "pod_demo01", name: "Pod Orbit", score: 0.73, createdAt: "2026-11-07T14:40:00.000Z",
+      explanations: [{ fromUserId: "aisha", toUserId: "priya", text: "Fixture text." }],
+      members: [
+        { userId: "aisha", learns: ["docker"], teaches: ["python"], role: "Learns Docker · Teaches Python" },
+        { userId: "priya", learns: ["sql"], teaches: ["docker"], role: "Learns SQL · Teaches Docker" },
+        { userId: "tom", learns: ["pytorch"], teaches: ["sql"], role: "Learns PyTorch · Teaches SQL" },
+        { userId: "mei", learns: ["python"], teaches: ["pytorch"], role: "Learns Python · Teaches PyTorch" },
+      ],
+    };
+    serveDataFiles({ "data/seed/student-skills.json": STUDENT_SKILLS, "data/fixtures/pod.aisha.json": fixture });
+    mocks.llmJSON.mockImplementation(async ({ user }: { user: string }) => ({
+      lines: (JSON.parse(user) as { lines: { fromUserId: string; toUserId: string; text: string }[] }).lines.map((l) => ({ ...l, text: `Polished: ${l.text}` })),
+    }));
+    const pod = await matchPod({ userId: "aisha" });
+    expect(pod.id).toBe("pod_demo01");
+    expect(mocks.llmJSON).toHaveBeenCalledWith(expect.objectContaining({ schemaName: "pod_explanations" }));
+    expect(pod.explanations.length).toBeGreaterThan(0);
+    expect(pod.explanations.every((e) => e.text.startsWith("Polished: "))).toBe(true);
+    expect(await fakeStore.get<Pod>("pods", "pod_demo01")).toMatchObject({ explanations: pod.explanations });
+
+    process.env.DEMO_MODE = "true";
+    mocks.llmJSON.mockClear();
+    expect((await matchPod({ userId: "aisha" })).explanations).toEqual(fixture.explanations);
+    expect(mocks.llmJSON).not.toHaveBeenCalled();
+  });
+
   it("DEMO_MODE falls back to data/fixtures/pod.aisha.json when anything throws", async () => {
     process.env.DEMO_MODE = "true";
     const fixture: Pod = {

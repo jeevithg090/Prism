@@ -28,14 +28,16 @@ test("find my pod → start our project → project view with the repo link", as
 
 test("an unknown pod id shows a kind error, not a crash", async ({ page }, testInfo) => {
   const watch = watchPage(page, { allow: [/\/api\/pods\/pod_does_not_exist$/] });
-  await page.goto("/pods/pod_does_not_exist");
+  await page.goto("/pods/pod_does_not_exist?demo=1");
   await expect(page.getByRole("heading", { name: "We couldn't load this pod" })).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole("button", { name: "Use demo data" })).toBeVisible();
   await expectNoA11yViolations(page);
   watch.assertClean(testInfo);
 });
 
-test("loading states are announced and axe-clean while the API is slow", async ({ page }) => {
+test("loading states are announced and axe-clean while the API is slow", async ({ page, baseURL }) => {
+  // Signed in as Aisha by cookie, not ?demo=1: on /pods that flag starts fresh at the hero and skips the pods query.
+  await page.context().addCookies([{ name: "ks_uid", value: "aisha", url: baseURL! }]);
   const slow = (pattern: string) =>
     page.route(pattern, async (route) => {
       await new Promise((r) => setTimeout(r, 2_500));

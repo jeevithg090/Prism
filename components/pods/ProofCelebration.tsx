@@ -11,15 +11,26 @@ import {
   TrendingUp,
 } from "lucide-react";
 import type { ProofResult } from "@/lib/schemas/studio";
+import type { SkillStatus } from "@/lib/types";
 import { BadgePill, StatusBadge } from "@/components/keystone";
 import { LadderStep } from "@/components/ladder/LadderStep";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog";
+
+/** The proof engine adds the skill's Bridge Map status before the merge beside the contract fields. */
+type ProofWithStatus = ProofResult & { statusBefore?: SkillStatus };
+const STATUS_WORD: Record<SkillStatus, string> = {
+  proven: "Proven",
+  "degree-done": "In your degree",
+  "degree-upcoming": "Later in your degree",
+  gap: "Gap",
+};
 
 const firstName = (names: Record<string, string>, id: string) =>
   (names[id]?.trim() || (id ? id[0].toUpperCase() + id.slice(1) : id)).split(
@@ -49,11 +60,31 @@ function useCountUp(
 }
 
 /** Readiness as an arc: coral for where you were, green for what this proof added, drawn in once. */
-function ReadinessArc({ before, after, reduce }: { before: number; after: number; reduce: boolean }) {
+function ReadinessArc({
+  before,
+  after,
+  reduce,
+}: {
+  before: number;
+  after: number;
+  reduce: boolean;
+}) {
   const gained = Math.max(after - before, 0);
   return (
-    <svg viewBox="0 0 120 120" className="size-32 shrink-0 -rotate-90" aria-hidden focusable="false">
-      <circle cx="60" cy="60" r="50" fill="none" strokeWidth="12" className="stroke-paper-3" />
+    <svg
+      viewBox="0 0 120 120"
+      className="size-32 shrink-0 -rotate-90"
+      aria-hidden
+      focusable="false"
+    >
+      <circle
+        cx="60"
+        cy="60"
+        r="50"
+        fill="none"
+        strokeWidth="12"
+        className="stroke-paper-3"
+      />
       <circle
         cx="60"
         cy="60"
@@ -100,6 +131,10 @@ function CelebrationBody({
   const delta = after - before;
   const shown = useCountUp(before, after, !reduce);
   const reviewer = firstName(names, result.reviewerUserId);
+  const from = (result as ProofWithStatus).statusBefore ?? "gap";
+  // Already proven (a challenge or GitHub proof came first): the merge adds the Built it rung, readiness can't move.
+  const already = from === "proven";
+  const showReadiness = !already && delta !== 0;
   const deltaLabel = `${delta >= 0 ? "+" : ""}${delta} ${Math.abs(delta) === 1 ? "point" : "points"}`;
 
   return (
@@ -114,7 +149,7 @@ function CelebrationBody({
             transition={{ delay: 0.8, duration: 0.9, ease: "easeOut" }}
           />
         )}
-        {!reduce && (
+        {!reduce && !already && (
           <motion.span
             className="absolute inset-0 flex items-center justify-center rounded-full border-2 border-status-gap/45 bg-status-gap/10 text-status-gap"
             initial={{ opacity: 1, scale: 1 }}
@@ -128,82 +163,114 @@ function CelebrationBody({
           className="absolute inset-0 flex items-center justify-center rounded-full bg-status-proven text-background"
           initial={reduce ? false : { opacity: 0, scale: 0.4 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.7, type: "spring", stiffness: 260, damping: 16 }}
+          transition={{
+            delay: 0.7,
+            type: "spring",
+            stiffness: 260,
+            damping: 16,
+          }}
         >
           <Check className="size-10" strokeWidth={3} />
         </motion.span>
       </div>
 
       <DialogTitle className="text-center text-3xl leading-tight font-semibold text-balance text-foreground sm:text-4xl">
-        {result.skillName} is now proven
+        {already
+          ? `You built it: ${result.skillName}`
+          : `${result.skillName} is now proven`}
       </DialogTitle>
       <DialogDescription className="mx-auto mt-2 max-w-sm text-center text-base text-pretty text-muted-foreground">
-        Your merged pull request is real evidence, not a self-claim. It&apos;s
-        on your Bridge Map now.
+        {already
+          ? `${result.skillName} was already proven on your Bridge Map. Your merged pull request adds Built it to its Proof Ladder.`
+          : "Your merged pull request is real evidence, not a self-claim. It's on your Bridge Map now."}
       </DialogDescription>
 
-      {/* Status change: Gap to Proven */}
-      <div className="mt-5 flex items-center justify-center gap-3">
-        <span className="sr-only">
-          {result.skillName} changed from Gap to Proven.
-        </span>
-        <motion.span
-          aria-hidden
-          initial={reduce ? false : { opacity: 1 }}
-          animate={{ opacity: 0.5 }}
-          transition={{ delay: 0.6, duration: 0.4 }}
-        >
-          <StatusBadge status="gap" />
-        </motion.span>
-        <ArrowRight aria-hidden className="size-4 text-muted-foreground" />
-        <motion.span
-          aria-hidden
-          initial={reduce ? false : { opacity: 0, scale: 0.6 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.8, type: "spring", stiffness: 300, damping: 18 }}
-        >
-          <StatusBadge status="proven" />
-        </motion.span>
-      </div>
+      {/* Status change, e.g. Gap to Proven (none when the skill was already proven) */}
+      {!already && (
+        <div className="mt-5 flex items-center justify-center gap-3">
+          <span className="sr-only">
+            {result.skillName} changed from {STATUS_WORD[from]} to Proven.
+          </span>
+          <motion.span
+            aria-hidden
+            initial={reduce ? false : { opacity: 1 }}
+            animate={{ opacity: 0.5 }}
+            transition={{ delay: 0.6, duration: 0.4 }}
+          >
+            <StatusBadge status={from} />
+          </motion.span>
+          <ArrowRight aria-hidden className="size-4 text-muted-foreground" />
+          <motion.span
+            aria-hidden
+            initial={reduce ? false : { opacity: 0, scale: 0.6 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{
+              delay: 0.8,
+              type: "spring",
+              stiffness: 300,
+              damping: 18,
+            }}
+          >
+            <StatusBadge status="proven" />
+          </motion.span>
+        </div>
+      )}
 
-      <LadderStep skillName={result.skillName} from={1} level={2} className="mt-6" />
+      <LadderStep
+        skillName={result.skillName}
+        from={1}
+        level={2}
+        className="mt-6"
+      />
 
-      {/* Readiness: before, after, and what moved it */}
-      <div className="mt-6 flex flex-col items-center gap-5 rounded-xl bg-muted p-5 sm:flex-row sm:gap-6 sm:p-6">
-        <ReadinessArc before={before} after={after} reduce={reduce} />
-        <div className="min-w-0 text-center sm:text-left">
-          <p className="text-sm font-medium text-muted-foreground">Job readiness</p>
-          <p className="sr-only">
-            Readiness went from {before}% to {after}%, {deltaLabel}.
-          </p>
-          <div aria-hidden className="mt-1 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 sm:justify-start">
-            <span
-              data-testid="readiness-before"
-              className="font-mono text-3xl font-semibold text-muted-foreground tabular-nums"
+      {/* Readiness: before, after, and what moved it (hidden when this proof didn't move it) */}
+      {showReadiness && (
+        <div className="mt-6 flex flex-col items-center gap-5 rounded-xl bg-muted p-5 sm:flex-row sm:gap-6 sm:p-6">
+          <ReadinessArc before={before} after={after} reduce={reduce} />
+          <div className="min-w-0 text-center sm:text-left">
+            <p className="text-sm font-medium text-muted-foreground">
+              Job readiness
+            </p>
+            <p className="sr-only">
+              Readiness went from {before}% to {after}%, {deltaLabel}.
+            </p>
+            <div
+              aria-hidden
+              className="mt-1 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 sm:justify-start"
             >
-              {before}%
-            </span>
-            <ArrowRight className="size-5 text-muted-foreground" />
-            <span
-              data-testid="readiness-after"
-              className="font-mono text-5xl leading-none font-semibold text-foreground tabular-nums"
+              <span
+                data-testid="readiness-before"
+                className="font-mono text-3xl font-semibold text-muted-foreground tabular-nums"
+              >
+                {before}%
+              </span>
+              <ArrowRight className="size-5 text-muted-foreground" />
+              <span
+                data-testid="readiness-after"
+                className="font-mono text-5xl leading-none font-semibold text-foreground tabular-nums"
+              >
+                {shown}%
+              </span>
+            </div>
+            <div
+              aria-hidden
+              className="mt-3 flex flex-wrap items-center justify-center gap-2 sm:justify-start"
             >
-              {shown}%
-            </span>
-          </div>
-          <div aria-hidden className="mt-3 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
-            <motion.span
-              initial={reduce ? false : { opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.6, duration: 0.22 }}
-              className="inline-flex h-8 items-center rounded-md border border-status-proven/35 bg-status-proven/10 px-2.5 text-base font-semibold text-foreground tabular-nums"
-            >
-              {deltaLabel}
-            </motion.span>
-            <span className="text-sm text-muted-foreground">for proving {result.skillName}</span>
+              <motion.span
+                initial={reduce ? false : { opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.6, duration: 0.22 }}
+                className="inline-flex h-8 items-center rounded-md border border-status-proven/35 bg-status-proven/10 px-2.5 text-base font-semibold text-foreground tabular-nums"
+              >
+                {deltaLabel}
+              </motion.span>
+              <span className="text-sm text-muted-foreground">
+                for proving {result.skillName}
+              </span>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* What you and your reviewer earned */}
       <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
@@ -212,7 +279,9 @@ function CelebrationBody({
         ))}
         <span className="inline-flex h-7 items-center gap-1.5 rounded-md border bg-card px-2 text-sm font-medium text-foreground">
           <TrendingUp className="size-4 text-muted-foreground" aria-hidden />
-          <span className="tabular-nums">+{result.momentumPoints} momentum</span>
+          <span className="tabular-nums">
+            +{result.momentumPoints} momentum
+          </span>
         </span>
       </div>
       <p
@@ -230,7 +299,14 @@ function CelebrationBody({
       </p>
 
       <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-        <Link href={mapHref} onClick={onClose} className={buttonVariants({ size: "lg" })}>
+        <Link
+          href={mapHref}
+          onClick={onClose}
+          className={cn(
+            buttonVariants({ size: "lg" }),
+            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+          )}
+        >
           See it on my Bridge Map
         </Link>
         <Button variant="outline" size="lg" onClick={onClose}>

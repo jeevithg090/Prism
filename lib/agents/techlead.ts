@@ -11,6 +11,7 @@ import { UNTRUSTED_RULE, dropApprovalClaims, guardOutput, scanForInjection, wrap
 import type { PRReview } from "@/lib/schemas/studio";
 import { MAX_CODE_LINES, noFullSolutions, stripLongCodeBlocks } from "@/lib/agents/guardrails";
 import { runAgent, type Checkpoint } from "@/lib/agents/harness";
+import { canReplay, hasRecording, replayOrRecord } from "@/lib/replay";
 import type { Profile } from "@/lib/types";
 
 export const SOCRATIC_SYSTEM =
@@ -231,6 +232,33 @@ const lineCount = (diff: string) => (diff ? diff.replace(/\n+$/, "").split("\n")
 const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? "" : "s"}`;
 
 type OpenPR = { number: number; title: string; body?: string | null; html_url: string; created_at?: string };
+type FetchedPR = { pr: OpenPR; fullDiff: string };
+
+/** The requested (or newest) open PR and its diff. Demo toggle: replayed from the recorded run (lib/replay.ts). */
+function fetchOpenPR(octokit: Octokit | null, gh: { owner: string; repo: string }, prNumber?: number): Promise<FetchedPR> {
+  return replayOrRecord<FetchedPR>(
+    "github",
+    { op: "open-pr", owner: gh.owner, repo: gh.repo, prNumber: prNumber ?? null },
+    async () => {
+      if (!octokit) throw new Error("no GitHub token");
+      const list = await octokit.request("GET /repos/{owner}/{repo}/pulls", {
+        owner: gh.owner, repo: gh.repo, state: "open", sort: "created", direction: "desc", per_page: 20,
+      });
+      const prs = (Array.isArray(list.data) ? list.data : []) as OpenPR[];
+      const found = prNumber ? prs.find((p) => p.number === prNumber) : [...prs].sort((a, b) => b.number - a.number)[0];
+      if (!found) throw new Error("no open PR");
+      const diffRes = await octokit.request("GET /repos/{owner}/{repo}/pulls/{pull_number}", {
+        owner: gh.owner, repo: gh.repo, pull_number: found.number, mediaType: { format: "diff" },
+      });
+      const pr: OpenPR = { number: found.number, title: found.title, body: found.body ?? null, html_url: found.html_url };
+      return { pr, fullDiff: typeof diffRes.data === "string" ? diffRes.data : String(diffRes.data ?? "") };
+    },
+    {
+      requires: ["GITHUB_TOKEN"], loose: false, quietErrors: true, meta: { kind: "github-pr", label: `${gh.owner}/${gh.repo}` },
+      validate: (v) => !!(v as FetchedPR | null)?.pr?.number && typeof (v as FetchedPR).fullDiff === "string",
+    },
+  );
+}
 
 /**
  * POST /api/projects/review. Live (GITHUB_TOKEN, not DEMO_MODE, pod repo on GitHub): reviews the requested or
@@ -244,20 +272,16 @@ export async function reviewNow(opts: { podId: string; prNumber?: number }, runI
   const token = process.env.GITHUB_TOKEN;
   const demo = process.env.DEMO_MODE === "true";
   const gh = parseRepo(repoUrl);
+  // Demo toggle: replay the PR that was reviewed in the recorded run (if GitHub was part of it), and never
+  // post to GitHub. Live: the real open PR, and the comment is posted.
+  const demoToggle = !demo && (await canReplay());
+  const prKey = gh ? { op: "open-pr", owner: gh.owner, repo: gh.repo, prNumber: opts.prNumber ?? null } : null;
+  const useGitHub = !demo && !!gh && (demoToggle ? !!prKey && hasRecording("github", prKey, { loose: false }) : !!token);
 
-  if (!demo && token && gh) {
+  if (useGitHub && gh) {
     try {
-      const octokit = new Octokit({ auth: token });
-      const list = await octokit.request("GET /repos/{owner}/{repo}/pulls", {
-        owner: gh.owner, repo: gh.repo, state: "open", sort: "created", direction: "desc", per_page: 20,
-      });
-      const prs = (Array.isArray(list.data) ? list.data : []) as OpenPR[];
-      const pr = opts.prNumber ? prs.find((p) => p.number === opts.prNumber) : [...prs].sort((a, b) => b.number - a.number)[0];
-      if (!pr) throw new Error("no open PR");
-      const diffRes = await octokit.request("GET /repos/{owner}/{repo}/pulls/{pull_number}", {
-        owner: gh.owner, repo: gh.repo, pull_number: pr.number, mediaType: { format: "diff" },
-      });
-      const fullDiff = typeof diffRes.data === "string" ? diffRes.data : String(diffRes.data ?? "");
+      const octokit = token ? new Octokit({ auth: token }) : null;
+      const { pr, fullDiff } = await fetchOpenPR(octokit, gh, opts.prNumber);
       const diff = fullDiff.slice(0, MAX_DIFF_CHARS);
       emit({
         runId: rid, agent: "techlead", status: "started",
@@ -269,10 +293,17 @@ export async function reviewNow(opts: { podId: string; prNumber?: number }, runI
       const review = withInjectionHint(raw, prompt.flagged);
       const comment = formatReviewComment(review);
       const hints = prompt.flagged ? [...extractHints(dropApprovalClaims(raw), 5), INJECTION_HINT] : extractHints(review);
-      await octokit.request("POST /repos/{owner}/{repo}/issues/{issue_number}/comments", { owner: gh.owner, repo: gh.repo, issue_number: pr.number, body: comment });
-      emit({ runId: rid, agent: "techlead", status: "done", message: `posted ${plural(hints.length, "Socratic hint")}: no solutions given`, data: { prNumber: pr.number, posted: true } });
-      emit({ runId: rid, agent: "orchestrator", status: "done", message: `Tech Lead review posted on PR #${pr.number}` });
-      return { prUrl: pr.html_url, prTitle: pr.title, comment, hints, posted: true, source: "live", runId: rid };
+      const post = !demoToggle && !!octokit;
+      if (post) {
+        await octokit!.request("POST /repos/{owner}/{repo}/issues/{issue_number}/comments", { owner: gh.owner, repo: gh.repo, issue_number: pr.number, body: comment });
+      }
+      emit({
+        runId: rid, agent: "techlead", status: "done",
+        message: `${post ? "posted" : "wrote"} ${plural(hints.length, "Socratic hint")}: no solutions given${post ? "" : " (Demo: nothing posted to GitHub)"}`,
+        data: { prNumber: pr.number, posted: post },
+      });
+      emit({ runId: rid, agent: "orchestrator", status: "done", message: post ? `Tech Lead review posted on PR #${pr.number}` : `Tech Lead review ready for PR #${pr.number}` });
+      return { prUrl: pr.html_url, prTitle: pr.title, comment, hints, posted: post, source: "live", runId: rid };
     } catch {
       // fall through to the sample PR so the demo never dead-ends
     }

@@ -1,14 +1,13 @@
 [
-  { "id": "mev_aisha_12", "userId": "aisha", "kind": "problem-solved", "ts": "2026-11-06T17:50:00Z", "label": "Solved “Valid Parentheses” on LeetCode", "url": "https://leetcode.com/problems/valid-parentheses/" },
-  { "id": "mev_aisha_11", "userId": "aisha", "kind": "pr-merged", "ts": "2026-11-05T20:15:00Z", "label": "Merged PR #15 in pod-vision-demo: Load the captioning model with PyTorch", "url": "https://github.com/keystone-demo/pod-vision-demo/pull/15" },
-  { "id": "mev_aisha_10", "userId": "aisha", "kind": "roadmap-milestone", "ts": "2026-11-03T19:30:00Z", "label": "Completed Week 4: PyTorch basics" },
-  { "id": "mev_aisha_09", "userId": "aisha", "kind": "pr-merged", "ts": "2026-10-31T10:20:00Z", "label": "Merged PR #13 in pod-vision-demo: Return alt-text friendly captions", "url": "https://github.com/keystone-demo/pod-vision-demo/pull/13" },
-  { "id": "mev_aisha_08", "userId": "aisha", "kind": "pr-merged", "ts": "2026-10-27T18:55:00Z", "label": "Merged PR #12 in pod-vision-demo: Add pytest tests for the /caption endpoint", "url": "https://github.com/keystone-demo/pod-vision-demo/pull/12" },
-  { "id": "mev_aisha_07", "userId": "aisha", "kind": "pr-merged", "ts": "2026-10-22T20:10:00Z", "label": "Merged PR #10 in pod-vision-demo: Add an image resize and normalise step", "url": "https://github.com/keystone-demo/pod-vision-demo/pull/10" },
-  { "id": "mev_aisha_06", "userId": "aisha", "kind": "roadmap-milestone", "ts": "2026-10-20T19:40:00Z", "label": "Completed Week 3: SQL foundations" },
-  { "id": "mev_aisha_05", "userId": "aisha", "kind": "helped-newcomer", "ts": "2026-10-17T11:15:00Z", "label": "Helped a newcomer fix their first Git merge conflict" },
-  { "id": "mev_aisha_04", "userId": "aisha", "kind": "pr-merged", "ts": "2026-10-14T18:45:00Z", "label": "Merged PR #8 in pod-vision-demo: Dockerise the captioning API", "url": "https://github.com/keystone-demo/pod-vision-demo/pull/8" },
-  { "id": "mev_aisha_03", "userId": "aisha", "kind": "mock-interview", "ts": "2026-10-10T10:30:00Z", "label": "Practised a mock interview for ML engineer roles" },
-  { "id": "mev_aisha_02", "userId": "aisha", "kind": "roadmap-milestone", "ts": "2026-10-08T20:05:00Z", "label": "Completed Week 2: Docker" },
-  { "id": "mev_aisha_01", "userId": "aisha", "kind": "roadmap-milestone", "ts": "2026-10-01T19:20:00Z", "label": "Completed Week 1: Linux and the command line" }
+  { "id": "mev_aisha_11", "userId": "aisha", "kind": "problem-solved", "ts": "2026-11-06T17:50:00Z", "label": "Solved “Valid Parentheses” on LeetCode", "url": "https://leetcode.com/problems/valid-parentheses/" },
+  { "id": "mev_aisha_10", "userId": "aisha", "kind": "helped-newcomer", "ts": "2026-11-05T19:15:00Z", "label": "Helped a newcomer fix their first Git merge conflict" },
+  { "id": "mev_aisha_09", "userId": "aisha", "kind": "problem-solved", "ts": "2026-11-03T20:05:00Z", "label": "Solved “Linked List Cycle” on LeetCode", "url": "https://leetcode.com/problems/linked-list-cycle/" },
+  { "id": "mev_aisha_08", "userId": "aisha", "kind": "problem-solved", "ts": "2026-10-31T10:40:00Z", "label": "Solved “Binary Search” on LeetCode", "url": "https://leetcode.com/problems/binary-search/" },
+  { "id": "mev_aisha_07", "userId": "aisha", "kind": "roadmap-milestone", "ts": "2026-10-27T18:55:00Z", "label": "Pushed clinic-queue-sim, a Python model of a clinic waiting room built on a priority queue", "url": "https://github.com/aisha-rahman-demo/clinic-queue-sim" },
+  { "id": "mev_aisha_06", "userId": "aisha", "kind": "problem-solved", "ts": "2026-10-24T11:20:00Z", "label": "Solved “Merge Two Sorted Lists” on LeetCode", "url": "https://leetcode.com/problems/merge-two-sorted-lists/" },
+  { "id": "mev_aisha_05", "userId": "aisha", "kind": "roadmap-milestone", "ts": "2026-10-21T19:40:00Z", "label": "Completed the shell scripting lab in Computer Systems and the Command Line" },
+  { "id": "mev_aisha_04", "userId": "aisha", "kind": "roadmap-milestone", "ts": "2026-10-15T20:10:00Z", "label": "Published a portfolio site with HTML, CSS grid and a JavaScript dark theme", "url": "https://github.com/aisha-rahman-demo/portfolio" },
+  { "id": "mev_aisha_03", "userId": "aisha", "kind": "helped-newcomer", "ts": "2026-10-08T18:30:00Z", "label": "Helped a newcomer on your course set up Python and VS Code" },
+  { "id": "mev_aisha_02", "userId": "aisha", "kind": "problem-solved", "ts": "2026-10-03T11:15:00Z", "label": "Solved “Valid Anagram” on LeetCode", "url": "https://leetcode.com/problems/valid-anagram/" },
+  { "id": "mev_aisha_01", "userId": "aisha", "kind": "problem-solved", "ts": "2026-09-30T19:20:00Z", "label": "Solved “Two Sum” on LeetCode", "url": "https://leetcode.com/problems/two-sum/" }
 ]

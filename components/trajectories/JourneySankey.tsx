@@ -128,8 +128,10 @@ export function JourneySankey({ trajectories, focus = "ML" }: { trajectories: Tr
   );
 
   return (
-    <section aria-labelledby="journeys-title" className="flex flex-col gap-6 rounded-2xl border bg-card p-6 shadow-sm">
-      <div className="min-w-0">
+    <section aria-labelledby="journeys-title" className="rounded-2xl border bg-card p-6 shadow-sm">
+      {/* The figcaption leads: the plain-English summary is the chart's text alternative, read before the chart. */}
+      <figure aria-describedby="journeys-caption" className="m-0 flex flex-col gap-6">
+      <figcaption className="min-w-0">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <h2 id="journeys-title" className="text-xl font-semibold text-foreground">Where students before you went</h2>
           {isDemo && <DemoDataNote />}
@@ -140,7 +142,7 @@ export function JourneySankey({ trajectories, focus = "ML" }: { trajectories: Tr
         <p id="journeys-howto" className="sr-only">
           Each band is a real path, from first-year focus to where they are now. Pick an outcome to follow its paths.
         </p>
-      </div>
+      </figcaption>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div role="group" aria-label="Filter journeys by outcome" aria-describedby="journeys-howto" className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
@@ -182,7 +184,7 @@ export function JourneySankey({ trajectories, focus = "ML" }: { trajectories: Tr
         </Button>
       </div>
 
-      <figure aria-describedby="journeys-caption" className="m-0 flex flex-col gap-4">
+      <div className="flex flex-col gap-4">
         {asList ? (
           <>
             <ol aria-label="Journeys by path" className="divide-y border-y sm:hidden">
@@ -250,6 +252,7 @@ export function JourneySankey({ trajectories, focus = "ML" }: { trajectories: Tr
             </ResponsiveContainer>
           </div>
         )}
+      </div>
       </figure>
     </section>
   );

@@ -92,4 +92,24 @@ describe("ProofCelebration", () => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
     );
   });
+
+  it("for a skill that was already proven, shows the Built it rung and hides the status change and readiness", () => {
+    render(
+      <ProofCelebration
+        result={{ ...proof, readinessAfter: 0.38, statusBefore: "proven" } as ProofResult}
+        names={names}
+        onClose={() => {}}
+      />,
+    );
+    expect(screen.getByRole("heading", { name: "You built it: Docker" })).toBeInTheDocument();
+    expect(screen.getByTestId("ladder-step")).toBeInTheDocument();
+    expect(screen.queryByText(/changed from/)).not.toBeInTheDocument();
+    expect(screen.queryByTestId("readiness-before")).not.toBeInTheDocument();
+  });
+
+  it("hides the readiness block when the merge didn't move readiness", () => {
+    render(<ProofCelebration result={{ ...proof, readinessAfter: 0.38 }} names={names} onClose={() => {}} />);
+    expect(screen.getByRole("heading", { name: "Docker is now proven" })).toBeInTheDocument();
+    expect(screen.queryByTestId("readiness-after")).not.toBeInTheDocument();
+  });
 });

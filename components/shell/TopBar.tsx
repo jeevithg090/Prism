@@ -24,7 +24,7 @@ export function ReadinessPill({ userId, roleId, initial }: { userId: string; rol
   return (
     <Link
       href="/map"
-      className="inline-flex h-10 items-center gap-2 rounded-xl bg-card px-3 text-sm font-medium text-foreground shadow-stock outline-none transition-[box-shadow,transform] duration-(--dur-short) hover:-translate-y-px hover:shadow-stock-lift focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+      className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl bg-card px-3 text-sm font-medium whitespace-nowrap text-foreground shadow-stock outline-none transition-[box-shadow,transform] duration-(--dur-short) hover:-translate-y-px hover:shadow-stock-lift focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
     >
       <MiniRing value={map.readinessNow} />
       <span className="sr-only text-muted-foreground lg:not-sr-only">{role} ·</span>{" "}

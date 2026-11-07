@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { connection } from "next/server";
 import { Providers } from "@/app/providers";
 import { Sidebar, SidebarView } from "@/components/shell/Sidebar";
 import { ReadinessPill, TopBar } from "@/components/shell/TopBar";
@@ -7,8 +8,12 @@ import { CoachLauncher } from "@/components/coach/CoachLauncher";
 import { loadGraph } from "@/lib/graph/build";
 import { getViewer } from "@/lib/session";
 
-/** Server half of the readiness pill: the viewer's map from loadGraph, used until /api/graph answers. */
+/**
+ * Server half of the readiness pill: the viewer's map from loadGraph, used until /api/graph answers.
+ * connection() first: loadGraph reads the clock, and cacheComponents rejects new Date() while prerendering.
+ */
 async function ReadinessPillSlot() {
+  await connection();
   const { userId, roleId } = await getViewer();
   let initial = null;
   try { initial = await loadGraph(userId, roleId); } catch { initial = null; }
@@ -51,7 +56,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </Suspense>
       {/* Ask Keystone on every app page; under 768px it rides above the bottom tab bar. */}
       <div className="max-md:[&>button]:bottom-[calc(var(--mobile-nav-height,4rem)+env(safe-area-inset-bottom)+1rem)]">
-        <CoachLauncher />
+        {/* CoachLauncher reads usePathname(), so it streams in after prerender instead of blocking it. */}
+        <Suspense fallback={null}>
+          <CoachLauncher />
+        </Suspense>
       </div>
     </Providers>
   );

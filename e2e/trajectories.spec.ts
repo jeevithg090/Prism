@@ -4,7 +4,7 @@ import { expectNoA11yViolations, watchPage } from "./utils";
 
 test("journeys summary, outcome filter chips, and Ask for 15 minutes → toast", async ({ page }, testInfo) => {
   const watch = watchPage(page);
-  await page.goto("/trajectories");
+  await page.goto("/trajectories?demo=1");
   await expect(page.getByRole("heading", { level: 1, name: "Trajectories" })).toBeVisible();
 
   // The Sankey card and its plain-English summary (the chart itself is aria-hidden; the caption is the text alternative).

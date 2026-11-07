@@ -1,4 +1,5 @@
-// Sample run-ledger entries for the governance page's "Use demo data" state (GET /api/agents/runs?demo=1).
+// Sample run-ledger entries for the governance page's "Use demo data" state (GET /api/agents/runs?demo=1), and the
+// curated runs a demo ledger leads with (DEMO_MODE or ?samples=1), so a demo never opens on repeated QA runs.
 import type { AgentRunEntry } from "@/lib/agents/harness";
 
 const PEER = { kind: "peer-approval", who: "a podmate", note: "Each issue is reviewed and merged by a podmate, never by the AI" } as const;
@@ -40,3 +41,13 @@ export const SAMPLE_RUNS: AgentRunEntry[] = [
     inputDigest: "9c02b6ee41d7", model: "deterministic", steps: [{ name: "load candidates", durationMs: 12 }],
   },
 ];
+
+/** Runs newer than this lead a demo ledger; the samples sit just before them, ahead of older runs. */
+export const FRESH_RUN_MS = 15 * 60_000;
+
+/** SAMPLE_RUNS moved in time so the newest sits just before `beforeMs` (gaps kept), each marked `sample`. */
+export function samplesBefore(beforeMs: number): AgentRunEntry[] {
+  const newest = Math.max(...SAMPLE_RUNS.map((e) => Date.parse(e.startedAt)));
+  const shift = beforeMs - 60_000 - newest;
+  return SAMPLE_RUNS.map((e) => ({ ...e, startedAt: new Date(Date.parse(e.startedAt) + shift).toISOString(), sample: true }));
+}

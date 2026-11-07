@@ -10,6 +10,7 @@ import { emit, newRunId } from "@/lib/agents/events";
 import { maxItems, noFullSolutions } from "@/lib/agents/guardrails";
 import { runAgent, type Checkpoint } from "@/lib/agents/harness";
 import { triggerWorkflow } from "@/lib/n8n";
+import { canReplay } from "@/lib/replay";
 import { ProjectBriefDraftZ, ProjectBriefZ, skillName } from "@/lib/schemas/community";
 import type { Pod, PodMember, Profile, ProjectBrief, ProjectIssue, Roadmap, RoadmapWeek, SkillId } from "@/lib/types";
 
@@ -443,9 +444,11 @@ export async function createRepoAndIssues(pod: Pod, brief: ProjectBrief, runId?:
       const org = process.env.GITHUB_ORG;
 
       let result: ProjectBrief;
-      if (isDemo() || !token || !org) {
+      // The Demo toggle replays recorded runs and never writes to GitHub (no repo, no issues).
+      const demoToggle = !isDemo() && (await canReplay());
+      if (isDemo() || demoToggle || !token || !org) {
         result = demoResult(brief);
-        ctx.emit("progress", `Demo mode: linked ${result.issues.length} issues across ${brief.milestones.length} milestones in keystone-demo/pod-vision-demo`);
+        ctx.emit("progress", `${demoToggle ? "Demo (no GitHub writes)" : "Demo mode"}: linked ${result.issues.length} issues across ${brief.milestones.length} milestones in keystone-demo/pod-vision-demo`);
       } else {
         try {
           const octokit = new Octokit({ auth: token });
@@ -518,13 +521,16 @@ export async function createRepoAndIssues(pod: Pod, brief: ProjectBrief, runId?:
         }
       }
 
-      try {
-        await triggerWorkflow("pod-kickoff", {
-          podId: pod.id, podName: pod.name, repoUrl: result.repoUrl,
-          members: members.map((m) => m.name), title: result.title, pitch: result.pitch,
-        });
-      } catch {
-        // kickoff is best-effort; the project is already usable
+      // The Demo toggle has no side effects, so no kickoff workflow either.
+      if (!demoToggle) {
+        try {
+          await triggerWorkflow("pod-kickoff", {
+            podId: pod.id, podName: pod.name, repoUrl: result.repoUrl,
+            members: members.map((m) => m.name), title: result.title, pitch: result.pitch,
+          });
+        } catch {
+          // kickoff is best-effort; the project is already usable
+        }
       }
       ctx.done(`Project ready: ${result.repoUrl}`, { repoUrl: result.repoUrl });
       return result;

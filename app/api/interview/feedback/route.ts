@@ -5,8 +5,9 @@ import { badRequest, internal, ok } from "@/lib/schemas/community";
 import { interviewContext } from "@/lib/voice/context";
 import { scoreInterview } from "@/lib/voice/interviewScoring";
 import { FeedbackReqZ } from "@/lib/voice/schemas";
+import { withReplayInfo } from "@/lib/replay";
 
-export async function POST(req: Request) {
+async function handlePOST(req: Request) {
   let body: unknown;
   try {
     body = await req.json();
@@ -27,3 +28,6 @@ export async function POST(req: Request) {
     return internal();
   }
 }
+
+/** Demo toggle: the envelope says whether its AI / connector values were replayed from a real run (lib/replay.ts). */
+export const POST = withReplayInfo(handlePOST);

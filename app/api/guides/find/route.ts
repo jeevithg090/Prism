@@ -4,8 +4,9 @@
 // We only draft messages: the student sends them themselves. Logic: lib/community/guides.ts.
 import { findGuidesForUser, GuidesError } from "@/lib/community/guides";
 import { GuidesFindReqZ, badRequest, fail, internal, ok } from "@/lib/schemas/community";
+import { withReplayInfo } from "@/lib/replay";
 
-export async function POST(req: Request) {
+async function handlePOST(req: Request) {
   try {
     let body: unknown;
     try {
@@ -24,3 +25,6 @@ export async function POST(req: Request) {
     return internal();
   }
 }
+
+/** Demo toggle: the envelope says whether its AI / connector values were replayed from a real run (lib/replay.ts). */
+export const POST = withReplayInfo(handlePOST);

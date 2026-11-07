@@ -4,6 +4,9 @@
 /* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V3 · weakest: V, an app shell shares its frame with every dashboard; the desk sidebar, ink actions and coral spent only on where you are and what you have proven carry the difference */
 /* Hallmark · dismissed F18 · the 32px avatar slots are shadcn's data-slot attribute on member initials, not picture slots */
 /* Hallmark · answered F13 · Geist Mono has one role, figures and code; Instrument Sans stands in for General Sans, which next/font cannot load */
+/* Hallmark · waive 26b · globals.css styles no form control and sets no aria-disabled, it only maps tokens and base layers · every control's pressed and disabled states live in its component, such as the shared Button's active:translate-y-px and disabled:opacity-55 */
+/* Hallmark · dismissed F25 · on governance the run ledger trades its wide table for one stacked row per run under @4xl, so a phone shows every run, purpose, guardrail and checkpoint; only the column headers, empty checkpoint cells and the desktop sidebar footer drop */
+/* Hallmark · dropped #_R_qatpet9d5rlb_ · a React useId on the Ask the Coach input that regenerates with the tree; the field, its label and its form are all kept */
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";

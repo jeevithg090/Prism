@@ -14,10 +14,10 @@ import { AGENT_REGISTRY, type AgentRegistryEntry } from "@/lib/agents/registry";
 import { apiGet } from "@/lib/fetcher";
 import { AiActPanel } from "./AiActPanel";
 import { RegistryCard } from "./RegistryCard";
-import { RunLedger } from "./RunLedger";
+import { collapseRuns, RunLedger } from "./RunLedger";
 
 export const LEDGER_POLL_MS = 5000;
-/** Rows the ledger shows before "Show all": the 5-second poll can add up to 50 runs during a live demo. */
+/** Rows the ledger shows before "Show all" (repeated runs fold into one row): the 5-second poll can add up to 50 runs. */
 export const LEDGER_PREVIEW_ROWS = 6;
 
 export function GovernanceView() {
@@ -32,7 +32,7 @@ export function GovernanceView() {
   });
   const runs = useQuery({
     queryKey: ["agents-runs", demoRuns],
-    queryFn: () => apiGet<AgentRunEntry[]>(`/api/agents/runs?limit=50${demoRuns ? "&demo=1" : ""}`),
+    queryFn: () => apiGet<AgentRunEntry[]>(`/api/agents/runs?limit=50${demoRuns ? "&demo=1" : demoPage() ? "&samples=1" : ""}`),
     refetchInterval: demoRuns ? false : LEDGER_POLL_MS,
   });
 
@@ -46,6 +46,9 @@ export function GovernanceView() {
   };
 
   const list = runs.data ?? [];
+  const groups = collapseRuns(list);
+  const shown = expanded ? list : groups.slice(0, LEDGER_PREVIEW_ROWS).flatMap((g) => g.runs);
+  const seeded = demoRuns || list.some((e) => e.sample);
   const guarded = list.reduce((n, e) => n + e.guardrails.filter((g) => g.action !== "pass").length, 0);
   const checkpoints = list.filter((e) => e.checkpoint).length;
   const stats = [
@@ -67,7 +70,7 @@ export function GovernanceView() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0">
             <h2 id="ledger-title" className="flex flex-wrap items-center gap-2 text-xl font-semibold text-foreground">
-              Run ledger {demoRuns && <DemoDataNote />}
+              Run ledger {seeded && <DemoDataNote />}
             </h2>
             <p className="mt-1 max-w-[68ch] text-pretty text-muted-foreground">
               Every agent run, newest first: how long it took, which guardrails acted, and who decides next.
@@ -116,11 +119,11 @@ export function GovernanceView() {
                 </div>
               ))}
             </div>
-            <RunLedger runs={expanded ? list : list.slice(0, LEDGER_PREVIEW_ROWS)} />
-            {list.length > LEDGER_PREVIEW_ROWS && (
+            <RunLedger runs={shown} />
+            {groups.length > LEDGER_PREVIEW_ROWS && (
               <div className="border-t px-6 py-4">
                 <Button variant="outline" aria-expanded={expanded} onClick={() => setExpanded((v) => !v)}>
-                  {expanded ? `Show the latest ${LEDGER_PREVIEW_ROWS} runs` : `Show all ${list.length} runs`}
+                  {expanded ? "Show fewer runs" : `Show all ${list.length} runs`}
                 </Button>
               </div>
             )}
@@ -172,6 +175,12 @@ export function GovernanceView() {
       </section>
     </div>
   );
+}
+
+/** The page was opened as the demo (`?demo=1`): the ledger leads with the curated sample runs. */
+function demoPage(): boolean {
+  if (typeof window === "undefined") return false;
+  return new URLSearchParams(window.location.search).get("demo") === "1";
 }
 
 function agoShort(iso: string | undefined): string {

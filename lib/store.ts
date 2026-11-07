@@ -30,3 +30,5 @@ class MemoryStore implements Store {
 }
 const g = globalThis as unknown as { __ksStore?: Store };
 export function getStore(): Store { return (g.__ksStore ??= new MemoryStore()); }
+/** Demo reset: drops everything written since the server started (evidence, proofs, maps, interviews), so the next read reseeds from the fixtures. */
+export function resetStore(): void { g.__ksStore = new MemoryStore(); }

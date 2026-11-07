@@ -191,6 +191,22 @@ export interface ScoreInput {
  * and saves it: `interviews` (feeds the 🎤 Interview-ready badge), a `mock-interview` momentum event, and
  * keystone-interview evidence for communication and, when the content held up, the discussed skill.
  */
+/** True when the learner has a merged pod PR (a recorded proof or keystone-pod evidence at level 2+) in the skill. */
+async function hasMergedPR(store: ReturnType<typeof getStore>, userId: string, skillId: string): Promise<boolean> {
+  try {
+    const [proofs, evidence] = await Promise.all([
+      store.list<{ userId?: string; skillId?: string }>("proofs"),
+      store.list<EvidenceItem>("evidence", { userId }),
+    ]);
+    return (
+      (proofs ?? []).some((p) => p?.userId === userId && p?.skillId === skillId) ||
+      (evidence ?? []).some((e) => e?.skillId === skillId && e.source === "keystone-pod" && e.level >= 2)
+    );
+  } catch {
+    return false;
+  }
+}
+
 export async function scoreInterview(i: ScoreInput): Promise<InterviewResult> {
   const runId = i.runId ?? newRunId();
   const skill = skillName(i.skillId);
@@ -203,7 +219,7 @@ export async function scoreInterview(i: ScoreInput): Promise<InterviewResult> {
   let scoredBy: InterviewResult["scoredBy"] = "rules";
   emit({
     runId, agent: "voice", status: "progress",
-    message: `${rules.detail.words} words · ${rules.fillerWordsPerMin} filler words/min · ${rules.detail.star.length} of 4 STAR parts`,
+    message: `${rules.detail.words} words, ${rules.fillerWordsPerMin} filler words a minute, ${rules.detail.star.length} of 4 STAR parts`,
   });
 
   if (process.env.DEMO_MODE !== "true") {
@@ -249,12 +265,16 @@ export async function scoreInterview(i: ScoreInput): Promise<InterviewResult> {
   await save("communication", avg >= 3.5 ? 2 : 1, Math.min(0.9, 0.4 + avg / 10),
     `Mock interview for ${i.roleName ?? i.roleId}: structure ${scores.structure}/5, clarity ${scores.clarity}/5`, "Communication");
   if (scores.content >= 3 && i.skillId !== "communication") {
-    await save(i.skillId, 3, Math.min(0.9, 0.55 + scores.content * 0.07),
+    // Explaining a skill is rung 3 ("Explained it"). Without a merged PR in it, the talk alone stays below proof
+    // confidence (0.6), so the skill doesn't turn proven and readiness waits for the build.
+    const built = await hasMergedPR(store, i.userId, i.skillId);
+    const confidence = built ? Math.min(0.9, 0.55 + scores.content * 0.07) : Math.min(0.5, 0.2 + scores.content * 0.06);
+    await save(i.skillId, 3, confidence,
       `Explained "${i.prTitle ?? skill}" in a mock interview (content ${scores.content}/5)`, `${skill} (explained)`);
   }
   emit({
     runId, agent: "evidence", status: "done",
-    message: `Saved as proof: ${evidence.map((e) => e.label).join(" · ")}`,
+    message: `Saved as proof: ${evidence.map((e) => e.label).join(", ")}`,
     data: { userId: i.userId, evidenceIds: evidence.map((e) => e.id) },
   });
   emit({ runId, agent: "voice", status: "done", message: `Interview scored: average ${avg.toFixed(1)} of 5`, data: { scores } });

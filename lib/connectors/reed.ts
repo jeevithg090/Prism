@@ -2,6 +2,7 @@ import "server-only";
 // Reed.co.uk job search, the Market Agent's fallback when Adzuna fails. Docs: https://www.reed.co.uk/developers/jobseeker
 // Basic auth with the API key as the username and an empty password.
 import type { JobAd } from "@/lib/connectors/adzuna";
+import { replayOrRecord } from "@/lib/replay";
 
 export class ReedError extends Error {
   constructor(message: string, public status?: number) { super(message); }
@@ -26,7 +27,20 @@ export function mapReedResult(r: ReedResult): JobAd {
   };
 }
 
-export async function searchReed(keywords: string, opts: { location?: string; take?: number } = {}): Promise<JobAd[]> {
+/** Demo toggle (lib/replay.ts): Live records the ads; Demo replays them for the same search. */
+export function searchReed(keywords: string, opts: { location?: string; take?: number } = {}): Promise<JobAd[]> {
+  return replayOrRecord<JobAd[]>(
+    "market",
+    { op: "reed", keywords, location: opts.location ?? null, take: opts.take ?? 100 },
+    () => fetchReed(keywords, opts),
+    {
+      requires: ["REED_API_KEY"], missError: () => new ReedError("no_key"), loose: false,
+      meta: { kind: "job-ads", label: `reed: ${keywords}` }, validate: (v) => Array.isArray(v), shouldRecord: (v) => v.length > 0,
+    },
+  );
+}
+
+async function fetchReed(keywords: string, opts: { location?: string; take?: number }): Promise<JobAd[]> {
   const key = process.env.REED_API_KEY;
   if (!key) throw new ReedError("no_key");
   const q = new URLSearchParams({ keywords, resultsToTake: String(opts.take ?? 100) });

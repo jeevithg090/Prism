@@ -6,10 +6,11 @@ import { loadGraph } from "@/lib/graph/build";
 import { getProfile, marketFixture, podFor, programmeFixture, trendsFixture } from "@/lib/graph/data";
 import { RoadmapGenerateReqZ } from "@/lib/graph/schemas";
 import { badRequest, fail, internal, ok } from "@/lib/schemas/community";
+import { withReplayInfo } from "@/lib/replay";
 
 const pct = (x: number) => `${Math.round(x * 100)}%`;
 
-export async function POST(req: Request) {
+async function handlePOST(req: Request) {
   let runId: string | undefined;
   try {
     let body: unknown;
@@ -47,3 +48,6 @@ export async function POST(req: Request) {
     return internal();
   }
 }
+
+/** Demo toggle: the envelope says whether its AI / connector values were replayed from a real run (lib/replay.ts). */
+export const POST = withReplayInfo(handlePOST);

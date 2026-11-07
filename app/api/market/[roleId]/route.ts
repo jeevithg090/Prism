@@ -3,8 +3,9 @@
 import { getRoleDemand, isRole } from "@/lib/agents/market";
 import { badRequest, fail, internal, ok } from "@/lib/schemas/community";
 import { MarketQueryZ, RoleParamZ } from "@/lib/schemas/data";
+import { withReplayInfo } from "@/lib/replay";
 
-export async function GET(req: Request, ctx: { params: Promise<{ roleId: string }> }) {
+async function handleGET(req: Request, ctx: { params: Promise<{ roleId: string }> }) {
   try {
     const params = RoleParamZ.safeParse(await ctx.params);
     if (!params.success) return badRequest(params.error);
@@ -19,3 +20,6 @@ export async function GET(req: Request, ctx: { params: Promise<{ roleId: string 
     return internal();
   }
 }
+
+/** Demo toggle: the envelope says whether its AI / connector values were replayed from a real run (lib/replay.ts). */
+export const GET = withReplayInfo(handleGET);

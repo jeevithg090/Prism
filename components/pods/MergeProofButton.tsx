@@ -40,7 +40,7 @@ export function MergeProofButton({
 }: {
   podId: string;
   issueIndex: number;
-  /** Used for the accessible name: "Mark <issue title> as merged". */
+  /** Used for the accessible name: "Mark as merged: <issue title>". */
   issueTitle?: string;
   merged?: boolean;
   onProof?: (result: ProofResult) => void;
@@ -56,7 +56,11 @@ export function MergeProofButton({
     mutationFn: () =>
       apiPost<ProofResult>("/api/projects/merge", { podId, issueIndex }),
     onSuccess: (result) => {
-      if (result.runId) activity.start(result.runId);
+      if (result.runId) {
+        activity.start(result.runId);
+        // The celebration is the payoff: keep the agents panel closed under it (the Agents button still shows the run).
+        if (onProof) activity.setOpen(false);
+      }
       qc.setQueryData<ProjectProgress>(projectProgressKey(podId), (old) =>
         withMerged(old, {
           podId,
@@ -67,6 +71,10 @@ export function MergeProofButton({
         }),
       );
       void qc.invalidateQueries({ queryKey: projectProgressKey(podId) });
+      // The proof moves the map, roadmap, ladder and passport: refetch them so every screen agrees.
+      for (const key of ["graph", "roadmap", "proof-ladder", "passport", "evidence", "momentum"]) {
+        void qc.invalidateQueries({ queryKey: [key] });
+      }
       // With onProof the parent shows the full ProofCelebration, so the toast would only cover it.
       if (onProof) onProof(result);
       else
@@ -86,9 +94,10 @@ export function MergeProofButton({
 
   if (merged || mutation.isSuccess) return <MergedPill className={className} />;
 
+  // The name starts with the visible text (WCAG 2.5.3 label in name), then says which issue.
   const label = issueTitle
-    ? `Mark ${issueTitle} as merged`
-    : `Mark issue ${issueIndex + 1} as merged`;
+    ? `Mark as merged: ${issueTitle}`
+    : `Mark as merged: issue ${issueIndex + 1}`;
   return (
     <Button
       variant={variant}

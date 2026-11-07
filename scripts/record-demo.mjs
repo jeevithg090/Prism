@@ -1,33 +1,37 @@
 #!/usr/bin/env node
-// Records Keystone's demo story from a running Live AI server, so Demo mode can replay real results.
-// Every OpenAI, Firecrawl, ElevenLabs (and, with TRENDS_LIVE=true, Hacker News) call the server makes in
-// Live mode is saved under data/replay/<ns>/ on the server's disk (lib/replay.ts). Commit data/replay so the
-// Vercel build ships them.
+// Records Keystone's demo story from a running Live AI server, so Demo mode can replay real results, then
+// (--verify) checks that Demo replays every step without a template fallback.
+// Every OpenAI, Firecrawl, ElevenLabs, GitHub read (and, with TRENDS_LIVE=true, Hacker News) call the server
+// makes in Live mode is saved under data/replay/<ns>/ on the server's disk (lib/replay.ts), or under
+// KEYSTONE_REPLAY_DIR when the server sets it. Commit data/replay so the Vercel build ships them.
 //
-//   npm run record-demo                                  # http://localhost:3001 as aisha
-//   npm run record-demo -- --base http://localhost:3002 --user aisha
-//   npm run record-demo -- --no-github                   # skip the steps that write to GitHub
-//   npm run record-demo -- --only coach,tts              # just some steps (names in the table)
+//   npm run record-demo -- --base http://localhost:3002            # record, then verify
+//   npm run record-demo -- --base http://localhost:3002 --verify   # only check Demo replays every step
+//   npm run record-demo -- --only coach,interview                  # just some phases or steps
+//   npm run record-demo -- --no-github                             # skip approvals when the server writes to GitHub
 //
-// Needs a server with DEMO_MODE=false and the keys set. For the best replay hit rate, start it fresh (seed
-// data) so the prompts match what a fresh Vercel instance sends. Heads-up: approving "Start our project"
-// and "Review my PR" (and POST /api/projects/review) create a GitHub repo / post a PR comment when the
-// server has GITHUB_TOKEN; --no-github skips those steps.
+// Needs a server with DEMO_MODE=false and the keys set, running this checkout's code. Best: start it without
+// GITHUB_TOKEN (GITHUB_TOKEN= npx next dev -p 3002), so "Start our project" and "Review my PR" are side-effect
+// free, and with TRENDS_LIVE=true. Each phase starts from the seed state (POST /api/mode {reset:true}), the way a
+// fresh server or Vercel instance starts, so the recorded prompts match what Demo sends on stage.
+// Runs under tsx (npm run record-demo) so it can build the interview transcript with lib/voice/questions.ts.
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { PRACTICE_QUESTION_COUNT, estimateDurationSec, formatTranscript, practiceQuestions, sampleAnswers } from "../lib/voice/questions.ts";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 function parseArgs(argv) {
-  const out = { github: true, conversation: true };
+  const out = { github: true, record: true, verify: true };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--base") out.base = argv[++i];
     else if (a === "--user") out.user = argv[++i];
     else if (a === "--only") out.only = new Set(String(argv[++i] ?? "").split(",").map((s) => s.trim()).filter(Boolean));
     else if (a === "--no-github") out.github = false;
-    else if (a === "--no-conversation") out.conversation = false;
+    else if (a === "--verify") { out.record = false; out.verify = true; }
+    else if (a === "--no-verify") out.verify = false;
     else if (a === "--help" || a === "-h") out.help = true;
   }
   return out;
@@ -35,34 +39,36 @@ function parseArgs(argv) {
 
 const args = parseArgs(process.argv.slice(2));
 if (args.help) {
-  console.log("Usage: node scripts/record-demo.mjs [--base http://localhost:3001] [--user aisha] [--no-github] [--no-conversation] [--only coach,pods,…]");
+  console.log("Usage: npm run record-demo -- [--base http://localhost:3002] [--user aisha] [--verify | --no-verify] [--no-github] [--only coach,pods,…]");
   process.exit(0);
 }
-const BASE = String(args.base ?? process.env.KEYSTONE_BASE ?? "http://localhost:3001").replace(/\/$/, "");
+const BASE = String(args.base ?? process.env.KEYSTONE_BASE ?? "http://localhost:3002").replace(/\/$/, "");
 const USER = args.user ?? "aisha";
-const COOKIE = `ks_mode=live; ks_uid=${encodeURIComponent(USER)}`;
-const SYLLABUS_URL = "https://www.manchester.ac.uk/study/undergraduate/courses/2027/00560/bsc-computer-science/";
-const INTERVIEW_TRANSCRIPT = [
-  "agent: Tell me about a recent piece of work you're proud of.",
-  "user: In my pod we built a small recommendation service for student society events. I owned the Docker setup. I wrote a multi-stage Dockerfile, so the image went from about 1.2 GB to 180 MB, and I added a GitHub Actions job that builds and tests it on every pull request.",
-  "agent: What was the hardest part, and how did you deal with it?",
-  "user: Loading the model. The first version loaded the embeddings on every request, so responses took over two seconds. I moved the loading to start-up and cached it, then ran a quick load test: the slowest five percent of requests came back in about 120 milliseconds. Next time I'd add a health check and pin the Python dependencies earlier.",
-  "agent: How did you work with the rest of your team?",
-  "user: We split the work into GitHub issues. I reviewed two of Omar's pull requests and he reviewed mine. His review caught that I was copying the whole repo into the image, so I added a .dockerignore and the build got faster too.",
-].join("\n");
+const ROLE = "ml-engineer";
+/** The wizard's programme URL (components/onboarding/draft.ts UOM_CS_URL): the onboarding a judge runs. */
+const UOM_CS_URL = "https://www.manchester.ac.uk/study/undergraduate/courses/2026/00560/bsc-computer-science/";
 
-const COACH_STORY = ["What should I do this week?", "Why Docker?", "Find me a pod", "Start our project", "Review my PR", "Who has been where I want to go?"];
-const APPROVE = new Set(["Start our project", "Review my PR"]);
+// The Coach panel's starter chips (components/coach/CoachPanel.tsx STARTER_PROMPTS) and the follow-up chips the
+// coach suggests (lib/agents/coach/planner.ts suggestionsFor), in the order the stage demo clicks them.
+const STARTERS = ["What should I do this week?", "Why Docker?", "Find me a pod", "Who's been where I want to go?"];
+const COACH_STORY = [
+  "What should I do this week?", "Why Docker?", "Find me a pod", "Start our project", "Review my PR",
+  "I merged my issue", "How's my momentum?", "Who's been where I want to go?", "Find professionals to learn from",
+];
+const STANDALONE = [...STARTERS, "Start our project", "Review my PR", "How's my momentum?", "Find professionals to learn from"];
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const runId = () => `run_${Math.random().toString(36).slice(2, 12).padEnd(10, "0")}`;
+
+let MODE = "live"; // "live" while recording, "demo" (strict) while verifying
+const cookie = () => (MODE === "live" ? `ks_mode=live; ks_uid=${encodeURIComponent(USER)}` : `ks_mode=demo; ks_replay=strict; ks_uid=${encodeURIComponent(USER)}`);
 
 async function call(method, route, body, { timeoutMs = 240_000, binary = false } = {}) {
   const t0 = Date.now();
   try {
     const res = await fetch(`${BASE}${route}`, {
       method,
-      headers: { cookie: COOKIE, accept: binary ? "audio/mpeg" : "application/json", ...(body === undefined ? {} : { "content-type": "application/json" }) },
+      headers: { cookie: cookie(), accept: binary ? "audio/mpeg" : "application/json", ...(body === undefined ? {} : { "content-type": "application/json" }) },
       body: body === undefined ? undefined : JSON.stringify(body),
       signal: AbortSignal.timeout(timeoutMs),
     });
@@ -91,15 +97,25 @@ const delta = (before, after) => {
   return out;
 };
 
-// ---------- the story ----------
+// ---------- steps ----------
 
 const rows = [];
-let pod = null; // the pod id from /api/pods/match, for the PR review
-const sent = new Set(); // coach requests already sent (same inputs = same recording keys)
+let server = null; // GET /api/mode at the start
+let canReset = true;
+
+const selected = (group, name) => !args.only || args.only.has(group) || args.only.has(name);
+
+/** Where a response's AI values came from: the envelope's `replay`, else the x-keystone-replay header. */
+function provenance(r) {
+  const info = r?.json?.replay;
+  if (info && typeof info === "object") return { source: info.source, missed: info.missed ?? 0, replayed: info.replayed ?? 0, similar: !!info.similar };
+  const h = r?.headers?.get?.("x-keystone-replay");
+  return h ? { source: h === "off" ? "n/a" : h, missed: h === "template" ? 1 : 0, replayed: h === "replayed" ? 1 : 0 } : { source: "n/a", missed: 0, replayed: 0 };
+}
 
 async function step(group, name, fn) {
-  if (args.only && !args.only.has(group) && !args.only.has(name)) return;
-  const before = await modeState();
+  if (!selected(group, name)) return null;
+  const before = MODE === "live" ? await modeState() : null;
   process.stdout.write(`- ${name} … `);
   let r;
   try {
@@ -109,25 +125,36 @@ async function step(group, name, fn) {
   }
   if (r?.skipped) {
     console.log(`skipped (${r.skipped})`);
-    rows.push({ group, name, status: "skip", ms: 0, recorded: {}, note: r.skipped });
+    rows.push({ mode: MODE, group, name, status: "skip", ms: 0, recorded: {}, note: r.skipped });
     return r;
   }
-  const after = await modeState();
-  const recorded = delta(before, after);
-  const n = Object.values(recorded).reduce((a, b) => a + b, 0);
+  const p = r.provenance ?? provenance(r);
   const note = r.error ?? (r.ok ? r.note ?? "" : r.json?.error?.message ?? "");
-  console.log(`${r.status || "ERR"} in ${(r.ms / 1000).toFixed(1)}s, ${n} new recording${n === 1 ? "" : "s"}${note ? ` (${note})` : ""}`);
-  rows.push({ group, name, status: r.status || "ERR", ms: r.ms, recorded, note });
+  if (MODE === "live") {
+    const recorded = delta(before, await modeState());
+    const n = Object.values(recorded).reduce((a, b) => a + b, 0);
+    console.log(`${r.status || "ERR"} in ${(r.ms / 1000).toFixed(1)}s, ${n} new recording${n === 1 ? "" : "s"}${note ? ` (${note})` : ""}`);
+    rows.push({ mode: MODE, group, name, status: r.status || "ERR", ms: r.ms, recorded, note, source: p.source });
+  } else {
+    console.log(`${r.status || "ERR"} in ${(r.ms / 1000).toFixed(1)}s, ${p.source}${p.similar ? " (similar run)" : ""}${note ? ` (${note})` : ""}`);
+    rows.push({ mode: MODE, group, name, status: r.status || "ERR", ms: r.ms, recorded: {}, note, source: p.source, missed: p.missed });
+  }
   return r;
+}
+
+/** Back to the seed state (a fresh server / Vercel instance), between story phases. */
+async function reset(label) {
+  if (!canReset) return;
+  const r = await call("POST", "/api/mode", { mode: MODE, reset: true }, { timeoutMs: 20_000 });
+  if (!r.ok || !r.json?.data?.reset) {
+    canReset = false;
+    console.log(`  (this server can't reset its state: ${r.json?.error?.message ?? r.status}; recording ${label} on top of the earlier phases)`);
+  }
 }
 
 const coachBody = (message, history, approval) => ({ userId: USER, message, history, ...(approval ? { approval } : {}), runId: runId() });
 
-/** POST /api/coach unless these exact inputs were already sent (that recording already exists). */
 async function coach(message, history = [], approval) {
-  const sig = JSON.stringify({ message, history, approval });
-  if (sent.has(sig)) return { skipped: "same request already recorded" };
-  sent.add(sig);
   const r = await call("POST", "/api/coach", coachBody(message, history, approval));
   const d = r.json?.data;
   if (d) r.note = `${d.planner} planner${d.pendingApproval ? `, asks to approve ${d.pendingApproval.tool}` : ""}`;
@@ -139,55 +166,51 @@ const approvalOf = (r) => {
   return p ? { tool: p.tool, args: p.args, decision: "approve" } : null;
 };
 
-/** The Coach panel's flow: one conversation; history = the last 10 turns, approvals shown as "Approve: …". */
-async function coachConversation() {
+/** Approvals write to GitHub only when the server has a token and an org; --no-github skips them there. */
+const approvalsAllowed = () => args.github || !server?.githubWrites;
+
+/** One Coach chat, like CoachPanel: history = the last 10 turns, an approval shown as "Approve: <title>". */
+async function coachChat(label, messages) {
   const turns = [];
   const history = () => turns.slice(-10).map((t) => ({ role: t.role, content: t.content.slice(0, 4000) }));
-  for (const message of COACH_STORY) {
+  for (const message of messages) {
     const prior = history();
-    const r = await step("coach", `coach (conversation): ${message}`, () => coach(message, prior));
+    const r = await step("coach", `${label}: ${message}`, () => coach(message, prior));
     turns.push({ role: "user", content: message });
     const answer = r?.json?.data?.answer;
     if (!answer) continue;
     turns.push({ role: "assistant", content: answer });
     const approval = approvalOf(r);
-    if (approval && APPROVE.has(message)) {
-      if (!args.github) {
-        await step("coach", `coach (conversation): approve ${approval.tool}`, async () => ({ skipped: "--no-github" }));
-        continue;
-      }
-      const title = r.json.data.pendingApproval.title;
-      const prior2 = history();
-      const a = await step("coach", `coach (conversation): approve ${approval.tool}`, () => coach(message, prior2, approval));
-      turns.push({ role: "user", content: `Approve: ${title}` });
-      if (a?.json?.data?.answer) turns.push({ role: "assistant", content: a.json.data.answer });
+    if (!approval) continue;
+    if (!approvalsAllowed()) {
+      await step("coach", `${label}: approve ${approval.tool}`, async () => ({ skipped: "--no-github and this server writes to GitHub" }));
+      continue;
     }
+    const title = r.json.data.pendingApproval.title;
+    const prior2 = history();
+    const a = await step("coach", `${label}: approve ${approval.tool}`, () => coach(message, prior2, approval));
+    turns.push({ role: "user", content: `Approve: ${title}` });
+    if (a?.json?.data?.answer) turns.push({ role: "assistant", content: a.json.data.answer });
   }
 }
 
-/** Each story question asked fresh (a new Coach chat), approving the side-effecting ones. */
-async function coachStandalone() {
-  for (const message of COACH_STORY) {
-    const r = await step("coach", `coach: ${message}`, () => coach(message, []));
-    const approval = approvalOf(r);
-    if (approval && APPROVE.has(message)) {
-      if (!args.github) {
-        await step("coach", `coach: approve ${approval.tool}`, async () => ({ skipped: "--no-github" }));
-        continue;
-      }
-      const prior = [{ role: "user", content: message }, { role: "assistant", content: r.json.data.answer }];
-      await step("coach", `coach: approve ${approval.tool}`, () => coach(message, prior, approval));
-    }
-  }
-}
-
+/** Polls an agent run until the orchestrator finishes; flags any "not recorded" template fallback in Demo. */
 async function waitForRun(id, limitMs = 6 * 60_000) {
   const t0 = Date.now();
   while (Date.now() - t0 < limitMs) {
     const r = await call("GET", `/api/agents/stream?runId=${encodeURIComponent(id)}&poll=1`, undefined, { timeoutMs: 20_000 });
     const events = Array.isArray(r.json?.data) ? r.json.data : [];
     const end = events.find((e) => e.agent === "orchestrator" && (e.status === "done" || e.status === "error"));
-    if (end) return { status: end.status === "done" ? 200 : 500, ok: end.status === "done", ms: Date.now() - t0, note: `${events.length} agent events, ${end.status}` };
+    if (end) {
+      const misses = events.filter((e) => e.data?.missed || /not recorded/i.test(e.message ?? "")).length;
+      const replays = events.filter((e) => e.data?.replay === true).length;
+      const source = MODE === "demo" ? (misses ? (replays ? "mixed" : "template") : replays ? "replayed" : "n/a") : "live";
+      return {
+        status: end.status === "done" ? 200 : 500, ok: end.status === "done", ms: Date.now() - t0,
+        note: `${events.length} agent events, ${end.status}${misses ? `, ${misses} not recorded` : ""}`,
+        provenance: { source, missed: misses, replayed: replays },
+      };
+    }
     await sleep(2000);
   }
   return { status: 0, ok: false, ms: Date.now() - t0, error: "timed out waiting for the onboarding run" };
@@ -203,127 +226,206 @@ function voiceover() {
   }
 }
 
-/** Every /api/labs/** route without a dynamic segment: POST {userId} when it exports POST, else GET ?userId=. */
-function labRoutes() {
-  const dir = path.join(ROOT, "app/api/labs");
-  const out = [];
-  const walk = (d) => {
-    let entries = [];
-    try { entries = fs.readdirSync(d, { withFileTypes: true }); } catch { return; }
-    for (const e of entries) {
-      const p = path.join(d, e.name);
-      if (e.isDirectory()) { if (!e.name.startsWith("[")) walk(p); }
-      else if (e.name === "route.ts") {
-        const src = fs.readFileSync(p, "utf8");
-        const route = `/api/${path.relative(path.join(ROOT, "app/api"), path.dirname(p)).split(path.sep).join("/")}`;
-        out.push({ route, method: /export\s+(async\s+)?function\s+POST\b|export\s+const\s+POST\b/.test(src) ? "POST" : "GET" });
-      }
-    }
-  };
-  walk(dir);
-  return out.sort((a, b) => a.route.localeCompare(b.route));
-}
-
-async function main() {
-  const start = await modeState();
-  if (!start) {
-    console.error(`No Keystone with the Demo toggle at ${BASE} (GET /api/mode failed). Start a Live server with this code, e.g. DEMO_MODE=false npx next dev -p 3001.`);
-    process.exit(1);
-  }
-  if (start.demoModeEnv) {
-    console.error(`${BASE} runs with DEMO_MODE=true, so it never calls the AI services and nothing would be recorded. Use a server with DEMO_MODE=false.`);
-    process.exit(1);
-  }
-  if (start.mode !== "live") {
-    console.error(`${BASE} didn't take the ks_mode=live cookie (mode is ${start.mode}).`);
-    process.exit(1);
-  }
-  console.log(`Recording the demo story from ${BASE} as ${USER} (Live AI). ${start.total ?? 0} recordings before.${args.github ? "" : " GitHub steps skipped."}\n`);
-
-  if (args.conversation) await coachConversation();
-  await coachStandalone();
-
-  await step("pods", "POST /api/pods/match", async () => {
-    const r = await call("POST", "/api/pods/match", { userId: USER });
-    pod = r.json?.data?.id ?? null;
-    if (pod) r.note = `pod ${pod}`;
-    return r;
-  });
-  await step("review", "POST /api/projects/review", async () => {
-    if (!args.github) return { skipped: "--no-github" };
-    return call("POST", "/api/projects/review", { podId: pod ?? "pod_demo01" });
-  });
-  await step("interview", "POST /api/interview/feedback", () =>
-    call("POST", "/api/interview/feedback", { userId: USER, roleId: "ml-engineer", transcript: INTERVIEW_TRANSCRIPT, durationSec: 240, skillId: "docker" }));
-
+async function briefingAndVoice(label) {
   let script = null;
-  await step("briefing", `GET /api/briefing/${USER}`, async () => {
+  await step("briefing", `briefing (${label})`, async () => {
     const r = await call("GET", `/api/briefing/${encodeURIComponent(USER)}`);
     script = r.json?.data?.script ?? null;
     if (script) r.note = `${script.length} characters`;
     return r;
   });
-  await step("tts", "POST /api/tts (briefing script)", async () => {
+  await step("tts", `voice for the briefing (${label})`, async () => {
     if (!script) return { skipped: "no briefing script" };
     const r = await call("POST", "/api/tts", { text: script.slice(0, 2500) }, { binary: true });
     r.note = `${r.headers.get("x-keystone-replay") ?? "?"}, ${Math.round(r.bytes / 1024)} KB`;
     return r;
   });
-  await step("tts", "POST /api/tts (launch voiceover)", async () => {
+}
+
+/** Practice mode with "Use sample answer" on every question, exactly as components/voice/InterviewFlow.tsx sends it. */
+async function interview(label) {
+  await step("interview", `interview feedback (${label})`, async () => {
+    const cfg = await call("GET", `/api/interview/config?userId=${encodeURIComponent(USER)}&roleId=${ROLE}`);
+    const vars = cfg.json?.data?.dynamicVariables;
+    if (!vars) return cfg;
+    const questions = practiceQuestions(vars);
+    const samples = sampleAnswers(vars);
+    const turns = [];
+    for (let i = 0; i < PRACTICE_QUESTION_COUNT; i++) {
+      turns.push({ speaker: "ai", text: questions[i] });
+      if (samples[i]?.trim()) turns.push({ speaker: "user", text: samples[i].trim() });
+    }
+    const r = await call("POST", "/api/interview/feedback", {
+      userId: USER, roleId: ROLE, transcript: formatTranscript(turns), durationSec: estimateDurationSec(turns),
+      ...(vars.pr_skill_id ? { skillId: vars.pr_skill_id } : {}),
+    });
+    const d = r.json?.data;
+    if (d) r.note = `scored by ${d.feedback?.scoredBy ?? d.scoredBy ?? "?"}, PR ${vars.pr_status}`;
+    return r;
+  });
+}
+
+// ---------- the story, phase by phase (each from the seed state) ----------
+
+async function story() {
+  // 1. A fresh instance: the dashboard briefing, the launch voiceover, and the interview before any pod work.
+  await reset("the fresh phase");
+  await briefingAndVoice("fresh");
+  await step("tts", "launch voiceover", async () => {
     const text = voiceover();
     if (!text) return { skipped: "VOICEOVER not found in components/launch/data.ts" };
     const r = await call("POST", "/api/tts", { text }, { binary: true });
     r.note = `${r.headers.get("x-keystone-replay") ?? "?"}, ${Math.round(r.bytes / 1024)} KB`;
     return r;
   });
+  await interview("fresh");
 
-  await step("syllabus", "POST /api/syllabus/extract", async () => {
-    const r = await call("POST", "/api/syllabus/extract", { url: SYLLABUS_URL });
+  // 2. Each Coach question in a new chat on a fresh instance (what a judge clicking one chip gets).
+  for (const message of STANDALONE) {
+    if (!selected("coach", `coach (new chat): ${message}`)) continue;
+    await reset(`"${message}"`);
+    await coachChat("coach (new chat)", [message]);
+  }
+
+  // 3. The stage conversation, in order, in one chat.
+  await reset("the coach conversation");
+  await coachChat("coach (conversation)", COACH_STORY);
+
+  // 4. The Pods page: Find my pod → Start our project → Review my PR now → Mark as merged → interview, briefing.
+  await reset("the pods flow");
+  let pod = null;
+  await step("pods", "find my pod", async () => {
+    const r = await call("POST", "/api/pods/match", { userId: USER });
+    pod = r.json?.data ?? null;
+    if (pod?.id) r.note = `pod ${pod.id}`;
+    return r;
+  });
+  await briefingAndVoice("after the pod");
+  let project = null;
+  await step("pods", "start our project", async () => {
+    if (!pod?.id) return { skipped: "no pod" };
+    if (!approvalsAllowed()) return { skipped: "--no-github and this server writes to GitHub" };
+    const r = await call("POST", "/api/projects/create", { podId: pod.id });
+    project = r.json?.data ?? null;
+    if (project?.title) r.note = `"${project.title}", ${project.issues?.length ?? 0} issues`;
+    return r;
+  });
+  await step("review", "review my PR now", async () => {
+    if (!approvalsAllowed()) return { skipped: "--no-github and this server writes to GitHub" };
+    return call("POST", "/api/projects/review", { podId: pod?.id ?? "pod_demo01" });
+  });
+  await step("pods", "mark my issue as merged", async () => {
+    const issues = project?.issues ?? pod?.project?.issues ?? [];
+    const issueIndex = issues.findIndex((i) => i.assigneeUserId === USER);
+    if (!pod?.id || issueIndex < 0) return { skipped: "no issue assigned to this user" };
+    return call("POST", "/api/projects/merge", { podId: pod.id, issueIndex });
+  });
+  await interview("after the merge");
+  await briefingAndVoice("after the merge");
+
+  // 5. The other AI screens, from a fresh instance.
+  await reset("the other screens");
+  await step("screens", `similar trajectories`, () => call("GET", `/api/trajectories/similar?userId=${encodeURIComponent(USER)}`));
+  await step("screens", "find guides", () => call("POST", "/api/guides/find", { userId: USER }));
+  await step("screens", "lecturer insights", () => call("GET", "/api/lecturer/insights?programmeId=uom-bsc-cs"));
+  await step("screens", "trends (Hacker News needs TRENDS_LIVE=true)", () => call("GET", "/api/trends"));
+  await step("screens", `market (${ROLE})`, () => call("GET", `/api/market/${ROLE}`));
+  await step("screens", "micro-challenge (docker)", () => call("POST", "/api/challenges/generate", { userId: USER, skillId: "docker" }));
+  await step("screens", "roadmap", () => call("POST", "/api/roadmap/generate", { userId: USER, roleId: ROLE }));
+
+  // 6. Onboarding: the wizard's programme URL (Firecrawl + the model read the real syllabus), then the demo profile.
+  await reset("onboarding");
+  await step("syllabus", "syllabus extraction (UoM BSc CS)", async () => {
+    const r = await call("POST", "/api/syllabus/extract", { url: UOM_CS_URL });
     const d = r.json?.data;
     if (d) r.note = `${d.modules?.length ?? 0} course units, source ${d.source}`;
     return r;
   });
-  await step("onboard", "POST /api/onboard/run (until done)", async () => {
+  await step("onboard", "onboarding with the wizard's programme URL", async () => {
+    const r = await call("POST", "/api/onboard/run", { userId: USER, programmeUrl: UOM_CS_URL });
+    const id = r.json?.data?.runId;
+    return id ? waitForRun(id) : r;
+  });
+  await reset("the demo profile");
+  await step("onboard", "onboarding as the demo profile", async () => {
     const r = await call("POST", "/api/onboard/run", { userId: USER });
     const id = r.json?.data?.runId;
-    if (!id) return r;
-    return waitForRun(id);
+    return id ? waitForRun(id) : r;
   });
-  await step("trajectories", `GET /api/trajectories/similar?userId=${USER}`, () => call("GET", `/api/trajectories/similar?userId=${encodeURIComponent(USER)}`));
-  await step("guides", "POST /api/guides/find", () => call("POST", "/api/guides/find", { userId: USER }));
+  await reset("the end");
+}
 
-  // Other AI-backed screens in the demo.
-  await step("extra", "POST /api/roadmap/generate", () => call("POST", "/api/roadmap/generate", { userId: USER, roleId: "ml-engineer" }));
-  await step("extra", "POST /api/challenges/generate (docker)", () => call("POST", "/api/challenges/generate", { userId: USER, skillId: "docker" }));
-  await step("extra", "GET /api/lecturer/insights", () => call("GET", "/api/lecturer/insights?programmeId=uom-bsc-cs"));
-  await step("extra", "GET /api/trends (HN, needs TRENDS_LIVE=true)", () => call("GET", "/api/trends"));
+// ---------- report ----------
 
-  const labs = labRoutes();
-  if (!labs.length) console.log("- no /api/labs routes to record");
-  for (const { route, method } of labs) {
-    await step("labs", `${method} ${route}`, () =>
-      method === "POST" ? call("POST", route, { userId: USER }) : call("GET", `${route}?userId=${encodeURIComponent(USER)}`));
-  }
-
-  // ---------- report ----------
-  const end = await modeState();
-  const total = delta(start, end);
+function report(mode) {
+  const mine = rows.filter((r) => r.mode === mode);
   const pad = (s, n) => String(s).padEnd(n);
-  const w = Math.max(...rows.map((r) => r.name.length), 10);
-  console.log(`\n${pad("Step", w)}  HTTP  Time    Recorded`);
+  const w = Math.max(...mine.map((r) => r.name.length), 10);
+  console.log(`\n${mode === "live" ? "Recorded (Live AI)" : "Verified (Demo, strict)"}\n${pad("Step", w)}  HTTP  Time    ${mode === "live" ? "Recorded" : "Source"}`);
   console.log(`${"-".repeat(w)}  ----  ------  ${"-".repeat(30)}`);
-  for (const r of rows) {
-    const rec = Object.entries(r.recorded).map(([ns, n]) => `${ns} +${n}`).join(", ") || (r.status === "skip" ? `skipped: ${r.note}` : "nothing new");
-    console.log(`${pad(r.name, w)}  ${pad(r.status, 4)}  ${pad(`${(r.ms / 1000).toFixed(1)}s`, 6)}  ${rec}`);
+  for (const r of mine) {
+    const col = r.status === "skip" ? `skipped: ${r.note}` : mode === "live"
+      ? Object.entries(r.recorded).map(([ns, n]) => `${ns} +${n}`).join(", ") || "nothing new"
+      : r.source;
+    console.log(`${pad(r.name, w)}  ${pad(r.status, 4)}  ${pad(`${(r.ms / 1000).toFixed(1)}s`, 6)}  ${col}`);
   }
-  const sum = Object.values(total).reduce((a, b) => a + b, 0);
-  console.log(`\nNew recordings: ${sum} (${Object.entries(total).map(([ns, n]) => `${ns} ${n}`).join(", ") || "none"}). Total on the server: ${end?.total ?? "?"}.`);
-  console.log("They are in data/replay on the server's disk (or /tmp/keystone-replay when that is read-only). Commit data/replay so Demo mode on Vercel replays them.");
-  const failed = rows.filter((r) => r.status === "ERR" || (typeof r.status === "number" && r.status >= 500));
-  if (failed.length) {
-    console.log(`\n${failed.length} step${failed.length === 1 ? "" : "s"} failed: ${failed.map((r) => r.name).join("; ")}`);
+}
+
+async function main() {
+  const start = await modeState();
+  if (!start) {
+    console.error(`No Keystone with the Demo toggle at ${BASE} (GET /api/mode failed). Start one from this checkout, e.g.\n  DEMO_MODE=false TRENDS_LIVE=true GITHUB_TOKEN= npx next dev -p 3002`);
     process.exit(1);
   }
+  server = start;
+  if (start.demoModeEnv) {
+    console.error(`${BASE} runs with DEMO_MODE=true, so it never calls the AI services and nothing would be recorded. Use a server with DEMO_MODE=false.`);
+    process.exit(1);
+  }
+  let failed = 0;
+
+  if (args.record) {
+    MODE = "live";
+    const s = await modeState();
+    if (s?.mode !== "live") {
+      console.error(`${BASE} didn't take the ks_mode=live cookie (mode is ${s?.mode}).`);
+      process.exit(1);
+    }
+    const services = Object.entries(start.services ?? {}).map(([k, v]) => `${k} ${v ? "on" : "off"}`).join(", ");
+    console.log(`Recording the demo story from ${BASE} as ${USER} (Live AI). ${start.total ?? 0} recordings before. Services: ${services || "?"}.`);
+    if (start.githubWrites) console.log(args.github ? "Heads-up: this server has GITHUB_TOKEN + GITHUB_ORG, so approvals create a real repo and post a real PR comment." : "This server writes to GitHub, so approvals are skipped (--no-github).");
+    console.log("");
+    await story();
+    const end = await modeState();
+    report("live");
+    const total = delta(start, end);
+    const sum = Object.values(total).reduce((a, b) => a + b, 0);
+    console.log(`\nNew recordings: ${sum} (${Object.entries(total).map(([ns, n]) => `${ns} ${n}`).join(", ") || "none"}). Total on the server: ${end?.total ?? "?"}.`);
+    console.log("They are in the server's data/replay (or KEYSTONE_REPLAY_DIR, or /tmp/keystone-replay when that is read-only). Commit data/replay so Demo mode on Vercel replays them.");
+    failed += rows.filter((r) => r.mode === "live" && (r.status === "ERR" || (typeof r.status === "number" && r.status >= 500))).length;
+  }
+
+  if (args.verify) {
+    MODE = "demo";
+    canReset = true;
+    const s = await modeState();
+    if (!s?.strict) {
+      console.error(`\n${BASE} didn't take the ks_replay=strict cookie (production server?). Verify against a dev server, or one with KEYSTONE_REPLAY_STRICT=true.`);
+      process.exit(1);
+    }
+    console.log(`\nVerifying Demo (strict: nothing is called live) against ${s.total ?? 0} recordings…\n`);
+    await story();
+    report("demo");
+    const bad = rows.filter((r) => r.mode === "demo" && r.status !== "skip" && (r.source === "template" || r.source === "mixed" || r.source === "live" || r.status === "ERR" || (typeof r.status === "number" && r.status >= 500)));
+    if (bad.length) {
+      console.log(`\n${bad.length} step${bad.length === 1 ? "" : "s"} would not replay in Demo: ${bad.map((r) => `${r.name} (${r.source})`).join("; ")}`);
+      failed += bad.length;
+    } else {
+      console.log("\nEvery step replays from a recorded real run in Demo.");
+    }
+  }
+
+  if (failed) process.exit(1);
 }
 
 main().catch((e) => {

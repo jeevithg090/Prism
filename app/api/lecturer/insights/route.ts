@@ -4,8 +4,9 @@ import { buildLecturerInsights } from "@/lib/agents/lecturer";
 import { withCache } from "@/lib/cache";
 import { badRequest, internal, ok } from "@/lib/schemas/community";
 import { LecturerInsightsZ, LecturerQueryZ } from "@/lib/schemas/lecturer";
+import { withReplayInfo } from "@/lib/replay";
 
-export async function GET(req: Request) {
+async function handleGET(req: Request) {
   try {
     const parsed = LecturerQueryZ.safeParse(Object.fromEntries(new URL(req.url).searchParams));
     if (!parsed.success) return badRequest(parsed.error);
@@ -23,3 +24,6 @@ export async function GET(req: Request) {
     return internal();
   }
 }
+
+/** Demo toggle: the envelope says whether its AI / connector values were replayed from a real run (lib/replay.ts). */
+export const GET = withReplayInfo(handleGET);
