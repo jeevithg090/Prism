@@ -26,7 +26,7 @@ export function HelpersThisWeek({
       title="Helpers this week"
       description="Celebrating helpers, not ranking students."
       actions={
-        <Button variant="outline" size="sm" aria-expanded={show} aria-controls="helpers-this-week" onClick={() => setShow((s) => !s)}>
+        <Button variant="outline" aria-expanded={show} aria-controls="helpers-this-week" onClick={() => setShow((s) => !s)}>
           {show ? "Hide" : "Show helpers"}
         </Button>
       }

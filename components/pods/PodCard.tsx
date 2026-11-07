@@ -35,6 +35,7 @@ function CompatibilityBar({ value }: { value: number }) {
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
         />
       </div>
+      <p className="mt-2 text-sm text-muted-foreground">From skills you can teach each other, shared interests and free time.</p>
     </div>
   );
 }
@@ -101,9 +102,9 @@ export function PodCard({ pod, viewerId, onFindDifferent, cta }: PodCardProps) {
                   initial={reduce ? false : { opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.22, ease: "easeOut", delay: 0.2 + i * 0.04 }}
-                  className="flex items-start gap-3 rounded-xl border bg-background/60 p-4"
+                  className="flex items-start gap-3 rounded-xl bg-muted/60 p-4"
                 >
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-card text-primary shadow-sm">
                     <ArrowLeftRight className="size-4" aria-hidden />
                   </span>
                   <p className="pt-1 text-base leading-snug">{e.text}</p>

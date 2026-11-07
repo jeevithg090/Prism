@@ -80,7 +80,7 @@ export function TrajectoryCard({
       <footer className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-1">
         {trajectory.isDemo ? <DemoDataNote /> : <span />}
         {trajectory.openToChat ? (
-          <Button size="lg" className="h-10 rounded-xl px-4" onClick={() => onAsk?.(trajectory)} aria-label={`Ask for 15 minutes with ${first}`}>
+          <Button variant="outline" size="lg" className="h-10 rounded-xl px-4" onClick={() => onAsk?.(trajectory)} aria-label={`Ask for 15 minutes with ${first}`}>
             <MessageCircleHeart aria-hidden />
             Ask for 15 minutes
           </Button>

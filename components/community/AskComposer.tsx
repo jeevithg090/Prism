@@ -65,7 +65,7 @@ export function AskComposer({ viewerId, newcomer }: { viewerId: string; newcomer
           </select>
         </div>
         {newcomer && (
-          <p id="ask-newcomer-note" className="rounded-xl bg-status-proven/10 px-3 py-2 text-sm text-status-proven">
+          <p id="ask-newcomer-note" className="rounded-xl border border-status-proven/25 bg-status-proven/10 px-3 py-2 text-sm text-foreground">
             Your 🌱 badge tells helpers to explain things in more detail.
           </p>
         )}

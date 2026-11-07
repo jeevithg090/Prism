@@ -38,7 +38,7 @@ export function CommunityView() {
             onUseDemo={() => setDemo(true)}
           />
         </div>
-        <div className="space-y-6">
+        <div className="space-y-6 lg:sticky lg:top-6">
           <AskComposer viewerId={viewerId} newcomer={isNewcomer(profiles[viewerId])} />
           <HelpersThisWeek requests={all} profiles={profiles} isLoading={help.isPending} isError={help.isError} onRetry={retry} />
         </div>
