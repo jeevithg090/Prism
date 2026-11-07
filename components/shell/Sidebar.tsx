@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   BadgeCheck,
   CalendarDays,
+  FlaskConical,
   Flag,
   GraduationCap,
   HeartHandshake,
@@ -39,6 +40,7 @@ export function primaryNav(viewerId: string): NavItem[] {
     { id: "challenge", label: "Challenges", href: "/challenge", icon: Flag },
     { id: "interview", label: "Interview", href: "/interview", icon: Mic },
     { id: "passport", label: "Passport", href: `/profile/${encodeURIComponent(viewerId)}`, icon: BadgeCheck, match: "/profile" },
+    { id: "labs", label: "Labs", href: "/labs", icon: FlaskConical },
   ];
 }
 

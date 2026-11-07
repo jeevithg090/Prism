@@ -10,11 +10,12 @@ vi.mock("@/lib/llm", () => ({
   cosine: vi.fn(() => 0),
   LLMError: class extends Error {},
 }));
-vi.mock("@/lib/graph/build", () => ({ loadGraph: vi.fn(async () => null) }));
+vi.mock("@/lib/graph/build", async (orig) => ({ ...(await orig<typeof import("@/lib/graph/build")>()), loadGraph: vi.fn(async () => null) }));
 vi.mock("@/lib/n8n", () => ({ triggerWorkflow: vi.fn(async () => false) }));
 vi.mock("octokit", () => ({ Octokit: class { request = vi.fn(async () => { throw new Error("no network in evals"); }); } }));
 
 import { TOOLS, ToolError, MAX_SUMMARY_CHARS } from "@/lib/agents/tools/registry";
+import { EXTRA_TOOLS } from "@/lib/agents/tools/extensions";
 import { POST as mcpPOST } from "@/app/api/mcp/route";
 import { testStore } from "@/tests/seededStore";
 
@@ -34,7 +35,8 @@ const CANONICAL: [name: string, effect: string, approval: boolean, agent: string
   ["ask_for_help", "write", true, "orchestrator"],
   ["find_guides", "read", false, "guides"],
 ];
-const VERBS = new Set(["get", "find", "explain", "start", "review", "record", "ask"]);
+/** Canonical verbs, plus the ones Labs extension tools add (lib/agents/tools/extra). */
+const VERBS = new Set(["get", "find", "explain", "start", "review", "record", "ask", "convene"]);
 /** Arguments for the tools that need some in the end-to-end run (everything else runs with {}). */
 const ARGS: Record<string, unknown> = {
   record_merged_pr: { issueIndex: 0 },
@@ -54,8 +56,9 @@ afterAll(() => {
 });
 
 describe("eval: tool registry quality", () => {
-  it("has exactly the 13 canonical tools with fixed effects, approval flags and agents", () => {
-    expect(TOOLS.map((t) => [t.name, t.effect, t.requiresApproval, t.agent])).toEqual(CANONICAL);
+  it("has exactly the 13 canonical tools with fixed effects, approval flags and agents, then the Labs extensions", () => {
+    expect(TOOLS.slice(0, CANONICAL.length).map((t) => [t.name, t.effect, t.requiresApproval, t.agent])).toEqual(CANONICAL);
+    expect(TOOLS.slice(CANONICAL.length).map((t) => t.name)).toEqual(EXTRA_TOOLS.map((t) => t.name));
   });
 
   it("every name is a unique snake_case verb_noun", () => {

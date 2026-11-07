@@ -1,0 +1,33 @@
+{
+  "about": "Curated curriculum links for the Skill Half-life Radar. 'pairs' are skills taught together (BridgeEdge kind co-occurs); prerequisite edges come from the Bridge Map. 'successors' are where demand for a cooling skill tends to move; one is only suggested when the live forecast says it is rising. 'keywords' pick the learning outcome a refresh note links to.",
+  "pairs": [
+    { "a": "deep-learning", "b": "llm-apps", "why": "LLM apps are built on the transformer and sequence models this module explains" },
+    { "a": "deep-learning", "b": "pytorch", "why": "PyTorch is the framework students would use to build the networks this module derives" },
+    { "a": "machine-learning", "b": "mlops", "why": "MLOps is how the models this module trains get versioned, shipped and monitored" },
+    { "a": "databases", "b": "vector-databases", "why": "Vector databases apply the indexing and query processing this module teaches to embeddings" },
+    { "a": "system-design", "b": "docker", "why": "Services like the ones this module designs are shipped as containers" },
+    { "a": "system-design", "b": "kubernetes", "why": "Kubernetes runs replicated, fault-tolerant services like the ones this module designs" },
+    { "a": "system-design", "b": "aws", "why": "Cloud platforms are where the distributed services this module designs run" },
+    { "a": "llm-apps", "b": "llm-evaluation", "why": "Evaluating an LLM app is part of building one" },
+    { "a": "llm-apps", "b": "vector-databases", "why": "Retrieval for LLM apps runs on a vector store" },
+    { "a": "testing", "b": "ci-cd", "why": "Continuous integration runs the tests this module teaches on every push" }
+  ],
+  "successors": {
+    "java": ["typescript"],
+    "tensorflow": ["pytorch"],
+    "pandas": ["sql"],
+    "scikit-learn": ["pytorch"]
+  },
+  "keywords": {
+    "llm-apps": ["text", "language", "build", "represent", "apply"],
+    "llm-evaluation": ["evaluat", "limitation", "error", "critic"],
+    "pytorch": ["implement", "design", "network", "train", "build"],
+    "mlops": ["reproduc", "evaluat", "model", "pipeline"],
+    "docker": ["command line", "deploy", "service", "execut", "fault"],
+    "kubernetes": ["fault", "scal", "failure", "service"],
+    "aws": ["service", "deploy", "design"],
+    "vector-databases": ["quer", "index", "schema"],
+    "typescript": ["code", "web", "product", "program"],
+    "ci-cd": ["test", "automat", "safely"]
+  }
+}

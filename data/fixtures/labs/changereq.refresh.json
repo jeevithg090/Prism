@@ -1,0 +1,17 @@
+{
+  "id": "refresh_2026-W46",
+  "label": "Weekly refresh, week of 9 Nov 2026",
+  "month": "2026-11",
+  "simulated": true,
+  "note": "A simulated weekly refresh for the demo: one new month of hiring-thread shares per skill and a re-weighted ad sample. The forecast is refitted with the same OLS model the Trend Forecaster uses.",
+  "shocks": {
+    "llm-evaluation": { "trend": 0.6, "market": 0.08 },
+    "vector-databases": { "trend": 0.35, "market": 0.05 },
+    "kubernetes": { "trend": -0.3, "market": -0.05 },
+    "ci-cd": { "trend": -0.25, "market": -0.05 },
+    "tensorflow": { "trend": -0.35, "market": -0.04 },
+    "aws": { "trend": -0.04, "market": -0.01 },
+    "docker": { "trend": 0.03, "market": 0.01 },
+    "sql": { "trend": -0.02, "market": 0 }
+  }
+}
