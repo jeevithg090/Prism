@@ -1,5 +1,5 @@
 "use client";
-// LOCAL SHIM of P3's ActivityPanel / useActivity.
+// SCAFFOLD STUB (owner: P3). useActivity() + provider; P3 replaces it with the real Activity panel.
 import * as React from "react";
 import type { AgentEvent } from "@/lib/types";
 type Ctx = { runId: string | null; events: AgentEvent[]; open: boolean; setOpen: (o: boolean) => void; start: (runId: string) => void };

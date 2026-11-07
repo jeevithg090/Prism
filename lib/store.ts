@@ -1,7 +1,7 @@
 import "server-only";
 import fs from "node:fs";
 import path from "node:path";
-// LOCAL SHIM of P2's lib/store.ts — not committed on P5 branches.
+// SCAFFOLD STUB (owner: P2). In-memory store seeded from fixtures (contract §8); P2 adds SupabaseStore + getStore() switching.
 export interface Store {
   get<T>(collection: string, id: string): Promise<T | null>;
   list<T>(collection: string, filter?: { userId?: string }): Promise<T[]>;
@@ -9,7 +9,7 @@ export interface Store {
   remove(collection: string, id: string): Promise<void>;
 }
 type Row = { doc: unknown; userId?: string };
-function readJSON(rel: string): unknown { try { return JSON.parse(fs.readFileSync(path.join(process.cwd(), rel), "utf8")); } catch { return undefined; } }
+function readJSON(rel: string): unknown { try { return JSON.parse(fs.readFileSync(path.join(process.cwd(), "data", rel.replace(/^data\//, "")), "utf8")); } catch { return undefined; } }
 class MemoryStore implements Store {
   private data = new Map<string, Map<string, Row>>();
   private seeded = false;
