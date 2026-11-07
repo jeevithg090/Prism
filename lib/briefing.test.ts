@@ -85,10 +85,14 @@ beforeAll(() => {
 
 afterAll(() => fs.rmSync(root, { recursive: true, force: true }));
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.spyOn(process, "cwd").mockReturnValue(root);
   vi.mocked(llmText).mockReset();
   delete process.env.DEMO_MODE;
+  // P2's store seeds Aisha's real roadmap (id "aisha") from data/fixtures; clear it so each test reads the roadmap it sets up.
+  const store = getStore();
+  await store.list("roadmaps");
+  await store.remove("roadmaps", "aisha");
 });
 
 afterEach(async () => {
