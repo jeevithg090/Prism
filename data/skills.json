@@ -1,0 +1,303 @@
+[
+  {
+    "id": "python",
+    "name": "Python",
+    "category": "language",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "java",
+    "name": "Java",
+    "category": "language",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "javascript",
+    "name": "JavaScript",
+    "category": "language",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "typescript",
+    "name": "TypeScript",
+    "category": "language",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "c",
+    "name": "C",
+    "category": "language",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "cpp",
+    "name": "C++",
+    "category": "language",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "sql",
+    "name": "SQL",
+    "category": "data",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "html-css",
+    "name": "HTML & CSS",
+    "category": "language",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "react",
+    "name": "React",
+    "category": "framework",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "nodejs",
+    "name": "Node.js",
+    "category": "framework",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "rest-apis",
+    "name": "REST APIs",
+    "category": "framework",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "git",
+    "name": "Git",
+    "category": "practice",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "linux",
+    "name": "Linux",
+    "category": "cloud-devops",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "docker",
+    "name": "Docker",
+    "category": "cloud-devops",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "kubernetes",
+    "name": "Kubernetes",
+    "category": "cloud-devops",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "aws",
+    "name": "AWS",
+    "category": "cloud-devops",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "cloud-computing",
+    "name": "Cloud computing",
+    "category": "cloud-devops",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "ci-cd",
+    "name": "CI/CD",
+    "category": "cloud-devops",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "testing",
+    "name": "Testing",
+    "category": "practice",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "data-structures",
+    "name": "Data structures",
+    "category": "cs-fundamentals",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "algorithms",
+    "name": "Algorithms",
+    "category": "cs-fundamentals",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "databases",
+    "name": "Databases",
+    "category": "data",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "postgresql",
+    "name": "PostgreSQL",
+    "category": "data",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "system-design",
+    "name": "System design",
+    "category": "cs-fundamentals",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "security-basics",
+    "name": "Security basics",
+    "category": "cs-fundamentals",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "statistics",
+    "name": "Statistics",
+    "category": "data",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "linear-algebra",
+    "name": "Linear algebra",
+    "category": "data",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "machine-learning",
+    "name": "Machine learning",
+    "category": "ml-ai",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "deep-learning",
+    "name": "Deep learning",
+    "category": "ml-ai",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "pytorch",
+    "name": "PyTorch",
+    "category": "ml-ai",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "tensorflow",
+    "name": "TensorFlow",
+    "category": "ml-ai",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "scikit-learn",
+    "name": "scikit-learn",
+    "category": "ml-ai",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "pandas",
+    "name": "pandas",
+    "category": "data",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "numpy",
+    "name": "NumPy",
+    "category": "data",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "data-visualisation",
+    "name": "Data visualisation",
+    "category": "data",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "llm-apps",
+    "name": "LLM apps",
+    "category": "ml-ai",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "llm-evaluation",
+    "name": "LLM evaluation",
+    "category": "ml-ai",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "vector-databases",
+    "name": "Vector databases",
+    "category": "ml-ai",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "mlops",
+    "name": "MLOps",
+    "category": "ml-ai",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "code-review",
+    "name": "Code review",
+    "category": "practice",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "communication",
+    "name": "Communication",
+    "category": "professional",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "teamwork",
+    "name": "Teamwork",
+    "category": "professional",
+    "aliases": [],
+    "prereqs": []
+  },
+  {
+    "id": "agile",
+    "name": "Agile",
+    "category": "practice",
+    "aliases": [],
+    "prereqs": []
+  }
+]
