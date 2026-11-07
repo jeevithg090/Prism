@@ -440,6 +440,18 @@ async function runMatch(userId: string, runId: string, demo: boolean): Promise<P
   const score = scoreTeam(team, opts);
   emit({ runId, agent: "matchmaker", status: "progress", message: `pod score ${score.toFixed(2)}`, data: { score, size: team.length, parts: scoreParts(team, opts) } });
 
+  // DEMO_MODE: when the live match equals the seeded demo pod, return it under its stable id, so every
+  // server instance (serverless functions don't share memory) can resolve it for project / proof calls.
+  if (demo) {
+    const fixture = readDemoPod();
+    const ids = new Set(team.map((t) => t.userId));
+    if (fixture && fixture.members.length === ids.size && fixture.members.every((m) => ids.has(m.userId))) {
+      await store.upsert("pods", fixture.id, fixture, userId);
+      emit({ runId, agent: "matchmaker", status: "done", message: `${fixture.name} is ready: ${team.map((t) => firstName(t.userId, names)).join(", ")}` });
+      return fixture;
+    }
+  }
+
   const skills = learnsTeaches(team);
   const members: PodMember[] = skills.map((m) => ({ ...m, role: roleLabel(m.learns, m.teaches) }));
   const templates = templateExplanations(userId, skills, names);
