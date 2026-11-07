@@ -456,9 +456,9 @@ async function runMatch(userId: string, ctx: AgentCtx, demo: boolean): Promise<P
   const score = scoreTeam(team, opts);
   ctx.emit("progress", `pod score ${score.toFixed(2)}`, { score, size: team.length, parts: scoreParts(team, opts) });
 
-  // DEMO_MODE: when the live match equals the seeded demo pod, return it under its stable id, so every
+  // When the match equals the seeded demo pod (in demo AND live mode), return it under its stable id, so every
   // server instance (serverless functions don't share memory) can resolve it for project / proof calls.
-  if (demo) {
+  {
     const fixture = readDemoPod();
     const ids = new Set(team.map((t) => t.userId));
     if (fixture && fixture.members.length === ids.size && fixture.members.every((m) => ids.has(m.userId))) {
