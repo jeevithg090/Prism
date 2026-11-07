@@ -68,7 +68,7 @@ describe("GovernanceView", () => {
     expect(within(techlead).getByText("2.1 s")).toBeInTheDocument();
     expect(within(rows[2]).getByText("Fallback")).toBeInTheDocument();
     expect(within(rows[2]).getByText(/You send it/)).toBeInTheDocument();
-    expect(screen.getByText("Agent runs logged").nextSibling).toHaveTextContent(String(SAMPLE_RUNS.length));
+    expect(screen.getByText("Agent runs logged").closest(".rounded-2xl")).toHaveTextContent(String(SAMPLE_RUNS.length));
   });
 
   it("empty ledger: explains and offers sample runs", async () => {
