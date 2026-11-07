@@ -1,0 +1,167 @@
+{
+  "roleId": "ml-engineer",
+  "roleName": "ML engineer",
+  "location": "UK",
+  "adsAnalysed": 214,
+  "skills": [
+    {
+      "skillId": "python",
+      "share": 0.86,
+      "trend": "stable"
+    },
+    {
+      "skillId": "machine-learning",
+      "share": 0.78
+    },
+    {
+      "skillId": "pytorch",
+      "share": 0.52,
+      "trend": "rising"
+    },
+    {
+      "skillId": "sql",
+      "share": 0.48,
+      "trend": "stable"
+    },
+    {
+      "skillId": "git",
+      "share": 0.45
+    },
+    {
+      "skillId": "deep-learning",
+      "share": 0.44
+    },
+    {
+      "skillId": "docker",
+      "share": 0.41,
+      "trend": "stable"
+    },
+    {
+      "skillId": "statistics",
+      "share": 0.4
+    },
+    {
+      "skillId": "aws",
+      "share": 0.38,
+      "trend": "stable"
+    },
+    {
+      "skillId": "communication",
+      "share": 0.36
+    },
+    {
+      "skillId": "mlops",
+      "share": 0.33,
+      "trend": "rising"
+    },
+    {
+      "skillId": "llm-apps",
+      "share": 0.31,
+      "trend": "rising"
+    },
+    {
+      "skillId": "teamwork",
+      "share": 0.3
+    },
+    {
+      "skillId": "tensorflow",
+      "share": 0.29
+    },
+    {
+      "skillId": "linux",
+      "share": 0.28
+    },
+    {
+      "skillId": "kubernetes",
+      "share": 0.27,
+      "trend": "stable"
+    },
+    {
+      "skillId": "pandas",
+      "share": 0.26
+    },
+    {
+      "skillId": "ci-cd",
+      "share": 0.24
+    },
+    {
+      "skillId": "numpy",
+      "share": 0.23
+    },
+    {
+      "skillId": "rest-apis",
+      "share": 0.21
+    },
+    {
+      "skillId": "llm-evaluation",
+      "share": 0.19,
+      "trend": "rising"
+    },
+    {
+      "skillId": "system-design",
+      "share": 0.18
+    },
+    {
+      "skillId": "vector-databases",
+      "share": 0.17,
+      "trend": "rising"
+    }
+  ],
+  "salary": {
+    "p25": 44000,
+    "median": 52000,
+    "p75": 63000,
+    "currency": "GBP"
+  },
+  "topCompanies": [
+    {
+      "name": "Northbeam AI",
+      "count": 12
+    },
+    {
+      "name": "Pennine Robotics",
+      "count": 9
+    },
+    {
+      "name": "Mersey Health Tech",
+      "count": 8
+    },
+    {
+      "name": "Ledgerline",
+      "count": 7
+    },
+    {
+      "name": "Quayside Data",
+      "count": 6
+    }
+  ],
+  "sampleAds": [
+    {
+      "title": "Graduate Machine Learning Engineer",
+      "company": "Northbeam AI",
+      "url": "https://example.com/jobs/ml-engineer-1"
+    },
+    {
+      "title": "Junior ML Engineer",
+      "company": "Pennine Robotics",
+      "url": "https://example.com/jobs/ml-engineer-2"
+    },
+    {
+      "title": "Machine Learning Engineer, NLP",
+      "company": "Mersey Health Tech",
+      "url": "https://example.com/jobs/ml-engineer-3"
+    },
+    {
+      "title": "ML Platform Engineer",
+      "company": "Ledgerline",
+      "url": "https://example.com/jobs/ml-engineer-4"
+    },
+    {
+      "title": "Applied AI Engineer",
+      "company": "Quayside Data",
+      "url": "https://example.com/jobs/ml-engineer-5"
+    }
+  ],
+  "snapshotAt": "2026-11-06T09:00:00.000Z",
+  "source": "cache"
+}

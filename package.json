@@ -11,8 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "warm-cache": "tsx scripts/warm-cache.ts",
-    "hn-backfill": "tsx scripts/hn-backfill.ts",
+    "warm-cache": "tsx --conditions=react-server scripts/warm-cache.ts",
+    "hn-backfill": "tsx --conditions=react-server scripts/hn-backfill.ts",
     "seed": "tsx scripts/seed.ts"
   },
   "dependencies": {
