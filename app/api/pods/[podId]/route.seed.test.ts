@@ -10,8 +10,10 @@ import { GET } from "./route";
 const call = (podId: string) => GET(new Request(`http://localhost/api/pods/${podId}`), { params: Promise.resolve({ podId }) });
 
 describe("GET /api/pods/[podId] (stub)", () => {
-  it("returns the demo pod for pod_demo01", async () => {
+  it("returns the demo pod for pod_demo01 (DEMO_MODE)", async () => {
+    vi.stubEnv("DEMO_MODE", "true");
     const res = await call("pod_demo01");
+    vi.unstubAllEnvs();
     expect(res.status).toBe(200);
     expect((await res.json()).data.name).toBe("Pod Aurora");
   });
