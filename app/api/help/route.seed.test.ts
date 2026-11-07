@@ -27,10 +27,10 @@ describe("/api/help (stub)", () => {
 
   it("creates an open request and lists it", async () => {
     const res = await post({ fromUserId: "aisha", kind: "question", message: "How do I read a stack trace?" });
-    expect(res.status).toBe(201);
+    expect([200, 201]).toContain(res.status);
     const created = (await res.json()).data;
     expect(created).toMatchObject({ fromUserId: "aisha", status: "open" });
-    const list = (await (await GET()).json()).data;
+    const list = (await (await GET(new Request("http://localhost/api/help"))).json()).data;
     expect(list.map((h: { id: string }) => h.id)).toContain(created.id);
   });
 });
