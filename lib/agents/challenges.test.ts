@@ -199,6 +199,8 @@ describe("generateChallenge + menu", () => {
   });
 
   it("menu puts the top gap first when there's no roadmap, and marks tried skills", async () => {
+    // A roadmap whose weeks are all done means "no current week" (the seeded roadmap fixture is not used then).
+    h.docs.set("roadmaps/aisha", { doc: { userId: "aisha", weeks: [{ week: 1, focusSkillId: "linux", tasks: [{ id: "t0", done: true }] }] }, userId: "aisha" });
     const before = await getChallengeMenu("aisha");
     expect(before.focusSkillId).toBe("docker");
     expect(before.options[0]).toMatchObject({ skillId: "docker", status: "gap", demand: 0.41, tried: false });
