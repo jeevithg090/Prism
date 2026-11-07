@@ -1,0 +1,16 @@
+{
+  "userId": "aisha",
+  "roleId": "ml-engineer",
+  "scores": { "content": 4, "structure": 3, "clarity": 4, "confidence": 3 },
+  "fillerWordsPerMin": 6.2,
+  "strengths": [
+    "Clear explanation of your pod's Docker setup",
+    "Good use of a concrete example when you described the image-captioning model"
+  ],
+  "improvements": [
+    "Structure answers as situation → action → result",
+    "Pause instead of saying 'um' when you're thinking"
+  ],
+  "transcript": "ai: Hi Aisha, thanks for joining. This is a five-minute practice interview for the ML engineer role. Ready? Tell me a little about yourself and what got you into computing.\nuser: Um, so I'm a first-year CS student at Manchester. I got into computing because, like, I wanted to build things that help people, and machine learning felt like the best way to do that.\nai: Your pod is building VisionAid, an image captioning API. What did you personally do, and what was one challenge?\nuser: I wrote the Dockerfile so everyone could run the model the same way. Um, the challenge was the image was really big, so I used a slim Python base and it went from three gigabytes to about nine hundred megabytes.\nai: That's a great result. How are you learning PyTorch at the moment?\nuser: I'm doing the official PyTorch tutorials and, um, Priya reviews my pull requests, which basically helps a lot.\nai: That's the end of your practice interview. Your feedback is on screen.",
+  "createdAt": "2026-11-07T15:30:00.000Z"
+}
