@@ -15,7 +15,7 @@ describe("GET /api/pods/[podId] (stub)", () => {
     const res = await call("pod_demo01");
     vi.unstubAllEnvs();
     expect(res.status).toBe(200);
-    expect((await res.json()).data.name).toBe("Pod Aurora");
+    expect((await res.json()).data.name).toBe("Pod Orbit");
   });
 
   it("returns 404 for an unknown pod", async () => {
