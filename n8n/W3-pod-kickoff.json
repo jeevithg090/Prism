@@ -1,0 +1,402 @@
+{
+  "name": "Keystone W3 · Pod kickoff → Discord",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## W3 · Pod kickoff\nTriggered by the Keystone app (**Start project**) via `POST /webhook/pod-kickoff` with header `x-keystone-secret`.\n\n1. Edit **Config** (only node you need to touch).\n2. Set the **Keystone shared secret** Header Auth credential on **Webhook**.\n3. Publish/activate the workflow.\n\nIf `DISCORD_BOT_TOKEN` + `DISCORD_GUILD_ID` are set, a bot creates `#pod-<slug>` and posts there; otherwise the message goes to the #pods webhook.\n\nResponds `{ discordChannelUrl, posted, mode }`.",
+        "height": 320,
+        "width": 520
+      },
+      "id": "496b58cb-28d7-43fc-abcb-d9aad64de9b4",
+      "name": "About this workflow",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -260,
+        -360
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pod-kickoff",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "1dd72afb-05e0-4991-b3a8-3e676e5fca6d",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "5c0f2d7e-6b1a-4d1e-9c3a-0a7b5e2f4d11",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ksSharedSecret01",
+          "name": "Keystone shared secret"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "130a26fe-0000",
+              "name": "APP_URL",
+              "value": "https://YOUR-APP-URL",
+              "type": "string"
+            },
+            {
+              "id": "130a26fe-0001",
+              "name": "DISCORD_WEBHOOK_URL",
+              "value": "https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN",
+              "type": "string"
+            },
+            {
+              "id": "130a26fe-0002",
+              "name": "PODS_CHANNEL_URL",
+              "value": "https://discord.com/channels/YOUR_GUILD_ID/YOUR_PODS_CHANNEL_ID",
+              "type": "string"
+            },
+            {
+              "id": "130a26fe-0003",
+              "name": "DISCORD_BOT_TOKEN",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "130a26fe-0004",
+              "name": "DISCORD_GUILD_ID",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "130a26fe-0005",
+              "name": "DISCORD_PODS_CATEGORY_ID",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "130a26fe-0006",
+              "name": "DISCORD_API_BASE",
+              "value": "https://discord.com/api/v10",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "id": "130a26fe-de02-4948-86df-028df1149e1a",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        0
+      ],
+      "notes": "Edit me: Discord webhook (#pods), #pods URL, optional bot token/guild/category",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Builds the Discord announcement from the app's payload:\n// { podId, podName, repoUrl, members: string[], title, pitch, runId? }\nconst body = $('Webhook').first().json.body || {};\nconst cfg = $('Config').first().json;\n\nconst clean = (v) => (v === undefined || v === null ? '' : String(v).trim());\nconst podId = clean(body.podId);\nconst podName = clean(body.podName) || 'New pod';\nconst title = clean(body.title);\nconst pitch = clean(body.pitch);\nconst repoUrl = clean(body.repoUrl);\nconst members = (Array.isArray(body.members) ? body.members : [])\n  .map(clean)\n  .filter(Boolean)\n  .slice(0, 20);\n\n// Discord channel names: lowercase, a-z 0-9 and dashes, max 100 chars.\nconst slug = (podName || podId)\n  .toLowerCase()\n  .normalize('NFKD')\n  .replace(/[^a-z0-9]+/g, '-')\n  .replace(/^-+|-+$/g, '')\n  .slice(0, 90) || 'pod';\nconst channelName = `pod-${slug}`;\n\nconst isUrl = (u) => /^https?:\\/\\//i.test(u);\nconst headline = `🚀 ${podName} is live!`;\nconst firstStep = 'First step: pick your issue and open a PR. Your reviewer is waiting.';\n\nconst contentLines = [\n  `**${headline}**`,\n  title ? `Project: **${title}**` : '',\n  members.length ? `Members: ${members.join(', ')}` : '',\n  repoUrl ? `Repo: ${repoUrl}` : '',\n  firstStep,\n].filter(Boolean);\nconst content = contentLines.join('\\n').slice(0, 1900);\n\nconst embed = {\n  title: (title || headline).slice(0, 250),\n  description: (pitch || 'A new Keystone pod just kicked off.').slice(0, 2500),\n  color: 6514417,\n  fields: [\n    ...members.map((m) => ({ name: m.slice(0, 250), value: 'Pod member', inline: true })),\n    { name: 'First step', value: 'Pick your issue and open a PR. Your reviewer is waiting.', inline: false },\n  ],\n  footer: { text: podId ? `Keystone · pod ${podId}` : 'Keystone' },\n};\nif (isUrl(repoUrl)) embed.url = repoUrl;\n\nconst message = { content, embeds: [embed] };\nconst botToken = clean(cfg.DISCORD_BOT_TOKEN);\nconst useBot = botToken !== '' && clean(cfg.DISCORD_GUILD_ID) !== '';\n\nconst channelCreateBody = { name: channelName, type: 0, topic: (title || headline).slice(0, 1000) };\nif (clean(cfg.DISCORD_PODS_CATEGORY_ID)) channelCreateBody.parent_id = clean(cfg.DISCORD_PODS_CATEGORY_ID);\n\nreturn [{\n  json: {\n    useBot: useBot ? 'yes' : '',\n    podId,\n    podName,\n    runId: clean(body.runId),\n    channelName,\n    message,\n    channelCreateBody,\n    podsChannelUrl: clean(cfg.PODS_CHANNEL_URL),\n  },\n}];\n"
+      },
+      "id": "64ec1b71-1186-4bfe-a0cd-47eab489182a",
+      "name": "Build Discord message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "8bf91ca3-cond",
+              "leftValue": "={{ $json.useBot }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "8bf91ca3-af2b-45fd-aece-33c993641cdf",
+      "name": "Bot token configured?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').first().json.DISCORD_API_BASE.replace(/\\/+$/, '') }}/guilds/{{ $('Config').first().json.DISCORD_GUILD_ID }}/channels",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bot {{ $('Config').first().json.DISCORD_BOT_TOKEN }}"
+            },
+            {
+              "name": "User-Agent",
+              "value": "DiscordBot (https://github.com/jeevithg090/Reply_Hack, 1.0)"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.channelCreateBody) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "a1621cea-3045-42e9-a279-83a96f9dc7f5",
+      "name": "Create pod channel",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        900,
+        -160
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').first().json.DISCORD_API_BASE.replace(/\\/+$/, '') }}/channels/{{ $json.id }}/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bot {{ $('Config').first().json.DISCORD_BOT_TOKEN }}"
+            },
+            {
+              "name": "User-Agent",
+              "value": "DiscordBot (https://github.com/jeevithg090/Reply_Hack, 1.0)"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($('Build Discord message').first().json.message) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "2c16f175-f3b6-4d47-be92-45ea8fc3a8c4",
+      "name": "Post in pod channel",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1120,
+        -160
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Bot branch: link straight to the new pod channel (fall back to #pods on error).\nconst built = $('Build Discord message').first().json;\nconst cfg = $('Config').first().json;\nconst channel = $('Create pod channel').first().json || {};\nconst posted = $input.first().json || {};\nconst ok = !!channel.id && !channel.error && !posted.error;\nreturn [{ json: {\n  discordChannelUrl: channel.id\n    ? `https://discord.com/channels/${cfg.DISCORD_GUILD_ID}/${channel.id}`\n    : built.podsChannelUrl,\n  posted: ok,\n  mode: 'bot',\n} }];\n"
+      },
+      "id": "9a63de11-2ab8-4f18-bd82-9d87825fdc0b",
+      "name": "Channel URL (bot)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1340,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ (() => { const u = $('Config').first().json.DISCORD_WEBHOOK_URL; return u + (u.includes('?') ? '&' : '?') + 'wait=true'; })() }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.message) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "236a6127-068f-464b-b4a7-741b54294da5",
+      "name": "Post to #pods webhook",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        900,
+        160
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Fallback branch: the message went to the #pods webhook, so link to #pods.\nconst built = $('Build Discord message').first().json;\nconst res = $input.first().json || {};\nreturn [{ json: {\n  discordChannelUrl: built.podsChannelUrl,\n  posted: !res.error,\n  mode: 'webhook',\n} }];\n"
+      },
+      "id": "2d3c905e-0b32-4b0a-9c15-e9eb549bb25b",
+      "name": "Channel URL (webhook)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ discordChannelUrl: $json.discordChannelUrl, posted: $json.posted, mode: $json.mode }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "a8c6eac3-c0f9-4bd1-9ef5-e760fd3af9fa",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1580,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Build Discord message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Discord message": {
+      "main": [
+        [
+          {
+            "node": "Bot token configured?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bot token configured?": {
+      "main": [
+        [
+          {
+            "node": "Create pod channel",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Post to #pods webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create pod channel": {
+      "main": [
+        [
+          {
+            "node": "Post in pod channel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post in pod channel": {
+      "main": [
+        [
+          {
+            "node": "Channel URL (bot)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Channel URL (bot)": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post to #pods webhook": {
+      "main": [
+        [
+          {
+            "node": "Channel URL (webhook)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Channel URL (webhook)": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/London"
+  },
+  "pinData": {},
+  "tags": []
+}
