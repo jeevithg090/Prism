@@ -89,8 +89,7 @@ export function PodsFlow({ startFresh = false }: { startFresh?: boolean }) {
       // Start the live run but keep the Agents sheet shut, so the reveal stays in view. The top bar's
       // Agents button still shows the run, and the presenter opens it on cue.
       if (pod.runId) {
-        activity.start(pod.runId);
-        activity.setOpen(false);
+        activity.start(pod.runId, { open: false });
       }
       qc.setQueryData<Pod>(["pod", pod.id], pod);
       void qc.invalidateQueries({ queryKey: ["pods", viewerId] });

@@ -68,7 +68,7 @@ export default function LaunchPage() {
             </Link>
             <span className="hidden border-l pl-3 font-medium text-foreground sm:inline">Bridge Week</span>
           </div>
-          <LevelChips items={["launch-campaign"]} className="order-last basis-full md:order-none md:ml-auto md:basis-auto" />
+          <LevelChips items={["launch-campaign"]} className="max-sm:hidden md:ml-auto" />
           <Link href="/" className={buttonVariants({ variant: "outline", size: "lg" })}>Try the demo</Link>
         </div>
       </header>

@@ -32,7 +32,13 @@ export function GovernanceView() {
   });
   const runs = useQuery({
     queryKey: ["agents-runs", demoRuns],
-    queryFn: () => apiGet<AgentRunEntry[]>(`/api/agents/runs?limit=50${demoRuns ? "&demo=1" : ""}`),
+    queryFn: async () => {
+      const rows = await apiGet<AgentRunEntry[]>(`/api/agents/runs?limit=50${demoRuns ? "&demo=1" : ""}`);
+      // Presenting with ?demo=1 on a fresh deploy: an empty ledger leaves the governance story without
+      // evidence, so it switches to the sample runs (tagged "Demo data") until real runs exist.
+      if (!demoRuns && rows.length === 0 && new URLSearchParams(window.location.search).get("demo") === "1") setDemoRuns(true);
+      return rows;
+    },
     refetchInterval: demoRuns ? false : LEDGER_POLL_MS,
   });
 

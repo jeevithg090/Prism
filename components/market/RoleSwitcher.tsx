@@ -7,8 +7,9 @@ import { cn } from "@/lib/utils";
 
 export function RoleSwitcher({ roles, value, onChange, primaryRole }: { roles: Role[]; value: string; onChange: (roleId: string) => void; primaryRole?: string }) {
   return (
-    <div role="group" aria-label="Choose a role" className="-mx-1 overflow-x-auto px-1 pb-1">
-      <div className="flex w-full flex-wrap gap-1 rounded-xl bg-muted p-1 sm:inline-flex sm:w-max sm:flex-nowrap">
+    <div role="group" aria-label="Choose a role" className="-mx-1 overflow-x-auto px-1 pb-1 max-sm:mask-[linear-gradient(to_right,black_82%,transparent)]">
+      {/* One row at every width: on a phone it scrolls sideways, and the right-edge fade shows there's more. */}
+      <div className="inline-flex w-max flex-nowrap gap-1 rounded-xl bg-muted p-1">
         {roles.map((r) => {
           const on = r.id === value;
           return (

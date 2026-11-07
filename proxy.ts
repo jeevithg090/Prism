@@ -1,12 +1,15 @@
 // Next 16 Proxy (formerly middleware): the demo session.
 // - `?demo=1` on any page signs in as Aisha (cookie ks_uid=aisha, path /, 7 days).
-// - App pages without a session go to /onboard. The landing, onboarding, the launch campaign,
+// - The demo pod's deep link (/pods/pod_demo01) without a session also signs in as Aisha.
+// - Other app pages without a session go to /onboard. The landing, onboarding, the launch campaign,
 //   staff pages (lecturer, governance), shareable Skill Passports, the API and static files stay open.
 import { NextResponse, type NextRequest } from "next/server";
 import { DEMO_UID, UID_COOKIE, UID_MAX_AGE_S, safeUserId } from "@/lib/session-cookie";
 
 const OPEN_PATHS = ["/onboard", "/launch", "/lecturer", "/governance", "/profile", "/api", "/_next"];
 const STATIC_FILE = /\.[a-z0-9]+$/i;
+/** The seeded demo pod: a shared deep link to it opens Aisha's demo session, never the onboarding wizard. */
+const DEMO_POD_PATH = "/pods/pod_demo01";
 
 export function isOpenPath(pathname: string): boolean {
   if (pathname === "/" || STATIC_FILE.test(pathname)) return true;
@@ -22,6 +25,7 @@ export type ProxyDecision =
 export function decide({ pathname, demo, uid }: { pathname: string; demo: string | null; uid: string | undefined }): ProxyDecision {
   if (demo === "1") return { kind: "demo" };
   if (safeUserId(uid) || isOpenPath(pathname)) return { kind: "next" };
+  if (pathname === DEMO_POD_PATH || pathname.startsWith(`${DEMO_POD_PATH}/`)) return { kind: "demo" };
   return { kind: "redirect", to: "/onboard" };
 }
 

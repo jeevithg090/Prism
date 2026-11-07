@@ -84,8 +84,9 @@ function Headline({ map, targetDate, demo }: { map: BridgeMap; targetDate?: stri
       aria-labelledby="readiness-h"
       className="grid grid-cols-1 items-center gap-x-6 gap-y-6 sm:grid-cols-[auto_minmax(0,1fr)] md:gap-x-10 xl:grid-cols-[auto_minmax(0,1fr)_17rem]"
     >
-      {/* The arcs carry the ring here: the 48px figures beside it state 38% and 84%, so its centre stays empty. */}
-      <ReadinessRing value={map.readinessNow} projected={map.readinessProjected} label="today" className="md:size-44 [&>div]:hidden" />
+      {/* From sm the 48px figures beside the ring state 38% and 84%, so its centre stays empty; on a phone the
+          figures sit far below it, so the ring is centred and shows today's number itself. */}
+      <ReadinessRing value={map.readinessNow} projected={map.readinessProjected} label="today" className="max-sm:justify-self-center md:size-44 sm:[&>div]:hidden" />
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <h2 id="readiness-h" className="text-xl font-semibold text-foreground">{roleTitle(map.roleId)} readiness</h2>

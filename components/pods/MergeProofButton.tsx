@@ -6,6 +6,7 @@ import { GitMerge, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { apiPost } from "@/lib/fetcher";
 import type { ProjectProgress, ProofResult } from "@/lib/schemas/studio";
+import type { BridgeMap } from "@/lib/types";
 import { useActivity } from "@/components/shell/ActivityPanel";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -40,7 +41,7 @@ export function MergeProofButton({
 }: {
   podId: string;
   issueIndex: number;
-  /** Used for the accessible name: "Mark <issue title> as merged". */
+  /** Used for the accessible name: "Mark as merged: <issue title>" (contains the visible text). */
   issueTitle?: string;
   merged?: boolean;
   onProof?: (result: ProofResult) => void;
@@ -56,7 +57,16 @@ export function MergeProofButton({
     mutationFn: () =>
       apiPost<ProofResult>("/api/projects/merge", { podId, issueIndex }),
     onSuccess: (result) => {
-      if (result.runId) activity.start(result.runId);
+      // Stream the run in the background: the top bar's Agents pill pulses, and the celebration stays
+      // unobstructed. The presenter opens the sheet from the celebration ("See what the agents did").
+      if (result.runId) activity.start(result.runId, { open: false });
+      // Move the top-bar readiness pill with the celebration: the viewer's primary-role map is the one
+      // whose readiness equals readinessBefore.
+      qc.setQueriesData<BridgeMap | null>({ queryKey: ["graph", result.userId] }, (old) =>
+        old && Math.abs(old.readinessNow - result.readinessBefore) < 0.005
+          ? { ...old, readinessNow: Math.max(old.readinessNow, result.readinessAfter) }
+          : old,
+      );
       qc.setQueryData<ProjectProgress>(projectProgressKey(podId), (old) =>
         withMerged(old, {
           podId,
@@ -87,8 +97,8 @@ export function MergeProofButton({
   if (merged || mutation.isSuccess) return <MergedPill className={className} />;
 
   const label = issueTitle
-    ? `Mark ${issueTitle} as merged`
-    : `Mark issue ${issueIndex + 1} as merged`;
+    ? `Mark as merged: ${issueTitle}`
+    : `Mark as merged: issue ${issueIndex + 1}`;
   return (
     <Button
       variant={variant}

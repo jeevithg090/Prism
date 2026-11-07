@@ -2,11 +2,28 @@ import { getStore } from "@/lib/store";
 import { badRequest, fail, internal, LearningDNAZ, ok, ProfileZ } from "@/lib/schemas/community";
 import type { Profile } from "@/lib/types";
 
+import trajectoriesJson from "@/data/seed/trajectories.json";
+
+/** Seeded seniors (data/seed/trajectories.json) have no student profile; answer them with a display-only
+ *  profile so the community page can show their names without a 404 in the console. */
+function seniorProfile(id: string): Profile | null {
+  const t = (trajectoriesJson as { userId: string; name: string; programmeId: string }[]).find((x) => x.userId === id);
+  if (!t) return null;
+  return {
+    id, name: t.name, programmeId: t.programmeId, year: 4, startedAt: "2021-09-20", isDemo: true,
+    badges: [], interests: [], availability: [],
+    dna: {
+      targetRoles: ["ml-engineer"], timelineLabel: "Graduated", targetDate: "2025-06-30", hoursPerWeek: 1,
+      theoryPractice: 50, formats: [], budget: "free", constraints: [], accessibility: [], language: "en",
+    },
+  };
+}
+
 // GET /api/profile/[id] → Profile · PUT (and PATCH) → partial update, `dna` deep-merged (contract §6).
 export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await ctx.params;
-    const p = await getStore().get<Profile>("profiles", id);
+    const p = (await getStore().get<Profile>("profiles", id)) ?? seniorProfile(id);
     if (!p) return fail(404, "not_found", `No profile ${id}`);
     return ok(p);
   } catch {

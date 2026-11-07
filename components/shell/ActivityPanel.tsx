@@ -21,7 +21,8 @@ type Ctx = {
   events: AgentEvent[];
   open: boolean;
   setOpen: (o: boolean) => void;
-  start: (runId: string) => void;
+  /** Streams a run. `{ open: false }` keeps the sheet closed (the TopBar "Agents" pill pulses instead). */
+  start: (runId: string, opts?: { open?: boolean }) => void;
   /** True while a run is streaming (the TopBar "Agents" button pulses). */
   live: boolean;
   status: RunStatus;
@@ -44,6 +45,9 @@ const POLL_MS = 1000;
 const MAX_POLL_MS = 3 * 60_000;
 const ERRORS_BEFORE_POLLING = 2;
 const ERROR_SETTLE_MS = 3000;
+/** No event on the stream after this long: also poll. On serverless the stream and the run can sit on
+ *  different instances, so polling (merged, never replaced) gathers whatever any instance has seen. */
+const QUIET_MS = 4000;
 
 const keyOf = (e: AgentEvent) => `${e.ts}|${e.agent}|${e.status}|${e.message}`;
 
@@ -61,7 +65,7 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
   const [events, setEvents] = React.useState<AgentEvent[]>([]);
   const [open, setOpen] = React.useState(false);
   const [status, setStatus] = React.useState<RunStatus>("idle");
-  const conn = React.useRef<{ id: string | null; es: EventSource | null; poll: ReturnType<typeof setInterval> | null; settle: ReturnType<typeof setTimeout> | null; log: AgentEvent[] }>({ id: null, es: null, poll: null, settle: null, log: [] });
+  const conn = React.useRef<{ id: string | null; es: EventSource | null; poll: ReturnType<typeof setInterval> | null; settle: ReturnType<typeof setTimeout> | null; quiet: ReturnType<typeof setTimeout> | null; log: AgentEvent[] }>({ id: null, es: null, poll: null, settle: null, quiet: null, log: [] });
 
   const stop = React.useCallback(() => {
     const c = conn.current;
@@ -71,18 +75,20 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
     c.poll = null;
     if (c.settle) clearTimeout(c.settle);
     c.settle = null;
+    if (c.quiet) clearTimeout(c.quiet);
+    c.quiet = null;
   }, []);
 
   React.useEffect(() => stop, [stop]);
 
-  const start = React.useCallback((id: string) => {
+  const start = React.useCallback((id: string, opts?: { open?: boolean }) => {
     stop();
     const c = conn.current;
     c.id = id;
     c.log = [];
     setRunId(id);
     setEvents([]);
-    setOpen(true);
+    if (opts?.open !== false) setOpen(true);
     setStatus("connecting");
 
     const finish = (s: "done" | "error") => {
@@ -109,9 +115,12 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
-    const startPolling = () => {
-      c.es?.close();
-      c.es = null;
+    const startPolling = (keepStream = false) => {
+      if (!keepStream) {
+        c.es?.close();
+        c.es = null;
+      }
+      if (c.poll) return;
       const began = Date.now();
       const tick = async () => {
         if (c.id !== id) return;
@@ -130,6 +139,10 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
     let errors = 0;
     const es = new EventSource(`/api/agents/stream?runId=${encodeURIComponent(id)}`);
     c.es = es;
+    c.quiet = setTimeout(() => {
+      c.quiet = null;
+      if (c.id === id && c.log.length === 0) startPolling(true);
+    }, QUIET_MS);
     es.addEventListener("agent", (m) => {
       try {
         ingest([JSON.parse((m as MessageEvent<string>).data) as AgentEvent]);

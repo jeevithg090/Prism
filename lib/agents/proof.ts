@@ -318,3 +318,39 @@ export async function proofFromPullRequestEvent(event: unknown): Promise<ProofRe
     podId: pod.id, issueIndex, prUrl: e.pull_request.html_url, mergedAt: e.pull_request.merged_at ?? undefined,
   });
 }
+
+// ---------- Demo reset ----------
+
+/**
+ * Undo every "Mark as merged" on a pod, so the demo can be shown again: proofs, pod progress, the pod
+ * evidence and momentum it wrote, and the stored Bridge Map it bumped (the map is rebuilt on next read).
+ * Returns how many merges were cleared. Roadmap ticks and earned badges stay (they are harmless to repeat).
+ */
+export async function resetPodProofs(podId: string): Promise<{ podId: string; cleared: number }> {
+  const store = getStore();
+  const pod = await loadPod(podId);
+  if (!pod) throw new NotFoundError(`We couldn't find pod ${podId}.`);
+  const progress = await store.get<ProjectProgress>("pod_progress", podId);
+  const issues = pod.project?.issues ?? [];
+  let cleared = 0;
+  for (let i = 0; i < issues.length; i++) {
+    const issue = issues[i];
+    const proofId = `${podId}:${i}`;
+    const hadProof = !!(await store.get<unknown>("proofs", proofId));
+    const wasMerged = !!progress?.merged?.some((m) => m.issueIndex === i);
+    if (!hadProof && !wasMerged) continue;
+    cleared++;
+    const base = `ev_pod_${podId}_${i}`;
+    await Promise.all([
+      store.remove("proofs", proofId),
+      store.remove("evidence", `${base}_${issue.assigneeUserId}`),
+      store.remove("evidence", `${base}_${issue.reviewerUserId}_review`),
+      store.remove("momentum_events", `pr-merged-${podId}-${i}`),
+      store.remove("momentum_events", `helped-newcomer-${podId}-${i}`),
+    ]);
+    const role = (await profileOf(issue.assigneeUserId))?.dna?.targetRoles?.[0];
+    if (role) await store.remove("maps", `${issue.assigneeUserId}:${role}`);
+  }
+  await store.remove("pod_progress", podId);
+  return { podId, cleared };
+}

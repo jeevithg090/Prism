@@ -90,3 +90,6 @@ export async function GET(req: Request) {
     },
   });
 }
+
+// Vercel: the after() pipeline and the SSE stream need longer than the default function timeout.
+export const maxDuration = 300;

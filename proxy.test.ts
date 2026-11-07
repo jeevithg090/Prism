@@ -10,9 +10,14 @@ describe("decide (pure proxy policy)", () => {
   });
 
   it("sends app pages without a session to /onboard", () => {
-    for (const p of ["/dashboard", "/map", "/roadmap", "/pods/pod_demo01", "/community"]) {
+    for (const p of ["/dashboard", "/map", "/roadmap", "/pods/pod_other", "/community"]) {
       expect(decide({ pathname: p, demo: null, uid: undefined })).toEqual({ kind: "redirect", to: "/onboard" });
     }
+  });
+
+  it("a shared deep link to the demo pod opens the demo session instead of onboarding", () => {
+    expect(decide({ pathname: "/pods/pod_demo01", demo: null, uid: undefined })).toEqual({ kind: "demo" });
+    expect(decide({ pathname: "/pods/pod_demo01", demo: null, uid: "priya" })).toEqual({ kind: "next" });
   });
 
   it("lets a signed-in student through", () => {

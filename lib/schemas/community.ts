@@ -226,6 +226,10 @@ export function internal(): Response {
 // ---------- skill display names (data/skills.json, contract core ids) ----------
 import skillsJson from "@/data/skills.json";
 const SKILL_NAME = new Map((skillsJson as { id: string; name: string }[]).map((s) => [s.id, s.name]));
+/** True for ids in the skills taxonomy (data/skills.json). */
+export function isKnownSkill(id: string): boolean {
+  return SKILL_NAME.has(id);
+}
 /** "docker" → "Docker". Unknown ids are title-cased. */
 export function skillName(id: string): string {
   return SKILL_NAME.get(id) ?? id.split("-").map((w) => w[0]?.toUpperCase() + w.slice(1)).join(" ");

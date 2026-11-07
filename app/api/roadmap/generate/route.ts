@@ -47,3 +47,6 @@ export async function POST(req: Request) {
     return internal();
   }
 }
+
+// The live roadmap call can take ~20 s; give it headroom over the default function timeout.
+export const maxDuration = 60;
