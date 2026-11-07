@@ -1,0 +1,1502 @@
+[
+  {
+    "id": "traj_01",
+    "userId": "senior_01",
+    "name": "Fatima Begum",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "society",
+        "label": "Joined the AI society"
+      },
+      {
+        "year": 1,
+        "kind": "hackathon",
+        "label": "GreatUniHack: built a skin-lesion classifier"
+      },
+      {
+        "year": 2,
+        "kind": "project",
+        "label": "Open-source contribution to MONAI docs"
+      },
+      {
+        "year": 3,
+        "kind": "placement",
+        "label": "Year in industry at a health-tech ML team"
+      },
+      {
+        "year": 4,
+        "kind": "module-choice",
+        "label": "Final-year project on medical image segmentation"
+      },
+      {
+        "year": 5,
+        "kind": "first-role",
+        "label": "ML engineer at a health-tech startup"
+      }
+    ],
+    "outcomeRole": "ML engineer at a Manchester health-tech startup",
+    "advice": "Pick one project you care about and keep improving it every term. My NHS dataset project carried me through every interview.",
+    "isDemo": true,
+    "openToChat": true
+  },
+  {
+    "id": "traj_02",
+    "userId": "senior_02",
+    "name": "Rhys Morgan",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "hackathon",
+        "label": "GreatUniHack: built a CV app for sign language"
+      },
+      {
+        "year": 2,
+        "kind": "module-choice",
+        "label": "Chose Machine Learning and Computer Vision modules"
+      },
+      {
+        "year": 3,
+        "kind": "placement",
+        "label": "Placement at a Manchester health-tech company"
+      },
+      {
+        "year": 4,
+        "kind": "project",
+        "label": "Built a Dockerised model-serving demo"
+      },
+      {
+        "year": 5,
+        "kind": "first-role",
+        "label": "ML engineer"
+      }
+    ],
+    "outcomeRole": "ML engineer at a Manchester health-tech startup",
+    "advice": "Placements are less scary than they look. Apply early, and treat every rejection as practice for the next interview.",
+    "isDemo": true,
+    "openToChat": true
+  },
+  {
+    "id": "traj_03",
+    "userId": "senior_03",
+    "name": "Ananya Rao",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "society",
+        "label": "Joined Women in Computing"
+      },
+      {
+        "year": 1,
+        "kind": "project",
+        "label": "Built a plant-disease detector with a webcam"
+      },
+      {
+        "year": 2,
+        "kind": "internship",
+        "label": "Summer internship at an NHS digital team"
+      },
+      {
+        "year": 3,
+        "kind": "module-choice",
+        "label": "Research project in explainable AI"
+      },
+      {
+        "year": 4,
+        "kind": "first-role",
+        "label": "ML engineer at a health-tech startup"
+      }
+    ],
+    "outcomeRole": "ML engineer at a Manchester health-tech startup",
+    "advice": "Learn Docker early. Every ML team I met asked how I'd ship a model, not just train one.",
+    "isDemo": true,
+    "openToChat": false
+  },
+  {
+    "id": "traj_04",
+    "userId": "senior_04",
+    "name": "Kwame Mensah",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "society",
+        "label": "Joined the robotics society"
+      },
+      {
+        "year": 1,
+        "kind": "hackathon",
+        "label": "Hackathon: fraud-detection dashboard"
+      },
+      {
+        "year": 2,
+        "kind": "project",
+        "label": "Open-source contribution to scikit-learn docs"
+      },
+      {
+        "year": 3,
+        "kind": "placement",
+        "label": "Year in industry at an ML consultancy"
+      },
+      {
+        "year": 4,
+        "kind": "first-role",
+        "label": "ML engineer at a fintech"
+      }
+    ],
+    "outcomeRole": "ML engineer at a fintech",
+    "advice": "Join a society that builds things, not just one that talks about them. Shipping small projects with friends taught me more than any module.",
+    "isDemo": true,
+    "openToChat": true
+  },
+  {
+    "id": "traj_05",
+    "userId": "senior_05",
+    "name": "Emily Hartley",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "society",
+        "label": "Joined the AI society"
+      },
+      {
+        "year": 2,
+        "kind": "hackathon",
+        "label": "Hackathon: speech-to-text for clinic notes"
+      },
+      {
+        "year": 2,
+        "kind": "project",
+        "label": "Open-source contribution to Hugging Face datasets"
+      },
+      {
+        "year": 3,
+        "kind": "placement",
+        "label": "Placement at a medical imaging company"
+      },
+      {
+        "year": 4,
+        "kind": "module-choice",
+        "label": "Final-year project on ECG anomaly detection"
+      },
+      {
+        "year": 5,
+        "kind": "first-role",
+        "label": "ML engineer at a health-tech startup"
+      }
+    ],
+    "outcomeRole": "ML engineer at a Manchester health-tech startup",
+    "advice": "Ask seniors for 15 minutes. Everyone said yes, and one chat led to my placement referral.",
+    "isDemo": true,
+    "openToChat": true
+  },
+  {
+    "id": "traj_06",
+    "userId": "senior_06",
+    "name": "Omar Siddiqui",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "project",
+        "label": "Built a line-following robot with OpenCV"
+      },
+      {
+        "year": 1,
+        "kind": "society",
+        "label": "Joined the robotics society"
+      },
+      {
+        "year": 2,
+        "kind": "module-choice",
+        "label": "Chose Computer Vision and Robotics modules"
+      },
+      {
+        "year": 3,
+        "kind": "placement",
+        "label": "Placement at a warehouse robotics firm"
+      },
+      {
+        "year": 4,
+        "kind": "project",
+        "label": "Final-year project on depth estimation"
+      },
+      {
+        "year": 5,
+        "kind": "first-role",
+        "label": "Computer vision engineer"
+      }
+    ],
+    "outcomeRole": "Computer vision engineer at a robotics company",
+    "advice": "Linear algebra felt abstract in first year, but it's the thing I use most now. Stick with it.",
+    "isDemo": true,
+    "openToChat": false
+  },
+  {
+    "id": "traj_07",
+    "userId": "senior_07",
+    "name": "Grace Kim",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "society",
+        "label": "Joined the Computer Science society"
+      },
+      {
+        "year": 1,
+        "kind": "hackathon",
+        "label": "GreatUniHack: budgeting app"
+      },
+      {
+        "year": 2,
+        "kind": "internship",
+        "label": "Summer internship at a bank"
+      },
+      {
+        "year": 3,
+        "kind": "module-choice",
+        "label": "Chose Distributed Systems and Security modules"
+      },
+      {
+        "year": 4,
+        "kind": "first-role",
+        "label": "Software engineer at a bank"
+      }
+    ],
+    "outcomeRole": "Software engineer at a bank",
+    "advice": "Leetcode helps, but explaining your own project clearly helped me more in bank interviews.",
+    "isDemo": true,
+    "openToChat": true
+  },
+  {
+    "id": "traj_08",
+    "userId": "senior_08",
+    "name": "Daniel Kowalski",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "project",
+        "label": "Built a Discord bot for society events"
+      },
+      {
+        "year": 2,
+        "kind": "project",
+        "label": "Open-source contribution to a Java testing library"
+      },
+      {
+        "year": 3,
+        "kind": "placement",
+        "label": "Year in industry at an investment bank"
+      },
+      {
+        "year": 4,
+        "kind": "module-choice",
+        "label": "Final-year project on low-latency messaging"
+      },
+      {
+        "year": 5,
+        "kind": "first-role",
+        "label": "Software engineer at a bank"
+      }
+    ],
+    "outcomeRole": "Software engineer at a bank",
+    "advice": "Write tests for your side projects. Interviewers noticed, and it made my placement much easier.",
+    "isDemo": true,
+    "openToChat": true
+  },
+  {
+    "id": "traj_09",
+    "userId": "senior_09",
+    "name": "Zara Ahmed",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "society",
+        "label": "Joined the Data Science society"
+      },
+      {
+        "year": 1,
+        "kind": "project",
+        "label": "Analysed Manchester bus delays with pandas"
+      },
+      {
+        "year": 2,
+        "kind": "internship",
+        "label": "Summer internship at a supermarket insights team"
+      },
+      {
+        "year": 3,
+        "kind": "module-choice",
+        "label": "Chose Statistics and Databases modules"
+      },
+      {
+        "year": 4,
+        "kind": "first-role",
+        "label": "Data analyst at a retailer"
+      }
+    ],
+    "outcomeRole": "Data analyst at a retailer",
+    "advice": "SQL is the superpower nobody tells you about. Practise it on real, messy data.",
+    "isDemo": true,
+    "openToChat": true
+  },
+  {
+    "id": "traj_10",
+    "userId": "senior_10",
+    "name": "Callum Reid",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "society",
+        "label": "Joined the maths society"
+      },
+      {
+        "year": 2,
+        "kind": "module-choice",
+        "label": "Chose Machine Learning and Optimisation modules"
+      },
+      {
+        "year": 2,
+        "kind": "project",
+        "label": "Summer research project on graph neural networks"
+      },
+      {
+        "year": 3,
+        "kind": "module-choice",
+        "label": "Third-year research project in reinforcement learning"
+      },
+      {
+        "year": 4,
+        "kind": "first-role",
+        "label": "Started a PhD in ML"
+      }
+    ],
+    "outcomeRole": "PhD in ML",
+    "advice": "If research excites you, email a lecturer about a summer project. That's how I found my PhD supervisor.",
+    "isDemo": true,
+    "openToChat": false
+  },
+  {
+    "id": "traj_11",
+    "userId": "senior_11",
+    "name": "Isabel Costa",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "hackathon",
+        "label": "GreatUniHack: built an allergy-scanner app"
+      },
+      {
+        "year": 1,
+        "kind": "society",
+        "label": "Joined the AI society"
+      },
+      {
+        "year": 2,
+        "kind": "project",
+        "label": "Open-source contribution to PyTorch tutorials"
+      },
+      {
+        "year": 3,
+        "kind": "placement",
+        "label": "Placement at a digital health scale-up"
+      },
+      {
+        "year": 4,
+        "kind": "first-role",
+        "label": "ML engineer at a health-tech startup"
+      }
+    ],
+    "outcomeRole": "ML engineer at a Manchester health-tech startup",
+    "advice": "Don't wait until you feel ready to apply. I felt behind until my placement started, then it clicked.",
+    "isDemo": true,
+    "openToChat": true
+  },
+  {
+    "id": "traj_12",
+    "userId": "senior_12",
+    "name": "Arjun Mehta",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "hackathon",
+        "label": "GreatUniHack: won best newcomer team"
+      },
+      {
+        "year": 1,
+        "kind": "society",
+        "label": "Joined the Entrepreneurs society"
+      },
+      {
+        "year": 2,
+        "kind": "project",
+        "label": "Built a study-group app used by 300 students"
+      },
+      {
+        "year": 3,
+        "kind": "internship",
+        "label": "Summer at a startup accelerator"
+      },
+      {
+        "year": 4,
+        "kind": "first-role",
+        "label": "Founded an edtech startup"
+      }
+    ],
+    "outcomeRole": "Founded a startup",
+    "advice": "Talk to users before writing code. My first startup idea died in a week of interviews, and the second one survived.",
+    "isDemo": true,
+    "openToChat": true
+  },
+  {
+    "id": "traj_13",
+    "userId": "senior_13",
+    "name": "Niamh O'Connor",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "society",
+        "label": "Joined the Linux users society"
+      },
+      {
+        "year": 1,
+        "kind": "project",
+        "label": "Self-hosted a home server on a Raspberry Pi"
+      },
+      {
+        "year": 2,
+        "kind": "internship",
+        "label": "Summer internship in a cloud operations team"
+      },
+      {
+        "year": 3,
+        "kind": "module-choice",
+        "label": "Chose Distributed Systems and Networks modules"
+      },
+      {
+        "year": 4,
+        "kind": "first-role",
+        "label": "SRE at a cloud company"
+      }
+    ],
+    "outcomeRole": "SRE at a cloud company",
+    "advice": "Run Linux on your own laptop for a term. It made every on-call shift feel familiar.",
+    "isDemo": true,
+    "openToChat": true
+  },
+  {
+    "id": "traj_14",
+    "userId": "senior_14",
+    "name": "Samuel Adeyemi",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "society",
+        "label": "Joined the AI society"
+      },
+      {
+        "year": 1,
+        "kind": "hackathon",
+        "label": "Hackathon: credit-risk explainer"
+      },
+      {
+        "year": 2,
+        "kind": "module-choice",
+        "label": "Chose Machine Learning and Statistics modules"
+      },
+      {
+        "year": 3,
+        "kind": "internship",
+        "label": "Summer internship at a payments company's ML team"
+      },
+      {
+        "year": 4,
+        "kind": "project",
+        "label": "Final-year project on time-series forecasting"
+      },
+      {
+        "year": 5,
+        "kind": "first-role",
+        "label": "ML engineer at a fintech"
+      }
+    ],
+    "outcomeRole": "ML engineer at a fintech",
+    "advice": "Pair with someone who's one step ahead of you. Our study pod got three of us into ML placements.",
+    "isDemo": true,
+    "openToChat": false
+  },
+  {
+    "id": "traj_15",
+    "userId": "senior_15",
+    "name": "Lucy Chen",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "project",
+        "label": "Built a dashboard of society membership trends"
+      },
+      {
+        "year": 2,
+        "kind": "society",
+        "label": "Treasurer of the Data Science society"
+      },
+      {
+        "year": 2,
+        "kind": "internship",
+        "label": "Summer internship at an online retailer"
+      },
+      {
+        "year": 3,
+        "kind": "module-choice",
+        "label": "Chose Data Visualisation and Databases modules"
+      },
+      {
+        "year": 4,
+        "kind": "first-role",
+        "label": "Data analyst at a retailer"
+      }
+    ],
+    "outcomeRole": "Data analyst at a retailer",
+    "advice": "Make one dashboard you're proud of and show it everywhere. It started most of my interviews.",
+    "isDemo": true,
+    "openToChat": true
+  },
+  {
+    "id": "traj_16",
+    "userId": "senior_16",
+    "name": "Marcus Bell",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "hackathon",
+        "label": "Hackathon: split-the-bill app"
+      },
+      {
+        "year": 2,
+        "kind": "project",
+        "label": "Open-source contribution to a TypeScript payments SDK"
+      },
+      {
+        "year": 3,
+        "kind": "placement",
+        "label": "Year in industry at a fintech"
+      },
+      {
+        "year": 4,
+        "kind": "module-choice",
+        "label": "Final-year project on API rate limiting"
+      },
+      {
+        "year": 5,
+        "kind": "first-role",
+        "label": "Software engineer at a fintech"
+      }
+    ],
+    "outcomeRole": "Software engineer at a fintech",
+    "advice": "Contribute to one open-source project for a whole term. Reviewers' feedback is free mentoring.",
+    "isDemo": true,
+    "openToChat": false
+  },
+  {
+    "id": "traj_17",
+    "userId": "senior_17",
+    "name": "Aaliyah Hussain",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "society",
+        "label": "Joined the AI society"
+      },
+      {
+        "year": 1,
+        "kind": "project",
+        "label": "Built a sleep-tracking data project"
+      },
+      {
+        "year": 2,
+        "kind": "internship",
+        "label": "Summer internship at a hospital data team"
+      },
+      {
+        "year": 3,
+        "kind": "module-choice",
+        "label": "Research project on fairness in clinical ML"
+      },
+      {
+        "year": 4,
+        "kind": "first-role",
+        "label": "ML engineer at a health-tech startup"
+      }
+    ],
+    "outcomeRole": "ML engineer at a Manchester health-tech startup",
+    "advice": "Healthcare data is messy and that's okay. Learning to clean it well made me valuable on day one.",
+    "isDemo": true,
+    "openToChat": true
+  },
+  {
+    "id": "traj_18",
+    "userId": "senior_18",
+    "name": "Tomasz Zielinski",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "project",
+        "label": "Built a CLI tool for uptime checks"
+      },
+      {
+        "year": 2,
+        "kind": "society",
+        "label": "Ran the society's Kubernetes workshop"
+      },
+      {
+        "year": 3,
+        "kind": "placement",
+        "label": "Year in industry with a cloud infrastructure team"
+      },
+      {
+        "year": 4,
+        "kind": "module-choice",
+        "label": "Final-year project on autoscaling"
+      },
+      {
+        "year": 5,
+        "kind": "first-role",
+        "label": "SRE at a cloud company"
+      }
+    ],
+    "outcomeRole": "SRE at a cloud company",
+    "advice": "Break things on purpose in a safe sandbox. Chaos experiments taught me more than tutorials.",
+    "isDemo": true,
+    "openToChat": false
+  },
+  {
+    "id": "traj_19",
+    "userId": "senior_19",
+    "name": "Ella Robinson",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "hackathon",
+        "label": "GreatUniHack: first hackathon, learned Git"
+      },
+      {
+        "year": 1,
+        "kind": "society",
+        "label": "Joined the Computer Science society"
+      },
+      {
+        "year": 2,
+        "kind": "project",
+        "label": "Built a React app for a local charity"
+      },
+      {
+        "year": 3,
+        "kind": "internship",
+        "label": "Summer internship at a retail bank"
+      },
+      {
+        "year": 4,
+        "kind": "first-role",
+        "label": "Software engineer at a bank"
+      }
+    ],
+    "outcomeRole": "Software engineer at a bank",
+    "advice": "Join the hackathon even if you can't code much yet. I learned Git in one weekend at my first one.",
+    "isDemo": true,
+    "openToChat": false
+  },
+  {
+    "id": "traj_20",
+    "userId": "senior_20",
+    "name": "Haruto Sato",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "society",
+        "label": "Joined the robotics society"
+      },
+      {
+        "year": 2,
+        "kind": "hackathon",
+        "label": "Hackathon: drone obstacle avoidance"
+      },
+      {
+        "year": 2,
+        "kind": "project",
+        "label": "Open-source contribution to OpenCV examples"
+      },
+      {
+        "year": 3,
+        "kind": "placement",
+        "label": "Placement at an autonomous vehicles lab"
+      },
+      {
+        "year": 4,
+        "kind": "first-role",
+        "label": "Started a PhD in ML (robotics)"
+      }
+    ],
+    "outcomeRole": "PhD in ML (robotics)",
+    "advice": "Read one paper a month and reimplement a small part of it. It builds confidence fast.",
+    "isDemo": true,
+    "openToChat": true
+  },
+  {
+    "id": "traj_21",
+    "userId": "senior_21",
+    "name": "Imogen Price",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "society",
+        "label": "Joined the Data Science society"
+      },
+      {
+        "year": 1,
+        "kind": "project",
+        "label": "Analysed food waste data for a student project"
+      },
+      {
+        "year": 2,
+        "kind": "module-choice",
+        "label": "Chose Statistics and Data Engineering modules"
+      },
+      {
+        "year": 3,
+        "kind": "placement",
+        "label": "Placement at a supermarket chain's analytics team"
+      },
+      {
+        "year": 4,
+        "kind": "first-role",
+        "label": "Data analyst at a supermarket chain"
+      }
+    ],
+    "outcomeRole": "Data analyst at a supermarket chain",
+    "advice": "Ask why a number matters before you calculate it. Managers loved that more than fancy models.",
+    "isDemo": true,
+    "openToChat": false
+  },
+  {
+    "id": "traj_22",
+    "userId": "senior_22",
+    "name": "Bilal Rashid",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "hackathon",
+        "label": "Hackathon: chatbot for university FAQs"
+      },
+      {
+        "year": 2,
+        "kind": "project",
+        "label": "Open-source contribution to an LLM evaluation toolkit"
+      },
+      {
+        "year": 2,
+        "kind": "internship",
+        "label": "Summer internship at a legal-tech startup"
+      },
+      {
+        "year": 3,
+        "kind": "module-choice",
+        "label": "Third-year project on retrieval-augmented generation"
+      },
+      {
+        "year": 4,
+        "kind": "first-role",
+        "label": "NLP engineer at a legal-tech startup"
+      }
+    ],
+    "outcomeRole": "NLP engineer at a legal-tech startup",
+    "advice": "Build something with an LLM, then evaluate it honestly. Showing where it failed impressed interviewers.",
+    "isDemo": true,
+    "openToChat": true
+  },
+  {
+    "id": "traj_23",
+    "userId": "senior_23",
+    "name": "Freya Lindqvist",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "society",
+        "label": "Joined the AI society"
+      },
+      {
+        "year": 1,
+        "kind": "project",
+        "label": "Built a bird-song classifier"
+      },
+      {
+        "year": 2,
+        "kind": "module-choice",
+        "label": "Chose Machine Learning and Signal Processing modules"
+      },
+      {
+        "year": 3,
+        "kind": "module-choice",
+        "label": "Third-year research project in audio ML"
+      },
+      {
+        "year": 4,
+        "kind": "first-role",
+        "label": "Started a PhD in ML (audio)"
+      }
+    ],
+    "outcomeRole": "PhD in ML",
+    "advice": "Research is a marathon. Find a supervisor whose students seem happy, not just one with famous papers.",
+    "isDemo": true,
+    "openToChat": true
+  },
+  {
+    "id": "traj_24",
+    "userId": "senior_24",
+    "name": "Joseph Mwangi",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "project",
+        "label": "Built a library system in Java"
+      },
+      {
+        "year": 2,
+        "kind": "society",
+        "label": "Joined the Fintech society"
+      },
+      {
+        "year": 3,
+        "kind": "placement",
+        "label": "Year in industry at a bank's trading platform team"
+      },
+      {
+        "year": 4,
+        "kind": "module-choice",
+        "label": "Chose Concurrency and Security modules"
+      },
+      {
+        "year": 5,
+        "kind": "first-role",
+        "label": "Software engineer at a bank"
+      }
+    ],
+    "outcomeRole": "Software engineer at a bank",
+    "advice": "Learn Java properly. Many bank teams still run on it, and it gave me a head start.",
+    "isDemo": true,
+    "openToChat": false
+  },
+  {
+    "id": "traj_25",
+    "userId": "senior_25",
+    "name": "Ruby Clarke",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "society",
+        "label": "Joined the AI society"
+      },
+      {
+        "year": 1,
+        "kind": "hackathon",
+        "label": "GreatUniHack: built a CV app for medicine labels"
+      },
+      {
+        "year": 2,
+        "kind": "project",
+        "label": "Open-source contribution to a medical imaging library"
+      },
+      {
+        "year": 3,
+        "kind": "placement",
+        "label": "Year in industry at a Manchester health-tech startup"
+      },
+      {
+        "year": 4,
+        "kind": "first-role",
+        "label": "ML engineer at a health-tech startup"
+      }
+    ],
+    "outcomeRole": "ML engineer at a Manchester health-tech startup",
+    "advice": "Say yes to the boring data jobs on placement. That's where I learned how real ML systems work.",
+    "isDemo": true,
+    "openToChat": true
+  },
+  {
+    "id": "traj_26",
+    "userId": "senior_26",
+    "name": "Vikram Iyer",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "society",
+        "label": "Joined the Computer Science society"
+      },
+      {
+        "year": 1,
+        "kind": "project",
+        "label": "Deployed a society website on AWS"
+      },
+      {
+        "year": 2,
+        "kind": "internship",
+        "label": "Summer internship at a hosting company"
+      },
+      {
+        "year": 3,
+        "kind": "module-choice",
+        "label": "Chose Cloud Computing and Networks modules"
+      },
+      {
+        "year": 4,
+        "kind": "first-role",
+        "label": "Site reliability engineer at a cloud company"
+      }
+    ],
+    "outcomeRole": "SRE at a cloud company",
+    "advice": "Learn to read logs and metrics calmly. Being the calm person in an incident got me hired.",
+    "isDemo": true,
+    "openToChat": true
+  },
+  {
+    "id": "traj_27",
+    "userId": "senior_27",
+    "name": "Hana Yilmaz",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "project",
+        "label": "Built a spending tracker in Excel then Python"
+      },
+      {
+        "year": 2,
+        "kind": "society",
+        "label": "Ran the Data Science society's pandas workshop"
+      },
+      {
+        "year": 3,
+        "kind": "placement",
+        "label": "Placement at a fashion retailer's insights team"
+      },
+      {
+        "year": 4,
+        "kind": "first-role",
+        "label": "Data analyst at a retailer"
+      }
+    ],
+    "outcomeRole": "Data analyst at a retailer",
+    "advice": "Practise explaining charts to non-technical friends. That's most of the job.",
+    "isDemo": true,
+    "openToChat": false
+  },
+  {
+    "id": "traj_28",
+    "userId": "senior_28",
+    "name": "Ethan Shaw",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "society",
+        "label": "Joined the Game Development society"
+      },
+      {
+        "year": 1,
+        "kind": "hackathon",
+        "label": "Game jam: 48-hour puzzle game"
+      },
+      {
+        "year": 2,
+        "kind": "project",
+        "label": "Open-source contribution to a Godot plugin"
+      },
+      {
+        "year": 3,
+        "kind": "internship",
+        "label": "Summer internship at a games studio"
+      },
+      {
+        "year": 4,
+        "kind": "first-role",
+        "label": "Software engineer at a games studio"
+      }
+    ],
+    "outcomeRole": "Graduate software engineer at a games studio",
+    "advice": "Finish small games instead of starting big ones. A finished jam game beats an unfinished epic.",
+    "isDemo": true,
+    "openToChat": true
+  },
+  {
+    "id": "traj_29",
+    "userId": "senior_29",
+    "name": "Layla Karim",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "hackathon",
+        "label": "Hackathon: stock-news sentiment app"
+      },
+      {
+        "year": 1,
+        "kind": "society",
+        "label": "Joined the Fintech society"
+      },
+      {
+        "year": 2,
+        "kind": "module-choice",
+        "label": "Chose Machine Learning modules"
+      },
+      {
+        "year": 3,
+        "kind": "placement",
+        "label": "Placement in an MLOps team at a bank"
+      },
+      {
+        "year": 4,
+        "kind": "project",
+        "label": "Final-year project on model monitoring"
+      },
+      {
+        "year": 5,
+        "kind": "first-role",
+        "label": "ML engineer at a fintech"
+      }
+    ],
+    "outcomeRole": "ML engineer at a fintech",
+    "advice": "MLOps sounds advanced, but it's mostly good habits. Version your data and your experiments from week one.",
+    "isDemo": true,
+    "openToChat": true
+  },
+  {
+    "id": "traj_30",
+    "userId": "senior_30",
+    "name": "George Evans",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "society",
+        "label": "Joined the Computer Science society"
+      },
+      {
+        "year": 2,
+        "kind": "hackathon",
+        "label": "Hackathon: accessibility checker for web forms"
+      },
+      {
+        "year": 2,
+        "kind": "internship",
+        "label": "Spring insight week at a bank"
+      },
+      {
+        "year": 3,
+        "kind": "project",
+        "label": "Built a microservices demo with Docker"
+      },
+      {
+        "year": 4,
+        "kind": "first-role",
+        "label": "Software engineer at a bank"
+      }
+    ],
+    "outcomeRole": "Software engineer at a bank",
+    "advice": "Go to the careers fair in first year, just to listen. It took the pressure off in second year.",
+    "isDemo": true,
+    "openToChat": false
+  },
+  {
+    "id": "traj_31",
+    "userId": "senior_31",
+    "name": "Yui Tanaka",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "project",
+        "label": "Built a handwriting recogniser in first year"
+      },
+      {
+        "year": 2,
+        "kind": "module-choice",
+        "label": "Chose Deep Learning and Computer Vision modules"
+      },
+      {
+        "year": 2,
+        "kind": "internship",
+        "label": "Summer research internship in medical imaging"
+      },
+      {
+        "year": 3,
+        "kind": "module-choice",
+        "label": "Third-year research project on segmentation"
+      },
+      {
+        "year": 4,
+        "kind": "first-role",
+        "label": "Started a PhD in ML (medical imaging)"
+      }
+    ],
+    "outcomeRole": "PhD in ML",
+    "advice": "Try a research internship before committing to a PhD. It helped me know it was right for me.",
+    "isDemo": true,
+    "openToChat": true
+  },
+  {
+    "id": "traj_32",
+    "userId": "senior_32",
+    "name": "Tunde Adebayo",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "hackathon",
+        "label": "GreatUniHack: built a campus food-sharing app"
+      },
+      {
+        "year": 2,
+        "kind": "project",
+        "label": "Kept building the app with the hackathon team"
+      },
+      {
+        "year": 2,
+        "kind": "society",
+        "label": "Joined the Entrepreneurs society"
+      },
+      {
+        "year": 3,
+        "kind": "internship",
+        "label": "Summer at a university incubator"
+      },
+      {
+        "year": 4,
+        "kind": "first-role",
+        "label": "Founded a startup"
+      }
+    ],
+    "outcomeRole": "Founded a startup",
+    "advice": "Hackathon teams make great co-founders. Mine came from a GreatUniHack team.",
+    "isDemo": true,
+    "openToChat": false
+  },
+  {
+    "id": "traj_33",
+    "userId": "senior_33",
+    "name": "Maya Desai",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "society",
+        "label": "Joined Women in Computing"
+      },
+      {
+        "year": 1,
+        "kind": "hackathon",
+        "label": "GreatUniHack: built a CV app for wound photos"
+      },
+      {
+        "year": 2,
+        "kind": "project",
+        "label": "Open-source contribution to a FHIR data library"
+      },
+      {
+        "year": 3,
+        "kind": "placement",
+        "label": "Placement at a health-tech startup in Manchester"
+      },
+      {
+        "year": 4,
+        "kind": "module-choice",
+        "label": "Final-year project on clinical NLP"
+      },
+      {
+        "year": 5,
+        "kind": "first-role",
+        "label": "ML engineer at a health-tech startup"
+      }
+    ],
+    "outcomeRole": "ML engineer at a Manchester health-tech startup",
+    "advice": "Find a podmate who is good at what you're bad at. We swapped Python and SQL lessons all of second year.",
+    "isDemo": true,
+    "openToChat": true
+  },
+  {
+    "id": "traj_34",
+    "userId": "senior_34",
+    "name": "Oscar Lindgren",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "project",
+        "label": "Scraped and analysed second-hand book prices"
+      },
+      {
+        "year": 2,
+        "kind": "society",
+        "label": "Joined the Data Science society"
+      },
+      {
+        "year": 2,
+        "kind": "internship",
+        "label": "Summer internship at an online grocer"
+      },
+      {
+        "year": 3,
+        "kind": "module-choice",
+        "label": "Chose Databases and Data Engineering modules"
+      },
+      {
+        "year": 4,
+        "kind": "first-role",
+        "label": "Analytics engineer at a retailer"
+      }
+    ],
+    "outcomeRole": "Analytics engineer at a retailer",
+    "advice": "dbt and SQL got me further than any fancy ML course. Learn the boring tools well.",
+    "isDemo": true,
+    "openToChat": false
+  },
+  {
+    "id": "traj_35",
+    "userId": "senior_35",
+    "name": "Chiara Romano",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "society",
+        "label": "Joined the Computer Science society"
+      },
+      {
+        "year": 1,
+        "kind": "hackathon",
+        "label": "Hackathon: savings goals app"
+      },
+      {
+        "year": 2,
+        "kind": "project",
+        "label": "Open-source contribution to a React component library"
+      },
+      {
+        "year": 3,
+        "kind": "internship",
+        "label": "Summer internship at a fintech"
+      },
+      {
+        "year": 4,
+        "kind": "first-role",
+        "label": "Software engineer at a fintech"
+      }
+    ],
+    "outcomeRole": "Software engineer at a fintech",
+    "advice": "Code review is a skill. Reviewing others' pull requests in my society made my own code much better.",
+    "isDemo": true,
+    "openToChat": false
+  },
+  {
+    "id": "traj_36",
+    "userId": "senior_36",
+    "name": "Nathan Hughes",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "project",
+        "label": "Built a football stats scraper"
+      },
+      {
+        "year": 2,
+        "kind": "society",
+        "label": "Joined the Sports Analytics society"
+      },
+      {
+        "year": 3,
+        "kind": "module-choice",
+        "label": "Chose Statistics and Machine Learning modules"
+      },
+      {
+        "year": 3,
+        "kind": "internship",
+        "label": "Summer internship at a sports data company"
+      },
+      {
+        "year": 4,
+        "kind": "first-role",
+        "label": "Data analyst at a football club"
+      }
+    ],
+    "outcomeRole": "Data analyst at a football club",
+    "advice": "Pick data you're curious about. My football stats hobby turned into my job.",
+    "isDemo": true,
+    "openToChat": false
+  },
+  {
+    "id": "traj_37",
+    "userId": "senior_37",
+    "name": "Priyanka Nair",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "society",
+        "label": "Joined the AI society"
+      },
+      {
+        "year": 1,
+        "kind": "project",
+        "label": "Built a posture-detection app with a webcam"
+      },
+      {
+        "year": 2,
+        "kind": "hackathon",
+        "label": "Hackathon: NHS waiting-time predictor"
+      },
+      {
+        "year": 3,
+        "kind": "internship",
+        "label": "Summer internship at a Manchester health-tech startup"
+      },
+      {
+        "year": 4,
+        "kind": "first-role",
+        "label": "ML engineer at a health-tech startup"
+      }
+    ],
+    "outcomeRole": "ML engineer at a Manchester health-tech startup",
+    "advice": "Write short blog posts about what you learn. Recruiters found me through one about Docker for ML.",
+    "isDemo": true,
+    "openToChat": true
+  },
+  {
+    "id": "traj_38",
+    "userId": "senior_38",
+    "name": "Kieran Doyle",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "society",
+        "label": "Joined the Entrepreneurs society"
+      },
+      {
+        "year": 1,
+        "kind": "hackathon",
+        "label": "Hackathon: volunteering-match app"
+      },
+      {
+        "year": 2,
+        "kind": "project",
+        "label": "Built an MVP with two friends"
+      },
+      {
+        "year": 3,
+        "kind": "placement",
+        "label": "Year in industry at a startup"
+      },
+      {
+        "year": 4,
+        "kind": "first-role",
+        "label": "Founded a climate-data startup"
+      }
+    ],
+    "outcomeRole": "Founded a startup",
+    "advice": "Keep your startup idea small enough to test in a month. Momentum matters more than polish.",
+    "isDemo": true,
+    "openToChat": true
+  },
+  {
+    "id": "traj_39",
+    "userId": "senior_39",
+    "name": "Amina Yusuf",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "society",
+        "label": "Joined the maths society"
+      },
+      {
+        "year": 2,
+        "kind": "project",
+        "label": "Reproduced a fairness paper as a summer project"
+      },
+      {
+        "year": 3,
+        "kind": "module-choice",
+        "label": "Third-year research project on ML fairness"
+      },
+      {
+        "year": 4,
+        "kind": "first-role",
+        "label": "Started a PhD in ML at Manchester"
+      }
+    ],
+    "outcomeRole": "PhD in ML",
+    "advice": "Your first research idea doesn't have to be original. Reproducing a paper well is a great start.",
+    "isDemo": true,
+    "openToChat": false
+  },
+  {
+    "id": "traj_40",
+    "userId": "senior_40",
+    "name": "Ben Carter",
+    "programmeId": "uom-bsc-cs",
+    "steps": [
+      {
+        "year": 1,
+        "kind": "project",
+        "label": "Built a budget-tracking spreadsheet tool"
+      },
+      {
+        "year": 1,
+        "kind": "society",
+        "label": "Joined the Data Science society"
+      },
+      {
+        "year": 2,
+        "kind": "module-choice",
+        "label": "Chose Statistics and Databases modules"
+      },
+      {
+        "year": 3,
+        "kind": "placement",
+        "label": "Placement at a high-street retailer"
+      },
+      {
+        "year": 4,
+        "kind": "first-role",
+        "label": "Data analyst at a retailer"
+      }
+    ],
+    "outcomeRole": "Data analyst at a retailer",
+    "advice": "Ask your placement manager for a project you can talk about publicly. It made my CV so much stronger.",
+    "isDemo": true,
+    "openToChat": true
+  }
+]
