@@ -5,8 +5,7 @@ export function readViewerId(cookie: string = typeof document === "undefined" ? 
   const m = cookie.match(/(?:^|;\s*)ks_uid=([^;]+)/);
   return m ? decodeURIComponent(m[1]) : "aisha";
 }
+const noopSubscribe = () => () => {};
 export function useViewerId(): string {
-  const [id, setId] = React.useState("aisha");
-  React.useEffect(() => { setId(readViewerId()); }, []);
-  return id;
+  return React.useSyncExternalStore(noopSubscribe, () => readViewerId(), () => "aisha");
 }
