@@ -1,0 +1,98 @@
+[
+  {
+    "id": "priya", "name": "Priya Shah", "githubLogin": "priya-demo", "programmeId": "uom-bsc-cs", "year": 2, "startedAt": "2025-09-22",
+    "badges": ["first-gen"],
+    "interests": ["computer vision", "open source"],
+    "availability": ["tue-eve", "sat-am"],
+    "isDemo": true,
+    "dna": { "targetRoles": ["ml-engineer"], "timelineLabel": "Placement 2027/28", "targetDate": "2027-06-01", "hoursPerWeek": 10, "theoryPractice": 60, "formats": ["projects"], "budget": "free", "constraints": [], "accessibility": [], "language": "en" }
+  },
+  {
+    "id": "tom", "name": "Tom Okafor", "githubLogin": "tom-okafor-demo", "programmeId": "uom-bsc-cs", "year": 2, "startedAt": "2025-09-22",
+    "badges": ["first-gen"],
+    "interests": ["healthcare data", "cloud infrastructure"],
+    "availability": ["tue-eve", "thu-eve"],
+    "isDemo": true,
+    "dna": { "targetRoles": ["ml-engineer"], "timelineLabel": "Summer internship 2027", "targetDate": "2027-06-15", "hoursPerWeek": 8, "theoryPractice": 65, "formats": ["projects", "docs"], "budget": "free", "constraints": ["part-time job"], "accessibility": [], "language": "en" }
+  },
+  {
+    "id": "mei", "name": "Mei Lin", "githubLogin": "mei-lin-demo", "programmeId": "uom-bsc-cs", "year": 1, "startedAt": "2026-09-21",
+    "badges": ["new-to-uni", "international"],
+    "interests": ["accessible design", "computer vision"],
+    "availability": ["tue-eve", "sat-am", "wed-eve"],
+    "isDemo": true,
+    "dna": { "targetRoles": ["ml-engineer"], "timelineLabel": "Placement applications Sept 2027", "targetDate": "2027-09-01", "hoursPerWeek": 8, "theoryPractice": 55, "formats": ["projects", "video"], "budget": "free", "constraints": [], "accessibility": [], "language": "en" }
+  },
+  {
+    "id": "jakub", "name": "Jakub Nowak", "githubLogin": "jakub-nowak-demo", "programmeId": "uom-bsc-cs", "year": 3, "startedAt": "2024-09-23",
+    "badges": [],
+    "interests": ["distributed systems", "fintech"],
+    "availability": ["mon-eve", "wed-eve"],
+    "isDemo": true,
+    "dna": { "targetRoles": ["software-engineer"], "timelineLabel": "Graduate role 2027", "targetDate": "2027-09-01", "hoursPerWeek": 6, "theoryPractice": 70, "formats": ["docs", "projects"], "budget": "paid-ok", "constraints": [], "accessibility": [], "language": "en" }
+  },
+  {
+    "id": "sara", "name": "Sara Haddad", "githubLogin": "sara-haddad-demo", "programmeId": "uom-bsc-cs", "year": 1, "startedAt": "2026-09-21",
+    "badges": ["new-to-uni"],
+    "interests": ["climate data", "data visualisation"],
+    "availability": ["wed-eve", "sun-pm"],
+    "isDemo": true,
+    "dna": { "targetRoles": ["data-analyst"], "timelineLabel": "Summer internship 2027", "targetDate": "2027-06-15", "hoursPerWeek": 6, "theoryPractice": 50, "formats": ["video", "projects"], "budget": "free", "constraints": ["commuting"], "accessibility": ["dyslexia-friendly"], "language": "en" }
+  },
+  {
+    "id": "leo", "name": "Leo Fischer", "githubLogin": "leo-fischer-demo", "programmeId": "uom-bsc-cs", "year": 2, "startedAt": "2025-09-22",
+    "badges": [],
+    "interests": ["game dev", "graphics programming"],
+    "availability": ["mon-eve", "fri-pm"],
+    "isDemo": true,
+    "dna": { "targetRoles": ["software-engineer"], "timelineLabel": "Placement 2027/28", "targetDate": "2027-06-01", "hoursPerWeek": 10, "theoryPractice": 80, "formats": ["projects"], "budget": "free", "constraints": [], "accessibility": [], "language": "en" }
+  },
+  {
+    "id": "amara", "name": "Amara Nwosu", "githubLogin": "amara-nwosu-demo", "programmeId": "uom-bsc-cs", "year": 3, "startedAt": "2024-09-23",
+    "badges": [],
+    "interests": ["NLP", "fintech"],
+    "availability": ["thu-eve", "sun-pm"],
+    "isDemo": true,
+    "dna": { "targetRoles": ["ml-engineer"], "timelineLabel": "Graduate role 2027", "targetDate": "2027-09-01", "hoursPerWeek": 8, "theoryPractice": 45, "formats": ["docs", "pair"], "budget": "free", "constraints": [], "accessibility": [], "language": "en" }
+  },
+  {
+    "id": "dev", "name": "Dev Patel", "githubLogin": "dev-patel-demo", "programmeId": "uom-bsc-cs", "year": 3, "startedAt": "2024-09-23",
+    "badges": [],
+    "interests": ["fintech", "developer tooling"],
+    "availability": ["mon-eve", "thu-eve"],
+    "isDemo": true,
+    "dna": { "targetRoles": ["software-engineer"], "timelineLabel": "Graduate role 2027", "targetDate": "2027-09-01", "hoursPerWeek": 6, "theoryPractice": 75, "formats": ["projects", "pair"], "budget": "paid-ok", "constraints": ["part-time job"], "accessibility": [], "language": "en" }
+  },
+  {
+    "id": "hannah", "name": "Hannah Brooks", "githubLogin": "hannah-brooks-demo", "programmeId": "uom-bsc-cs", "year": 2, "startedAt": "2025-09-22",
+    "badges": [],
+    "interests": ["sports analytics", "data visualisation"],
+    "availability": ["mon-eve", "sat-pm"],
+    "isDemo": true,
+    "dna": { "targetRoles": ["data-analyst"], "timelineLabel": "Summer internship 2027", "targetDate": "2027-06-15", "hoursPerWeek": 7, "theoryPractice": 60, "formats": ["video", "docs"], "budget": "free", "constraints": ["caring"], "accessibility": [], "language": "en" }
+  },
+  {
+    "id": "yusuf", "name": "Yusuf Ali", "githubLogin": "yusuf-ali-demo", "programmeId": "uom-bsc-cs", "year": 2, "startedAt": "2025-09-22",
+    "badges": [],
+    "interests": ["robotics", "reinforcement learning"],
+    "availability": ["wed-eve", "sun-am"],
+    "isDemo": true,
+    "dna": { "targetRoles": ["ml-engineer"], "timelineLabel": "Placement 2027/28", "targetDate": "2027-06-01", "hoursPerWeek": 9, "theoryPractice": 40, "formats": ["docs", "projects"], "budget": "free", "constraints": [], "accessibility": [], "language": "en" }
+  },
+  {
+    "id": "chloe", "name": "Chloé Martin", "githubLogin": "chloe-martin-demo", "programmeId": "uom-bsc-cs", "year": 3, "startedAt": "2024-09-23",
+    "badges": ["international"],
+    "interests": ["public health", "survey data"],
+    "availability": ["thu-eve", "sun-am"],
+    "isDemo": true,
+    "dna": { "targetRoles": ["data-analyst"], "timelineLabel": "Graduate role 2027", "targetDate": "2027-09-01", "hoursPerWeek": 6, "theoryPractice": 55, "formats": ["docs"], "budget": "free", "constraints": [], "accessibility": [], "language": "fr" }
+  },
+  {
+    "id": "ollie", "name": "Ollie Grant", "githubLogin": "ollie-grant-demo", "programmeId": "uom-bsc-cs", "year": 1, "startedAt": "2026-09-21",
+    "badges": ["new-to-uni"],
+    "interests": ["game dev", "web apps"],
+    "availability": ["tue-eve", "fri-pm"],
+    "isDemo": true,
+    "dna": { "targetRoles": ["software-engineer"], "timelineLabel": "Summer internship 2028", "targetDate": "2028-06-15", "hoursPerWeek": 8, "theoryPractice": 85, "formats": ["video", "projects"], "budget": "free", "constraints": [], "accessibility": [], "language": "en" }
+  }
+]

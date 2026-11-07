@@ -1,0 +1,34 @@
+[
+  {
+    "name": "PyData Manchester",
+    "whyRelevant": "A friendly local meetup where people share practical Python and machine learning work, including PyTorch and model deployment talks that match your Docker and PyTorch gaps.",
+    "publicUrl": "https://www.meetup.com/pydata-manchester/",
+    "source": "web",
+    "suggestedQuestion": "What's one thing you wish you'd known before deploying your first PyTorch model?",
+    "draftMessage": "Hi! I'm Aisha, a first-year CS student at Manchester learning PyTorch and Docker through a peer project (an image captioning API for alt text). I'd love to come to the next meetup. Is there a talk or a regular attendee you'd recommend for someone just starting with model deployment?"
+  },
+  {
+    "name": "UniCS (University of Manchester Computer Science Society)",
+    "whyRelevant": "The student-run CS society behind GreatUniHack. Its members include second and third years who did ML placements and are happy to explain how they prepared.",
+    "publicUrl": "https://unicsmcr.com/",
+    "source": "web",
+    "suggestedQuestion": "Who in the society did an ML placement and might share how they prepared for it?",
+    "draftMessage": "Hi UniCS team! I'm a first-year aiming for an ML engineering placement. Do you run any sessions where older students talk about placements, or could you point me to someone happy to share their experience over a coffee?"
+  },
+  {
+    "name": "PyTorch Tutorials maintainers",
+    "whyRelevant": "The official tutorials repo has clearly labelled starter issues. Small doc fixes there are a gentle way to learn PyTorch and open-source review at the same time.",
+    "publicUrl": "https://github.com/pytorch/tutorials",
+    "source": "github",
+    "suggestedQuestion": "Is there a beginner-friendly issue in the computer vision tutorials that a first-time contributor could take on?",
+    "draftMessage": "Hi! I'm a student learning PyTorch and I'd like to make my first open-source contribution. I noticed the vision tutorials and would be glad to help with a small docs fix. Is there an issue you'd suggest for a first-timer?"
+  },
+  {
+    "name": "Hugging Face Transformers community",
+    "whyRelevant": "Transformers hosts the image-captioning models your pod's VisionAid project builds on, and its community answers questions about fine-tuning vision-language models.",
+    "publicUrl": "https://github.com/huggingface/transformers",
+    "source": "github",
+    "suggestedQuestion": "Which small captioning model is the most practical to fine-tune on a laptop for an accessibility project?",
+    "draftMessage": "Hi! My study pod is building an open-source alt-text captioning API for accessibility. We're beginners with vision-language models. Which small captioning checkpoint would you suggest we start fine-tuning on a laptop CPU?"
+  }
+]
