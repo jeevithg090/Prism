@@ -61,10 +61,16 @@ export function parseUnitsFromText(text: string): RawUnit[] {
     if (!line) continue;
     const code = line.match(CODE_RE);
     if (code && line.length < 160) {
-      const title = line.replace(code[0], "").replace(/^[\s:–—|-]+|[\s:–—|-]+$/g, "").replace(/\(.*?credits?\)/i, "").trim();
-      const credits = line.match(/(\d{2})\s*credits?/i);
+      // Markdown table rows ("| COMP10120 | First Year Team Project | | 20 | Mandatory |") are split into cells,
+      // so the title is the name cell only and credits / compulsory come from their own cells.
+      const cells = line.includes("|") ? line.split("|").map((c) => c.trim()).filter(Boolean) : [];
+      const nameCell = cells.find((c) => !CODE_RE.test(c) && !/^\d{1,3}$/.test(c) && !/^(mandatory|compulsory|optional|core|elective)$/i.test(c));
+      const title = (nameCell ?? line.replace(code[0], "").replace(/^[\s:–—|-]+|[\s:–—|-]+$/g, "")).replace(/\(.*?credits?\)/i, "").trim();
+      const credits = line.match(/(\d{2})\s*credits?/i) ?? (cells.find((c) => /^(10|15|20|30|40|60)$/.test(c)) ?? "").match(/(\d{2})/);
+      const status = cells.find((c) => /^(mandatory|compulsory|core|optional|elective)$/i.test(c));
       const sem = line.match(/(semester\s*\d|full[-\s]?year|semesters?\s*1\s*(?:and|&)\s*2)/i);
-      cur = { code: code[1], title: title || code[1], credits: credits ? Number(credits[1]) : undefined, semester: sem?.[1], topics: [], learning_outcomes: [] };
+      cur = { code: code[1], title: title || code[1], credits: credits ? Number(credits[1]) : undefined, semester: sem?.[1], topics: [], learning_outcomes: [],
+        ...(status ? { compulsory: /mandatory|compulsory|core/i.test(status) } : {}) };
       units.push(cur);
       mode = "topics";
       continue;
