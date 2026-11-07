@@ -3,7 +3,9 @@ import fs from "node:fs";
 import path from "node:path";
 import { nanoid } from "nanoid";
 import { z } from "zod";
-import { emit, newRunId } from "@/lib/agents/events";
+import { newRunId } from "@/lib/agents/events";
+import { noDemographicSignals } from "@/lib/agents/guardrails";
+import { runAgent, type AgentCtx } from "@/lib/agents/harness";
 import { loadGraph } from "@/lib/graph/build";
 import { cosine, embed, llmJSON } from "@/lib/llm";
 import { MatchExplanationZ, PodZ, StudentSkillsZ, skillName, type StudentSkills } from "@/lib/schemas/community";
@@ -14,6 +16,8 @@ import type { BadgeId, BridgeMap, MatchExplanation, Pod, PodMember, Profile, Ski
 // The algorithm is deterministic and pure; only the explanation polish uses the LLM.
 // Matching never uses demographic fields: only skills, interests, availability, direction,
 // and the near-peer mix (a newcomer plus someone in year 2 or later).
+// Governed by the agent harness: candidates are minimised before scoring (only the tenure badge
+// survives) and the noDemographicSignals guardrail verifies it on every run.
 
 export type CandidateSkills = {
   userId: string;
@@ -370,56 +374,69 @@ export async function listPodsForUser(userId: string): Promise<Pod[]> {
 }
 
 // ---------- the agent ----------
+/** Data minimisation: the scoring view keeps only the tenure badge (`new-to-uni`) for the near-peer mix rule. */
+export function minimiseForScoring(c: CandidateSkills): CandidateSkills {
+  return { ...c, badges: c.badges.filter((b) => b === "new-to-uni") };
+}
+
+export const MATCH_PURPOSE = "Form a complementary study pod from skills, interests and availability";
+
 export async function matchPod(input: { userId: string; runId?: string }): Promise<Pod> {
   const runId = input.runId ?? newRunId();
   const demo = process.env.DEMO_MODE === "true";
-  try {
-    return await runMatch(input.userId, runId, demo);
-  } catch (e) {
-    if (e instanceof NotFoundError) {
-      emit({ runId, agent: "matchmaker", status: "error", message: `Matchmaker: no profile for ${input.userId}` });
-      throw e;
-    }
-    const fixture = demo ? readDemoPod() : null;
-    emit({
-      runId,
-      agent: "matchmaker",
-      status: "error",
-      message: fixture ? "Matchmaker hit a problem: showing the demo pod" : "Matchmaker hit a problem",
-    });
-    if (fixture) return fixture;
-    throw e;
-  }
+  const { output } = await runAgent<Pod>({
+    agent: "matchmaker",
+    runId,
+    purpose: MATCH_PURPOSE,
+    input: { userId: input.userId, demo },
+    outputSchema: PodZ,
+    guardrails: [noDemographicSignals<Pod>()],
+    run: (ctx) => runMatch(input.userId, ctx, demo),
+    fallback: (err, ctx) => {
+      if (err instanceof NotFoundError) throw err; // a missing profile is a 404, never masked
+      const fixture = demo ? readDemoPod() : null;
+      if (!fixture) throw err;
+      ctx.done("Matchmaker hit a problem: showing the demo pod", { podId: fixture.id, score: fixture.score });
+      return fixture;
+    },
+  });
+  return output;
 }
 
-async function runMatch(userId: string, runId: string, demo: boolean): Promise<Pod> {
+async function runMatch(userId: string, ctx: AgentCtx, demo: boolean): Promise<Pod> {
   const store = getStore();
-  const profile = await store.get<Profile>("profiles", userId);
-  if (!profile) throw new NotFoundError(`No profile for ${userId}`);
+  const { user, others } = await ctx.step(
+    "load candidates",
+    async () => {
+      const profile = await store.get<Profile>("profiles", userId);
+      if (!profile) throw new NotFoundError(`No profile for ${userId}`);
 
-  const seedSkills = loadStudentSkills();
-  const roleId = profile.dna?.targetRoles?.[0] ?? "ml-engineer";
-  const map = await loadUserMap(userId, roleId);
-  const user = map ? buildCandidate(profile, map) : candidateFromSeed(profile, seedSkills[userId]);
+      const seedSkills = loadStudentSkills();
+      const roleId = profile.dna?.targetRoles?.[0] ?? "ml-engineer";
+      const map = await loadUserMap(userId, roleId);
+      const me = map ? buildCandidate(profile, map) : candidateFromSeed(profile, seedSkills[userId]);
 
-  const profiles = await store.list<Profile>("profiles");
-  const seen = new Set<string>([userId]);
-  const others: CandidateSkills[] = [];
-  for (const p of profiles) {
-    if (!p?.id || seen.has(p.id)) continue;
-    seen.add(p.id);
-    if (seedSkills[p.id]) {
-      others.push(candidateFromSeed(p, seedSkills[p.id]));
-      continue;
-    }
-    // Real (non-seeded) users count too once they have a Bridge Map.
-    const role = p.dna?.targetRoles?.[0];
-    const m = role ? await loadUserMap(p.id, role) : null;
-    if (m?.nodes?.length) others.push(buildCandidate(p, m));
-  }
-  others.sort(byUserId);
-
-  emit({ runId, agent: "matchmaker", status: "started", message: `Matchmaker: comparing ${others.length} students`, data: { candidates: others.length } });
+      const profiles = await store.list<Profile>("profiles");
+      const seen = new Set<string>([userId]);
+      const pool: CandidateSkills[] = [];
+      for (const p of profiles) {
+        if (!p?.id || seen.has(p.id)) continue;
+        seen.add(p.id);
+        if (seedSkills[p.id]) {
+          pool.push(candidateFromSeed(p, seedSkills[p.id]));
+          continue;
+        }
+        // Real (non-seeded) users count too once they have a Bridge Map.
+        const role = p.dna?.targetRoles?.[0];
+        const m = role ? await loadUserMap(p.id, role) : null;
+        if (m?.nodes?.length) pool.push(buildCandidate(p, m));
+      }
+      pool.sort(byUserId);
+      return { user: minimiseForScoring(me), others: pool.map(minimiseForScoring) };
+    },
+    (r) => ({ message: `Matchmaker: comparing ${r.others.length} students`, data: { candidates: r.others.length } }),
+  );
+  ctx.memo.scoringInputs = [user, ...others]; // what the guardrail checks: exactly what was scored
   if (!others.length) throw new Error("No other students to match with yet");
 
   const interestSim = demo ? interestJaccard : await embeddingSim([user, ...others]);
@@ -429,16 +446,12 @@ async function runMatch(userId: string, runId: string, demo: boolean): Promise<P
 
   const partner = team[1];
   const fills = user.gaps.filter((g) => partner.proven.includes(g)).slice(0, TOP_N);
-  emit({
-    runId,
-    agent: "matchmaker",
-    status: "progress",
-    message: `best partner: ${firstName(partner.userId, names)}${fills.length ? ` (fills ${fills.map(skillName).join(", ")})` : ""}`,
-    data: { partnerId: partner.userId, fills, pairScore: scoreTeam([user, partner], opts) },
+  ctx.emit("progress", `best partner: ${firstName(partner.userId, names)}${fills.length ? ` (fills ${fills.map(skillName).join(", ")})` : ""}`, {
+    partnerId: partner.userId, fills, pairScore: scoreTeam([user, partner], opts),
   });
 
   const score = scoreTeam(team, opts);
-  emit({ runId, agent: "matchmaker", status: "progress", message: `pod score ${score.toFixed(2)}`, data: { score, size: team.length, parts: scoreParts(team, opts) } });
+  ctx.emit("progress", `pod score ${score.toFixed(2)}`, { score, size: team.length, parts: scoreParts(team, opts) });
 
   // DEMO_MODE: when the live match equals the seeded demo pod, return it under its stable id, so every
   // server instance (serverless functions don't share memory) can resolve it for project / proof calls.
@@ -447,7 +460,9 @@ async function runMatch(userId: string, runId: string, demo: boolean): Promise<P
     const ids = new Set(team.map((t) => t.userId));
     if (fixture && fixture.members.length === ids.size && fixture.members.every((m) => ids.has(m.userId))) {
       await store.upsert("pods", fixture.id, fixture, userId);
-      emit({ runId, agent: "matchmaker", status: "done", message: `${fixture.name} is ready: ${team.map((t) => firstName(t.userId, names)).join(", ")}` });
+      ctx.done(`${fixture.name} is ready: ${team.map((t) => firstName(t.userId, names)).join(", ")}`, {
+        podId: fixture.id, score: fixture.score, memberIds: team.map((t) => t.userId),
+      });
       return fixture;
     }
   }
@@ -455,7 +470,7 @@ async function runMatch(userId: string, runId: string, demo: boolean): Promise<P
   const skills = learnsTeaches(team);
   const members: PodMember[] = skills.map((m) => ({ ...m, role: roleLabel(m.learns, m.teaches) }));
   const templates = templateExplanations(userId, skills, names);
-  const explanations = demo ? templates : await polishExplanations(templates, skills, runId);
+  const explanations = demo ? templates : await polishExplanations(templates, skills, ctx.runId);
 
   const pod: Pod = PodZ.parse({
     id: `pod_${nanoid(6)}`,
@@ -467,12 +482,8 @@ async function runMatch(userId: string, runId: string, demo: boolean): Promise<P
   });
   await store.upsert("pods", pod.id, pod, userId);
 
-  emit({
-    runId,
-    agent: "matchmaker",
-    status: "done",
-    message: `${pod.name} is ready: ${team.map((t) => firstName(t.userId, names)).join(", ")}`,
-    data: { podId: pod.id, score, memberIds: team.map((t) => t.userId) },
+  ctx.done(`${pod.name} is ready: ${team.map((t) => firstName(t.userId, names)).join(", ")}`, {
+    podId: pod.id, score, memberIds: team.map((t) => t.userId),
   });
   return pod;
 }

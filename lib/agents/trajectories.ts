@@ -3,7 +3,8 @@ import "server-only";
 import fs from "node:fs";
 import path from "node:path";
 import { cosine, embed } from "@/lib/llm";
-import { emit } from "@/lib/agents/events";
+import { maxItems } from "@/lib/agents/guardrails";
+import { runAgent } from "@/lib/agents/harness";
 import { getStore } from "@/lib/store";
 import { TrajectoryZ } from "@/lib/schemas/community";
 import type { Profile, Trajectory } from "@/lib/types";
@@ -80,53 +81,62 @@ export function jaccard(a: string, b: string): number {
 
 const round3 = (n: number) => Math.round(n * 1000) / 1000;
 
+export type SimilarTrajectory = { trajectory: Trajectory; similarity: number };
+
 export async function similarTrajectories(
   profile: Profile,
   all: Trajectory[],
   limit = 5,
   runId?: string,
-): Promise<{ trajectory: Trajectory; similarity: number }[]> {
+): Promise<SimilarTrajectory[]> {
   const targetRole = profile.dna.targetRoles[0];
-  if (runId) {
-    emit({ runId, agent: "trajectories", status: "started", message: `Comparing your path with ${all.length} seniors' journeys`, data: { candidates: all.length } });
-  }
-  if (!all.length) {
-    if (runId) emit({ runId, agent: "trajectories", status: "done", message: "No journeys to compare yet", data: { candidates: 0, returned: 0 } });
-    return [];
-  }
+  const cap = Math.max(0, limit);
+  const { output } = await runAgent<SimilarTrajectory[]>({
+    agent: "trajectories",
+    runId,
+    quiet: !runId, // events only when someone is watching this run; the ledger entry is always written
+    purpose: `Comparing your path with ${all.length} seniors' journeys`,
+    startData: { candidates: all.length },
+    input: { userId: profile.id, candidates: all.length, limit: cap },
+    guardrails: [maxItems<SimilarTrajectory[]>(cap)],
+    run: async (ctx) => {
+      if (!all.length) {
+        ctx.done("No journeys to compare yet", { candidates: 0, returned: 0 });
+        return [];
+      }
 
-  const pText = profileText(profile);
-  const tTexts = all.map(trajectoryText);
-  let base: number[];
-  let method: "embedding" | "jaccard" = "embedding";
-  try {
-    const vecs = await embed([pText, ...tTexts]);
-    const [pv, ...tv] = vecs;
-    if (!pv || tv.length !== all.length) throw new Error("embedding count mismatch");
-    base = tv.map((v) => cosine(pv, v));
-  } catch {
-    method = "jaccard";
-    base = tTexts.map((t) => jaccard(pText, t));
-  }
+      const pText = profileText(profile);
+      const tTexts = all.map(trajectoryText);
+      let base: number[];
+      let method: "embedding" | "jaccard" = "embedding";
+      try {
+        const vecs = await embed([pText, ...tTexts]);
+        const [pv, ...tv] = vecs;
+        if (!pv || tv.length !== all.length) throw new Error("embedding count mismatch");
+        base = tv.map((v) => cosine(pv, v));
+      } catch {
+        method = "jaccard";
+        ctx.degraded("embeddings unavailable: ranked by word overlap");
+        base = tTexts.map((t) => jaccard(pText, t));
+      }
 
-  let bonusCount = 0;
-  const scored = all.map((trajectory, i) => {
-    const bonus = outcomeMatchesRole(trajectory.outcomeRole, targetRole) ? OUTCOME_BONUS : 0;
-    if (bonus) bonusCount++;
-    return { trajectory, score: (base[i] ?? 0) + bonus };
+      let bonusCount = 0;
+      const scored = all.map((trajectory, i) => {
+        const bonus = outcomeMatchesRole(trajectory.outcomeRole, targetRole) ? OUTCOME_BONUS : 0;
+        if (bonus) bonusCount++;
+        return { trajectory, score: (base[i] ?? 0) + bonus };
+      });
+      scored.sort((a, b) => b.score - a.score || a.trajectory.id.localeCompare(b.trajectory.id));
+      const top = scored.slice(0, cap).map(({ trajectory, score }) => ({
+        trajectory,
+        similarity: round3(Math.max(0, Math.min(1, score))),
+      }));
+
+      ctx.done(`Found ${top.length} journeys like yours (${bonusCount} reached ${roleName(targetRole) || "your target role"})`, {
+        candidates: all.length, returned: top.length, roleMatches: bonusCount, method, topSimilarity: top[0]?.similarity ?? 0,
+      });
+      return top;
+    },
   });
-  scored.sort((a, b) => b.score - a.score || a.trajectory.id.localeCompare(b.trajectory.id));
-  const top = scored.slice(0, Math.max(0, limit)).map(({ trajectory, score }) => ({
-    trajectory,
-    similarity: round3(Math.max(0, Math.min(1, score))),
-  }));
-
-  if (runId) {
-    emit({
-      runId, agent: "trajectories", status: "done",
-      message: `Found ${top.length} journeys like yours (${bonusCount} reached ${roleName(targetRole) || "your target role"})`,
-      data: { candidates: all.length, returned: top.length, roleMatches: bonusCount, method, topSimilarity: top[0]?.similarity ?? 0 },
-    });
-  }
-  return top;
+  return output;
 }
