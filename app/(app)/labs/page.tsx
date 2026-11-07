@@ -3,7 +3,15 @@ import { createElement } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { FlaskConical, icons, type LucideIcon } from "lucide-react";
-import { AGENT_META, AgentAvatar, EmptyState, PageHeader } from "@/components/keystone";
+import { AgentAvatar, EmptyState, PageHeader } from "@/components/keystone";
+import type { AgentName } from "@/lib/types";
+
+// Server-side names (AGENT_META lives in a "use client" module, so a server component cannot read it).
+const AGENT_NAMES: Record<AgentName, string> = {
+  orchestrator: "Orchestrator", syllabus: "Syllabus agent", skillmap: "Skill map agent", market: "Market agent", trends: "Trends agent",
+  evidence: "Evidence agent", roadmap: "Roadmap agent", matchmaker: "Matchmaker", architect: "Project Architect", techlead: "Tech Lead",
+  trajectories: "Trajectories agent", guides: "Guides agent", voice: "Voice coach", n8n: "n8n automations",
+};
 import { LAB_FEATURES } from "@/lib/features";
 import type { LabFeature, Pillar } from "@/lib/features/types";
 
@@ -25,7 +33,7 @@ function FeatureIcon({ name }: { name: string }) {
 }
 
 function LabCard({ feature }: { feature: LabFeature }) {
-  const agent = AGENT_META[feature.agent] ?? AGENT_META.orchestrator;
+  const agent = { name: AGENT_NAMES[feature.agent] ?? AGENT_NAMES.orchestrator };
   return (
     <li
       data-lab={feature.key}
