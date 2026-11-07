@@ -1,4 +1,6 @@
-// P5 · POST /api/webhooks/github: HMAC-verified GitHub webhook → Socratic PR review → { reviewed }
+// P5 · POST /api/webhooks/github: HMAC-verified GitHub webhook.
+// pull_request opened/synchronize → Socratic PR review; closed+merged on a pod repo → proof of skill.
+import { proofFromPullRequestEvent } from "@/lib/agents/proof";
 import { reviewPullRequest, verifySignature } from "@/lib/agents/techlead";
 import { badRequest, fail, internal, ok } from "@/lib/schemas/community";
 
@@ -15,6 +17,15 @@ export async function POST(req: Request) {
     } catch {
       return badRequest("Body must be JSON");
     }
+    // A merged PR on a pod repo becomes proof (which also writes the pr-merged momentum event, once).
+    // Anything else, including merged PRs we can't map to a pod issue, goes to the Tech Lead as before.
+    let proof = null;
+    try {
+      proof = await proofFromPullRequestEvent(payload);
+    } catch {
+      proof = null;
+    }
+    if (proof) return ok({ reviewed: false, proof });
     return ok(await reviewPullRequest(payload));
   } catch {
     return internal();
