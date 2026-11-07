@@ -51,7 +51,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </Suspense>
       {/* Ask Keystone on every app page; under 768px it rides above the bottom tab bar. */}
       <div className="max-md:[&>button]:bottom-[calc(var(--mobile-nav-height,4rem)+env(safe-area-inset-bottom)+1rem)]">
-        <CoachLauncher />
+        <Suspense fallback={null}>
+          <CoachLauncher />
+        </Suspense>
       </div>
     </Providers>
   );
