@@ -1,0 +1,141 @@
+{
+  "roleId": "data-analyst",
+  "roleName": "Data analyst",
+  "location": "UK",
+  "adsAnalysed": 188,
+  "skills": [
+    {
+      "skillId": "sql",
+      "share": 0.78,
+      "trend": "stable"
+    },
+    {
+      "skillId": "data-visualisation",
+      "share": 0.61
+    },
+    {
+      "skillId": "python",
+      "share": 0.52,
+      "trend": "stable"
+    },
+    {
+      "skillId": "statistics",
+      "share": 0.47
+    },
+    {
+      "skillId": "communication",
+      "share": 0.38
+    },
+    {
+      "skillId": "pandas",
+      "share": 0.29,
+      "trend": "stable"
+    },
+    {
+      "skillId": "databases",
+      "share": 0.2
+    },
+    {
+      "skillId": "machine-learning",
+      "share": 0.14,
+      "trend": "stable"
+    },
+    {
+      "skillId": "git",
+      "share": 0.12
+    },
+    {
+      "skillId": "teamwork",
+      "share": 0.12
+    },
+    {
+      "skillId": "docker",
+      "share": 0.11,
+      "trend": "rising"
+    },
+    {
+      "skillId": "numpy",
+      "share": 0.1
+    },
+    {
+      "skillId": "aws",
+      "share": 0.08,
+      "trend": "stable"
+    },
+    {
+      "skillId": "scikit-learn",
+      "share": 0.08,
+      "trend": "stable"
+    },
+    {
+      "skillId": "llm-apps",
+      "share": 0.06,
+      "trend": "rising"
+    },
+    {
+      "skillId": "cloud-computing",
+      "share": 0.06
+    },
+    {
+      "skillId": "postgresql",
+      "share": 0.05
+    }
+  ],
+  "salary": {
+    "p25": 28000,
+    "median": 33000,
+    "p75": 40000,
+    "currency": "GBP"
+  },
+  "topCompanies": [
+    {
+      "name": "NHS Greater Manchester",
+      "count": 9
+    },
+    {
+      "name": "Co-op",
+      "count": 8
+    },
+    {
+      "name": "Lloyds Banking Group",
+      "count": 7
+    },
+    {
+      "name": "Kellanova",
+      "count": 5
+    },
+    {
+      "name": "THG",
+      "count": 5
+    }
+  ],
+  "sampleAds": [
+    {
+      "title": "Graduate Data Analyst",
+      "company": "Co-op",
+      "url": "https://www.adzuna.co.uk/jobs/search?q=Graduate%20Data%20Analyst%20Co-op&w=Manchester"
+    },
+    {
+      "title": "Data Analyst",
+      "company": "NHS Greater Manchester",
+      "url": "https://www.adzuna.co.uk/jobs/search?q=Data%20Analyst%20NHS%20Greater%20Manchester&w=Manchester"
+    },
+    {
+      "title": "Junior Data Analyst, Insights",
+      "company": "Lloyds Banking Group",
+      "url": "https://www.adzuna.co.uk/jobs/search?q=Junior%20Data%20Analyst%2C%20Insights%20Lloyds%20Banking%20Group&w=Leeds"
+    },
+    {
+      "title": "Commercial Data Analyst",
+      "company": "Kellanova",
+      "url": "https://www.adzuna.co.uk/jobs/search?q=Commercial%20Data%20Analyst%20Kellanova&w=Manchester"
+    },
+    {
+      "title": "Data Analyst, Customer",
+      "company": "THG",
+      "url": "https://www.adzuna.co.uk/jobs/search?q=Data%20Analyst%2C%20Customer%20THG&w=Manchester"
+    }
+  ],
+  "snapshotAt": "2026-11-07T09:00:00.000Z",
+  "source": "cache"
+}
