@@ -1,0 +1,14 @@
+{
+  "priya": { "proven": ["python", "pytorch", "docker", "git"], "gaps": ["sql", "aws"] },
+  "tom": { "proven": ["sql", "postgresql", "aws"], "gaps": ["pytorch", "react"] },
+  "mei": { "proven": ["react", "typescript", "ci-cd"], "gaps": ["python", "machine-learning"] },
+  "jakub": { "proven": ["java", "sql", "linux", "git", "data-structures"], "gaps": ["kubernetes", "system-design", "react"] },
+  "sara": { "proven": ["python", "html-css"], "gaps": ["sql", "pandas", "data-visualisation", "statistics"] },
+  "leo": { "proven": ["cpp", "c", "git", "algorithms"], "gaps": ["typescript", "testing", "docker"] },
+  "amara": { "proven": ["python", "pandas", "numpy", "scikit-learn", "statistics", "machine-learning"], "gaps": ["pytorch", "mlops", "docker"] },
+  "dev": { "proven": ["typescript", "react", "nodejs", "rest-apis", "testing"], "gaps": ["kubernetes", "system-design", "aws"] },
+  "hannah": { "proven": ["python", "pandas", "data-visualisation", "statistics"], "gaps": ["sql", "machine-learning", "aws"] },
+  "yusuf": { "proven": ["python", "numpy", "linear-algebra", "tensorflow", "linux"], "gaps": ["pytorch", "docker", "mlops"] },
+  "chloe": { "proven": ["python", "pandas", "statistics", "data-visualisation", "postgresql"], "gaps": ["machine-learning", "aws", "docker"] },
+  "ollie": { "proven": ["html-css", "javascript"], "gaps": ["git", "react", "typescript", "python"] }
+}
