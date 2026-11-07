@@ -1,19 +1,24 @@
-// STUB (P5 PR1): GET /api/pods/[podId] → a stored pod, or the demo fixture for its id.
-import podFixture from "@/data/fixtures/pod.aisha.json";
+import { readDemoPod } from "@/lib/agents/matchmaker";
+import { badRequest, fail, internal, ok, PodIdParamZ, PodZ } from "@/lib/schemas/community";
 import { getStore } from "@/lib/store";
-import { PodIdParamZ, PodZ, badRequest, fail, internal, ok } from "@/lib/schemas/community";
-import type { Pod } from "@/lib/types";
 
+// GET /api/pods/[podId] → Pod, or 404 not_found. Contract §6.
 export async function GET(_req: Request, ctx: { params: Promise<{ podId: string }> }) {
+  const parsed = PodIdParamZ.safeParse(await ctx.params);
+  if (!parsed.success) return badRequest(parsed.error);
+  const { podId } = parsed.data;
+  const demo = process.env.DEMO_MODE === "true";
+  const demoPod = () => {
+    const pod = demo ? readDemoPod() : null;
+    return pod && pod.id === podId ? pod : null;
+  };
   try {
-    const parsed = PodIdParamZ.safeParse(await ctx.params);
-    if (!parsed.success) return badRequest(parsed.error);
-    const { podId } = parsed.data;
-    const fixture = PodZ.parse(podFixture);
-    const pod = (await getStore().get<Pod>("pods", podId)) ?? (podId === fixture.id ? fixture : null);
-    if (!pod) return fail(404, "not_found", `No pod ${podId}`);
-    return ok(pod);
+    const found = PodZ.safeParse(await getStore().get("pods", podId));
+    if (found.success) return ok(found.data);
+    const fallback = demoPod();
+    return fallback ? ok(fallback) : fail(404, "not_found", `No pod ${podId}.`);
   } catch {
-    return internal();
+    const fallback = demoPod();
+    return fallback ? ok(fallback) : internal();
   }
 }
