@@ -3,7 +3,7 @@ import { getStore } from "@/lib/store";
 import { HelpCreateReqZ, HelpUpdateReqZ, badRequest, fail, internal, ok } from "@/lib/schemas/community";
 import type { HelpRequest } from "@/lib/types";
 
-export async function GET() {
+export async function GET(_req?: Request) {
   try {
     const all = await getStore().list<HelpRequest>("help");
     return ok([...all].sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
