@@ -43,3 +43,8 @@ next-env.d.ts
 
 # ui gate screenshots (scripts/ui-gate.mjs)
 /.ui-gate/
+
+# playwright
+/test-results/
+/playwright-report/
+/blob-report/

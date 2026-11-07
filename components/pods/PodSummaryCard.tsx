@@ -58,7 +58,7 @@ export function PodSummaryCard({ userId }: { userId: string }) {
 
   if (q.isPending) {
     return (
-      <div className={cn(card, "space-y-4")} aria-busy="true" aria-label="Loading your pod">
+      <div role="status" className={cn(card, "space-y-4")} aria-busy="true" aria-label="Loading your pod">
         <Skeleton className="h-4 w-20" />
         <Skeleton className="h-7 w-40" />
         <Skeleton className="h-5 w-3/4" />

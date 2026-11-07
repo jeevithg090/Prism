@@ -126,7 +126,7 @@ export function PRReviewPanel({
 
       <div aria-live="polite" className="mt-5">
         {pending && (
-          <div className="space-y-2" aria-label="Reading your pull request">
+          <div role="status" className="space-y-2" aria-label="Reading your pull request">
             {[0, 1, 2].map((i) => (
               <div
                 key={i}
@@ -191,13 +191,13 @@ export function PRReviewPanel({
                 <span className="sr-only">(opens on GitHub in a new tab)</span>
               </a>
               <div className="flex flex-wrap items-center gap-1.5">
-                <span className="inline-flex items-center gap-1 rounded-full border border-status-rising/25 bg-status-rising/10 px-2.5 py-0.5 text-xs font-medium text-status-rising">
-                  <Sparkles className="size-3.5" aria-hidden />
+                <span className="inline-flex items-center gap-1 rounded-full border border-status-rising/25 bg-status-rising/10 px-2.5 py-0.5 text-xs font-medium text-foreground">
+                  <Sparkles className="size-3.5 text-status-rising" aria-hidden />
                   Hints, not answers
                 </span>
                 {review.posted ? (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-status-proven/25 bg-status-proven/10 px-2.5 py-0.5 text-xs font-medium text-status-proven">
-                    <CheckCircle2 className="size-3.5" aria-hidden />
+                  <span className="inline-flex items-center gap-1 rounded-full border border-status-proven/25 bg-status-proven/10 px-2.5 py-0.5 text-xs font-medium text-foreground">
+                    <CheckCircle2 className="size-3.5 text-status-proven" aria-hidden />
                     Posted on GitHub ✓
                   </span>
                 ) : (

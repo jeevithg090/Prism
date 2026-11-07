@@ -19,7 +19,7 @@ type MatchedPod = Pod & { runId?: string };
 
 export function PodCardSkeleton() {
   return (
-    <div className="rounded-2xl border bg-card shadow-sm" aria-busy="true" aria-label="Loading your pod">
+    <div role="status" className="rounded-2xl border bg-card shadow-sm" aria-busy="true" aria-label="Loading your pod">
       <div className="flex flex-col gap-6 border-b p-6 md:flex-row md:justify-between md:p-8">
         <div className="space-y-3">
           <Skeleton className="h-4 w-32" />

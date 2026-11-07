@@ -18,11 +18,11 @@ export function MergedPill({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "inline-flex h-7 items-center gap-1 rounded-full border border-status-proven/25 bg-status-proven/10 px-2.5 text-xs font-medium text-status-proven",
+        "inline-flex h-7 items-center gap-1 rounded-full border border-status-proven/25 bg-status-proven/10 px-2.5 text-xs font-medium text-foreground",
         className,
       )}
     >
-      <GitMerge className="size-3.5" aria-hidden />
+      <GitMerge className="size-3.5 text-status-proven" aria-hidden />
       Merged ✓
     </span>
   );
