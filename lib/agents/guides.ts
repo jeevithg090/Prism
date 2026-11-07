@@ -3,8 +3,12 @@ import "server-only";
 // Finds Manchester people who work with the student's top gap skill (GitHub user search + P1's
 // Firecrawl web search), then drafts a short first message the STUDENT copies and sends themselves.
 // This module is read-only: it only issues GET requests and never contacts anyone.
+// Governed by the agent harness: emails / phone numbers are redacted before the LLM sees anything,
+// the output must carry no send intent, and the student is the human checkpoint (they send it).
 import { z } from "zod";
-import { emit, newRunId } from "@/lib/agents/events";
+import { newRunId } from "@/lib/agents/events";
+import { maxItems, noOutboundMessaging, redactForLLM } from "@/lib/agents/guardrails";
+import { runAgent, type AgentCtx, type Checkpoint } from "@/lib/agents/harness";
 import { fcSearch } from "@/lib/connectors/firecrawl";
 import { llmJSON } from "@/lib/llm";
 import { GuideSuggestionZ, skillName } from "@/lib/schemas/community";
@@ -22,7 +26,7 @@ const ROLE_NAMES: Record<string, string> = {
 const YEAR_WORDS: Record<number, string> = { 1: "first-year", 2: "second-year", 3: "third-year", 4: "final-year" };
 
 type Candidate = { name: string; publicUrl: string; source: GuideSuggestion["source"]; context: string };
-type Ctx = { skill: string; demandPct: number; roleName: string; language: "python" | "typescript"; studentFirst: string; studentIntro: string };
+type DraftCtx = { skill: string; demandPct: number; roleName: string; language: "python" | "typescript"; studentFirst: string; studentIntro: string };
 
 /** The student's top gap: gap nodes sorted by demand (highest first). */
 export function topGap(map: BridgeMap): BridgeNode | undefined {
@@ -36,7 +40,14 @@ export function githubLanguage(node: Pick<BridgeNode, "skillId" | "category">): 
 
 const isHttpUrl = (u: unknown): u is string => typeof u === "string" && /^https?:\/\/\S+$/.test(u);
 
-async function searchGitHub(language: string, runId: string): Promise<Candidate[]> {
+/** Human checkpoint: Keystone drafts, the student decides whether to send it themselves. */
+export const STUDENT_SENDS: Checkpoint = {
+  kind: "student-sends",
+  who: "you",
+  note: "Keystone only drafts the message. You decide whether to send it, from your own account.",
+};
+
+async function searchGitHub(language: string, report: AgentCtx["emit"]): Promise<Candidate[]> {
   const url = `https://api.github.com/search/users?q=location:Manchester+language:${language}+followers:>20&per_page=5`;
   const headers: Record<string, string> = {
     accept: "application/vnd.github+json",
@@ -47,7 +58,7 @@ async function searchGitHub(language: string, runId: string): Promise<Candidate[
   try {
     const res = await fetch(url, { headers });
     if (!res.ok) {
-      emit({ runId, agent: "guides", status: "progress", message: `GitHub search unavailable (HTTP ${res.status}), using the web only` });
+      report("progress", `GitHub search unavailable (HTTP ${res.status}), using the web only`);
       return [];
     }
     const json = (await res.json()) as { items?: { login?: string; html_url?: string; type?: string }[] };
@@ -97,7 +108,7 @@ function pick(github: Candidate[], web: Candidate[]): Candidate[] {
   return out;
 }
 
-function templateFor(c: Candidate, ctx: Ctx): Omit<GuideSuggestion, "name" | "publicUrl" | "source"> {
+function templateFor(c: Candidate, ctx: DraftCtx): Omit<GuideSuggestion, "name" | "publicUrl" | "source"> {
   const gapLine = `${ctx.skill} is your top gap: it shows up in ${ctx.demandPct}% of ${ctx.roleName} ads.`;
   const whyRelevant = c.source === "github"
     ? `${c.name} is a Manchester developer on GitHub who writes ${ctx.language === "python" ? "Python" : "TypeScript"} and has more than 20 followers. ${gapLine}`
@@ -141,7 +152,7 @@ export async function findGuides(profile: Profile, map: BridgeMap): Promise<Guid
   const language = gap ? githubLanguage(gap) : "python";
   const studentFirst = profile.name.trim().split(/\s+/)[0] || profile.id;
   const yearWord = YEAR_WORDS[profile.year] ?? "university";
-  const ctx: Ctx = {
+  const tpl: DraftCtx = {
     skill,
     demandPct: Math.round((gap?.demand ?? 0) * 100),
     roleName: ROLE_NAMES[map.roleId] ?? map.roleId.replace(/-/g, " "),
@@ -150,51 +161,72 @@ export async function findGuides(profile: Profile, map: BridgeMap): Promise<Guid
     studentIntro: profile.programmeId.startsWith("uom") ? `a ${yearWord} student at the University of Manchester` : `a ${yearWord} student`,
   };
 
-  emit({ runId, agent: "guides", status: "started", message: `Looking for Manchester practitioners who work with ${skill}` });
-  const [github, web] = await Promise.all([searchGitHub(language, runId), searchWeb(skill)]);
-  emit({ runId, agent: "guides", status: "progress", message: `Found ${github.length} GitHub profiles and ${web.length} web pages`, data: { github: github.length, web: web.length } });
+  const { output } = await runAgent<GuideSuggestion[]>({
+    agent: "guides",
+    runId,
+    purpose: `Looking for Manchester practitioners who work with ${skill}`,
+    input: { skillId, roleId: map.roleId },
+    outputSchema: z.array(GuideSuggestionZ),
+    guardrails: [noOutboundMessaging<GuideSuggestion[]>(), maxItems<GuideSuggestion[]>(MAX_GUIDES)],
+    checkpoint: STUDENT_SENDS,
+    run: async (ctx) => {
+      const [github, web] = await ctx.step(
+        "search",
+        () => Promise.all([searchGitHub(language, ctx.emit), searchWeb(skill)]),
+        ([g, w]) => ({ message: `Found ${g.length} GitHub profiles and ${w.length} web pages`, data: { github: g.length, web: w.length } }),
+      );
 
-  const people = pick(github, web);
-  if (people.length === 0) {
-    emit({ runId, agent: "guides", status: "done", message: "No practitioners found this time", data: { count: 0 } });
-    return [];
-  }
+      const people = pick(github, web);
+      if (people.length === 0) {
+        ctx.done("No practitioners found this time", { count: 0 });
+        return [];
+      }
 
-  let drafts: z.infer<typeof DraftsZ>["guides"] = [];
-  try {
-    const out = await llmJSON({
-      agent: "guides",
-      runId,
-      system: SYSTEM,
-      user: JSON.stringify({
-        student: { firstName: studentFirst, intro: ctx.studentIntro, interests: profile.interests, targetRole: ctx.roleName },
-        topGap: { skill, demandPct: ctx.demandPct },
-        people: people.map(({ name, publicUrl, source, context }) => ({ name, publicUrl, source, context })),
-      }),
-      schema: DraftsZ,
-      schemaName: "guide_drafts",
-      temperature: 0.4,
-    });
-    drafts = out.guides;
-  } catch {
-    emit({ runId, agent: "guides", status: "progress", message: "Writing drafts from a template (AI writer unavailable)" });
-  }
+      let drafts: z.infer<typeof DraftsZ>["guides"] = [];
+      try {
+        // PII guardrail on the LLM input: emails and phone numbers in scraped context never reach the model.
+        const payload = redactForLLM(ctx, {
+          student: { firstName: studentFirst, intro: tpl.studentIntro, interests: profile.interests, targetRole: tpl.roleName },
+          topGap: { skill, demandPct: tpl.demandPct },
+          people: people.map(({ name, publicUrl, source, context }) => ({ name, publicUrl, source, context })),
+        }, ["publicUrl"]);
+        const out = await ctx.step("draft messages", () => llmJSON({
+          agent: "guides",
+          runId,
+          system: SYSTEM,
+          user: JSON.stringify(payload),
+          schema: DraftsZ,
+          schemaName: "guide_drafts",
+          temperature: 0.4,
+        }), (o) => `Drafted ${o.guides.length} first messages`);
+        drafts = out.guides;
+      } catch {
+        ctx.degraded("AI writer unavailable: template drafts");
+        ctx.emit("progress", "Writing drafts from a template (AI writer unavailable)");
+      }
 
-  const suggestions = people.flatMap((c, i) => {
-    const t = templateFor(c, ctx);
-    const d = drafts.find((x) => x.publicUrl === c.publicUrl) ?? (drafts.length === people.length ? drafts[i] : undefined);
-    const pickText = (v: string | undefined, fallback: string, max: number) => (v?.trim() ? v.trim().slice(0, max) : fallback);
-    const parsed = GuideSuggestionZ.safeParse({
-      name: c.name,
-      publicUrl: c.publicUrl,
-      source: c.source,
-      whyRelevant: pickText(d?.whyRelevant, t.whyRelevant, 400),
-      suggestedQuestion: pickText(d?.suggestedQuestion, t.suggestedQuestion, 300),
-      draftMessage: pickText(d?.draftMessage, t.draftMessage, 1200),
-    });
-    return parsed.success ? [parsed.data] : [];
-  }).slice(0, MAX_GUIDES);
+      const suggestions = people.flatMap((c, i) => {
+        const t = templateFor(c, tpl);
+        const d = drafts.find((x) => x.publicUrl === c.publicUrl) ?? (drafts.length === people.length ? drafts[i] : undefined);
+        const pickText = (v: string | undefined, fallback: string, max: number) => (v?.trim() ? v.trim().slice(0, max) : fallback);
+        const parsed = GuideSuggestionZ.safeParse({
+          name: c.name,
+          publicUrl: c.publicUrl,
+          source: c.source,
+          whyRelevant: pickText(d?.whyRelevant, t.whyRelevant, 400),
+          suggestedQuestion: pickText(d?.suggestedQuestion, t.suggestedQuestion, 300),
+          draftMessage: pickText(d?.draftMessage, t.draftMessage, 1200),
+        });
+        return parsed.success ? [parsed.data] : [];
+      }).slice(0, MAX_GUIDES);
 
-  emit({ runId, agent: "guides", status: "done", message: `${suggestions.length} guides ready. You send the messages yourself.`, data: { count: suggestions.length, skillId } });
-  return suggestions;
+      ctx.done(`${suggestions.length} guides ready. You send the messages yourself.`, { count: suggestions.length, skillId });
+      return suggestions;
+    },
+    fallback: (_err, ctx) => {
+      ctx.done("Couldn't find practitioners this time", { count: 0 });
+      return [];
+    },
+  });
+  return output;
 }
