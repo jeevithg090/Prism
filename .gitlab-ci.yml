@@ -35,7 +35,9 @@ workflow:
 
 secret-scan:
   stage: verify
-  image: alpine/git:latest
+  image:
+    name: alpine/git:latest
+    entrypoint: [""]
   cache: []
   before_script: []
   script:
