@@ -1,0 +1,302 @@
+{
+  "name": "Keystone W1 · market-refresh (Sun 22:00)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## W1 · market-refresh\nEvery Sunday 22:00 (or POST /webhook/market-refresh) it re-reads ML engineer, software engineer and data analyst demand from Keystone, compares it with last week's run (workflow static data) and, if any skill moved more than 10%, calls Keystone's /api/n8n/callback so affected roadmaps re-plan, then posts the moves to Discord.\n\n**Credentials:** Header Auth `x-keystone-secret` (= KEYSTONE_SHARED_SECRET), Discord webhook. Edit **Config** with your app URL.",
+        "height": 320,
+        "width": 460
+      },
+      "id": "72533e0f-07f2-5252-986f-680966ffbfea",
+      "name": "Setup notes",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -200,
+        -360
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 22 * * 0"
+            }
+          ]
+        }
+      },
+      "id": "4671b957-c784-5353-b3f8-ec73307e820d",
+      "name": "Every Sunday 22:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "market-refresh",
+        "authentication": "headerAuth",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "f96e0456-a616-5885-98ff-19e5f8bd90f0",
+      "name": "Webhook: market-refresh",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        200
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_ME_keystone_secret",
+          "name": "Keystone shared secret (x-keystone-secret)"
+        }
+      },
+      "webhookId": "4594304e-8313-50ca-874c-4b59db315dc2"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Edit these once after importing (no secrets here: secrets live in n8n credentials).\nreturn [{ json: {\n  appUrl: 'https://REPLACE-WITH-YOUR-KEYSTONE-URL',   // e.g. https://keystone.vercel.app (no trailing slash)\n  userIds: ['aisha'],\n  roles: ['ml-engineer', 'software-engineer', 'data-analyst'],\n  voiceId: 'JBFqnCBsd6RMkjVDRZzb',                      // ELEVENLABS_VOICE_ID\n} }];"
+      },
+      "id": "b545c000-b102-5eb6-aea1-24ad67e31ffe",
+      "name": "Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const { roles } = $('Config').first().json;\nreturn roles.map((roleId) => ({ json: { roleId } }));"
+      },
+      "id": "69f84672-55c2-50f1-ad97-34c1aedf6f02",
+      "name": "One item per role",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Config').first().json.appUrl }}/api/market/{{ $json.roleId }}?refresh=1",
+        "options": {}
+      },
+      "id": "bb002691-a182-5423-bd04-08684ac249df",
+      "name": "GET market demand",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Skill share per role vs the previous run; a move is a change of more than 10% (relative).\nconst stat = $getWorkflowStaticData('global');\nconst prev = stat.shares ?? {};\nconst next = {};\nconst moved = new Set();\nfor (const item of $input.all()) {\n  const d = item.json.data ?? item.json;\n  for (const s of d.skills ?? []) {\n    const key = `${d.roleId}:${s.skillId}`;\n    next[key] = s.share;\n    const before = prev[key];\n    if (typeof before === 'number' && before > 0 && Math.abs(s.share - before) / before > 0.10) moved.add(s.skillId);\n  }\n}\nstat.shares = next;\nreturn [{ json: { moved: [...moved], comparedSkills: Object.keys(next).length } }];"
+      },
+      "id": "5d02b3cd-ef13-5e69-834a-a5c4c78b0dd7",
+      "name": "Compare with last run",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "8832c4cb-5e9a-5974-810f-8d2e5e724e5b",
+              "leftValue": "={{ $json.moved.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "cd77b91f-a6d7-51fa-a1cb-99db407e6def",
+      "name": "Any skill moved?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').first().json.appUrl }}/api/n8n/callback",
+        "options": {},
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ workflow: 'market-refresh', result: { moved: $json.moved } }) }}"
+      },
+      "id": "ebcf3917-6944-5c61-960b-4829045a2e91",
+      "name": "Tell Keystone (re-plan roadmaps)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1440,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_ME_keystone_secret",
+          "name": "Keystone shared secret (x-keystone-secret)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "content": "=📈 Market moved this week: {{ $('Compare with last run').first().json.moved.join(', ') }}. Keystone re-planned {{ $json.data.replanned }} roadmap(s).",
+        "options": {}
+      },
+      "id": "edc390ee-bc63-5938-a7df-c79b6adca417",
+      "name": "Post moves to Discord",
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        0
+      ],
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "REPLACE_ME_discord_webhook",
+          "name": "Discord webhook (#pods / #briefings)"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Every Sunday 22:00": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook: market-refresh": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "One item per role",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "One item per role": {
+      "main": [
+        [
+          {
+            "node": "GET market demand",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET market demand": {
+      "main": [
+        [
+          {
+            "node": "Compare with last run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compare with last run": {
+      "main": [
+        [
+          {
+            "node": "Any skill moved?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any skill moved?": {
+      "main": [
+        [
+          {
+            "node": "Tell Keystone (re-plan roadmaps)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tell Keystone (re-plan roadmaps)": {
+      "main": [
+        [
+          {
+            "node": "Post moves to Discord",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/London",
+    "saveManualExecutions": true
+  },
+  "pinData": {},
+  "tags": [
+    {
+      "name": "keystone"
+    }
+  ],
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}
