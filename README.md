@@ -29,4 +29,13 @@ These files exist so every page builds and tests today. Each keeps the exact con
 | `lib/n8n.ts` | P4 | Posts to `N8N_WEBHOOK_BASE_URL/<workflow>` if set, else `false` |
 | `components/keystone/index.tsx`, `components/shell/ActivityPanel.tsx`, `app/providers.tsx`, `app/(app)/layout.tsx` | P3 | Minimal shared components, `useActivity`, React Query + sonner providers |
 
+## CI/CD (GitLab)
+Pipelines run on GitLab (`.gitlab-ci.yml`), not GitHub Actions: secret scan → typecheck → lint → test → DEMO_MODE build → e2e (non-blocking) → Vercel deploy (only if `VERCEL_TOKEN` is set) → a GitHub commit status named `ci` (only if `GITHUB_STATUS_TOKEN` is set), so GitHub branch protection can require it.
+
+Push to both remotes so every push runs CI:
+```bash
+git remote set-url --add --push origin https://github.com/jeevithg090/Reply_Hack.git
+git remote set-url --add --push origin git@gitlab.com:gjeevith090/reply-hack.git
+```
+
 Branch protection: PRs only, 1 review + green `ci` (see contract §10).
