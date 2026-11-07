@@ -210,7 +210,7 @@ docs/team/        the team plan and shared contract
 | | Role | GitHub |
 |---|---|---|
 | P1 | Data agents: Syllabus, Market, Skill Mapper, Trend Forecaster, Industry Radar | Bplhansi |
-| P2 | Brain: LLM layer, store, orchestrator, Evidence Agent, Bridge Map, Roadmap Agent | |
+| P2 | Brain: LLM layer, store, orchestrator, Evidence Agent, Bridge Map, Roadmap Agent | diyashah2914 |
 | P3 | Frontend lead and UX: design system, app shell, onboarding, Bridge Map and Roadmap pages, Activity panel | Violet2601 |
 | P4 | Voice, automation and story: ElevenLabs, n8n, interview and launch pages, pitch, video, Devpost | ShivaTeja05 |
 | P5 | Community: Matchmaker, Project Architect, Trajectories, badges, Momentum, pods pages | jeevithg090 |
