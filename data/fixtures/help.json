@@ -1,0 +1,70 @@
+[
+  {
+    "id": "help_01",
+    "fromUserId": "sara",
+    "kind": "question",
+    "message": "How do I set up a Python virtual environment on the lab machines? Mine keeps installing packages globally and I'm not sure what I broke.",
+    "status": "open",
+    "createdAt": "2026-11-07T10:12:00.000Z"
+  },
+  {
+    "id": "help_02",
+    "fromUserId": "ollie",
+    "kind": "code-review",
+    "message": "Could someone look at my first pull request? It's a small React to-do app and I'm not sure my components are split sensibly.",
+    "status": "open",
+    "createdAt": "2026-11-07T09:05:00.000Z"
+  },
+  {
+    "id": "help_03",
+    "fromUserId": "mei",
+    "toUserId": "priya",
+    "kind": "question",
+    "message": "What's the difference between a Python list and a NumPy array, and when should I use each one?",
+    "status": "accepted",
+    "createdAt": "2026-11-06T18:40:00.000Z"
+  },
+  {
+    "id": "help_04",
+    "fromUserId": "aisha",
+    "toUserId": "senior_02",
+    "kind": "chat-15",
+    "message": "Hi! I'm a first-year aiming for ML engineering. Could I ask you for 15 minutes about how you found your health-tech placement?",
+    "status": "open",
+    "createdAt": "2026-11-06T16:20:00.000Z"
+  },
+  {
+    "id": "help_05",
+    "fromUserId": "tom",
+    "kind": "question",
+    "message": "Has anyone used a PyTorch DataLoader with images stored in S3? My batches load really slowly and I'm not sure where to start.",
+    "status": "open",
+    "createdAt": "2026-11-06T12:30:00.000Z"
+  },
+  {
+    "id": "help_06",
+    "fromUserId": "hannah",
+    "toUserId": "chloe",
+    "kind": "code-review",
+    "message": "Can someone check my pandas groupby? The weekly totals don't match the spreadsheet my society treasurer sent.",
+    "status": "accepted",
+    "createdAt": "2026-11-05T20:15:00.000Z"
+  },
+  {
+    "id": "help_07",
+    "fromUserId": "leo",
+    "toUserId": "senior_07",
+    "kind": "chat-15",
+    "message": "Could I ask you about moving from game dev side projects into a software engineering placement? 15 minutes would really help.",
+    "status": "open",
+    "createdAt": "2026-11-05T14:00:00.000Z"
+  },
+  {
+    "id": "help_08",
+    "fromUserId": "yusuf",
+    "kind": "question",
+    "message": "Does anyone have a resource that explains backpropagation intuitively? The lecture slides went a bit fast for me.",
+    "status": "open",
+    "createdAt": "2026-11-04T11:45:00.000Z"
+  }
+]
