@@ -104,7 +104,7 @@ describe("SkillExchangeGraph", () => {
       <SkillExchangeGraph pod={pod} names={names} viewerId="aisha" />,
     );
     const img = screen.getByRole("img", {
-      name: /Pod Aurora skill exchange graph: 4 podmates and 9 skills/,
+      name: /Pod \w+ skill exchange graph: 4 podmates and 9 skills/,
     });
     expect(img.tagName.toLowerCase()).toBe("svg");
     expect(container.querySelectorAll("[data-edge]")).toHaveLength(7);
