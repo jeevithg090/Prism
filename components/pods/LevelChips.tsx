@@ -60,7 +60,7 @@ export function LevelChips({
                   />
                 }
               >
-                <span className="rounded-full bg-primary/10 px-1 text-[10px] font-semibold leading-4 text-primary">
+                <span className="rounded-full bg-primary/10 px-1 text-xs font-semibold leading-4 text-primary">
                   L3
                 </span>
                 <Icon className="size-3.5 text-primary" aria-hidden />

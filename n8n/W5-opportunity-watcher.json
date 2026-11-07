@@ -1,0 +1,198 @@
+{
+  "name": "Keystone W5 · opportunity-watcher (Wed 12:00)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## W5 · opportunity-watcher\nEvery Wednesday at 12:00 (or POST /webhook/opportunity-watcher) it reads the latest ML engineer ads Keystone analysed and posts up to 3 internship or graduate openings to #opportunities, with the skills they ask for. Links go to the original ad.\n\n**Credentials:** Discord webhook for #opportunities. Edit **Config** (app URL).",
+        "height": 300,
+        "width": 460
+      },
+      "id": "12789b03-bece-569b-8891-61f4aa74c997",
+      "name": "Setup notes",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -200,
+        -340
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 12 * * 3"
+            }
+          ]
+        }
+      },
+      "id": "8d5a4b66-ac51-57ac-ba26-1d4bcf3e8a1f",
+      "name": "Every Wednesday 12:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "opportunity-watcher",
+        "authentication": "headerAuth",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "40a58cd1-923c-5cec-8e24-7b82c972545f",
+      "name": "Webhook: opportunity-watcher",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        200
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_ME_keystone_secret",
+          "name": "Keystone shared secret (x-keystone-secret)"
+        }
+      },
+      "webhookId": "8d8a1b23-5f50-5509-97a5-5777fb61060e"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Edit these once after importing (no secrets here: secrets live in n8n credentials).\nreturn [{ json: {\n  appUrl: 'https://REPLACE-WITH-YOUR-KEYSTONE-URL',   // e.g. https://keystone.vercel.app (no trailing slash)\n  userIds: ['aisha'],\n  roles: ['ml-engineer', 'software-engineer', 'data-analyst'],\n  voiceId: 'JBFqnCBsd6RMkjVDRZzb',                      // ELEVENLABS_VOICE_ID\n} }];"
+      },
+      "id": "ba17493f-bff6-5112-8d7e-861f1cb9542c",
+      "name": "Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Config').first().json.appUrl }}/api/market/ml-engineer",
+        "options": {}
+      },
+      "id": "530f6aef-37c2-5a57-b6be-5911062957a6",
+      "name": "GET ML engineer market",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $json.data ?? {};\nconst ads = (d.sampleAds ?? []).filter((a) => /intern|graduate|junior|placement/i.test(a.title)).slice(0, 3);\nif (!ads.length) return [];\nconst top = (d.skills ?? []).slice(0, 3).map((s) => `${s.skillId} ${Math.round(s.share * 100)}%`).join(' · ');\nreturn [{ json: { content: `🔎 New early-career ML engineer openings (${d.adsAnalysed ?? '?'} ads analysed; top skills: ${top})\\n` + ads.map((a) => `• ${a.title} at ${a.company}: ${a.url}`).join('\\n') } }];"
+      },
+      "id": "083b607d-a825-5cd5-a08d-ff787cd5d3e9",
+      "name": "Pick early-career ads",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "content": "={{ $json.content }}",
+        "options": {}
+      },
+      "id": "cc9934f8-c97b-580a-a430-c661b11c9042",
+      "name": "Post to #opportunities",
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        960,
+        100
+      ],
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "REPLACE_ME_discord_webhook",
+          "name": "Discord webhook (#pods / #briefings)"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Every Wednesday 12:00": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook: opportunity-watcher": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "GET ML engineer market",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET ML engineer market": {
+      "main": [
+        [
+          {
+            "node": "Pick early-career ads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick early-career ads": {
+      "main": [
+        [
+          {
+            "node": "Post to #opportunities",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/London",
+    "saveManualExecutions": true
+  },
+  "pinData": {},
+  "tags": [
+    {
+      "name": "keystone"
+    }
+  ],
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

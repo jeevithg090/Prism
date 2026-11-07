@@ -1,0 +1,216 @@
+{
+  "name": "Keystone W3 · pod-kickoff",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## W3 · pod-kickoff (live in the demo)\nKeystone's Project Architect calls POST /webhook/pod-kickoff when a pod starts its project (payload: podId, podName, title, pitch, members, repoUrl). This posts a kickoff embed to #pods, tells Keystone the channel URL and answers with it.\n\n**Credentials:** Header Auth `x-keystone-secret` on the webhook and the callback, Discord webhook for #pods. Edit **Config** (app URL).",
+        "height": 320,
+        "width": 460
+      },
+      "id": "93236a9d-01e0-5f06-8545-6e00aab7da40",
+      "name": "Setup notes",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -200,
+        -360
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pod-kickoff",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "7711c432-0ac2-59f0-98c0-aa84fddc2beb",
+      "name": "Webhook: pod-kickoff",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        100
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_ME_keystone_secret",
+          "name": "Keystone shared secret (x-keystone-secret)"
+        }
+      },
+      "webhookId": "acce6166-351e-582e-9aed-baf9112a1017"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Edit these once after importing (no secrets here: secrets live in n8n credentials).\nreturn [{ json: {\n  appUrl: 'https://REPLACE-WITH-YOUR-KEYSTONE-URL',   // e.g. https://keystone.vercel.app (no trailing slash)\n  userIds: ['aisha'],\n  roles: ['ml-engineer', 'software-engineer', 'data-analyst'],\n  voiceId: 'JBFqnCBsd6RMkjVDRZzb',                      // ELEVENLABS_VOICE_ID\n} }];"
+      },
+      "id": "204b3a98-7e89-5972-8392-baaa5eeac235",
+      "name": "Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const b = $('Webhook: pod-kickoff').first().json.body ?? {};\nconst members = Array.isArray(b.members) ? b.members : [];\nreturn [{ json: {\n  podId: b.podId ?? '',\n  title: `🚀 ${b.podName ?? 'Your pod'} is live!`,\n  description: `${b.title ?? ''}\\n${b.pitch ?? ''}`.trim(),\n  repoUrl: b.repoUrl ?? '',\n  members: members.join(', '),\n  content: `🚀 ${b.podName ?? 'Your pod'} is live! Repo: ${b.repoUrl ?? ''}\\nFirst step: pick your issue and open a PR. Your reviewer is waiting.`,\n  discordChannelUrl: 'https://discord.com/channels/REPLACE_SERVER_ID/REPLACE_PODS_CHANNEL_ID',\n} }];"
+      },
+      "id": "a0ebbc58-f737-5d37-b849-fbceeaf5c474",
+      "name": "Build Discord message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "content": "={{ $json.content }}",
+        "options": {},
+        "embeds": {
+          "values": [
+            {
+              "inputMethod": "fields",
+              "title": "={{ $json.title }}",
+              "description": "={{ $json.description }}",
+              "url": "={{ $json.repoUrl }}",
+              "color": "#6366F1",
+              "author": "=Members: {{ $json.members }}"
+            }
+          ]
+        }
+      },
+      "id": "bd044958-880c-528e-9f8b-2982c27f7318",
+      "name": "Post kickoff to #pods",
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        680,
+        100
+      ],
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "REPLACE_ME_discord_webhook",
+          "name": "Discord webhook (#pods / #briefings)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').first().json.appUrl }}/api/n8n/callback",
+        "options": {},
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ workflow: 'pod-kickoff', result: { podId: $('Build Discord message').first().json.podId, discordChannelUrl: $('Build Discord message').first().json.discordChannelUrl } }) }}"
+      },
+      "id": "047d48c9-7555-51ea-8b0f-7aec6d8ba6a8",
+      "name": "Tell Keystone the channel",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        920,
+        100
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_ME_keystone_secret",
+          "name": "Keystone shared secret (x-keystone-secret)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ discordChannelUrl: $('Build Discord message').first().json.discordChannelUrl }) }}",
+        "options": {}
+      },
+      "id": "63df8eb8-5a74-5b61-a1b6-e6398cb1a7a9",
+      "name": "Respond with channel URL",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1160,
+        100
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook: pod-kickoff": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Build Discord message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Discord message": {
+      "main": [
+        [
+          {
+            "node": "Post kickoff to #pods",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post kickoff to #pods": {
+      "main": [
+        [
+          {
+            "node": "Tell Keystone the channel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tell Keystone the channel": {
+      "main": [
+        [
+          {
+            "node": "Respond with channel URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/London",
+    "saveManualExecutions": true
+  },
+  "pinData": {},
+  "tags": [
+    {
+      "name": "keystone"
+    }
+  ],
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}
