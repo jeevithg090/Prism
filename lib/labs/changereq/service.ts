@@ -9,7 +9,7 @@ import { runAgent } from "@/lib/agents/harness";
 import { buildRoadmap, loadRoadmap } from "@/lib/agents/roadmap";
 import { scanForInjection, neutralize } from "@/lib/agents/safety/injection";
 import { TREND_SKILLS } from "@/lib/agents/trends";
-import { loadGraph } from "@/lib/graph/build";
+import { loadBridgeMap } from "@/lib/agents/tools/loaders";
 import { getProfile, marketFixture, podFor, programmeFixture, readData, trendsFixture } from "@/lib/graph/data";
 import { roleName } from "@/lib/graph/roles";
 import { RoadmapZ } from "@/lib/graph/schemas";
@@ -59,7 +59,7 @@ interface Ctx {
 async function context(userId: string, now: Date): Promise<Ctx> {
   const profile = await getProfile(userId);
   const roleId = profile?.dna?.targetRoles?.[0] ?? "ml-engineer";
-  const [map, pod] = await Promise.all([loadGraph(userId, roleId), podFor(userId)]);
+  const [map, pod] = await Promise.all([loadBridgeMap(userId, roleId), podFor(userId)]);
   if (!map) throw new ChangeReqError("No Bridge Map yet. Finish onboarding so the Roadmap Agent has a plan to change.", 404, "not_found");
   const trends = trendsFixture() ?? [];
   let roadmap = await loadRoadmap(userId, roleId);

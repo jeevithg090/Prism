@@ -1,4 +1,4 @@
-// Readiness Explained · the governed agent around the pure explainer. It reads the Bridge Map (loadGraph), the
+// Readiness Explained · the governed agent around the pure explainer. It reads the Bridge Map (loadBridgeMap), the
 // student's evidence, the programme, the roadmap and the micro-challenge catalogue; runs inside runAgent with
 // guardrails (efficiency axiom, injection shield on evidence text, no demographic inputs); keeps a compact
 // explanation in `readiness_explanations` (read back to anchor the score history, written only when it changes);
@@ -13,7 +13,7 @@ import { runAgent, type AgentRunMeta, type Guardrail } from "@/lib/agents/harnes
 import { loadRoadmap } from "@/lib/agents/roadmap";
 import { roleName } from "@/lib/agents/trajectories";
 import { neutralize, scanForInjection } from "@/lib/agents/safety/injection";
-import { loadGraph } from "@/lib/graph/build";
+import { loadBridgeMap } from "@/lib/agents/tools/loaders";
 import { getProfile, listEvidence, programmeFixture } from "@/lib/graph/data";
 import { skillName } from "@/lib/schemas/community";
 import { getStore } from "@/lib/store";
@@ -120,7 +120,7 @@ export async function explainForUser(userId: string, opts: ExplainOptions = {}):
     run: async (ctx) => {
       const [map, rawEvidence, roadmap] = await ctx.step(
         "read-sources",
-        () => Promise.all([loadGraph(userId, roleId), listEvidence(userId).catch(() => [] as EvidenceItem[]), loadRoadmap(userId, roleId).catch(() => null)]),
+        () => Promise.all([loadBridgeMap(userId, roleId), listEvidence(userId).catch(() => [] as EvidenceItem[]), loadRoadmap(userId, roleId).catch(() => null)]),
         ([m, e, r]) => ({
           message: `Read the Bridge Map (${m?.nodes.filter((n) => n.demand > 0).length ?? 0} role skills), ${e.length} evidence items and a ${r?.weeks.length ?? 0}-week roadmap`,
           data: { skills: m?.nodes.length ?? 0, evidence: e.length, weeks: r?.weeks.length ?? 0 },
@@ -150,7 +150,7 @@ export async function explainForUser(userId: string, opts: ExplainOptions = {}):
     },
     fallback: async (err, ctx) => {
       if (err instanceof NoMapError) throw err;
-      const map = await loadGraph(userId, roleId).catch(() => null);
+      const map = await loadBridgeMap(userId, roleId).catch(() => null);
       if (!map) throw new NoMapError(`No Bridge Map yet for ${name}. Finish onboarding to build one.`);
       ctx.memo.scoringInputs = map.nodes.map((n) => ({ skillId: n.skillId, demand: n.demand, status: n.status }));
       ctx.done(`Readiness ${pct(map.readinessNow)}% explained per skill (sources unavailable)`);
