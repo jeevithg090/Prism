@@ -1,0 +1,200 @@
+{
+  "roleId": "software-engineer",
+  "roleName": "Software engineer",
+  "location": "UK",
+  "adsAnalysed": 236,
+  "skills": [
+    {
+      "skillId": "git",
+      "share": 0.58
+    },
+    {
+      "skillId": "javascript",
+      "share": 0.52
+    },
+    {
+      "skillId": "python",
+      "share": 0.47,
+      "trend": "stable"
+    },
+    {
+      "skillId": "sql",
+      "share": 0.44,
+      "trend": "stable"
+    },
+    {
+      "skillId": "typescript",
+      "share": 0.41,
+      "trend": "rising"
+    },
+    {
+      "skillId": "rest-apis",
+      "share": 0.4
+    },
+    {
+      "skillId": "testing",
+      "share": 0.39
+    },
+    {
+      "skillId": "java",
+      "share": 0.38,
+      "trend": "declining"
+    },
+    {
+      "skillId": "docker",
+      "share": 0.37,
+      "trend": "rising"
+    },
+    {
+      "skillId": "react",
+      "share": 0.36,
+      "trend": "stable"
+    },
+    {
+      "skillId": "aws",
+      "share": 0.34,
+      "trend": "stable"
+    },
+    {
+      "skillId": "ci-cd",
+      "share": 0.31,
+      "trend": "stable"
+    },
+    {
+      "skillId": "nodejs",
+      "share": 0.29
+    },
+    {
+      "skillId": "agile",
+      "share": 0.27
+    },
+    {
+      "skillId": "data-structures",
+      "share": 0.24
+    },
+    {
+      "skillId": "algorithms",
+      "share": 0.22
+    },
+    {
+      "skillId": "system-design",
+      "share": 0.22
+    },
+    {
+      "skillId": "linux",
+      "share": 0.2
+    },
+    {
+      "skillId": "communication",
+      "share": 0.2
+    },
+    {
+      "skillId": "html-css",
+      "share": 0.2
+    },
+    {
+      "skillId": "databases",
+      "share": 0.18
+    },
+    {
+      "skillId": "kubernetes",
+      "share": 0.17,
+      "trend": "stable"
+    },
+    {
+      "skillId": "postgresql",
+      "share": 0.16
+    },
+    {
+      "skillId": "teamwork",
+      "share": 0.16
+    },
+    {
+      "skillId": "cloud-computing",
+      "share": 0.15
+    },
+    {
+      "skillId": "code-review",
+      "share": 0.14
+    },
+    {
+      "skillId": "cpp",
+      "share": 0.12
+    },
+    {
+      "skillId": "llm-apps",
+      "share": 0.12,
+      "trend": "rising"
+    },
+    {
+      "skillId": "security-basics",
+      "share": 0.1
+    },
+    {
+      "skillId": "c",
+      "share": 0.08
+    },
+    {
+      "skillId": "machine-learning",
+      "share": 0.08,
+      "trend": "stable"
+    }
+  ],
+  "salary": {
+    "p25": 32000,
+    "median": 38000,
+    "p75": 46000,
+    "currency": "GBP"
+  },
+  "topCompanies": [
+    {
+      "name": "BAE Systems",
+      "count": 14
+    },
+    {
+      "name": "Booking.com",
+      "count": 10
+    },
+    {
+      "name": "Sky",
+      "count": 9
+    },
+    {
+      "name": "Auto Trader UK",
+      "count": 8
+    },
+    {
+      "name": "Bet365",
+      "count": 7
+    }
+  ],
+  "sampleAds": [
+    {
+      "title": "Graduate Software Engineer",
+      "company": "BAE Systems",
+      "url": "https://www.adzuna.co.uk/jobs/search?q=Graduate%20Software%20Engineer%20BAE%20Systems&w=Manchester"
+    },
+    {
+      "title": "Software Engineer, Payments",
+      "company": "Booking.com",
+      "url": "https://www.adzuna.co.uk/jobs/search?q=Software%20Engineer%2C%20Payments%20Booking.com&w=Manchester"
+    },
+    {
+      "title": "Graduate Software Developer",
+      "company": "Sky",
+      "url": "https://www.adzuna.co.uk/jobs/search?q=Graduate%20Software%20Developer%20Sky&w=Leeds"
+    },
+    {
+      "title": "Junior Full Stack Developer",
+      "company": "Auto Trader UK",
+      "url": "https://www.adzuna.co.uk/jobs/search?q=Junior%20Full%20Stack%20Developer%20Auto%20Trader%20UK&w=Manchester"
+    },
+    {
+      "title": "Graduate Software Engineer",
+      "company": "Bet365",
+      "url": "https://www.adzuna.co.uk/jobs/search?q=Graduate%20Software%20Engineer%20Bet365&w=Manchester"
+    }
+  ],
+  "snapshotAt": "2026-11-07T09:00:00.000Z",
+  "source": "cache"
+}
