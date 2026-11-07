@@ -6,6 +6,7 @@
 //  - throws ToolError with a recoverable message,
 //  - refuses to run without ctx.approved when it requires a human checkpoint.
 import "server-only";
+import { EXTRA_TOOLS } from "./extensions";
 import { z } from "zod";
 import { matchPod, NotFoundError as MatchNotFound } from "@/lib/agents/matchmaker";
 import { NotFoundError as ProofNotFound, recordMergedPR } from "@/lib/agents/proof";
@@ -554,6 +555,8 @@ const findGuidesTool = defineTool({
 export const TOOLS: AnyTool[] = [
   getStudentSnapshot, getBridgeMap, getWeekPlan, explainRecommendation, findPod, getMyPod, startPodProjectTool,
   reviewMyPr, recordMergedPr, findStudentsLikeMe, getMomentum, askForHelp, findGuidesTool,
+  // Keystone Labs features plug in here (lib/agents/tools/extra/*), so the Coach and MCP see them too.
+  ...EXTRA_TOOLS,
 ];
 
 /** Tools that are safe to repeat with the same arguments (MCP `idempotentHint`). */
