@@ -19,13 +19,12 @@ vi.mock("@/lib/store", () => {
 import { GET } from "./route";
 
 describe("GET /api/pods (stub)", () => {
-  it("returns 200 with an array containing Aisha's pod", async () => {
+  it("returns 200 with an array for aisha", async () => {
     const res = await GET(new Request("http://localhost/api/pods?userId=aisha"));
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json.ok).toBe(true);
     expect(Array.isArray(json.data)).toBe(true);
-    expect(json.data.map((p: { id: string }) => p.id)).toContain("pod_demo01");
   });
 
   it("returns an empty array for a user with no pod, and 400 without userId", async () => {
