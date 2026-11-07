@@ -46,7 +46,7 @@ export function LecturerInsightsView({ programmeId }: { programmeId: string }) {
   if (cohort) stats = <LecturerStats cohort={cohort} insights={insights} />;
   else if (cohortQ.isError) stats = <ErrorState title="We couldn't load your cohort" body="The cohort numbers didn't arrive. Try again, or show the demo cohort." onRetry={() => cohortQ.refetch()} onUseDemo={useDemo} />;
   else stats = (
-    <div className="grid gap-4 md:grid-cols-3" aria-busy="true" aria-label="Loading cohort numbers">
+    <div role="status" className="grid gap-4 md:grid-cols-3" aria-busy="true" aria-label="Loading cohort numbers">
       {[0, 1, 2].map((i) => <Skeleton key={i} className="h-32 rounded-2xl" />)}
     </div>
   );
@@ -83,7 +83,7 @@ export function LecturerInsightsView({ programmeId }: { programmeId: string }) {
   } else if (insightsQ.isError) {
     labs = <ErrorState title="We couldn't write lab ideas" onRetry={() => insightsQ.refetch()} onUseDemo={useDemo} />;
   } else labs = (
-    <div className="grid gap-4 lg:grid-cols-3" aria-busy="true" aria-label="Loading lab ideas">
+    <div role="status" className="grid gap-4 lg:grid-cols-3" aria-busy="true" aria-label="Loading lab ideas">
       {[0, 1, 2].map((i) => <Skeleton key={i} className="h-56 rounded-2xl" />)}
     </div>
   );

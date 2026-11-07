@@ -30,8 +30,8 @@ export function gapsSummary(gaps: Gap[], roleName: string): string {
 
 export function NoModuleBadge({ className }: { className?: string }) {
   return (
-    <span className={cn("inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-status-gap/25 bg-status-gap/10 px-3 py-1 text-sm font-medium text-status-gap", className)}>
-      <Target className="size-4" aria-hidden />
+    <span className={cn("inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-status-gap/25 bg-status-gap/10 px-3 py-1 text-sm font-medium text-foreground", className)}>
+      <Target className="size-4 text-status-gap" aria-hidden />
       No module covers it
     </span>
   );

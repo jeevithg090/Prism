@@ -29,7 +29,7 @@ const linkBtn = (variant: "default" | "outline") =>
 
 export function ProjectViewSkeleton() {
   return (
-    <div className="space-y-8" aria-busy="true" aria-label="Loading your pod's project">
+    <div role="status" className="space-y-8" aria-busy="true" aria-label="Loading your pod's project">
       <div className="space-y-3">
         <Skeleton className="h-5 w-40" />
         <Skeleton className="h-12 w-3/4 max-w-2xl" />
