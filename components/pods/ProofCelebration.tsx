@@ -210,7 +210,7 @@ function CelebrationBody({
             initial={reduce ? false : { opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.6, duration: 0.3 }}
-            className="mb-2 rounded-full bg-status-proven/10 px-3 py-1 text-sm font-semibold text-status-proven tabular-nums"
+            className="mb-2 rounded-full bg-status-proven/10 px-3 py-1 text-sm font-semibold text-foreground tabular-nums"
           >
             {deltaLabel}
           </motion.span>
@@ -241,8 +241,8 @@ function CelebrationBody({
           </span>
         ))}
         <span>
-          <span className="inline-flex items-center gap-1 rounded-full border border-status-rising/25 bg-status-rising/10 font-medium text-status-rising">
-            <TrendingUp className="size-4" aria-hidden />+
+          <span className="inline-flex items-center gap-1 rounded-full border border-status-rising/25 bg-status-rising/10 font-medium text-foreground">
+            <TrendingUp className="size-4 text-status-rising" aria-hidden />+
             {result.momentumPoints} momentum
           </span>
         </span>
