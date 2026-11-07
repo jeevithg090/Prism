@@ -9,7 +9,7 @@ import { getStore } from "@/lib/store";
 import { emit, newRunId } from "@/lib/agents/events";
 import { triggerWorkflow } from "@/lib/n8n";
 import { ProjectBriefDraftZ, skillName } from "@/lib/schemas/community";
-import type { Pod, PodMember, Profile, ProjectBrief, ProjectIssue, SkillId } from "@/lib/types";
+import type { Pod, PodMember, Profile, ProjectBrief, ProjectIssue, Roadmap, RoadmapWeek, SkillId } from "@/lib/types";
 
 export const DEMO_REPO_URL = "https://github.com/keystone-demo/pod-vision-demo";
 export const DEFAULT_MILESTONES = ["Week 1: Foundations", "Week 2: Build", "Week 3: Ship & demo"] as const;
@@ -21,7 +21,16 @@ export const SYSTEM_PROMPT =
   "You design a 3-week student team project that makes every member practise the skills they want to learn, reviewed by a teammate who already has that skill. Realistic, portfolio-worthy, achievable in ~6 hours/week each. Never reuse university coursework.";
 
 type Draft = Omit<ProjectBrief, "repoUrl" | "issues"> & { issues: Omit<ProjectIssue, "githubIssueUrl">[] };
-type MemberInfo = PodMember & { name: string; interests: string[]; githubLogin?: string; isDemo?: boolean };
+type MemberInfo = PodMember & { name: string; interests: string[]; githubLogin?: string; isDemo?: boolean; targetRole?: string };
+
+/** One member's current roadmap week, as answered by the Roadmap Agent (or a deterministic fallback). */
+export interface RoadmapFocus {
+  week: number;
+  skillId: SkillId;
+  proof: string;
+  source: "roadmap" | "fixture" | "fallback";
+}
+export type FocusMap = Map<string, RoadmapFocus>;
 
 const isDemo = () => process.env.DEMO_MODE === "true";
 const capitalise = (id: string) => (id ? id[0].toUpperCase() + id.slice(1) : id);
@@ -32,17 +41,82 @@ async function loadMembers(pod: Pod): Promise<MemberInfo[]> {
     pod.members.map(async (m) => {
       let p: Profile | null = null;
       try { p = await store.get<Profile>("profiles", m.userId); } catch { p = null; }
-      return { ...m, name: p?.name ?? capitalise(m.userId), interests: p?.interests ?? [], githubLogin: p?.githubLogin, isDemo: p?.isDemo };
+      return {
+        ...m, name: p?.name ?? capitalise(m.userId), interests: Array.isArray(p?.interests) ? p.interests : [],
+        githubLogin: p?.githubLogin, isDemo: p?.isDemo, targetRole: p?.dna?.targetRoles?.[0],
+      };
     }),
   );
 }
 
-export function buildUserPrompt(members: MemberInfo[]): string {
-  const lines = members.map(
-    (m) => `${m.name} (userId ${m.userId}): learns ${m.learns.join(", ")}; teaches ${m.teaches.join(", ")}; interests ${m.interests.join(", ") || "none listed"}`,
-  );
-  return `MEMBERS:\n${lines.join("\n")}\n\nReturn a title, a one-sentence pitch, exactly 3 milestones, and 6-8 issues. Each issue: title, body (with acceptance criteria as a checklist), assigneeUserId, reviewerUserId, skillId, milestone (one of the milestones).`;
+export function buildUserPrompt(members: MemberInfo[], focus?: FocusMap): string {
+  const lines = members.map((m) => {
+    const f = focus?.get(m.userId);
+    const week = f ? `; current roadmap focus: ${f.skillId} (Week ${f.week})` : "";
+    return `${m.name} (userId ${m.userId}): learns ${m.learns.join(", ")}; teaches ${m.teaches.join(", ")}; interests ${m.interests.join(", ") || "none listed"}${week}`;
+  });
+  const rule = focus?.size
+    ? "\n\nEach member's FIRST issue must practise their current roadmap focus skill (use that skillId): merging it is their roadmap proof for the week."
+    : "";
+  return `MEMBERS:\n${lines.join("\n")}${rule}\n\nReturn a title, a one-sentence pitch, exactly 3 milestones, and 6-8 issues. Each issue: title, body (with acceptance criteria as a checklist), assigneeUserId, reviewerUserId, skillId, milestone (one of the milestones).`;
 }
+
+// ---------- Roadmap Agent handoff ----------
+
+const isSkillId = (x: unknown): x is SkillId => typeof x === "string" && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(x);
+const firstName = (name: string) => name.split(" ")[0] || name;
+
+/** First week whose tasks aren't all done, as a RoadmapFocus (null if the roadmap is unusable or finished). */
+export function currentWeek(roadmap: unknown, source: RoadmapFocus["source"]): RoadmapFocus | null {
+  const weeks = (roadmap as Partial<Roadmap> | null)?.weeks;
+  if (!Array.isArray(weeks)) return null;
+  const open = weeks.find((w: RoadmapWeek) => {
+    const tasks = Array.isArray(w?.tasks) ? w.tasks : [];
+    return !(tasks.length > 0 && tasks.every((t) => t?.done));
+  });
+  if (!open || !isSkillId(open.focusSkillId)) return null;
+  const week = Number.isFinite(open.week) ? open.week : 1;
+  const proof = typeof open.proof === "string" && open.proof.trim() ? open.proof.trim() : fallbackProof(open.focusSkillId);
+  return { week, skillId: open.focusSkillId, proof, source };
+}
+
+const fallbackProof = (skill: SkillId) => `Merge a PR that adds ${skillName(skill)} to your pod repo`;
+
+async function readRoadmapFixture(userId: string, role?: string): Promise<unknown> {
+  if (!role || !/^[a-z0-9-]+$/.test(userId) || !/^[a-z0-9-]+$/.test(role)) return null;
+  try {
+    // async read on purpose: keeps the sync fixture reads below independent of this lookup
+    const raw = await fs.promises.readFile(path.join(process.cwd(), `data/fixtures/roadmap.${userId}.${role}.json`), "utf8");
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+/** Architect → Roadmap Agent: each member's current week focus (store → P2 fixture → first `learns` skill). */
+export async function askRoadmapAgent(members: MemberInfo[], runId: string): Promise<FocusMap> {
+  const n = members.length;
+  emit({ runId, agent: "architect", status: "progress", message: `asked Roadmap Agent for ${n} ${n === 1 ? "member's" : "members'"} current week` });
+  const store = getStore();
+  const out: FocusMap = new Map();
+  for (const m of members) {
+    let f: RoadmapFocus | null = null;
+    try { f = currentWeek(await store.get<Roadmap>("roadmaps", m.userId), "roadmap"); } catch { f = null; }
+    if (!f) f = currentWeek(await readRoadmapFixture(m.userId, m.targetRole), "fixture");
+    if (!f && m.learns[0]) f = { week: 1, skillId: m.learns[0], proof: fallbackProof(m.learns[0]), source: "fallback" };
+    if (!f) continue;
+    out.set(m.userId, f);
+    emit({
+      runId, agent: "roadmap", status: "done",
+      message: `${firstName(m.name)} · Week ${f.week} focus: ${skillName(f.skillId)}`,
+      data: { userId: m.userId, week: f.week, skillId: f.skillId, source: f.source },
+    });
+  }
+  return out;
+}
+
+const ROADMAP_LINE = /^\*\*Roadmap:\*\*.*$/gm;
+export const roadmapLine = (f: Pick<RoadmapFocus, "week" | "proof">) => `**Roadmap:** Week ${f.week} proof · ${f.proof}`;
 
 // ---------- deterministic repair ----------
 
@@ -70,8 +144,12 @@ function normaliseMilestones(ms: string[]): string[] {
   return out;
 }
 
-/** Applies the P5 repair rules: 3 milestones, every member learns something, valid reviewers, ≤ 8 issues. */
-export function repairBrief(draft: Draft, members: PodMember[]): Draft {
+/**
+ * Applies the P5 repair rules: 3 milestones, every member learns something, valid reviewers, ≤ 8 issues.
+ * With `focus` (the Roadmap Agent's answer), each member gets an issue for their current focus skill,
+ * and that issue's body ends with their roadmap proof line.
+ */
+export function repairBrief(draft: Draft, members: PodMember[], focus?: FocusMap): Draft {
   const ids = new Set(members.map((m) => m.userId));
   const byId = new Map(members.map((m) => [m.userId, m]));
   const milestones = normaliseMilestones(draft.milestones ?? []);
@@ -81,19 +159,24 @@ export function repairBrief(draft: Draft, members: PodMember[]): Draft {
     .filter((i) => ids.has(i.assigneeUserId))
     .map((i) => ({ ...i, milestone: milestones.includes(i.milestone) ? i.milestone : milestones[0] }));
 
-  // Every member gets ≥ 1 issue whose skill is one they want to learn.
-  const covers = (i: { assigneeUserId: string; skillId: SkillId }, m: PodMember) =>
-    i.assigneeUserId === m.userId && m.learns.includes(i.skillId);
+  // Every member gets ≥ 1 issue whose skill is one they want to learn (their roadmap focus skill, if known).
+  const focusOf = (m: PodMember) => focus?.get(m.userId)?.skillId;
+  const covers = (i: { assigneeUserId: string; skillId: SkillId }, m: PodMember) => {
+    if (i.assigneeUserId !== m.userId) return false;
+    const f = focusOf(m);
+    return f ? i.skillId === f : m.learns.includes(i.skillId);
+  };
   for (const m of members) {
-    if (!m.learns.length || issues.some((i) => covers(i, m))) continue;
-    const skill = m.learns[0];
+    const f = focusOf(m);
+    if ((!f && !m.learns.length) || issues.some((i) => covers(i, m))) continue;
+    const skill = f ?? m.learns[0];
     issues.push({
       title: `Add ${skillName(skill)} to the project`,
       body: templateIssueBody(skill),
       assigneeUserId: m.userId,
       reviewerUserId: "",
       skillId: skill,
-      milestone: milestones[Math.min(1, milestones.length - 1)],
+      milestone: f ? milestones[0] : milestones[Math.min(1, milestones.length - 1)],
     });
   }
 
@@ -127,6 +210,18 @@ export function repairBrief(draft: Draft, members: PodMember[]): Draft {
     load.set(reviewer, (load.get(reviewer) ?? 0) + 1);
     return { ...i, reviewerUserId: reviewer };
   });
+
+  // Roadmap handoff: each member's focus issue is their roadmap proof for the week.
+  if (focus?.size) {
+    const marked = new Set<string>();
+    issues = issues.map((i) => {
+      const f = focus.get(i.assigneeUserId);
+      const body = i.body.replace(ROADMAP_LINE, "").trimEnd();
+      if (!f || i.skillId !== f.skillId || marked.has(i.assigneeUserId)) return body === i.body ? i : { ...i, body };
+      marked.add(i.assigneeUserId);
+      return { ...i, body: `${body}\n\n${roadmapLine(f)}` };
+    });
+  }
 
   return { title: draft.title.trim() || "Pod project", pitch: draft.pitch.trim() || "A 3-week peer-learning project.", milestones, issues };
 }
@@ -230,12 +325,13 @@ export async function designProject(pod: Pod, runId?: string): Promise<ProjectBr
   const rid = runId ?? newRunId();
   emit({ runId: rid, agent: "architect", status: "started", message: `Designing a 3-week project for ${pod.name} (${pod.members.length} members)` });
   const members = await loadMembers(pod);
+  const focus = await askRoadmapAgent(members, rid);
 
   let draft: Draft | null = null;
   if (!isDemo()) {
     try {
       draft = await llmJSON({
-        agent: "architect", runId: rid, system: SYSTEM_PROMPT, user: buildUserPrompt(members),
+        agent: "architect", runId: rid, system: SYSTEM_PROMPT, user: buildUserPrompt(members, focus),
         schema: ProjectBriefDraftZ, schemaName: "project_brief", temperature: 0.4, cacheKey: `architect-${pod.id}`,
       });
       emit({ runId: rid, agent: "architect", status: "progress", message: `Drafted "${draft.title}" with ${draft.issues.length} issues` });
@@ -248,7 +344,7 @@ export async function designProject(pod: Pod, runId?: string): Promise<ProjectBr
     emit({ runId: rid, agent: "architect", status: "progress", message: `Using a ready-made plan: "${draft.title}"` });
   }
 
-  const repaired = repairBrief(draft, pod.members);
+  const repaired = repairBrief(draft, pod.members, focus);
   emit({
     runId: rid, agent: "architect", status: "done",
     message: `Designed "${repaired.title}": ${repaired.issues.length} issues across ${repaired.milestones.length} milestones`,
@@ -293,6 +389,13 @@ export function buildReadme(brief: ProjectBrief, members: MemberInfo[]): string 
     "Made with Keystone",
     "",
   ].join("\n");
+}
+
+/** Adds the people line to an issue body, keeping the roadmap proof line last. */
+export function githubIssueBody(body: string, people: string): string {
+  const m = body.match(/\n*(\*\*Roadmap:\*\*[^\n]*)\s*$/);
+  if (!m || m.index === undefined) return `${body}\n\n${people}`;
+  return `${body.slice(0, m.index).trimEnd()}\n\n${people}\n\n${m[1]}`;
 }
 
 const statusOf = (e: unknown) => (typeof e === "object" && e && "status" in e ? Number((e as { status: unknown }).status) : 0);
@@ -355,7 +458,7 @@ export async function createRepoAndIssues(pod: Pod, brief: ProjectBrief, runId?:
         const login = assignee?.githubLogin && !assignee.isDemo ? assignee.githubLogin : undefined;
         const params = {
           owner, repo: repoName, title: i.title,
-          body: `${i.body}\n\n**Assignee:** ${nameOf(i.assigneeUserId)} · **Reviewer:** ${nameOf(i.reviewerUserId)} · **Skill:** ${skillName(i.skillId)}`,
+          body: githubIssueBody(i.body, `**Assignee:** ${nameOf(i.assigneeUserId)} · **Reviewer:** ${nameOf(i.reviewerUserId)} · **Skill:** ${skillName(i.skillId)}`),
           labels: [i.skillId],
           milestone: numbers.get(i.milestone) ?? numbers.get(brief.milestones[0]),
         };

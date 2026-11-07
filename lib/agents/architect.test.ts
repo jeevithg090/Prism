@@ -9,6 +9,7 @@ const h = vi.hoisted(() => ({
   triggerWorkflow: vi.fn(async () => true),
   emit: vi.fn(),
   profiles: new Map<string, unknown>(),
+  roadmaps: new Map<string, unknown>(),
   octokitCtor: vi.fn(),
 }));
 
@@ -17,7 +18,7 @@ vi.mock("@/lib/n8n", () => ({ triggerWorkflow: h.triggerWorkflow }));
 vi.mock("@/lib/agents/events", () => ({ emit: h.emit, newRunId: () => "run_test", subscribe: vi.fn() }));
 vi.mock("@/lib/store", () => ({
   getStore: () => ({
-    get: async (_c: string, id: string) => h.profiles.get(id) ?? null,
+    get: async (c: string, id: string) => (c === "roadmaps" ? h.roadmaps.get(id) : h.profiles.get(id)) ?? null,
     list: async () => [],
     upsert: async (_c: string, _id: string, doc: unknown) => doc,
     remove: async () => {},
@@ -30,7 +31,7 @@ vi.mock("octokit", () => ({
   },
 }));
 
-import { createRepoAndIssues, designProject, repairBrief, DEMO_REPO_URL } from "./architect";
+import { createRepoAndIssues, currentWeek, designProject, githubIssueBody, repairBrief, DEMO_REPO_URL } from "./architect";
 
 const pod: Pod = {
   id: "pod_t1", name: "Pod Aurora", score: 0.8, createdAt: "2026-11-07T12:00:00Z", explanations: [],
@@ -99,6 +100,7 @@ function liveRequestMock(opts: { labelStatus?: number; failIssues?: boolean } = 
 beforeEach(() => {
   vi.clearAllMocks();
   h.profiles.clear();
+  h.roadmaps.clear();
   h.profiles.set("aisha", profile("aisha", "Aisha Rahman"));
   h.profiles.set("priya", profile("priya", "Priya Shah"));
   h.profiles.set("tom", profile("tom", "Tom Okafor"));
@@ -291,5 +293,81 @@ describe("createRepoAndIssues", () => {
     await createRepoAndIssues(pod, brief(4));
     const aishaIssue = h.request.mock.calls.find((c) => c[0] === "POST /repos/{owner}/{repo}/issues" && c[1].assignees);
     expect(aishaIssue?.[1].assignees).toEqual(["aisha-real"]);
+  });
+});
+
+describe("Architect ← Roadmap Agent handoff", () => {
+  const messages = () => h.emit.mock.calls.map((c) => `${c[0].agent}: ${c[0].message}`);
+  const week = (n: number, focusSkillId: string, done: boolean[], proof = `Week ${n} proof text`) => ({
+    week: n, startDate: "2026-11-02", focusSkillId, isExamWeek: false, proof,
+    tasks: done.map((d, i) => ({ id: `t${n}-${i}`, type: "learn", title: "Task", free: true, hours: 2, done: d })),
+    receipt: { demandPct: 41, coveredByDegree: "no", reason: "r" },
+  });
+
+  it("asks for each member's week and makes Aisha's Docker issue her Week 1 roadmap proof (seeded pod, DEMO_MODE)", async () => {
+    process.env.DEMO_MODE = "true";
+    const out = await designProject({ ...pod, id: "pod_demo01" }, "run_rm");
+    expect(h.llmJSON).not.toHaveBeenCalled();
+    const docker = out.issues.find((i) => i.assigneeUserId === "aisha" && i.skillId === "docker")!;
+    expect(docker.body.replace(/\*\*/g, "")).toContain("Roadmap: Week 1"); // rendered markdown
+    expect(docker.body.trimEnd().split("\n").at(-1)).toBe("**Roadmap:** Week 1 proof · Merge a PR that adds Docker to your pod repo");
+    // exactly one roadmap proof issue per member, on their focus skill (learns[0] fallback)
+    for (const m of pod.members) {
+      const proofs = out.issues.filter((i) => i.assigneeUserId === m.userId && i.body.includes("**Roadmap:**"));
+      expect(proofs).toHaveLength(1);
+      expect(proofs[0].skillId).toBe(m.learns[0]);
+    }
+    const msgs = messages();
+    expect(msgs).toContain("architect: asked Roadmap Agent for 4 members' current week");
+    expect(msgs).toContain("roadmap: Aisha · Week 1 focus: Docker");
+    expect(msgs).toContain("roadmap: Mei · Week 1 focus: Python");
+    expect(msgs.indexOf("architect: asked Roadmap Agent for 4 members' current week")).toBeLessThan(msgs.indexOf("roadmap: Aisha · Week 1 focus: Docker"));
+    expect(ProjectBriefZ.safeParse(out).success).toBe(true);
+  });
+
+  it("uses the stored roadmap's first unfinished week and adds a focus issue the LLM missed", async () => {
+    h.roadmaps.set("aisha", { userId: "aisha", roleId: "ml-engineer", weeks: [week(1, "docker", [true, true]), week(2, "pytorch", [true, false], "Train a tiny CNN and push it")] });
+    h.llmJSON.mockResolvedValueOnce(llmDraft()); // only a docker issue for aisha
+    const out = await designProject(pod, "run_rm2");
+    const prompt = h.llmJSON.mock.calls[0][0].user as string;
+    expect(prompt).toContain("current roadmap focus: pytorch (Week 2)");
+    expect(prompt).toContain("FIRST issue must practise their current roadmap focus skill");
+    const focusIssue = out.issues.find((i) => i.assigneeUserId === "aisha" && i.skillId === "pytorch")!;
+    expect(focusIssue.title).toBe("Add PyTorch to the project");
+    expect(focusIssue.milestone).toBe(MILESTONES[0]);
+    expect(focusIssue.body.endsWith("**Roadmap:** Week 2 proof · Train a tiny CNN and push it")).toBe(true);
+    expect(out.issues.find((i) => i.assigneeUserId === "aisha" && i.skillId === "docker")!.body).not.toContain("**Roadmap:**");
+    expect(messages()).toContain("roadmap: Aisha · Week 2 focus: PyTorch");
+  });
+
+  it("falls back to P2's roadmap fixture file when the store has none", async () => {
+    process.env.DEMO_MODE = "true";
+    h.profiles.set("aisha", profile("aisha", "Aisha Rahman", { dna: { targetRoles: ["ml-engineer"] } as Profile["dna"] }));
+    const real = fs.promises.readFile;
+    const spy = vi.spyOn(fs.promises, "readFile").mockImplementation((async (p: unknown, ...rest: unknown[]) => {
+      if (String(p).endsWith("data/fixtures/roadmap.aisha.ml-engineer.json")) {
+        return JSON.stringify({ weeks: [week(1, "docker", [false], "Ship a Dockerfile that runs the API")] });
+      }
+      return (real as (...a: unknown[]) => Promise<string>)(p, ...rest);
+    }) as typeof fs.promises.readFile);
+    const out = await designProject({ ...pod, id: "pod_demo01" });
+    spy.mockRestore();
+    const docker = out.issues.find((i) => i.assigneeUserId === "aisha" && i.skillId === "docker")!;
+    expect(docker.body.endsWith("**Roadmap:** Week 1 proof · Ship a Dockerfile that runs the API")).toBe(true);
+  });
+
+  it("currentWeek skips finished weeks and ignores unusable docs", () => {
+    expect(currentWeek({ weeks: [week(1, "docker", [true]), week(2, "sql", [false])] }, "roadmap")).toMatchObject({ week: 2, skillId: "sql" });
+    expect(currentWeek({ weeks: [week(1, "docker", [true])] }, "roadmap")).toBeNull();
+    expect(currentWeek({ id: "aisha", name: "Aisha" }, "roadmap")).toBeNull();
+    expect(currentWeek(null, "fixture")).toBeNull();
+  });
+
+  it("repairBrief without focus leaves bodies untouched; GitHub bodies keep the roadmap line last", () => {
+    const out = repairBrief(llmDraft(), pod.members);
+    expect(out.issues.every((i) => !i.body.includes("**Roadmap:**"))).toBe(true);
+    const body = githubIssueBody("Do it\n\n**Roadmap:** Week 1 proof · Ship it", "**Assignee:** Aisha");
+    expect(body).toBe("Do it\n\n**Assignee:** Aisha\n\n**Roadmap:** Week 1 proof · Ship it");
+    expect(githubIssueBody("Do it", "**Assignee:** Aisha")).toBe("Do it\n\n**Assignee:** Aisha");
   });
 });
