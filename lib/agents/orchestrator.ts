@@ -67,21 +67,54 @@ export function isDemoRun(userId: string, opts: Pick<OnboardOptions, "demo"> = {
 }
 
 /** Starts the run in the background and returns its id straight away. */
+// Serverless-safe runs: the run id carries what any instance needs to execute the run ("ob-<d|l>-<rand>-<userId>"),
+// so GET /api/agents/stream can start it in its own process when the POST ran elsewhere (Vercel instances
+// don't share memory). A per-process set stops the same run starting twice in one instance.
+const g = globalThis as unknown as { __ksStartedRuns?: Set<string> };
+const startedRuns: Set<string> = (g.__ksStartedRuns ??= new Set());
+const ONBOARD_RUN = /^ob-([dl])-([a-z0-9]{2,12})-([A-Za-z0-9_-]{1,40})$/;
+
+export function parseOnboardRunId(runId: string): { mode: "demo" | "live"; userId: string } | null {
+  const m = ONBOARD_RUN.exec(runId);
+  return m ? { mode: m[1] === "d" ? "demo" : "live", userId: m[3] } : null;
+}
+
+export function hasStartedRun(runId: string): boolean {
+  return startedRuns.has(runId);
+}
+
+/** Executes an onboarding run in this process (idempotent per process). */
+export async function executeOnboardingRun(runId: string, opts: OnboardOptions = {}): Promise<void> {
+  const parsed = parseOnboardRunId(runId);
+  if (!parsed || startedRuns.has(runId)) return;
+  startedRuns.add(runId);
+  const profile = await getStore().get<Profile>("profiles", parsed.userId);
+  if (!profile) {
+    emit({ runId, agent: "orchestrator", status: "error", message: `We couldn't find a profile for ${parsed.userId}.` });
+    return;
+  }
+  try {
+    if (parsed.mode === "demo") await replayDemo(runId, profile, opts);
+    else await runLive(runId, profile, opts);
+  } catch {
+    emit({ runId, agent: "orchestrator", status: "error", message: "Something went wrong on our side. Showing demo data." });
+  }
+}
+
 export async function runOnboarding(userId: string, opts: OnboardOptions = {}): Promise<{ runId: string; mode: "demo" | "live" }> {
   const profile = await getStore().get<Profile>("profiles", userId);
   if (!profile) throw new ProfileNotFoundError(userId);
-  const runId = newRunId();
   const mode = isDemoRun(userId, opts) ? "demo" : "live";
-  const work = async () => {
-    try {
-      if (mode === "demo") await replayDemo(runId, profile, opts);
-      else await runLive(runId, profile, opts);
-    } catch {
-      emit({ runId, agent: "orchestrator", status: "error", message: "Something went wrong on our side. Showing demo data." });
-    }
-  };
+  const safeUser = /^[A-Za-z0-9_-]{1,40}$/.test(userId) ? userId : "aisha";
+  const runId = `ob-${mode === "demo" ? "d" : "l"}-${newRunId().replace(/^run_/, "").replace(/[^a-z0-9]/g, "").slice(0, 8) || "x0"}-${safeUser}`;
+  // On Vercel the stream request (GET /api/agents/stream) executes the run in the instance that streams it.
+  if (process.env.VERCEL) return { runId, mode };
   const schedule = opts.schedule ?? ((w) => { void w(); });
-  schedule(work);
+  startedRuns.add(runId);
+  schedule(async () => {
+    startedRuns.delete(runId);
+    await executeOnboardingRun(runId, opts);
+  });
   return { runId, mode };
 }
 

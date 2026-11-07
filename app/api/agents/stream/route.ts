@@ -1,4 +1,5 @@
 import { getRunEvents, subscribe } from "@/lib/agents/events";
+import { executeOnboardingRun, hasStartedRun, parseOnboardRunId } from "@/lib/agents/orchestrator";
 import { badRequest, internal, ok } from "@/lib/schemas/community";
 import type { AgentEvent } from "@/lib/types";
 
@@ -60,6 +61,20 @@ export async function GET(req: Request) {
       send("retry: 2000\n: connected\n\n");
       if (req.signal.aborted) return close();
       req.signal.addEventListener("abort", close);
+
+      // Serverless: if this onboarding run hasn't started in this instance and has no events here, run it now,
+      // in this process, so its events reach this stream. Other runs that produce nothing close cleanly.
+      const onboard = parseOnboardRunId(runId);
+      if (onboard && !hasStartedRun(runId) && getRunEvents(runId).length === 0) {
+        void executeOnboardingRun(runId);
+      }
+      const idle = onboard ? null : setTimeout(() => {
+        if (getRunEvents(runId).length === 0) {
+          send(`event: agent\ndata: ${JSON.stringify({ runId, agent: "orchestrator", status: "done", message: "The agents finished; the results are on the page.", ts: new Date().toISOString() } satisfies AgentEvent)}\n\n`);
+          close();
+        }
+      }, 6_000);
+      req.signal.addEventListener("abort", () => { if (idle) clearTimeout(idle); });
 
       try {
         let lead: AgentEvent | undefined;

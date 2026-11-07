@@ -151,7 +151,11 @@ describe("demo replay", () => {
     process.env.DEMO_MODE = "true";
     let work: (() => Promise<void>) | undefined;
     const res = await runOnboarding("aisha", { schedule: (w) => { work = w; } });
-    expect(res).toEqual({ runId: "run_new", mode: "demo" });
+    // The run id carries mode + user so any serverless instance can execute it (GET /api/agents/stream).
+    expect(res).toEqual({ runId: "ob-d-new-aisha", mode: "demo" });
+    const { parseOnboardRunId } = await import("./orchestrator");
+    expect(parseOnboardRunId(res.runId)).toEqual({ mode: "demo", userId: "aisha" });
+    expect(parseOnboardRunId("run_abc")).toBeNull();
     expect(h.events).toHaveLength(0);
     expect(work).toBeTypeOf("function");
   });
