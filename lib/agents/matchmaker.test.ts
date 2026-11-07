@@ -3,7 +3,7 @@ import skills from "@/data/skills.json";
 import { PodZ, skillName } from "@/lib/schemas/community";
 import type { Pod } from "@/lib/types";
 import {
-  buildCandidate, greedyPod, learnsTeaches, matchPod, NotFoundError, podName, roleLabel, scoreParts, scoreTeam,
+  buildCandidate, greedyPod, learnsTeaches, MATCH_PURPOSE, matchPod, NotFoundError, podName, roleLabel, scoreParts, scoreTeam,
   templateExplanations, type CandidateSkills,
 } from "./matchmaker";
 import { AISHA_MAP, fakeStore, PROFILES, serveDataFiles, STUDENT_SKILLS } from "./matchmaker.testdata";
@@ -158,15 +158,26 @@ describe("matchPod", () => {
     expect(mocks.embed).toHaveBeenCalledTimes(2); // once per run (precomputed), then Jaccard fallback
   });
 
-  it("emits started / progress / progress / done with real numbers", async () => {
+  it("emits started (purpose) / progress ×3 / done with real numbers", async () => {
     const pod = await matchPod({ userId: "aisha", runId: "run_ev" });
-    const evs = mocks.emit.mock.calls.map(([e]) => e as { runId: string; agent: string; status: string; message: string });
+    const evs = mocks.emit.mock.calls.map(([e]) => e as { runId: string; agent: string; status: string; message: string; data?: Record<string, unknown> });
     expect(evs.every((e) => e.runId === "run_ev" && e.agent === "matchmaker")).toBe(true);
-    expect(evs.map((e) => e.status)).toEqual(["started", "progress", "progress", "done"]);
-    expect(evs[0].message).toBe("Matchmaker: comparing 4 students");
-    expect(evs[1].message).toBe("best partner: Priya (fills Docker, PyTorch)");
-    expect(evs[2].message).toBe(`pod score ${pod.score.toFixed(2)}`);
-    expect(evs[3].message).toContain(pod.name);
+    expect(evs.map((e) => e.status)).toEqual(["started", "progress", "progress", "progress", "done"]);
+    expect(evs[0].message).toBe(MATCH_PURPOSE);
+    expect(evs[1].message).toBe("Matchmaker: comparing 4 students");
+    expect(evs[1].data).toMatchObject({ candidates: 4 });
+    expect(evs[2].message).toBe("best partner: Priya (fills Docker, PyTorch)");
+    expect(evs[3].message).toBe(`pod score ${pod.score.toFixed(2)}`);
+    expect(evs[4].message).toContain(pod.name);
+    expect(evs[4].data).toMatchObject({ podId: pod.id, usedFallback: false });
+  });
+
+  it("writes an agent_runs ledger entry: noDemographicSignals passes on minimised scoring inputs", async () => {
+    await matchPod({ userId: "aisha", runId: "run_ledger" });
+    const entry = await fakeStore.get<Record<string, unknown>>("agent_runs", "run_ledger:matchmaker:1");
+    expect(entry).toMatchObject({ runId: "run_ledger", agent: "matchmaker", status: "ok", usedFallback: false, purpose: MATCH_PURPOSE });
+    expect(entry?.guardrails).toEqual([expect.objectContaining({ name: "noDemographicSignals", action: "pass" })]);
+    expect(JSON.stringify(entry)).not.toContain("aisha"); // input is only a digest
   });
 
   it("every explanation names real skills from the members' learns/teaches", async () => {

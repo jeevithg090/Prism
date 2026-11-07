@@ -6,14 +6,22 @@ import { Octokit } from "octokit";
 import { customAlphabet } from "nanoid";
 import { llmJSON } from "@/lib/llm";
 import { getStore } from "@/lib/store";
-import { emit, newRunId } from "@/lib/agents/events";
+import { newRunId } from "@/lib/agents/events";
+import { maxItems, noFullSolutions } from "@/lib/agents/guardrails";
+import { runAgent, type Checkpoint } from "@/lib/agents/harness";
 import { triggerWorkflow } from "@/lib/n8n";
-import { ProjectBriefDraftZ, skillName } from "@/lib/schemas/community";
+import { ProjectBriefDraftZ, ProjectBriefZ, skillName } from "@/lib/schemas/community";
 import type { Pod, PodMember, Profile, ProjectBrief, ProjectIssue, SkillId } from "@/lib/types";
 
 export const DEMO_REPO_URL = "https://github.com/keystone-demo/pod-vision-demo";
 export const DEFAULT_MILESTONES = ["Week 1: Foundations", "Week 2: Build", "Week 3: Ship & demo"] as const;
 export const MAX_ISSUES = 8;
+/** Human checkpoint: the AI proposes the issues; people review and merge the work. */
+export const PEER_APPROVAL: Checkpoint = {
+  kind: "peer-approval",
+  who: "a podmate",
+  note: "Each issue is reviewed and merged by a podmate, never by the AI",
+};
 const LABEL_COLOR = "6366F1";
 const repoSuffix = customAlphabet("abcdefghijklmnopqrstuvwxyz0123456789", 4);
 
@@ -228,33 +236,50 @@ function templateBrief(pod: Pod, members: MemberInfo[]): Draft {
 
 export async function designProject(pod: Pod, runId?: string): Promise<ProjectBrief> {
   const rid = runId ?? newRunId();
-  emit({ runId: rid, agent: "architect", status: "started", message: `Designing a 3-week project for ${pod.name} (${pod.members.length} members)` });
-  const members = await loadMembers(pod);
-
-  let draft: Draft | null = null;
-  if (!isDemo()) {
-    try {
-      draft = await llmJSON({
-        agent: "architect", runId: rid, system: SYSTEM_PROMPT, user: buildUserPrompt(members),
-        schema: ProjectBriefDraftZ, schemaName: "project_brief", temperature: 0.4, cacheKey: `architect-${pod.id}`,
+  const { output } = await runAgent<ProjectBrief>({
+    agent: "architect",
+    runId: rid,
+    purpose: `Designing a 3-week project for ${pod.name} (${pod.members.length} members)`,
+    input: { podId: pod.id, members: pod.members.map((m) => ({ learns: m.learns, teaches: m.teaches })) },
+    outputSchema: ProjectBriefZ,
+    guardrails: [noFullSolutions<ProjectBrief>(), maxItems<ProjectBrief>(MAX_ISSUES, { field: "issues" })],
+    checkpoint: PEER_APPROVAL,
+    run: async (ctx) => {
+      const members = await loadMembers(pod);
+      let draft: Draft | null = null;
+      if (!isDemo()) {
+        try {
+          draft = await ctx.step(
+            "draft with LLM",
+            () => llmJSON({
+              agent: "architect", runId: rid, system: SYSTEM_PROMPT, user: buildUserPrompt(members),
+              schema: ProjectBriefDraftZ, schemaName: "project_brief", temperature: 0.4, cacheKey: `architect-${pod.id}`,
+            }),
+            (d) => `Drafted "${d.title}" with ${d.issues.length} issues`,
+          );
+        } catch {
+          draft = null;
+          ctx.degraded("LLM unavailable: used a ready-made plan");
+        }
+      }
+      if (!draft) {
+        draft = fixtureBriefFor(pod) ?? templateBrief(pod, members);
+        ctx.emit("progress", `Using a ready-made plan: "${draft.title}"`);
+      }
+      const repaired = repairBrief(draft, pod.members);
+      ctx.done(`Designed "${repaired.title}": ${repaired.issues.length} issues across ${repaired.milestones.length} milestones`, {
+        issues: repaired.issues.length, milestones: repaired.milestones.length,
       });
-      emit({ runId: rid, agent: "architect", status: "progress", message: `Drafted "${draft.title}" with ${draft.issues.length} issues` });
-    } catch {
-      draft = null;
-    }
-  }
-  if (!draft) {
-    draft = fixtureBriefFor(pod) ?? templateBrief(pod, members);
-    emit({ runId: rid, agent: "architect", status: "progress", message: `Using a ready-made plan: "${draft.title}"` });
-  }
-
-  const repaired = repairBrief(draft, pod.members);
-  emit({
-    runId: rid, agent: "architect", status: "done",
-    message: `Designed "${repaired.title}": ${repaired.issues.length} issues across ${repaired.milestones.length} milestones`,
-    data: { issues: repaired.issues.length, milestones: repaired.milestones.length },
+      return repaired;
+    },
+    fallback: (_err, ctx) => {
+      const members = pod.members.map((m) => ({ ...m, name: capitalise(m.userId), interests: [] as string[] }));
+      const repaired = repairBrief(templateBrief(pod, members), pod.members);
+      ctx.done(`Designed "${repaired.title}" from a template: ${repaired.issues.length} issues`, { issues: repaired.issues.length });
+      return repaired;
+    },
   });
-  return repaired;
+  return output;
 }
 
 export function slug(s: string, max = 30): string {
@@ -299,95 +324,112 @@ const statusOf = (e: unknown) => (typeof e === "object" && e && "status" in e ? 
 
 export async function createRepoAndIssues(pod: Pod, brief: ProjectBrief, runId?: string): Promise<ProjectBrief> {
   const rid = runId ?? newRunId();
-  const members = await loadMembers(pod);
-  const nameOf = (id: string) => members.find((m) => m.userId === id)?.name ?? capitalise(id);
-  const token = process.env.GITHUB_TOKEN;
-  const org = process.env.GITHUB_ORG;
-  emit({ runId: rid, agent: "architect", status: "started", message: `Setting up the GitHub repo for "${brief.title}"` });
+  const { output } = await runAgent<ProjectBrief>({
+    agent: "architect",
+    runId: rid,
+    purpose: `Setting up the GitHub repo for "${brief.title}"`,
+    input: { podId: pod.id, issues: brief.issues.length, milestones: brief.milestones.length },
+    outputSchema: ProjectBriefZ,
+    checkpoint: PEER_APPROVAL,
+    timeoutMs: 60_000, // GitHub calls are sequential: repo, README, labels, milestones, issues
+    run: async (ctx) => {
+      const members = await loadMembers(pod);
+      const nameOf = (id: string) => members.find((m) => m.userId === id)?.name ?? capitalise(id);
+      const token = process.env.GITHUB_TOKEN;
+      const org = process.env.GITHUB_ORG;
 
-  let result: ProjectBrief;
-  if (isDemo() || !token || !org) {
-    result = demoResult(brief);
-    emit({
-      runId: rid, agent: "architect", status: "progress",
-      message: `Demo mode: linked ${result.issues.length} issues across ${brief.milestones.length} milestones in keystone-demo/pod-vision-demo`,
-    });
-  } else {
-    try {
-      const octokit = new Octokit({ auth: token });
-      const name = `pod-${slug(brief.title)}-${repoSuffix()}`;
-      const repo = await octokit.request("POST /orgs/{org}/repos", {
-        org, name, description: brief.pitch.slice(0, 350), private: false, auto_init: true,
-      });
-      const owner = repo.data.owner?.login ?? org;
-      const repoName = repo.data.name ?? name;
-      emit({ runId: rid, agent: "architect", status: "progress", message: `created repo ${repoName}`, data: { url: repo.data.html_url } });
+      let result: ProjectBrief;
+      if (isDemo() || !token || !org) {
+        result = demoResult(brief);
+        ctx.emit("progress", `Demo mode: linked ${result.issues.length} issues across ${brief.milestones.length} milestones in keystone-demo/pod-vision-demo`);
+      } else {
+        try {
+          const octokit = new Octokit({ auth: token });
+          const name = `pod-${slug(brief.title)}-${repoSuffix()}`;
+          const repo = await ctx.step(
+            "create repo",
+            () => octokit.request("POST /orgs/{org}/repos", { org, name, description: brief.pitch.slice(0, 350), private: false, auto_init: true }),
+            (r) => ({ message: `created repo ${r.data.name ?? name}`, data: { url: r.data.html_url } }),
+          );
+          const owner = repo.data.owner?.login ?? org;
+          const repoName = repo.data.name ?? name;
 
-      let sha: string | undefined;
+          let sha: string | undefined;
+          try {
+            const cur = await octokit.request("GET /repos/{owner}/{repo}/contents/{path}", { owner, repo: repoName, path: "README.md" });
+            sha = (cur.data as { sha?: string }).sha;
+          } catch (e) {
+            if (statusOf(e) !== 404) throw e; // auto_init README not there yet: create instead of update
+          }
+          await octokit.request("PUT /repos/{owner}/{repo}/contents/{path}", {
+            owner, repo: repoName, path: "README.md", message: "docs: project brief from Keystone",
+            content: Buffer.from(buildReadme(brief, members), "utf8").toString("base64"), ...(sha ? { sha } : {}),
+          });
+
+          for (const skill of [...new Set(brief.issues.map((i) => i.skillId))]) {
+            try {
+              await octokit.request("POST /repos/{owner}/{repo}/labels", { owner, repo: repoName, name: skill, color: LABEL_COLOR, description: skillName(skill) });
+            } catch (e) {
+              if (statusOf(e) !== 422) throw e; // label already exists
+            }
+          }
+
+          const numbers = new Map<string, number>();
+          for (const title of brief.milestones) {
+            const ms = await octokit.request("POST /repos/{owner}/{repo}/milestones", { owner, repo: repoName, title });
+            numbers.set(title, ms.data.number);
+          }
+
+          const issues = await ctx.step(
+            "open issues",
+            async () => {
+              const out: ProjectIssue[] = [];
+              for (const i of brief.issues) {
+                const assignee = members.find((m) => m.userId === i.assigneeUserId);
+                const login = assignee?.githubLogin && !assignee.isDemo ? assignee.githubLogin : undefined;
+                const params = {
+                  owner, repo: repoName, title: i.title,
+                  body: `${i.body}\n\n**Assignee:** ${nameOf(i.assigneeUserId)} · **Reviewer:** ${nameOf(i.reviewerUserId)} · **Skill:** ${skillName(i.skillId)}`,
+                  labels: [i.skillId],
+                  milestone: numbers.get(i.milestone) ?? numbers.get(brief.milestones[0]),
+                };
+                let created;
+                try {
+                  created = await octokit.request("POST /repos/{owner}/{repo}/issues", login ? { ...params, assignees: [login] } : params);
+                } catch (e) {
+                  if (!login || statusOf(e) !== 422) throw e;
+                  created = await octokit.request("POST /repos/{owner}/{repo}/issues", params); // login isn't assignable here
+                }
+                out.push({ ...i, githubIssueUrl: created.data.html_url });
+              }
+              return out;
+            },
+            (out) => ({ message: `opened ${out.length} issues across ${numbers.size} milestones`, data: { issues: out.length, milestones: numbers.size } }),
+          );
+          result = { ...brief, repoUrl: repo.data.html_url, issues };
+        } catch (e) {
+          ctx.emit("error", "GitHub failed: using demo repo", { status: statusOf(e) || undefined });
+          ctx.degraded("GitHub failed: used the demo repo");
+          result = demoResult(brief);
+        }
+      }
+
       try {
-        const cur = await octokit.request("GET /repos/{owner}/{repo}/contents/{path}", { owner, repo: repoName, path: "README.md" });
-        sha = (cur.data as { sha?: string }).sha;
-      } catch (e) {
-        if (statusOf(e) !== 404) throw e; // auto_init README not there yet: create instead of update
+        await triggerWorkflow("pod-kickoff", {
+          podId: pod.id, podName: pod.name, repoUrl: result.repoUrl,
+          members: members.map((m) => m.name), title: result.title, pitch: result.pitch,
+        });
+      } catch {
+        // kickoff is best-effort; the project is already usable
       }
-      await octokit.request("PUT /repos/{owner}/{repo}/contents/{path}", {
-        owner, repo: repoName, path: "README.md", message: "docs: project brief from Keystone",
-        content: Buffer.from(buildReadme(brief, members), "utf8").toString("base64"), ...(sha ? { sha } : {}),
-      });
-
-      for (const skill of [...new Set(brief.issues.map((i) => i.skillId))]) {
-        try {
-          await octokit.request("POST /repos/{owner}/{repo}/labels", { owner, repo: repoName, name: skill, color: LABEL_COLOR, description: skillName(skill) });
-        } catch (e) {
-          if (statusOf(e) !== 422) throw e; // label already exists
-        }
-      }
-
-      const numbers = new Map<string, number>();
-      for (const title of brief.milestones) {
-        const ms = await octokit.request("POST /repos/{owner}/{repo}/milestones", { owner, repo: repoName, title });
-        numbers.set(title, ms.data.number);
-      }
-
-      const issues: ProjectIssue[] = [];
-      for (const i of brief.issues) {
-        const assignee = members.find((m) => m.userId === i.assigneeUserId);
-        const login = assignee?.githubLogin && !assignee.isDemo ? assignee.githubLogin : undefined;
-        const params = {
-          owner, repo: repoName, title: i.title,
-          body: `${i.body}\n\n**Assignee:** ${nameOf(i.assigneeUserId)} · **Reviewer:** ${nameOf(i.reviewerUserId)} · **Skill:** ${skillName(i.skillId)}`,
-          labels: [i.skillId],
-          milestone: numbers.get(i.milestone) ?? numbers.get(brief.milestones[0]),
-        };
-        let created;
-        try {
-          created = await octokit.request("POST /repos/{owner}/{repo}/issues", login ? { ...params, assignees: [login] } : params);
-        } catch (e) {
-          if (!login || statusOf(e) !== 422) throw e;
-          created = await octokit.request("POST /repos/{owner}/{repo}/issues", params); // login isn't assignable here
-        }
-        issues.push({ ...i, githubIssueUrl: created.data.html_url });
-      }
-      emit({
-        runId: rid, agent: "architect", status: "progress",
-        message: `opened ${issues.length} issues across ${numbers.size} milestones`,
-        data: { issues: issues.length, milestones: numbers.size },
-      });
-      result = { ...brief, repoUrl: repo.data.html_url, issues };
-    } catch (e) {
-      emit({ runId: rid, agent: "architect", status: "error", message: "GitHub failed: using demo repo", data: { status: statusOf(e) || undefined } });
-      result = demoResult(brief);
-    }
-  }
-
-  try {
-    await triggerWorkflow("pod-kickoff", {
-      podId: pod.id, podName: pod.name, repoUrl: result.repoUrl,
-      members: members.map((m) => m.name), title: result.title, pitch: result.pitch,
-    });
-  } catch {
-    // kickoff is best-effort; the project is already usable
-  }
-  emit({ runId: rid, agent: "architect", status: "done", message: `Project ready: ${result.repoUrl}`, data: { repoUrl: result.repoUrl } });
-  return result;
+      ctx.done(`Project ready: ${result.repoUrl}`, { repoUrl: result.repoUrl });
+      return result;
+    },
+    fallback: (_err, ctx) => {
+      const result = demoResult(brief);
+      ctx.done(`Project ready (demo repo): ${result.repoUrl}`, { repoUrl: result.repoUrl });
+      return result;
+    },
+  });
+  return output;
 }
