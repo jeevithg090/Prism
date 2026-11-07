@@ -128,3 +128,13 @@ describe("the UoM fixture", () => {
     for (const gap of ["docker", "aws", "mlops", "llm-apps", "llm-evaluation", "kubernetes", "ci-cd", "vector-databases", "pytorch", "sql"]) expect(all).not.toContain(gap);
   });
 });
+
+describe("parseUnitsFromText: markdown table rows", () => {
+  it("takes the title from the name cell and credits/compulsory from their own cells", async () => {
+    const { parseUnitsFromText } = await import("./syllabus");
+    const units = parseUnitsFromText("| Unit code | Unit title | Unit lead | Credits | Status |\n| COMP10120 | First Year Team Project |  | 20 | Mandatory |\n| COMP13212 | Data Science | Dr X | 10 | Optional |");
+    expect(units.map((u) => u.title)).toEqual(["First Year Team Project", "Data Science"]);
+    expect(units[0]).toMatchObject({ code: "COMP10120", credits: 20, compulsory: true });
+    expect(units[1]).toMatchObject({ credits: 10, compulsory: false });
+  });
+});
