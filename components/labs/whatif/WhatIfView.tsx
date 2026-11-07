@@ -16,7 +16,7 @@ import { apiGet, apiPost } from "@/lib/fetcher";
 import { cn } from "@/lib/utils";
 import { AdoptDialog } from "./AdoptDialog";
 import { FuturesChart } from "./FuturesChart";
-import { dayLabel, favoured, PLAN_COLOR, type PlanSpec, type ProposalResponse, type SimResponse, type WhatIfContextView } from "./model";
+import { adoptChanges, dayLabel, favoured, PLAN_COLOR, type PlanSpec, type ProposalResponse, type SimResponse, type WhatIfContextView } from "./model";
 import { PlanCard } from "./PlanCard";
 
 const SUBTITLE = "Try two futures before you spend the hours. Built from your Bridge Map, your roadmap and the hiring forecast.";
@@ -33,9 +33,10 @@ function useDebounced<T>(value: T, ms: number): T {
 export function WhatIfSkeleton() {
   return (
     <div className="space-y-6" aria-busy="true" aria-label="Loading the What-if Simulator">
-      <div className="grid gap-6 lg:grid-cols-[22rem_minmax(0,1fr)]">
-        <div className="space-y-6">{[0, 1].map((i) => <Skeleton key={i} className="h-[30rem] w-full rounded-2xl" />)}</div>
-        <div className="space-y-6"><Skeleton className="h-40 w-full rounded-2xl" /><Skeleton className="h-[26rem] w-full rounded-2xl" /></div>
+      <div className="grid gap-6 lg:grid-cols-[22rem_minmax(0,1fr)] lg:grid-rows-[auto_1fr]">
+        <Skeleton className="h-40 w-full rounded-2xl lg:col-start-2 lg:row-start-1" />
+        <div className="space-y-6 lg:col-start-1 lg:row-span-2 lg:row-start-1">{[0, 1].map((i) => <Skeleton key={i} className="h-[30rem] w-full rounded-2xl" />)}</div>
+        <Skeleton className="h-[26rem] w-full rounded-2xl lg:col-start-2 lg:row-start-2" />
       </div>
     </div>
   );
@@ -71,7 +72,10 @@ export function WhatIfView({ demo = false }: { demo?: boolean }) {
   const [proposal, setProposal] = React.useState<ProposalResponse | null>(null);
   const propose = useMutation({
     mutationFn: (plan: PlanSpec) => apiPost<ProposalResponse>("/api/labs/whatif/adopt", { action: "propose", userId: uid, plan }),
-    onSuccess: (p) => setProposal(p),
+    onSuccess: (p) => {
+      if (p.status === "unchanged") toast("That's already your roadmap", { description: "Same weeks and the same hours, so there's nothing to approve." });
+      else setProposal(p);
+    },
     onError: (e) => toast.error("We couldn't draft that roadmap", { description: e instanceof Error ? e.message : "Try again in a moment." }),
   });
   const decide = useMutation({
@@ -136,24 +140,18 @@ export function WhatIfView({ demo = false }: { demo?: boolean }) {
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-[22rem_minmax(0,1fr)]">
-        <div className="space-y-6">
-          {shown.map((p) => (
-            <PlanCard key={p.id} spec={p} ctx={ctx} result={data?.plans.find((r) => r.id === p.id)} onChange={setPlan} stale={stale} />
-          ))}
-        </div>
-
-        <div className="min-w-0 space-y-6">
+      {/* The verdict comes first in the DOM, so on phones and narrow windows the headline result sits above the two
+          plan cards; from lg the cards take the left column and the verdict, chart and proofs the right. */}
+      <div className="grid gap-6 lg:grid-cols-[22rem_minmax(0,1fr)] lg:grid-rows-[auto_1fr]">
+        <div className="min-w-0 lg:col-start-2 lg:row-start-1">
           {!data && sim.isError ? (
             <ErrorState title="We couldn't run those futures" body={sim.error.message} onRetry={() => void sim.refetch()} onUseDemo={!useDemo ? () => setUseDemo(true) : undefined} />
           ) : !data ? (
-            <>
+            <div className="space-y-3">
               <Skeleton className="h-40 w-full rounded-2xl" />
-              <Skeleton className="h-[26rem] w-full rounded-2xl" />
               <p className="text-muted-foreground" aria-live="polite">Running {ctx.runs} futures for each plan.</p>
-            </>
+            </div>
           ) : (
-            <>
               <SectionCard title={`Your two futures to ${ctx.targetLabel}`} description={`${ctx.name.split(" ")[0]}, you're ${Math.round(ctx.readinessNow * 100)}% ready for ${ctx.role} roles today. ${data.runs} futures per plan, the same futures for both, so the comparison is fair.`}>
                 <motion.p
                   key={data.comparison?.verdict ?? data.plans[0].label}
@@ -172,22 +170,39 @@ export function WhatIfView({ demo = false }: { demo?: boolean }) {
                   </p>
                 )}
                 <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:flex-wrap">
-                  {data.plans.map((p) => (
-                    <Button
-                      key={p.id}
-                      variant={p.id === pick ? "default" : "outline"}
-                      className="h-10 rounded-xl px-4"
-                      disabled={propose.isPending || stale}
-                      onClick={() => propose.mutate(shown.find((c) => c.id === p.id)!)}
-                    >
-                      <span className="size-2.5 rounded-full" style={{ background: PLAN_COLOR[p.id] }} aria-hidden />
-                      Adopt {p.label}
-                    </Button>
-                  ))}
+                  {data.plans.map((p) => {
+                    const spec = shown.find((c) => c.id === p.id) ?? p.spec;
+                    const changes = adoptChanges(spec, ctx);
+                    return (
+                      <Button
+                        key={p.id}
+                        variant={p.id === pick ? "default" : "outline"}
+                        className="h-10 rounded-xl px-4"
+                        disabled={propose.isPending || stale || !changes}
+                        onClick={() => propose.mutate(spec)}
+                      >
+                        {changes ? <span className="size-2.5 rounded-full" style={{ background: PLAN_COLOR[p.id] }} aria-hidden /> : <CheckCircle2 aria-hidden />}
+                        {changes ? `Adopt ${p.label}` : `${p.label} is your roadmap`}
+                      </Button>
+                    );
+                  })}
                 </div>
                 <p className="mt-3 text-sm text-muted-foreground">Adopting asks the Roadmap Agent to draft it as your roadmap. You see every change and decide.</p>
               </SectionCard>
+          )}
+        </div>
 
+        <div className="space-y-6 lg:col-start-1 lg:row-span-2 lg:row-start-1">
+          {shown.map((p) => (
+            <PlanCard key={p.id} spec={p} ctx={ctx} result={data?.plans.find((r) => r.id === p.id)} onChange={setPlan} stale={stale} />
+          ))}
+        </div>
+
+        <div className="min-w-0 space-y-6 lg:col-start-2 lg:row-start-2">
+          {!data ? (
+            sim.isError ? null : <Skeleton className="h-[26rem] w-full rounded-2xl" />
+          ) : (
+            <>
               <SectionCard title="Readiness, week by week" description="Each line is the middle future. The shaded band holds 8 of 10 futures.">
                 <FuturesChart sim={data} targetLabel={ctx.targetLabel} />
               </SectionCard>

@@ -5,6 +5,10 @@ import { Briefcase, Clock, Flag, GraduationCap, Hourglass, Target } from "lucide
 import { cn } from "@/lib/utils";
 import { dayLabel, outOfTen, pct, PLAN_COLOR, type PlanResult, type PlanSpec, type WhatIfContextView } from "./model";
 
+/** The API's limits (PlanSpecZ), so a profile above 20 hours shows as it is, never clamped out of sync. */
+const MAX_HOURS = 40;
+const MAX_JOB_HOURS = 30;
+
 const focusRing = "outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card";
 
 function Switch({ id, checked, onChange, label, hint }: { id: string; checked: boolean; onChange: (v: boolean) => void; label: string; hint: string }) {
@@ -99,7 +103,7 @@ export function PlanCard({
       </div>
 
       <div className="mt-5 space-y-5">
-        <Range id={`${id}-hours`} label="Study hours a week" value={spec.hoursPerWeek} min={1} max={20} unit="h" onChange={(v) => set({ hoursPerWeek: v })} />
+        <Range id={`${id}-hours`} label="Study hours a week" value={spec.hoursPerWeek} min={1} max={MAX_HOURS} unit="h" onChange={(v) => set({ hoursPerWeek: v, jobHoursLost: Math.min(spec.jobHoursLost, v) })} />
 
         <div className="space-y-1">
           <label htmlFor={`${id}-first`} className="font-medium">Learn first</label>
@@ -130,12 +134,12 @@ export function PlanCard({
         <Switch
           id={`${id}-job`}
           checked={spec.jobHoursLost > 0}
-          onChange={(v) => set({ jobHoursLost: v ? 4 : 0 })}
+          onChange={(v) => set({ jobHoursLost: v ? Math.max(1, Math.min(4, spec.hoursPerWeek)) : 0 })}
           label="Part-time job"
           hint="It costs you study hours every week, except during a placement."
         />
         {spec.jobHoursLost > 0 && (
-          <Range id={`${id}-jobh`} label="Study hours the job costs you" value={spec.jobHoursLost} min={1} max={Math.max(1, Math.min(20, spec.hoursPerWeek))} unit="h" onChange={(v) => set({ jobHoursLost: v })} />
+          <Range id={`${id}-jobh`} label="Study hours the job costs you" value={spec.jobHoursLost} min={1} max={Math.max(1, Math.min(MAX_JOB_HOURS, spec.hoursPerWeek))} unit="h" onChange={(v) => set({ jobHoursLost: v })} />
         )}
 
         <Switch id={`${id}-placement`} checked={spec.placement} onChange={(v) => set({ placement: v })} label="Summer placement" hint={placementHint} />

@@ -1,4 +1,4 @@
-// Keystone Labs tool: simulate_plan (What-if Simulator). Read-only: it simulates, it never changes the roadmap;
+// Keystone Labs tool: get_plan_futures (What-if Simulator). Read-only: it simulates, it never changes the roadmap;
 // adopting a plan happens on /labs/whatif behind the student's approval.
 import "server-only";
 import { z } from "zod";
@@ -52,7 +52,7 @@ function clip(text: string, max = 400): string {
 }
 
 const simulatePlan: KeystoneTool<typeof InputZ, SimulatePlanOutput> = {
-  name: "simulate_plan",
+  name: "get_plan_futures",
   title: "Try a what-if plan",
   description:
     "Use when the student asks \"what if I studied more, learned X first, took a job or a placement?\". Simulates 200 futures to their target date from the Bridge Map, roadmap and demand forecasts. Returns readiness by the target (80% band), first-proof date, when all roadmap proofs land, the hours a week they need, and a verdict against their current plan. Read-only; adopting happens on /labs/whatif.",

@@ -32,6 +32,7 @@ export function FuturesChart({ sim, targetLabel }: { sim: SimulationResult; targ
   const rows = React.useMemo(() => chartRows(sim), [sim]);
   const lo = Math.max(0, Math.floor((Math.min(...rows.map((r) => Math.min(r.base, r.aBand?.[0] ?? 100, r.bBand?.[0] ?? 100))) - 5) / 10) * 10);
   const ticks = rows.filter((_, i) => i % 8 === 0).map((r) => r.date);
+  const yTicks = Array.from({ length: (100 - lo) / 10 + 1 }, (_, i) => lo + i * 10);
   const [a, b] = sim.plans;
 
   return (
@@ -82,7 +83,7 @@ export function FuturesChart({ sim, targetLabel }: { sim: SimulationResult; targ
             <ComposedChart data={rows} margin={{ top: 12, right: 12, bottom: 0, left: 0 }}>
               <CartesianGrid stroke="var(--border)" vertical={false} />
               <XAxis dataKey="date" ticks={ticks} tickFormatter={monthTick} tick={{ fill: "var(--muted-foreground)", fontSize: 13 }} tickLine={false} axisLine={{ stroke: "var(--border)" }} />
-              <YAxis domain={[lo, 100]} tickFormatter={(v: number) => `${v}%`} tick={{ fill: "var(--muted-foreground)", fontSize: 13 }} tickLine={false} axisLine={false} width={48} />
+              <YAxis domain={[lo, 100]} ticks={yTicks} interval={0} tickFormatter={(v: number) => `${v}%`} tick={{ fill: "var(--muted-foreground)", fontSize: 13 }} tickLine={false} axisLine={false} width={48} />
               <Tooltip content={<Tip sim={sim} />} />
               {a && <Area dataKey="aBand" type="monotone" stroke="none" fill={PLAN_COLOR.a} fillOpacity={0.16} isAnimationActive={!reduce} />}
               {b && <Area dataKey="bBand" type="monotone" stroke="none" fill={PLAN_COLOR.b} fillOpacity={0.16} isAnimationActive={!reduce} />}

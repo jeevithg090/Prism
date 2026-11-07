@@ -70,3 +70,18 @@ export function favoured(sim: SimulationResult): PlanSpec["id"] {
 export function sameSpec(x: PlanSpec, y: PlanSpec): boolean {
   return x.hoursPerWeek === y.hoursPerWeek && x.firstSkillId === y.firstSkillId && x.jobHoursLost === y.jobHoursLost && x.placement === y.placement;
 }
+
+/**
+ * Would adopting this plan change anything? Mirrors the server's proposal: the plan's first skill moves to the front
+ * of the weeks still ahead, its study hours (after any job) fill each week, and its hours are saved to the profile.
+ * Unknown roadmap (none stored yet) → assume it changes; the server still answers "unchanged" if it doesn't.
+ */
+export function adoptChanges(spec: PlanSpec, ctx: Pick<WhatIfContextView, "roadmapNow" | "hoursPerWeek">): boolean {
+  const now = ctx.roadmapNow;
+  if (!now) return true;
+  if (spec.hoursPerWeek !== ctx.hoursPerWeek) return true;
+  if (Math.max(1, spec.hoursPerWeek - Math.max(0, spec.jobHoursLost)) !== now.weeklyHours) return true;
+  if (!spec.firstSkillId) return false;
+  const moved = [...now.order.filter((id) => id === spec.firstSkillId), ...now.order.filter((id) => id !== spec.firstSkillId)];
+  return moved.some((id, i) => id !== now.order[i]);
+}

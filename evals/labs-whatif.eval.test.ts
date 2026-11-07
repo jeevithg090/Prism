@@ -10,6 +10,12 @@ vi.mock("@/lib/llm", () => ({
   cosine: vi.fn(() => 0),
   LLMError: class extends Error {},
 }));
+// loadGraph runs for real unless a test switches it off (the way evals/tools.eval.test.ts mocks it to null).
+const graph = vi.hoisted(() => ({ off: false }));
+vi.mock("@/lib/graph/build", async (importOriginal) => {
+  const real = await importOriginal<typeof import("@/lib/graph/build")>();
+  return { ...real, loadGraph: vi.fn(async (...args: Parameters<typeof real.loadGraph>) => (graph.off ? null : real.loadGraph(...args))) };
+});
 
 import { GET as contextGET } from "@/app/api/labs/whatif/route";
 import { POST as simulatePOST } from "@/app/api/labs/whatif/simulate/route";
@@ -31,7 +37,10 @@ const json = async (res: Response) => (await res.json()) as { ok: boolean; data:
 
 beforeAll(() => { process.env.DEMO_MODE = "true"; });
 afterAll(() => { delete process.env.DEMO_MODE; });
-beforeEach(() => testStore().reset());
+beforeEach(() => {
+  graph.off = false;
+  testStore().reset();
+});
 
 describe("GET /api/labs/whatif", () => {
   it("returns Aisha's starting point: readiness, the roadmap's queue and the two default plans", async () => {
@@ -42,7 +51,10 @@ describe("GET /api/labs/whatif", () => {
     expect(data.targetLabel).toBe("1 Sep 2027");
     expect(data.queue[0]).toMatchObject({ skillId: "docker", demandPct: 41 });
     expect(data.queue.find((q: { skillId: string }) => q.skillId === "pytorch").prereqs).toContainEqual({ skillId: "deep-learning", name: "Deep learning", covered: false });
-    expect(data.defaults.map((p: { label: string }) => p.label)).toEqual(["Docker first", "PyTorch first"]);
+    expect(data.defaults.map((p: { label: string }) => p.label)).toEqual(["Docker first", "With a part-time job"]);
+    expect(data.defaults[1]).toMatchObject({ firstSkillId: "docker", hoursPerWeek: 8, jobHoursLost: 4 });
+    expect(data.roadmapNow).toEqual({ order: expect.arrayContaining(["docker", "pytorch"]), weeklyHours: 8 });
+    expect(data.roadmapNow.order[0]).toBe("docker");
     expect(data.assumptions.length).toBeGreaterThanOrEqual(4);
   });
   it("validates the user id and 404s without a profile", async () => {
@@ -71,6 +83,20 @@ describe("POST /api/labs/whatif/simulate", () => {
     expect(mine).toMatchObject({ agent: "roadmap", status: "ok" });
     expect(mine.guardrails).toContainEqual(expect.objectContaining({ name: "honestBands", action: "pass" }));
     expect(JSON.stringify(mine)).not.toContain("Docker first"); // only a digest of the input lands in the ledger
+  });
+
+  it("the default plans branch on the first screen: the part-time job costs readiness by the target", async () => {
+    const ctxData = (await json(await contextGET(new Request("http://localhost/api/labs/whatif?userId=aisha")))).data;
+    const { data } = await json(await post(simulatePOST, { userId: "aisha", plans: ctxData.defaults }));
+    const [a, b] = data.plans;
+    expect(Math.round(a.final.p50 * 100) - Math.round(b.final.p50 * 100)).toBeGreaterThanOrEqual(5);
+    expect(data.comparison.verdict).toMatch(/^Docker first ends ahead on 1 Sep 2027/);
+    expect(b.hoursNeeded).toBeGreaterThan(a.hoursNeeded);
+  });
+
+  it("when both plans end level, the verdict leads with when the first proof lands", async () => {
+    const { data } = await json(await post(simulatePOST, { userId: "aisha", plans: [A, B] }));
+    expect(data.comparison.verdict).toMatch(/^Docker first lands your first proof \d+ weeks? sooner/);
   });
 
   it("is deterministic in DEMO_MODE", async () => {
@@ -130,6 +156,21 @@ describe("POST /api/labs/whatif/adopt: agents propose, the student decides", () 
     expect((await testStore().get<Profile>("profiles", "aisha"))!.dna.hoursPerWeek).toBe(8);
   });
 
+  it("adopting the plan you're already on drafts nothing: no proposal stored, no version bump", async () => {
+    const before = (await testStore().get<Roadmap>("roadmaps", "aisha"))?.version ?? null;
+    const res = await json(await post(adoptPOST, { action: "propose", userId: "aisha", plan: A }));
+    expect(res.ok).toBe(true);
+    expect(res.data.status).toBe("unchanged");
+    expect(res.data.diff.weekChanges).toEqual([]);
+    expect(await testStore().list("whatif_proposals")).toHaveLength(0);
+    const after = (await testStore().get<Roadmap>("roadmaps", "aisha"))!.version;
+    expect(before === null || after === before).toBe(true);
+    // a placement alone doesn't change the roadmap's weeks either
+    expect((await json(await post(adoptPOST, { action: "propose", userId: "aisha", plan: { ...A, placement: true } }))).data.status).toBe("unchanged");
+    // and an "unchanged" id can't be approved later
+    expect((await post(adoptPOST, { action: "approve", userId: "aisha", proposalId: res.data.id })).status).toBe(404);
+  });
+
   it("decline keeps the roadmap; another student can't decide on Aisha's proposal; stale proposals conflict", async () => {
     const p = await json(await post(adoptPOST, { action: "propose", userId: "aisha", plan: B }));
     expect((await post(adoptPOST, { action: "approve", userId: "mei", proposalId: p.data.id })).status).toBe(404);
@@ -145,11 +186,13 @@ describe("POST /api/labs/whatif/adopt: agents propose, the student decides", () 
   });
 });
 
-describe("Coach tool simulate_plan and the Labs card", () => {
+describe("Coach tool get_plan_futures and the Labs card", () => {
   const ctx = { userId: "aisha", runId: "run_whatif_eval" };
   it("is a read-only verb_noun tool with an ACI description", () => {
-    expect(tool.name).toBe("simulate_plan");
+    expect(tool.name).toBe("get_plan_futures");
     expect(tool.name).toMatch(/^[a-z]+(_[a-z]+)+$/);
+    // the verbs evals/tools.eval.test.ts allows for every registry tool
+    expect(["get", "find", "explain", "start", "review", "record", "ask"]).toContain(tool.name.split("_")[0]);
     expect(tool.effect).toBe("read");
     expect(tool.requiresApproval).toBe(false);
     expect(tool.description.length).toBeGreaterThanOrEqual(60);
@@ -164,6 +207,14 @@ describe("Coach tool simulate_plan and the Labs card", () => {
     expect(summary).toMatch(/^PyTorch first: readiness 38% → \d+% by 1 Sep 2027/);
     expect((out as { current: unknown }).current).not.toBeNull();
     expect(getRunEvents("run_whatif_eval").some((e) => e.agent === "roadmap")).toBe(true);
+  });
+  it("runs with {} in DEMO_MODE when loadGraph has nothing (store, then fixture, like the other tools)", async () => {
+    graph.off = true;
+    const out = await tool.run(tool.input.parse({}), ctx);
+    const summary = tool.summarize(out);
+    expect(summary.trim().length).toBeGreaterThan(0);
+    expect(summary.length).toBeLessThanOrEqual(400);
+    expect(summary).toMatch(/^Your what-if: readiness 38% →/);
   });
   it("explains how to recover from a skill that isn't on the roadmap", async () => {
     const err = await tool.run(tool.input.parse({ firstSkillId: "cobol" }), ctx).catch((e) => e);

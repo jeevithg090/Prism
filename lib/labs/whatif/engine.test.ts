@@ -5,7 +5,7 @@ import trendsJson from "@/data/fixtures/trends.json";
 import type { BridgeMap, Roadmap, TrendSeries } from "@/lib/types";
 import {
   ASSUMPTIONS, buildProposedRoadmap, diffRoadmaps, hoursInWeek, mulberry32, orderQueue, planQueue, quantile,
-  rescaleTasks, simulate, verdictFor, type PlanSpec, type SimContext,
+  blockFirst, movableWeeks, rescaleTasks, simulate, verdictFor, weeklyHours, type PlanSpec, type SimContext,
 } from "./engine";
 
 const map = mapJson as unknown as BridgeMap;
@@ -124,14 +124,19 @@ describe("what-if engine: simulate (Aisha, demo data)", () => {
 });
 
 describe("what-if engine: verdict", () => {
-  const p = (id: "a" | "b", label: string, p50: number) => ({ id, label, final: { p10: p50, p50, p90: p50 } }) as never;
+  const p = (id: "a" | "b", label: string, p50: number, allDoneDate: string | null = null) => ({ id, label, allDoneDate, final: { p10: p50, p50, p90: p50 } }) as never;
   it("names the winner with the paired share when the end differs", () => {
     expect(verdictFor(p("a", "Docker first", 0.84), p("b", "PyTorch first", 0.7), { aFinalWins: 0.9, bFinalWins: 0.1, aLeads: 0.9, bLeads: 0.1, firstProofGapWeeks: 2 }, "1 Sep 2027"))
       .toBe("Docker first ends ahead on 1 Sep 2027: 84% ready against 70%, and it comes out on top in 9 of 10 futures.");
   });
-  it("talks about the year when both end level", () => {
-    expect(verdictFor(p("a", "Docker first", 0.84), p("b", "PyTorch first", 0.84), { aFinalWins: 0, bFinalWins: 0, aLeads: 0.7, bLeads: 0.1, firstProofGapWeeks: 2 }, "1 Sep 2027"))
-      .toBe("Both plans reach 84% by 1 Sep 2027. Docker first is ahead for more of the year in 7 of 10 futures. Your first proof lands 2 weeks sooner with Docker first.");
+  it("leads with when the proofs land when both end level, then talks about the year", () => {
+    const c = { aFinalWins: 0, bFinalWins: 0, aLeads: 0.7, bLeads: 0.1, firstProofGapWeeks: 2 };
+    expect(verdictFor(p("a", "Docker first", 0.84), p("b", "PyTorch first", 0.84), c, "1 Sep 2027"))
+      .toBe("Docker first lands your first proof 2 weeks sooner. Both reach 84% by 1 Sep 2027, and Docker first is ahead for more of the year in 7 of 10 futures.");
+    expect(verdictFor(p("a", "8 hours", 0.84, "2027-06-13"), p("b", "12 hours", 0.84, "2027-03-28"), { ...c, aLeads: 0, bLeads: 1, firstProofGapWeeks: -1 }, "1 Sep 2027"))
+      .toBe("12 hours lands your first proof 1 week sooner, and it finishes every roadmap proof 11 weeks sooner. Both reach 84% by 1 Sep 2027, and 12 hours is ahead for more of the year in 10 of 10 futures.");
+    expect(verdictFor(p("a", "A", 0.84), p("b", "B", 0.84), { ...c, aLeads: 0, bLeads: 0, firstProofGapWeeks: 0 }, "1 Sep 2027"))
+      .toBe("Both plans reach 84% by 1 Sep 2027 and stay level all the way.");
   });
 });
 
@@ -151,6 +156,20 @@ describe("what-if engine: the proposed roadmap", () => {
     expect(diff.hoursBefore).toBe(8);
     expect(diff.hoursAfter).toBe(10);
     expect(diff.weekChanges.map((c) => c.week)).toEqual([1, 2]);
+  });
+  it("moves every week of the chosen skill as a block, keeping the rest in order", () => {
+    const twice: Roadmap = { ...roadmap, weeks: roadmap.weeks.map((w) => (w.week === 7 ? { ...w, focusSkillId: "pytorch" } : w)) };
+    const next = buildProposedRoadmap(twice, plan({ firstSkillId: "pytorch" }), now);
+    expect(next.weeks.slice(0, 4).map((w) => w.focusSkillId)).toEqual(["pytorch", "pytorch", "docker", "sql"]);
+    expect(next.weeks.map((w) => w.startDate)).toEqual(twice.weeks.map((w) => w.startDate));
+    expect(blockFirst(["a", "b", "a", "c"], "a", (x) => x)).toEqual(["a", "a", "b", "c"]);
+  });
+  it("never moves a week that has already ended", () => {
+    const later = new Date("2026-11-20T09:00:00.000Z"); // week 1 (from 9 Nov) is over; week 2 is under way
+    expect(movableWeeks(roadmap, later)[0].week).toBe(2);
+    const next = buildProposedRoadmap(roadmap, plan({ firstSkillId: "sql" }), later);
+    expect(next.weeks.slice(0, 3).map((w) => w.focusSkillId)).toEqual(["docker", "sql", "pytorch"]);
+    expect(weeklyHours(roadmap)).toBe(8);
   });
   it("a job takes its hours out of every week", () => {
     const next = buildProposedRoadmap(roadmap, plan({ jobHoursLost: 3 }), now);

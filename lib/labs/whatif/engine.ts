@@ -525,11 +525,23 @@ export function verdictFor(a: PlanResult, b: PlanResult, c: Omit<Comparison, "ve
     const [win, lose, share] = fa > fb ? [a, b, c.aFinalWins] : [b, a, c.bFinalWins];
     return `${win.label} ends ahead on ${target}: ${pctOf(win.final.p50)}% ready against ${pctOf(lose.final.p50)}%, and it comes out on top in ${tenths(share)} of 10 futures.`;
   }
+  // Level at the end: lead with what does differ (when proofs land), then the year-long picture.
   const [lead, share] = c.aLeads >= c.bLeads ? [a, c.aLeads] : [b, c.bLeads];
   const gap = c.firstProofGapWeeks;
-  const first = gap === 0 ? "" : ` Your first proof lands ${Math.abs(gap)} ${Math.abs(gap) === 1 ? "week" : "weeks"} sooner with ${gap > 0 ? a.label : b.label}.`;
-  if (share < 0.05) return `Both plans reach ${fa}% by ${target} and stay level all the way.${first}`;
-  return `Both plans reach ${fa}% by ${target}. ${lead.label} is ahead for more of the year in ${tenths(share)} of 10 futures.${first}`;
+  const doneGap = weeksBetween(b.allDoneDate, a.allDoneDate);
+  const parts: string[] = [];
+  if (gap !== 0) parts.push(`${gap > 0 ? a.label : b.label} lands your first proof ${weeksText(gap)} sooner`);
+  if (doneGap) parts.push(`${parts.length && (doneGap > 0) === (gap > 0) ? "it" : doneGap > 0 ? a.label : b.label} finishes every roadmap proof ${weeksText(doneGap)} sooner`);
+  const head = parts.length ? `${parts.join(", and ")}. ` : "";
+  if (share < 0.05) return `${head}Both plans reach ${fa}% by ${target}${parts.length ? "" : " and stay level all the way"}.`;
+  return `${head}Both reach ${fa}% by ${target}, and ${lead.label} is ahead for more of the year in ${tenths(share)} of 10 futures.`;
+}
+const weeksText = (n: number) => `${Math.abs(n)} ${Math.abs(n) === 1 ? "week" : "weeks"}`;
+/** Whole weeks from `from` to `to` (positive when `to` is later); 0 when either date is missing. */
+function weeksBetween(to: string | null | undefined, from: string | null | undefined): number {
+  if (!to || !from) return 0;
+  const d = (new Date(to).getTime() - new Date(from).getTime()) / WEEK_MS;
+  return Number.isFinite(d) ? Math.round(d) : 0;
 }
 
 /**
@@ -598,20 +610,17 @@ export interface RoadmapDiff {
 }
 
 /**
- * The roadmap a plan proposes: the student's current weeks, with the chosen first skill moved to the front of the
- * weeks not yet finished (each week keeps its slot's date and exam flag), task hours rescaled to the plan's study
- * hours (half in exam weeks), task ids renumbered and the version bumped. Ticked tasks travel with their week. Pure.
+ * The roadmap a plan proposes: the student's current weeks, with every week of the chosen first skill moved, as a
+ * block, to the front of the weeks still ahead (each week keeps its slot's date and exam flag), task hours rescaled
+ * to the plan's study hours (half in exam weeks), task ids renumbered and the version bumped. Weeks that have ended
+ * or are fully ticked never move; ticked tasks travel with their week. Pure.
  */
 export function buildProposedRoadmap(current: Roadmap, spec: PlanSpec, now: Date): Roadmap {
   const hours = Math.max(1, spec.hoursPerWeek - Math.max(0, spec.jobHoursLost));
   const weeks = [...current.weeks].sort((x, y) => x.week - y.week);
-  const movable = weeks.map((w, i) => ({ w, i })).filter(({ w }) => !(w.tasks.length && w.tasks.every((t) => t.done)));
+  const movable = weeks.map((w, i) => ({ w, i })).filter(({ w }) => isMovable(w, now));
   const slots = movable.map(({ i }) => i);
-  let order = movable.map(({ w }) => w);
-  if (spec.firstSkillId) {
-    const k = order.findIndex((w) => w.focusSkillId === spec.firstSkillId);
-    if (k > 0) order = [order[k], ...order.slice(0, k), ...order.slice(k + 1)];
-  }
+  const order = blockFirst(movable.map(({ w }) => w), spec.firstSkillId, (w) => w.focusSkillId);
   const placed = [...weeks];
   slots.forEach((slotIdx, j) => { placed[slotIdx] = order[j]; });
   const out = placed.map((w, idx) => {
@@ -623,11 +632,32 @@ export function buildProposedRoadmap(current: Roadmap, spec: PlanSpec, now: Date
   return { ...current, version: current.version + 1, weeks: out, generatedAt: now.toISOString() };
 }
 
+/** A week can be reordered while it hasn't ended and isn't fully ticked. */
+function isMovable(w: Roadmap["weeks"][number], now: Date): boolean {
+  const done = w.tasks.length > 0 && w.tasks.every((t) => t.done);
+  const end = new Date(w.startDate).getTime() + WEEK_MS;
+  return !done && !(Number.isFinite(end) && end <= now.getTime());
+}
+
+/** Every item whose key is `first` moves to the front as a block; everything else keeps its relative order. */
+export function blockFirst<T>(items: T[], first: SkillId | null | undefined, key: (x: T) => SkillId): T[] {
+  if (!first) return [...items];
+  return [...items.filter((x) => key(x) === first), ...items.filter((x) => key(x) !== first)];
+}
+
+/** The weeks of a roadmap that adopting a plan may reorder, in week order. */
+export function movableWeeks(r: Roadmap, now: Date): Roadmap["weeks"] {
+  return [...r.weeks].sort((x, y) => x.week - y.week).filter((w) => isMovable(w, now));
+}
+
+/** Study hours in a normal (non-exam) week of a roadmap. */
+export function weeklyHours(r: Roadmap): number {
+  const w = r.weeks.find((x) => !x.isExamWeek) ?? r.weeks[0];
+  return w ? w.tasks.reduce((s, t) => s + t.hours, 0) : 0;
+}
+
 export function diffRoadmaps(before: Roadmap, after: Roadmap): RoadmapDiff {
-  const hoursOf = (r: Roadmap) => {
-    const w = r.weeks.find((x) => !x.isExamWeek) ?? r.weeks[0];
-    return w ? w.tasks.reduce((s, t) => s + t.hours, 0) : 0;
-  };
+  const hoursOf = weeklyHours;
   const byWeek = new Map(before.weeks.map((w) => [w.week, w]));
   const weekChanges = after.weeks
     .filter((w) => byWeek.get(w.week) && byWeek.get(w.week)!.focusSkillId !== w.focusSkillId)

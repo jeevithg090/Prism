@@ -6,13 +6,14 @@ import { randomBytes } from "node:crypto";
 import { noOutboundMessaging } from "@/lib/agents/guardrails";
 import { runAgent, type Guardrail } from "@/lib/agents/harness";
 import { buildRoadmap, loadRoadmap } from "@/lib/agents/roadmap";
+import { loadBridgeMap } from "@/lib/agents/tools/loaders";
 import { loadGraph } from "@/lib/graph/build";
 import { getProfile, podFor, programmeFixture, trendsFixture } from "@/lib/graph/data";
 import { roleName } from "@/lib/graph/roles";
 import { getStore } from "@/lib/store";
 import type { BridgeMap, Profile, Roadmap, SkillId } from "@/lib/types";
 import {
-  ASSUMPTIONS, buildProposedRoadmap, dateLabel, diffRoadmaps, effortFor, planQueue, simulate,
+  ASSUMPTIONS, buildProposedRoadmap, dateLabel, diffRoadmaps, effortFor, movableWeeks, planQueue, simulate, weeklyHours,
   type PlanResult, type PlanSpec, type RoadmapDiff, type SimContext, type SimulationResult,
 } from "./engine";
 import { SimulationResultZ } from "./schemas";
@@ -34,12 +35,16 @@ export interface WhatIfWorld {
 /** The clock the simulator uses: pinned in DEMO_MODE so the demo shows the same numbers every time. */
 export const simNow = () => (isDemo() ? new Date(ASSUMPTIONS.demoNow) : new Date());
 
-/** Reads the student's map (loadGraph), roadmap (store "roadmaps"), trends and programme. Null without a map. */
+/**
+ * Reads the student's map (loadGraph, else the tool layer's store → fixture chain in loadBridgeMap), roadmap
+ * (store "roadmaps"), trends and programme. Null without a map.
+ */
 export async function loadWhatIfWorld(userId: string): Promise<WhatIfWorld | null> {
   const profile = await getProfile(userId);
   if (!profile?.dna) return null;
   const roleId = profile.dna.targetRoles?.[0] ?? "ml-engineer";
-  const map = await loadGraph(userId, roleId).catch(() => null);
+  const built = await loadGraph(userId, roleId).catch(() => null);
+  const map = built?.nodes?.length ? built : await loadBridgeMap(userId, roleId).catch(() => null);
   if (!map?.nodes?.length) return null;
   const roadmap = await loadRoadmap(userId, roleId).catch(() => null);
   const trends = trendsFixture() ?? [];
@@ -57,14 +62,19 @@ export async function loadWhatIfWorld(userId: string): Promise<WhatIfWorld | nul
 
 const nameOf = (w: WhatIfWorld, id: SkillId | null | undefined) => (id ? w.map.nodes.find((n) => n.skillId === id)?.name ?? id : "");
 
-/** Plan A = the Roadmap Agent's order at your hours; plan B = its runner-up first, same hours. */
+/** Study hours the default "part-time job" plan gives up: 4 a week, never more than half of your hours. */
+export const defaultJobHours = (hours: number) => Math.max(1, Math.min(4, Math.floor(hours / 2)));
+
+/**
+ * Plan A = the Roadmap Agent's order at your hours. Plan B = the same roadmap with a part-time job taking some of
+ * those hours: the most common trade-off students weigh, and one that visibly branches the futures from the first
+ * screen (switching the first skill is one select away on either card).
+ */
 export function defaultPlans(w: WhatIfWorld): [PlanSpec, PlanSpec] {
   const hours = Math.max(1, Math.min(40, Math.round(w.profile.dna.hoursPerWeek || 8)));
-  const [first, second] = w.ctx.queue;
-  return [
-    { id: "a", label: first ? `${nameOf(w, first)} first` : "Your roadmap", hoursPerWeek: hours, firstSkillId: first ?? null, jobHoursLost: 0, placement: false },
-    { id: "b", label: second ? `${nameOf(w, second)} first` : "More hours", hoursPerWeek: second ? hours : Math.min(40, hours + 4), firstSkillId: second ?? first ?? null, jobHoursLost: 0, placement: false },
-  ];
+  const [first] = w.ctx.queue;
+  const a: PlanSpec = { id: "a", label: first ? `${nameOf(w, first)} first` : "Your roadmap", hoursPerWeek: hours, firstSkillId: first ?? null, jobHoursLost: 0, placement: false };
+  return [a, { ...a, id: "b", label: "With a part-time job", jobHoursLost: defaultJobHours(hours) }];
 }
 
 export interface WhatIfContextView {
@@ -79,6 +89,8 @@ export interface WhatIfContextView {
   readinessProjected: number;
   hoursPerWeek: number;
   roadmapVersion: number | null;
+  /** Your roadmap as it stands: the focus of each week still ahead, and the study hours of a normal week. */
+  roadmapNow: { order: SkillId[]; weeklyHours: number } | null;
   queue: { skillId: SkillId; name: string; demandPct: number; trend?: string; growthPerYear?: number; effortHours: number; prereqs: { skillId: SkillId; name: string; covered: boolean }[] }[];
   defaults: [PlanSpec, PlanSpec];
   assumptions: { id: string; label: string; text: string; source: string }[];
@@ -101,6 +113,7 @@ export function contextView(w: WhatIfWorld): WhatIfContextView {
     readinessProjected: w.map.readinessProjected,
     hoursPerWeek: w.profile.dna.hoursPerWeek,
     roadmapVersion: w.roadmap?.version ?? null,
+    roadmapNow: w.roadmap?.weeks?.length ? { order: movableWeeks(w.roadmap, w.ctx.now).map((x) => x.focusSkillId), weeklyHours: weeklyHours(w.roadmap) } : null,
     queue: w.ctx.queue.map((id) => {
       const n = byId.get(id);
       const pre = w.map.edges.filter((e) => e.kind === "prereq" && e.to === id).map((e) => e.from);
@@ -184,7 +197,8 @@ export async function simulateWhatIf(i: { world: WhatIfWorld; plans: PlanSpec[];
 
 // ---------- adopt: propose → the student decides ----------
 
-export type ProposalStatus = "proposed" | "adopted" | "declined" | "undone";
+/** "unchanged" = the plan is already your roadmap, so nothing was drafted, stored or versioned. */
+export type ProposalStatus = "proposed" | "adopted" | "declined" | "undone" | "unchanged";
 export interface WhatIfProposal {
   id: string;
   userId: string;
@@ -237,14 +251,20 @@ export async function proposeAdoption(i: { world: WhatIfWorld; plan: PlanSpec; r
       const p = sim.plans[0];
       const proposed = buildProposedRoadmap(current, plan, simNow());
       const diff = diffRoadmaps(current, proposed);
+      const unchanged = !diff.weekChanges.length && diff.hoursBefore === diff.hoursAfter && plan.hoursPerWeek === world.profile.dna.hoursPerWeek;
       const proposal: WhatIfProposal = {
         id: `wi_${world.ctx.userId}_${randomBytes(4).toString("hex")}`.toLowerCase(),
-        userId: world.ctx.userId, status: "proposed", plan,
+        userId: world.ctx.userId, status: unchanged ? "unchanged" : "proposed", plan,
         baseVersion: current.version, previous: current, proposed, diff,
         outlook: { targetDate: sim.targetDate, ...p.final, allDoneShare: p.allDoneShare, allDoneDate: p.allDoneDate, hoursNeeded: p.hoursNeeded },
         hoursBefore: world.profile.dna.hoursPerWeek,
         createdAt: new Date().toISOString(),
       };
+      if (unchanged) {
+        // Approving would only bump the version and turn other open proposals stale, so there is nothing to decide.
+        ctx.done(`"${plan.label}" is already your roadmap (v${current.version}): same weeks, same ${diff.hoursAfter} hours a week. Nothing to change.`, { weekChanges: 0 });
+        return proposalView({ ...proposal, proposed: current }, names);
+      }
       await getStore().upsert(PROPOSALS, proposal.id, proposal, world.ctx.userId);
       ctx.done(`proposed roadmap v${proposed.version}: ${diff.weekChanges.length} weeks change, ${diff.hoursBefore} → ${diff.hoursAfter} hours a week. Waiting for you to decide.`, { weekChanges: diff.weekChanges.length, hoursAfter: diff.hoursAfter });
       return proposalView(proposal, names);
