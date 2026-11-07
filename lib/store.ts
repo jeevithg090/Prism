@@ -114,6 +114,6 @@ export function getStore(): Store {
   const mem = (g.__ksMem ??= new MemoryStore());
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (process.env.DEMO_MODE === "true" || !url || !key) return mem;
+  if (process.env.NODE_ENV === "test" || process.env.DEMO_MODE === "true" || !url || !key) return mem;
   return (g.__ksSb ??= new FallbackStore(new SupabaseStore(url, key), mem));
 }
