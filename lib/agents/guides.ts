@@ -7,6 +7,7 @@ import { z } from "zod";
 import { emit, newRunId } from "@/lib/agents/events";
 import { fcSearch } from "@/lib/connectors/firecrawl";
 import { llmJSON } from "@/lib/llm";
+import { UNTRUSTED_RULE, guardOutput, scanForInjection, wrapUntrusted } from "@/lib/agents/safety/injection";
 import { GuideSuggestionZ, skillName } from "@/lib/schemas/community";
 import type { BridgeMap, BridgeNode, GuideSuggestion, Profile } from "@/lib/types";
 
@@ -127,6 +128,7 @@ const SYSTEM = [
   "(a warm, short first message under 90 words that the student will copy and send themselves).",
   "Never invent facts about the person, never flatter, never claim the student knows them, never mention",
   "demographics. Plain, kind English. Return the publicUrl unchanged for each person.",
+  UNTRUSTED_RULE,
 ].join(" ");
 
 /**
@@ -169,7 +171,7 @@ export async function findGuides(profile: Profile, map: BridgeMap): Promise<Guid
       user: JSON.stringify({
         student: { firstName: studentFirst, intro: ctx.studentIntro, interests: profile.interests, targetRole: ctx.roleName },
         topGap: { skill, demandPct: ctx.demandPct },
-        people: people.map(({ name, publicUrl, source, context }) => ({ name, publicUrl, source, context })),
+        people: people.map(({ name, publicUrl, source, context }) => ({ name, publicUrl, source, context: wrapUntrusted(`${source}:${publicUrl}`, context, 400) })),
       }),
       schema: DraftsZ,
       schemaName: "guide_drafts",
@@ -180,10 +182,13 @@ export async function findGuides(profile: Profile, map: BridgeMap): Promise<Guid
     emit({ runId, agent: "guides", status: "progress", message: "Writing drafts from a template (AI writer unavailable)" });
   }
 
+  // A scraped page or bio that tries to instruct the AI gets the deterministic template, never the model's draft.
+  const flagged = new Set(people.filter((c) => scanForInjection(`${c.name}\n${c.context}`).risk === "high").map((c) => c.publicUrl));
+  if (flagged.size) emit({ runId, agent: "guides", status: "progress", message: `${flagged.size === 1 ? "1 page" : `${flagged.size} pages`} contained text aimed at an AI, so a safe template wrote those drafts`, data: { flagged: flagged.size } });
   const suggestions = people.flatMap((c, i) => {
     const t = templateFor(c, ctx);
-    const d = drafts.find((x) => x.publicUrl === c.publicUrl) ?? (drafts.length === people.length ? drafts[i] : undefined);
-    const pickText = (v: string | undefined, fallback: string, max: number) => (v?.trim() ? v.trim().slice(0, max) : fallback);
+    const d = flagged.has(c.publicUrl) ? undefined : drafts.find((x) => x.publicUrl === c.publicUrl) ?? (drafts.length === people.length ? drafts[i] : undefined);
+    const pickText = (v: string | undefined, fallback: string, max: number) => (v?.trim() ? guardOutput(v.trim()).slice(0, max) : fallback);
     const parsed = GuideSuggestionZ.safeParse({
       name: c.name,
       publicUrl: c.publicUrl,
