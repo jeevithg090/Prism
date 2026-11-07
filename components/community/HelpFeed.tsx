@@ -1,30 +1,43 @@
 "use client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
-import { HandHeart } from "lucide-react";
-import { motion, useReducedMotion } from "motion/react";
+import { Clock3, GitPullRequest, HandHeart, Loader2, MessageCircleQuestion, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
-import { BadgePill, EmptyState, ErrorState, LoadingSkeleton, SectionCard } from "@/components/keystone";
+import { BadgePill, DemoDataNote, EmptyState, ErrorState, LoadingSkeleton } from "@/components/keystone";
 import { Button } from "@/components/ui/button";
 import { apiPost } from "@/lib/fetcher";
 import type { HelpRequest } from "@/lib/types";
-import { displayName, KIND_LABEL, type ProfilesById } from "./help";
+import { displayName, isNewcomer, KIND_LABEL, type ProfilesById } from "./help";
 import { PersonAvatar } from "./PersonAvatar";
+import { CARD, Region } from "./Region";
 
 export const ASK_MESSAGE_ID = "ask-message";
+
+/**
+ * Newcomers first: the New to UoM pill takes the proven hue on its icon, tint and edge so those rows
+ * read from the back of the room. The label stays ink. Other badges stay neutral.
+ */
+export const NEWCOMER_TINT =
+  "inline-flex [&>span]:border-status-proven/40 [&>span]:bg-status-proven/8 [&_svg]:text-status-proven";
+
+const KIND_ICON: Record<HelpRequest["kind"], LucideIcon> = {
+  question: MessageCircleQuestion,
+  "chat-15": Clock3,
+  "code-review": GitPullRequest,
+};
 
 function relativeTime(iso: string): string {
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? "" : formatDistanceToNow(d, { addSuffix: true });
 }
 
-function HelpCard({ request, profiles, viewerId, index }: { request: HelpRequest; profiles: ProfilesById; viewerId: string; index: number }) {
+function HelpCard({ request, profiles, viewerId }: { request: HelpRequest; profiles: ProfilesById; viewerId: string }) {
   const qc = useQueryClient();
-  const reduce = useReducedMotion();
   const profile = profiles[request.fromUserId];
   const name = displayName(request.fromUserId, profile);
   const own = request.fromUserId === viewerId;
   const headingId = `help-${request.id}-name`;
+  const KindIcon = KIND_ICON[request.kind];
 
   const help = useMutation({
     mutationFn: () => apiPost<HelpRequest>("/api/help", { id: request.id, status: "accepted", toUserId: viewerId }),
@@ -37,49 +50,56 @@ function HelpCard({ request, profiles, viewerId, index }: { request: HelpRequest
   });
 
   return (
-    <motion.li
-      initial={reduce ? false : { opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2, ease: "easeOut", delay: reduce ? 0 : index * 0.04 }}
-      className="py-5 first:pt-1 last:pb-0"
-      data-testid="help-card"
-    >
-      <div className="flex items-start gap-3">
+    // Your own request sits in a well: the one row on this list that is yours.
+    <li className={own ? "bg-muted px-6 py-5 first:rounded-t-2xl last:rounded-b-2xl" : "px-6 py-5"} data-testid="help-card">
+      <article aria-labelledby={headingId} className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-4 sm:grid-cols-[auto_minmax(0,1fr)_auto]">
         <PersonAvatar userId={request.fromUserId} profile={profile} />
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 id={headingId} className="font-semibold">{own ? `${name} (you)` : name}</h3>
-            {profile?.badges.map((b) => <BadgePill key={b} badge={b} />)}
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+            <h3 id={headingId} className="text-lg font-semibold text-foreground">
+              {own ? <>{name} <span className="text-primary">(you)</span></> : name}
+            </h3>
+            {profile?.badges.map((b) =>
+              b === "new-to-uni" ? (
+                <span key={b} className={NEWCOMER_TINT}><BadgePill badge={b} /></span>
+              ) : (
+                <BadgePill key={b} badge={b} />
+              ),
+            )}
           </div>
-          <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">{KIND_LABEL[request.kind]}</span>
+          <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
+              <KindIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+              <span>{KIND_LABEL[request.kind]}</span>
+            </span>
             <time dateTime={request.createdAt}>{relativeTime(request.createdAt)}</time>
           </p>
         </div>
-      </div>
-      <p className="mt-3 whitespace-pre-wrap break-words">{request.message}</p>
-      <div className="mt-4 flex justify-end">
+        {/* On a phone the message and its action take the full row under the avatar. */}
+        <p className="col-span-2 mt-3 max-w-[68ch] text-base leading-7 text-pretty break-words whitespace-pre-wrap text-foreground sm:col-span-2 sm:col-start-2 sm:row-start-2">{request.message}</p>
         {own ? (
-          <p className="text-sm text-muted-foreground">This is your request. A helper will pick it up soon.</p>
+          <p className="col-span-2 mt-3 max-w-[68ch] text-sm text-pretty text-muted-foreground sm:col-span-2 sm:col-start-2">This is your request. A helper will pick it up soon.</p>
         ) : (
-          <Button
-            variant="outline"
-            onClick={() => help.mutate()}
-            disabled={help.isPending || help.isSuccess}
-            aria-label={`I can help ${name}`}
-            className="focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <HandHeart aria-hidden />
-            {help.isPending ? "Sending…" : help.isSuccess ? "Thanks for helping" : "I can help"}
-          </Button>
+          <div className="col-span-2 mt-4 sm:col-span-1 sm:col-start-3 sm:row-start-1 sm:mt-0">
+            <Button
+              variant="outline"
+              onClick={() => help.mutate()}
+              disabled={help.isPending || help.isSuccess}
+              aria-busy={help.isPending || undefined}
+              aria-label={`I can help ${name}`}
+            >
+              {help.isPending ? <Loader2 className="motion-safe:animate-spin" aria-hidden /> : <HandHeart aria-hidden />}
+              {help.isPending ? "Sending…" : help.isSuccess ? "Thanks for helping" : "I can help"}
+            </Button>
+          </div>
         )}
-      </div>
-    </motion.li>
+      </article>
+    </li>
   );
 }
 
 export function HelpFeed({
-  requests, profiles, viewerId, isLoading, isError, onRetry, onUseDemo,
+  requests, profiles, viewerId, isLoading, isError, onRetry, onUseDemo, isDemo = false,
 }: {
   requests: HelpRequest[];
   profiles: ProfilesById;
@@ -88,9 +108,33 @@ export function HelpFeed({
   isError: boolean;
   onRetry: () => void;
   onUseDemo: () => void;
+  isDemo?: boolean;
 }) {
+  const full = !isLoading && !isError && requests.length > 0;
+  // The counts are the requests you could pick up, so your own request is left out of both.
+  const others = requests.filter((r) => r.fromUserId !== viewerId);
+  const newcomers = others.filter((r) => isNewcomer(profiles[r.fromUserId])).length;
+
   return (
-    <SectionCard title="Help a newcomer" description="Open requests from other students. 🌱 newcomers are shown first, so nobody waits alone.">
+    <Region
+      id="help-feed-title"
+      title="Help a newcomer"
+      note={full && isDemo ? <DemoDataNote /> : undefined}
+      headWidth="max-w-[34ch]"
+      description="Students new to UoM are shown first, so nobody waits alone."
+      actions={full ? (
+        <dl className="flex items-end">
+          <div className="flex flex-col-reverse pr-6">
+            <dt className="text-sm text-muted-foreground">Open requests</dt>
+            <dd className="font-mono text-3xl leading-none font-semibold text-foreground tabular-nums">{others.length}</dd>
+          </div>
+          <div className="flex flex-col-reverse border-l pl-6">
+            <dt className="text-sm text-muted-foreground">New to UoM</dt>
+            <dd className="font-mono text-3xl leading-none font-semibold text-foreground tabular-nums">{newcomers}</dd>
+          </div>
+        </dl>
+      ) : undefined}
+    >
       {isLoading ? (
         <LoadingSkeleton variant="list" />
       ) : isError ? (
@@ -108,10 +152,10 @@ export function HelpFeed({
           action={<Button variant="outline" onClick={() => document.getElementById(ASK_MESSAGE_ID)?.focus()}>Write a request</Button>}
         />
       ) : (
-        <ul aria-label="Open help requests" className="divide-y">
-          {requests.map((r, i) => <HelpCard key={r.id} request={r} profiles={profiles} viewerId={viewerId} index={i} />)}
+        <ul aria-label="Open help requests" className={`divide-y ${CARD}`}>
+          {requests.map((r) => <HelpCard key={r.id} request={r} profiles={profiles} viewerId={viewerId} />)}
         </ul>
       )}
-    </SectionCard>
+    </Region>
   );
 }

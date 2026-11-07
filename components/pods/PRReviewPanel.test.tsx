@@ -101,7 +101,7 @@ describe("PRReviewPanel", () => {
       screen.getByRole("link", { name: /Containerise the captioning API/ }),
     ).toHaveAttribute("href", review.prUrl);
     expect(screen.getByText("Hints, not answers")).toBeInTheDocument();
-    expect(screen.getByText("Posted on GitHub ✓")).toBeInTheDocument();
+    expect(screen.getByText("Posted on GitHub")).toBeInTheDocument();
     expect(start).toHaveBeenCalledWith("run_review1");
     expect(onReviewed).toHaveBeenCalledWith(review);
     expect(toast.success).toHaveBeenCalled();
@@ -119,7 +119,7 @@ describe("PRReviewPanel", () => {
       screen.getByRole("button", { name: /Review my PR now/ }),
     );
     expect(await screen.findByText("Preview: demo mode")).toBeInTheDocument();
-    expect(screen.queryByText("Posted on GitHub ✓")).not.toBeInTheDocument();
+    expect(screen.queryByText("Posted on GitHub")).not.toBeInTheDocument();
     expect(start).not.toHaveBeenCalled();
   });
 

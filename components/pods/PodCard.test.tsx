@@ -52,7 +52,7 @@ describe("PodCard", () => {
 
     resolve(demoPod(true).project!);
     await waitFor(() => expect(push).toHaveBeenCalledWith("/pods/pod_demo01"));
-    expect(toastSuccess).toHaveBeenCalledWith("Repo is live ↗", expect.objectContaining({ action: expect.objectContaining({ label: "Open repo" }) }));
+    expect(toastSuccess).toHaveBeenCalledWith("Repo is live", expect.objectContaining({ action: expect.objectContaining({ label: "Open repo" }) }));
   });
 
   it("links to the existing project instead of creating another one", () => {

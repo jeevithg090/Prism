@@ -7,8 +7,8 @@ export const STATUS_ORDER: SkillStatus[] = ["proven", "degree-done", "degree-upc
 
 export const STATUS_META: Record<SkillStatus, { label: string; long: string; icon: LucideIcon; dot: string; cssVar: string }> = {
   proven: { label: "Proven", long: "Proven by your work", icon: CheckCircle2, dot: "bg-status-proven", cssVar: "--status-proven" },
-  "degree-done": { label: "Degree ✓", long: "Covered by your degree", icon: GraduationCap, dot: "bg-status-degree", cssVar: "--status-degree" },
-  "degree-upcoming": { label: "Degree · later", long: "Your degree covers it later", icon: GraduationCap, dot: "border-2 border-dashed border-status-degree bg-card", cssVar: "--status-degree" },
+  "degree-done": { label: "In your degree", long: "Covered by your degree", icon: GraduationCap, dot: "bg-status-degree", cssVar: "--status-degree" },
+  "degree-upcoming": { label: "Later in your degree", long: "Your degree covers it later", icon: GraduationCap, dot: "border-2 border-dashed border-status-degree bg-card", cssVar: "--status-degree" },
   gap: { label: "Gap", long: "A gap to close", icon: Target, dot: "bg-status-gap", cssVar: "--status-gap" },
 };
 
@@ -40,10 +40,13 @@ export function mapSummary(map: Pick<BridgeMap, "nodes" | "roleId">, visible?: B
   );
 }
 
+/** "Year 2 · Semester 2" reads as "Year 2, Semester 2" in a sentence. */
+export const termText = (label: string) => label.replace(/\s*·\s*/g, ", ");
+
 export function degreeText(n: BridgeNode): string {
   const codes = n.moduleCodes.join(", ");
   if (n.status === "degree-done") return codes ? `Covered in ${codes}` : "Covered by your degree";
-  if (n.status === "degree-upcoming") return `${codes || "A later module"}${n.upcomingLabel ? ` · ${n.upcomingLabel}` : ""}`;
+  if (n.status === "degree-upcoming") return `${codes || "A later module"}${n.upcomingLabel ? ` in ${termText(n.upcomingLabel)}` : ""}`;
   if (codes) return `Also taught in ${codes}`;
   return "Not covered by your degree";
 }
@@ -68,3 +71,6 @@ export function nodeReceipt(n: BridgeNode, roleId: string): Receipt {
   if (n.evidenceIds.length) r.evidenceIds = [...n.evidenceIds];
   return r;
 }
+
+/** The system's focus ring: a 2px coral outline, instant, never animated. */
+export const FOCUS = "outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";

@@ -42,7 +42,7 @@ describe("StatusBadge and SkillChip", () => {
   it("StatusBadge always pairs an icon with a label; degree-upcoming is dashed", () => {
     const { container } = render(<><StatusBadge status="gap" /><StatusBadge status="degree-upcoming" /></>);
     expect(screen.getByText("Gap").querySelector("svg")).not.toBeNull();
-    expect(screen.getByText("Degree · later")).toHaveClass("border-dashed");
+    expect(screen.getByText("Later in your degree")).toHaveClass("border-dashed");
     expect(container.querySelectorAll("svg")).toHaveLength(2);
   });
 

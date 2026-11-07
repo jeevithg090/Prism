@@ -63,18 +63,18 @@ export function PersonaSwitcher({ className }: { className?: string }) {
     <DropdownMenu>
       <DropdownMenuTrigger
         className={cn(
-          "flex h-11 min-w-0 items-center gap-2.5 overflow-hidden rounded-xl px-2 text-left outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring aria-expanded:bg-muted",
+          "flex h-12 min-w-0 cursor-pointer items-center gap-2.5 overflow-hidden rounded-xl px-2 text-left outline-none transition-[background-color] duration-(--dur-short) hover:bg-muted focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring aria-expanded:bg-muted",
           className,
         )}
       >
         <span className="sr-only">Viewing as</span>{" "}
         <span aria-hidden className="shrink-0"><MemberAvatar member={me} size="sm" /></span>
         <span className="min-w-0 sm:shrink-0">
-          <span className="block truncate text-sm font-semibold">
+          <span className="block truncate text-sm font-semibold text-foreground">
             <span className="sm:hidden">{me.firstName}</span>
             <span className="hidden sm:inline">{me.name}</span>
           </span>{" "}
-          <span className="hidden truncate text-xs text-muted-foreground sm:block">{me.year ? `Year ${me.year} · ` : ""}Switch student</span>
+          <span className="hidden truncate text-xs text-muted-foreground sm:block">{me.year ? `Year ${me.year}, switch student` : "Switch student"}</span>
         </span>{" "}
         {me.badges.length > 0 && (
           <span className="hidden shrink-0 items-center gap-1 xl:flex">
@@ -83,12 +83,12 @@ export function PersonaSwitcher({ className }: { className?: string }) {
         )}
         <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" aria-hidden />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-80 max-w-[calc(100vw-2rem)] p-1.5">
+      <DropdownMenuContent align="start" className="w-80 max-w-[calc(100vw-2rem)] p-1.5 shadow-lg">
         <DropdownMenuGroup>
-          <DropdownMenuLabel className="px-2 py-1.5 text-xs">Demo students · view Keystone as</DropdownMenuLabel>
+          <DropdownMenuLabel className="px-2 py-1.5 text-xs">View Keystone as a demo student</DropdownMenuLabel>
           <DropdownMenuRadioGroup value={viewerId} onValueChange={(v) => choose(String(v))}>
             {PERSONAS.map((p) => (
-              <DropdownMenuRadioItem key={p.id} value={p.id} className="gap-2.5 rounded-lg py-1.5 pl-2">
+              <DropdownMenuRadioItem key={p.id} value={p.id} className="min-h-11 gap-2.5 rounded-lg py-1.5 pl-2">
                 <span aria-hidden className="shrink-0"><MemberAvatar member={p} size="sm" /></span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-medium">{p.name}</span>{" "}

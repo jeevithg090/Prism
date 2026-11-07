@@ -44,7 +44,7 @@ describe("LecturerStats", () => {
     expect(within(stats).getByText("6 of 13 students' first-choice role")).toBeInTheDocument();
     expect(within(stats).getByText("Top gap no module covers")).toBeInTheDocument();
     expect(within(stats).getByText("Docker")).toBeInTheDocument();
-    expect(within(stats).getByText("41% of ML engineer ads · 8 students need it")).toBeInTheDocument();
+    expect(within(stats).getByText("41% of ML engineer ads, 8 students need it")).toBeInTheDocument();
   });
 });
 
@@ -106,7 +106,7 @@ describe("LecturerInsightsView", () => {
     expect(await screen.findByRole("heading", { name: "Gaps nobody in the cohort can teach yet" })).toBeInTheDocument();
     const chips = screen.getAllByTestId("peer-chip");
     expect(chips).toHaveLength(8);
-    expect(chips[0]).toHaveTextContent("AWS1 can teach·5 want to learn");
+    expect(chips[0]).toHaveTextContent("AWS1 can teach5 want to learn");
     expect(screen.getByText(/Demand from Adzuna job ads; coverage from your published syllabus/)).toBeInTheDocument();
   });
 

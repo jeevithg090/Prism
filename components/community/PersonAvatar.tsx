@@ -10,7 +10,7 @@ export function PersonAvatar({ userId, profile }: { userId: string; profile?: Pr
   return (
     <Avatar size="lg">
       {profile?.avatarUrl && <AvatarImage src={profile.avatarUrl} alt={`${name}'s avatar`} />}
-      <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary" aria-hidden>
+      <AvatarFallback className="bg-muted text-sm font-semibold text-foreground" aria-hidden>
         {initials}
       </AvatarFallback>
     </Avatar>

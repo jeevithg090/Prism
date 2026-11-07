@@ -1,14 +1,15 @@
 "use client";
 // P5 · /trajectories: near-peer mentoring. Where seniors went, who walked a path like yours, and a kind way to ask.
+// Hallmark redesign: the journey Sankey leads as the screen's signature; the students like you follow as one card row.
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { motion, useReducedMotion } from "motion/react";
+import { useReducedMotion } from "motion/react";
 import { ChevronLeft, ChevronRight, Milestone, Users } from "lucide-react";
 import type { Trajectory } from "@/lib/types";
 import { apiGet } from "@/lib/fetcher";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { EmptyState, ErrorState, LoadingSkeleton, PageHeader } from "@/components/keystone";
+import { DemoDataNote, EmptyState, ErrorState, LoadingSkeleton, PageHeader } from "@/components/keystone";
 import { useViewerId } from "@/components/community/useViewerId";
 import { JourneySankey } from "@/components/trajectories/JourneySankey";
 import { TrajectoryCard } from "@/components/trajectories/TrajectoryCard";
@@ -42,11 +43,8 @@ export default function TrajectoriesPage() {
       />
 
       {all.isPending ? (
-        <div className="rounded-2xl border bg-card p-6 shadow-sm" aria-busy="true">
+        <div aria-busy="true">
           <span className="sr-only">Loading journeys…</span>
-          <Skeleton className="mb-3 h-7 w-72 rounded-lg" />
-          <Skeleton className="mb-6 h-5 w-96 max-w-full rounded-lg" />
-          <div className="mb-5 flex gap-2">{[0, 1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-10 w-20 rounded-full" />)}</div>
           <LoadingSkeleton variant="chart" />
         </div>
       ) : all.isError ? (
@@ -61,18 +59,18 @@ export default function TrajectoriesPage() {
           icon={Milestone}
           title="No journeys yet"
           body="Seniors can share theirs from their passport. Until then, you can explore demo journeys."
-          action={<Button size="lg" className="h-10 rounded-xl" onClick={() => setDemo(true)}>Show demo journeys</Button>}
+          action={<Button size="lg" onClick={() => setDemo(true)}>Show demo journeys</Button>}
         />
       ) : (
         <JourneySankey trajectories={all.data} />
       )}
 
-      <section aria-labelledby="like-you-title" className="space-y-4">
-        <StudentsLikeYouHeader />
+      <section aria-labelledby="like-you-title" className="space-y-6">
+        <StudentsLikeYouHeader isDemo={!!similar.data?.some((s) => s.trajectory.isDemo)} />
         {similar.isPending ? (
-          <div className="relative flex gap-4 overflow-hidden" aria-busy="true">
+          <div className="relative flex gap-6 overflow-hidden" aria-busy="true">
             <span className="sr-only">Finding students like you…</span>
-            {[0, 1, 2].map((i) => <Skeleton key={i} className="h-[440px] w-[85%] max-w-[360px] shrink-0 rounded-2xl sm:w-[340px]" />)}
+            {[0, 1, 2].map((i) => <Skeleton key={i} className="h-[440px] w-[85%] max-w-[360px] shrink-0 rounded-2xl sm:w-[340px] lg:w-auto lg:max-w-none lg:flex-1" />)}
           </div>
         ) : similar.isError ? (
           <ErrorState
@@ -102,11 +100,14 @@ export default function TrajectoriesPage() {
   );
 }
 
-function StudentsLikeYouHeader() {
+function StudentsLikeYouHeader({ isDemo }: { isDemo: boolean }) {
   return (
-    <div>
-      <h2 id="like-you-title" className="text-xl font-semibold md:text-2xl">Students like you</h2>
-      <p className="mt-1 max-w-2xl text-muted-foreground">
+    <div className="min-w-0">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <h2 id="like-you-title" className="text-xl font-semibold text-foreground">Students like you</h2>
+        {isDemo && <DemoDataNote />}
+      </div>
+      <p className="mt-1 max-w-[62ch] text-pretty text-muted-foreground">
         Seniors whose journeys match your interests and goal. Many are happy to share 15 minutes and what they wish they&apos;d known.
       </p>
     </div>
@@ -124,26 +125,23 @@ function CardRow({ items, onAsk }: { items: Similar[]; onAsk: (t: Trajectory) =>
         role="region"
         aria-label="Students like you, scroll sideways for more"
         tabIndex={0}
-        className="relative flex snap-x snap-mandatory gap-4 overflow-x-auto rounded-2xl pb-3 outline-none focus-visible:ring-2 focus-visible:ring-ring lg:grid lg:grid-cols-3 lg:gap-6 lg:overflow-visible lg:pb-0"
+        className="relative flex snap-x snap-mandatory gap-4 overflow-x-auto rounded-2xl pb-3 outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring lg:grid lg:grid-cols-[repeat(3,minmax(0,1fr))] lg:items-start lg:gap-6 lg:overflow-visible lg:pb-0"
       >
-        {items.map(({ trajectory, similarity }, i) => (
-          <motion.div
+        {items.map(({ trajectory, similarity }) => (
+          <div
             key={trajectory.id}
-            initial={reduce ? false : { opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2, delay: i * 0.04, ease: "easeOut" }}
             className="w-[85%] max-w-[360px] shrink-0 snap-start sm:w-[340px] lg:w-auto lg:max-w-none"
           >
-            <TrajectoryCard trajectory={trajectory} similarity={similarity} onAsk={onAsk} />
-          </motion.div>
+            <TrajectoryCard trajectory={trajectory} similarity={similarity} onAsk={onAsk} showDemoNote={false} />
+          </div>
         ))}
       </div>
       {items.length > 1 && (
         <div className="flex justify-end gap-2 lg:hidden">
-          <Button variant="outline" size="icon-lg" className="rounded-xl" aria-label="Scroll to previous students" onClick={() => scroll(-1)}>
+          <Button variant="outline" size="icon-lg" aria-label="Scroll to previous students" onClick={() => scroll(-1)}>
             <ChevronLeft aria-hidden />
           </Button>
-          <Button variant="outline" size="icon-lg" className="rounded-xl" aria-label="Scroll to more students" onClick={() => scroll(1)}>
+          <Button variant="outline" size="icon-lg" aria-label="Scroll to more students" onClick={() => scroll(1)}>
             <ChevronRight aria-hidden />
           </Button>
         </div>

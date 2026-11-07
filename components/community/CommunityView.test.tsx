@@ -91,13 +91,16 @@ describe("CommunityView", () => {
   it("blocks an empty composer and posts a real request", async () => {
     const { user } = setup();
     const submit = screen.getByRole("button", { name: "Ask for help" });
-    expect(submit).toBeDisabled();
+    // The page action stays live; an empty ask posts nothing and points you back to the box.
+    expect(submit).toBeEnabled();
 
     const box = screen.getByLabelText("What do you need help with?");
     await user.type(box, "   ");
-    expect(submit).toBeDisabled();
     await user.click(submit);
     expect(apiPost).not.toHaveBeenCalled();
+    expect(screen.getByText("Write a sentence first.")).toBeInTheDocument();
+    expect(box).toHaveFocus();
+    expect(box).toHaveAttribute("aria-invalid", "true");
 
     apiPost.mockResolvedValue({ id: "help_new", fromUserId: "aisha", kind: "code-review", message: "Review my PR?", status: "open", createdAt: new Date().toISOString() });
     await user.clear(box);
@@ -112,11 +115,11 @@ describe("CommunityView", () => {
 
   it("shows the 🌱 note only to newcomers", async () => {
     setup();
-    expect(await screen.findByText("Your 🌱 badge tells helpers to explain things in more detail.")).toBeInTheDocument();
+    expect(await screen.findByText(/badge tells helpers to explain things in more detail\./)).toBeInTheDocument();
     cleanup();
     setup({ profiles: { ...PROFILES, aisha: profile("aisha", "Aisha Rahman", []) } });
     await screen.findByRole("list", { name: "Open help requests" });
-    expect(screen.queryByText(/Your 🌱 badge/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/badge tells helpers/)).not.toBeInTheDocument();
   });
 
   it("shows helpers this week only after opting in", async () => {

@@ -47,16 +47,14 @@ export function initials(name: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-// Literal class strings so Tailwind picks them up. 800/900 text on 100 backgrounds keeps contrast above 4.5:1.
+// Literal class strings so Tailwind picks them up. Token tints only (the chart hues, never the coral signal,
+// which stays for "you"); the initials are always the ink, so every tone keeps 4.5:1 in light and dark.
 const TONES = [
-  "bg-indigo-100 text-indigo-800 dark:bg-indigo-500/25 dark:text-indigo-100",
-  "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/25 dark:text-emerald-100",
-  "bg-amber-100 text-amber-900 dark:bg-amber-500/25 dark:text-amber-100",
-  "bg-rose-100 text-rose-800 dark:bg-rose-500/25 dark:text-rose-100",
-  "bg-sky-100 text-sky-800 dark:bg-sky-500/25 dark:text-sky-100",
-  "bg-violet-100 text-violet-800 dark:bg-violet-500/25 dark:text-violet-100",
-  "bg-teal-100 text-teal-800 dark:bg-teal-500/25 dark:text-teal-100",
-  "bg-orange-100 text-orange-900 dark:bg-orange-500/25 dark:text-orange-100",
+  "bg-chart-2/20 text-foreground",
+  "bg-chart-3/25 text-foreground",
+  "bg-chart-4/20 text-foreground",
+  "bg-chart-5/20 text-foreground",
+  "bg-accent text-foreground",
 ] as const;
 
 /** Stable colour per user id. */

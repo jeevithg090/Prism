@@ -9,7 +9,7 @@ import { apiGet } from "@/lib/fetcher";
 import type { LecturerCohort, LecturerInsights } from "@/lib/schemas/lecturer";
 import type { PodInsights } from "@/lib/schemas/studio";
 import { DEMO_COHORT, DEMO_INSIGHTS, DEMO_POD_INSIGHTS } from "./demoData";
-import { GapsChart, NoModuleBadge } from "./GapsChart";
+import { GapsChart } from "./GapsChart";
 import { LabIdeas } from "./LabIdeas";
 import { LecturerStats } from "./LecturerStats";
 import { PeerTeaching } from "./PeerTeaching";
@@ -46,14 +46,20 @@ export function LecturerInsightsView({ programmeId }: { programmeId: string }) {
   if (cohort) stats = <LecturerStats cohort={cohort} insights={insights} />;
   else if (cohortQ.isError) stats = <ErrorState title="We couldn't load your cohort" body="The cohort numbers didn't arrive. Try again, or show the demo cohort." onRetry={() => cohortQ.refetch()} onUseDemo={useDemo} />;
   else stats = (
-    <div role="status" className="grid gap-4 md:grid-cols-3" aria-busy="true" aria-label="Loading cohort numbers">
-      {[0, 1, 2].map((i) => <Skeleton key={i} className="h-32 rounded-2xl" />)}
+    <div role="status" className="grid gap-6 md:grid-cols-3" aria-busy="true" aria-label="Loading cohort numbers">
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="space-y-3">
+          <Skeleton className="h-4 w-40 max-w-full" />
+          <Skeleton className="h-12 w-28" />
+          <Skeleton className="h-4 w-56 max-w-full" />
+        </div>
+      ))}
     </div>
   );
 
   if (cohort?.suppressed) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-8">
         <EmptyState
           icon={ShieldCheck}
           title="Not enough students to show insights yet"
@@ -68,7 +74,7 @@ export function LecturerInsightsView({ programmeId }: { programmeId: string }) {
   let gaps: React.ReactNode;
   if (insights) {
     gaps = insights.gaps.length
-      ? <><NoModuleBadge className="mb-4 sm:hidden" /><GapsChart gaps={insights.gaps} roleName={roleName} /></>
+      ? <GapsChart gaps={insights.gaps} roleName={roleName} />
       : <EmptyState icon={SearchCheck} title="Your syllabus covers every in-demand skill we track" body="When job ads start asking for something no module teaches, it will show up here." />;
   } else if (insightsQ.isError) {
     gaps = <ErrorState title="We couldn't compare your syllabus with job ads" body="Try again, or show the demo programme." onRetry={() => insightsQ.refetch()} onUseDemo={useDemo} />;
@@ -83,8 +89,14 @@ export function LecturerInsightsView({ programmeId }: { programmeId: string }) {
   } else if (insightsQ.isError) {
     labs = <ErrorState title="We couldn't write lab ideas" onRetry={() => insightsQ.refetch()} onUseDemo={useDemo} />;
   } else labs = (
-    <div role="status" className="grid gap-4 lg:grid-cols-3" aria-busy="true" aria-label="Loading lab ideas">
-      {[0, 1, 2].map((i) => <Skeleton key={i} className="h-56 rounded-2xl" />)}
+    <div role="status" className="divide-y" aria-busy="true" aria-label="Loading lab ideas">
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="grid gap-x-6 gap-y-3 py-5 first:pt-0 last:pb-0 md:grid-cols-[9rem_minmax(0,1fr)_auto]">
+          <Skeleton className="h-4 w-24" />
+          <div className="space-y-2"><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-4/5" /></div>
+          <Skeleton className="h-9 w-44 rounded-xl" />
+        </div>
+      ))}
     </div>
   );
 
@@ -100,37 +112,44 @@ export function LecturerInsightsView({ programmeId }: { programmeId: string }) {
     teaching = <ErrorState title="We couldn't load peer-teaching numbers" onRetry={() => peerQ.refetch()} onUseDemo={useDemo} />;
   } else teaching = <LoadingSkeleton variant="list" />;
 
+  // A loaded region sits in its card; a loading, empty or error state stands in for the card itself, so no card holds another.
+  const gapsReady = Boolean(insights?.gaps.length);
+  const labsReady = Boolean(insights && insights.labIdeas.length && insights.gaps.length);
+  const teachingReady = Boolean(peer && !peer.suppressed && (peer.peerTeachable.length || peer.unteachableGaps.length));
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <span>Seeded cohort for the demo</span>
+    <div className="space-y-8 pb-24">
+      <div className="space-y-4">
         <DemoDataNote />
+        {stats}
       </div>
-      {stats}
 
-      <SectionCard
-        title="Industry skills your programme doesn't teach yet"
-        description={`Share of ${roleName} job ads asking for each skill, for skills no module in your syllabus covers.`}
-        actions={<NoModuleBadge className="hidden sm:inline-flex" />}
-      >
-        {gaps}
-      </SectionCard>
+      {gapsReady ? (
+        <SectionCard
+          title="Industry skills your programme doesn't teach yet"
+          description={`Share of ${roleName} job ads asking for each skill, for skills no module in your syllabus covers.`}
+        >
+          {gaps}
+        </SectionCard>
+      ) : gaps}
 
-      <section aria-labelledby="labs-heading" className="space-y-4">
-        <div>
-          <h2 id="labs-heading" className="text-xl font-semibold">Suggested practical labs</h2>
-          <p className="text-sm text-muted-foreground">Small additions to modules you already run, each linked to what the module teaches.</p>
+      <section aria-labelledby="labs-heading" className={labsReady ? "rounded-2xl border bg-card p-6 shadow-sm" : "space-y-4"}>
+        <div className={labsReady ? "mb-5" : undefined}>
+          {/* Hallmark · reworded "Suggested practical labs" to "Labs that would close these gaps" · review: generic heading, tie it to the ledger */}
+          <h2 id="labs-heading" className="text-xl font-semibold text-foreground">Labs that would close these gaps</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Small additions to modules you already run, each linked to what the module teaches.</p>
         </div>
         {labs}
       </section>
 
-      <SectionCard
-        title="Learning by teaching in your cohort"
-        description="Keystone pods pair students so each one learns a skill from a peer and teaches another back."
-        actions={<DemoDataNote />}
-      >
-        {teaching}
-      </SectionCard>
+      {teachingReady ? (
+        <SectionCard
+          title="Learning by teaching in your cohort"
+          description="Keystone pods pair students so each one learns a skill from a peer and teaches another back."
+        >
+          {teaching}
+        </SectionCard>
+      ) : teaching}
 
       <Footer />
     </div>

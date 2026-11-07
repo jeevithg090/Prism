@@ -38,6 +38,12 @@ export function growthText(g: number): string {
   const v = Math.round(g * 100);
   return `${v > 0 ? "+" : v < 0 ? "−" : "±"}${Math.abs(v)}% a year`;
 }
+/** growthText split for display: the figure (set in mono) and its words. 0.67 → ["+67%", "a year"]. */
+export function growthParts(g: number): [string, string] {
+  const t = growthText(g);
+  const at = t.indexOf(" ");
+  return [t.slice(0, at), t.slice(at + 1)];
+}
 export function fmtSalary(n: number): string {
   return `£${Math.round(n / 1000)}k`;
 }
@@ -87,7 +93,7 @@ export function trendSummary(series: TrendSeries[]): string {
       const end = s.projection.at(-1);
       const base = `${skillName(s.skillId)} is ${trendWord(s.label)} (${growthText(s.growthPerYear)})`;
       if (!now || !end) return `${base}.`;
-      return `${base}: ${pctPosts(now.share)} of Hacker News job posts in ${monthLabel(now.month)}, projected ${pctPosts(end.share)} (${pctPosts(end.low)}–${pctPosts(end.high)}) by ${monthLabel(end.month)}.`;
+      return `${base}: ${pctPosts(now.share)} of Hacker News job posts in ${monthLabel(now.month)}, projected ${pctPosts(end.share)} (${pctPosts(end.low)} to ${pctPosts(end.high)}) by ${monthLabel(end.month)}.`;
     })
     .join(" ");
 }

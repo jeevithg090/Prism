@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { avatarTone, initials, type MemberInfo } from "./members";
 
 const SIZE = { xs: "size-7", sm: "size-8", md: "size-10", lg: "size-12", xl: "size-16" } as const;
-const TEXT = { xs: "text-[13px] tracking-tight", sm: "text-[13px]", md: "text-sm", lg: "text-base", xl: "text-xl" } as const;
+const TEXT = { xs: "text-xs", sm: "text-xs", md: "text-sm", lg: "text-base", xl: "text-xl" } as const;
 
 export type AvatarSize = keyof typeof SIZE;
 

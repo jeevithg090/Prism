@@ -9,17 +9,17 @@ const POINTS: { icon: LucideIcon; text: string }[] = [
 
 export function AiActPanel() {
   return (
-    <section aria-labelledby="ai-act-title" className="rounded-2xl border border-primary/20 bg-primary/5 p-6 shadow-sm">
-      <h2 id="ai-act-title" className="text-xl font-semibold">EU AI Act: Keystone is decision support</h2>
-      <ul className="mt-4 grid gap-3 md:grid-cols-3">
+    <section aria-labelledby="ai-act-title" className="rounded-2xl border bg-card p-6 shadow-sm">
+      <h2 id="ai-act-title" className="text-xl font-semibold text-balance text-foreground">EU AI Act: Keystone is decision support</h2>
+      <ul className="mt-5 grid divide-y md:grid-cols-3 md:divide-x md:divide-y-0">
         {POINTS.map(({ icon: Icon, text }) => (
-          <li key={text} className="flex items-start gap-3 rounded-xl bg-card p-4">
-            <span className="rounded-full bg-primary/10 p-2 text-primary"><Icon className="size-5" aria-hidden /></span>
-            <span className="pt-1 font-medium">{text}</span>
+          <li key={text} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0 md:px-6 md:py-0 md:first:pl-0 md:last:pr-0">
+            <Icon className="mt-1 size-5 shrink-0 text-muted-foreground" aria-hidden />
+            <span className="text-base font-medium text-pretty text-foreground md:text-lg">{text}</span>
           </li>
         ))}
       </ul>
-      <p className="mt-3 text-[13px] text-muted-foreground">How we design Keystone, not legal advice.</p>
+      <p className="mt-5 border-t pt-4 text-sm text-muted-foreground">How we design Keystone, not legal advice.</p>
     </section>
   );
 }

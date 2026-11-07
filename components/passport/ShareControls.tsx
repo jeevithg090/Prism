@@ -28,9 +28,9 @@ export function ShareControls({ userId, isOwner, isPublic, onToggle, saving }: {
   }
 
   return (
-    <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center print:hidden">
+    <div className="flex w-full flex-col-reverse gap-3 sm:w-auto sm:flex-row sm:items-center print:hidden">
       {isOwner && (
-        <div className="flex items-center gap-3 rounded-xl border bg-card px-3 py-2">
+        <div className="flex items-center gap-3 rounded-xl border bg-card px-3.5 py-2">
           <button
             type="button"
             role="switch"
@@ -40,24 +40,24 @@ export function ShareControls({ userId, isOwner, isPublic, onToggle, saving }: {
             disabled={saving}
             onClick={() => onToggle(!isPublic)}
             className={cn(
-              "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border-2 border-transparent transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-60",
+              "relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-[background-color] duration-(--dur-short) ease-(--ease-out) outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:brightness-95 disabled:cursor-not-allowed disabled:opacity-55",
               isPublic ? "bg-primary" : "bg-input",
             )}
           >
-            <span aria-hidden className={cn("inline-block size-5 rounded-full bg-background shadow-sm transition-transform", isPublic ? "translate-x-5" : "translate-x-0")} />
+            <span aria-hidden className={cn("inline-block size-5 rounded-full bg-card shadow-sm motion-safe:transition-transform motion-safe:duration-(--dur-short) motion-safe:ease-(--ease-out)", isPublic ? "translate-x-5 rtl:-translate-x-5" : "translate-x-0")} />
           </button>
           <div className="min-w-0">
             <p id="public-passport-label" className="flex items-center gap-1.5 text-sm font-medium">
               {isPublic ? <Globe className="size-4 text-primary" aria-hidden /> : <Lock className="size-4 text-muted-foreground" aria-hidden />}
               Public passport
             </p>
-            <p id="public-passport-hint" className="text-xs text-muted-foreground">
+            <p id="public-passport-hint" className="text-sm text-muted-foreground">
               {isPublic ? "On: anyone with the link can see it" : "Off: only you can see it"}
             </p>
           </div>
         </div>
       )}
-      <Button size="lg" onClick={copy} className="h-11 px-5 text-base">
+      <Button size="lg" onClick={copy}>
         <Link2 aria-hidden /> Copy link
       </Button>
     </div>

@@ -1,15 +1,17 @@
 "use client";
-// App shell top bar (contract §9.4): persona switcher · readiness pill · Agents button · theme toggle.
+// App shell top bar: persona switcher on the left; readiness pill, Agents button and theme toggle on the right.
+// It is the only sticky top:0 element (the sidebar is fixed), on the --z-sticky-nav layer.
 import * as React from "react";
 import Link from "next/link";
-import { Workflow } from "lucide-react";
 import type { BridgeMap } from "@/lib/types";
-import { cn } from "@/lib/utils";
-import { useActivity } from "@/components/shell/ActivityPanel";
 import { roleName, useBridgeMap } from "@/components/dashboard/data";
+import { AgentsButton } from "./ActivityPanel";
 import { KeystoneMark } from "./Sidebar";
 import { PersonaSwitcher } from "./PersonaSwitcher";
 import { ThemeToggle } from "./ThemeToggle";
+
+/** The Agents button lives with the Activity panel it opens; re-exported here for the top bar. */
+export { AgentsButton };
 
 /** "ML engineer · 38%" for the viewer's primary role. Hidden when there is no map yet. */
 export function ReadinessPill({ userId, roleId, initial }: { userId: string; roleId: string; initial: BridgeMap | null }) {
@@ -21,10 +23,10 @@ export function ReadinessPill({ userId, roleId, initial }: { userId: string; rol
   return (
     <Link
       href="/map"
-      className="inline-flex h-10 items-center gap-2 rounded-full border bg-card px-3 text-sm font-medium outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+      className="inline-flex h-10 items-center gap-2 rounded-xl bg-card px-3 text-sm font-medium text-foreground shadow-stock outline-none transition-[box-shadow,transform] duration-(--dur-short) hover:-translate-y-px hover:shadow-stock-lift focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
     >
       <MiniRing value={map.readinessNow} />
-      <span className="sr-only lg:not-sr-only">{role} ·</span>{" "}
+      <span className="sr-only text-muted-foreground lg:not-sr-only">{role} ·</span>{" "}
       <span className="font-mono font-semibold tabular-nums">{pct}%</span>{" "}
       <span className="sr-only">ready. Open your Bridge Map</span>
     </Link>
@@ -34,7 +36,7 @@ export function ReadinessPill({ userId, roleId, initial }: { userId: string; rol
 function MiniRing({ value }: { value: number }) {
   return (
     <svg viewBox="0 0 20 20" className="size-5 -rotate-90" aria-hidden focusable="false">
-      <circle cx="10" cy="10" r="8" fill="none" strokeWidth="3" className="stroke-muted" />
+      <circle cx="10" cy="10" r="8" fill="none" strokeWidth="3" className="stroke-paper-3" />
       <circle cx="10" cy="10" r="8" fill="none" strokeWidth="3" strokeLinecap="round" pathLength={100} strokeDasharray="100 100" strokeDashoffset={100 - Math.round(value * 100)} className="stroke-primary" />
     </svg>
   );
@@ -45,41 +47,11 @@ export function isRunLive(events: { agent: string; status: string }[]): boolean 
   return events.length > 0 && !events.some((e) => e.agent === "orchestrator" && (e.status === "done" || e.status === "error"));
 }
 
-export function AgentsButton() {
-  const { events, open, setOpen } = useActivity();
-  const live = isRunLive(events);
-  return (
-    <button
-      type="button"
-      onClick={() => setOpen(true)}
-      aria-haspopup="dialog"
-      aria-expanded={open}
-      data-live={live || undefined}
-      className={cn(
-        "relative inline-flex h-10 items-center gap-2 rounded-xl border bg-card px-3 text-sm font-medium outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring",
-        live && "border-primary/40 text-primary",
-      )}
-    >
-      <span className="relative flex">
-        <Workflow className="size-5" aria-hidden />
-        {live && (
-          <span aria-hidden className="absolute -top-0.5 -right-0.5 flex size-2.5">
-            <span className="absolute inline-flex size-full animate-ping rounded-full bg-primary opacity-60 motion-reduce:animate-none" />
-            <span className="relative inline-flex size-2.5 rounded-full bg-primary" />
-          </span>
-        )}
-      </span>
-      <span className="sr-only sm:not-sr-only">Agents</span>
-      {live && <span className="sr-only">, running now</span>}
-    </button>
-  );
-}
-
 export function TopBar({ readiness }: { readiness?: React.ReactNode }) {
   return (
-    <header className="sticky top-0 z-30 border-b bg-background">
-      <div className="mx-auto flex h-16 w-full max-w-7xl items-center gap-2 px-4 md:px-8">
-        <Link href="/dashboard" aria-label="Keystone dashboard" className="rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden">
+    <header className="sticky top-0 z-(--z-sticky-nav) border-b bg-background">
+      <div className="mx-auto flex h-(--topbar-height) w-full max-w-7xl items-center gap-2 px-4 md:px-8">
+        <Link href="/dashboard" aria-label="Keystone dashboard" className="rounded-lg outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring md:hidden">
           <KeystoneMark />
         </Link>
         <PersonaSwitcher className="max-w-[11rem] sm:max-w-none" />

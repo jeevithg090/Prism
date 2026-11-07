@@ -3,8 +3,8 @@
 // Pure SVG: members sit on a circle; a curved arrow runs teacher → learner for every skill in teacher.teaches ∩ learner.learns.
 import * as React from "react";
 import { motion, useReducedMotion } from "motion/react";
-import { ArrowRight, Network } from "lucide-react";
-import type { Pod } from "@/lib/types";
+import { ArrowRight } from "lucide-react";
+import type { MatchExplanation, Pod } from "@/lib/types";
 import { skillName } from "@/lib/schemas/community";
 import { cn } from "@/lib/utils";
 import { LevelChips } from "@/components/pods/LevelChips";
@@ -109,8 +109,8 @@ const COMPACT: Geo = {
   cy: 150,
   r: 92,
   nodeR: 22,
-  nameSize: 14,
-  labelSize: 13,
+  nameSize: 15,
+  labelSize: 14,
   sideLabel: "below",
 };
 type Pt = { x: number; y: number };
@@ -132,11 +132,28 @@ function nodePositions(ids: string[], g: Geo) {
   return pos;
 }
 
-function edgeGeometry(a: Pt, b: Pt, g: Geo) {
+type Curve = { s: Pt; c: Pt; tip: Pt; base: Pt; d: string; arrow: string };
+type Laid = Curve & { label: Pt };
+const LABEL_T = 0.38; // labels sit a little before the middle, so two labels never meet at the centre
+const LABEL_PUSH = 12; // and beside their own line, not on it
+const bez = (s: Pt, c: Pt, e: Pt, t: number): Pt => ({
+  x: (1 - t) ** 2 * s.x + 2 * (1 - t) * t * c.x + t ** 2 * e.x,
+  y: (1 - t) ** 2 * s.y + 2 * (1 - t) * t * c.y + t ** 2 * e.y,
+});
+const tangentAt = (s: Pt, c: Pt, e: Pt, t: number): Pt => ({
+  x: 2 * (1 - t) * (c.x - s.x) + 2 * t * (e.x - c.x),
+  y: 2 * (1 - t) * (c.y - s.y) + 2 * t * (e.y - c.y),
+});
+/** A chord that runs through the middle of the circle (Aisha to Tom, Priya to Mei in a pod of four). */
+const throughMiddle = (a: Pt, b: Pt, g: Geo) =>
+  Math.hypot((a.x + b.x) / 2 - g.cx, (a.y + b.y) / 2 - g.cy) < g.r * 0.35;
+
+/** A curved arrow a → b. `side` (±1) picks the bow; A→B and B→A always bow to opposite sides. */
+function edgeCurve(a: Pt, b: Pt, g: Geo, side: number): Curve {
   const d = sub(b, a);
   const dist = len(d);
-  const n = { x: -d.y / dist, y: d.x / dist }; // A→B and B→A bend to opposite sides
-  const bend = dist * 0.2;
+  const n = { x: (-d.y / dist) * side, y: (d.x / dist) * side };
+  const bend = dist * (throughMiddle(a, b, g) ? 0.3 : 0.2);
   const c = {
     x: (a.x + b.x) / 2 + n.x * bend,
     y: (a.y + b.y) / 2 + n.y * bend,
@@ -156,15 +173,124 @@ function edgeGeometry(a: Pt, b: Pt, g: Geo) {
   ]
     .map((p) => `${r1(p.x)},${r1(p.y)}`)
     .join(" ");
-  const label = {
-    x: 0.25 * s.x + 0.5 * c.x + 0.25 * tip.x,
-    y: 0.25 * s.y + 0.5 * c.y + 0.25 * tip.y,
-  };
   return {
+    s,
+    c,
+    tip,
+    base,
     d: `M ${r1(s.x)} ${r1(s.y)} Q ${r1(c.x)} ${r1(c.y)} ${r1(base.x)} ${r1(base.y)}`,
     arrow,
-    label,
   };
+}
+
+/** Two label spots beside the curve at `at`: away from the centre first, then towards it. */
+function labelSpots(k: Curve, g: Geo, at = LABEL_T): [Pt, Pt] {
+  const p = bez(k.s, k.c, k.tip, at);
+  const t = unit(tangentAt(k.s, k.c, k.tip, at));
+  let n = { x: -t.y, y: t.x };
+  if (n.x * (p.x - g.cx) + n.y * (p.y - g.cy) < 0) n = { x: -n.x, y: -n.y };
+  return [
+    { x: p.x + n.x * LABEL_PUSH, y: p.y + n.y * LABEL_PUSH },
+    { x: p.x - n.x * LABEL_PUSH, y: p.y - n.y * LABEL_PUSH },
+  ];
+}
+
+function labelText(group: ExchangeGroup) {
+  const n = group.skillIds.map(skillName);
+  return n.length > 2 ? `${n.slice(0, 2).join(", ")} +${n.length - 2}` : n.join(", ");
+}
+
+const boxGap = (p: Pt, c: Pt, w: number, h: number) =>
+  Math.hypot(
+    Math.max(Math.abs(p.x - c.x) - w / 2, 0),
+    Math.max(Math.abs(p.y - c.y) - h / 2, 0),
+  );
+
+/**
+ * Lays out every arrow and its label. Chords through the middle can bow either way, so each
+ * combination is tried and the one whose labels sit furthest from other lines, nodes and labels wins.
+ */
+function layoutEdges(
+  groups: ExchangeGroup[],
+  pos: Record<string, Pt>,
+  g: Geo,
+  nameBoxes: { p: Pt; w: number; h: number }[] = [],
+): Record<string, Laid> {
+  const live = groups.filter((k) => pos[k.from] && pos[k.to]);
+  const pairOf = (k: ExchangeGroup) => [k.from, k.to].sort().join("|");
+  const flexible = [
+    ...new Set(
+      live.filter((k) => throughMiddle(pos[k.from], pos[k.to], g)).map(pairOf),
+    ),
+  ].slice(0, 6);
+  const texts = live.map(labelText);
+  const nodes = Object.values(pos);
+  let best: { worst: number; total: number; out: Record<string, Laid> } | null = null;
+
+  for (let mask = 0; mask < 1 << flexible.length; mask++) {
+    const side = (k: ExchangeGroup) => {
+      const i = flexible.indexOf(pairOf(k));
+      return i >= 0 && mask & (1 << i) ? -1 : 1;
+    };
+    const curves = live.map((k) => edgeCurve(pos[k.from], pos[k.to], g, side(k)));
+    const samples = curves.map((c) =>
+      Array.from({ length: 25 }, (_, i) => ({ t: i / 24, p: bez(c.s, c.c, c.base, i / 24) })),
+    );
+    const placed: { p: Pt; w: number; h: number }[] = [...nameBoxes];
+    const out: Record<string, Laid> = {};
+    let worst = Infinity,
+      total = 0;
+
+    curves.forEach((c, i) => {
+      const w = texts[i].length * g.labelSize * 0.56 + 6;
+      const h = g.labelSize + 4;
+      const clear = (spot: Pt) => {
+        let m = Infinity;
+        samples.forEach((pts, j) => {
+          for (const { t, p } of pts) {
+            if (j === i && Math.abs(t - LABEL_T) < 0.3) continue;
+            m = Math.min(m, boxGap(p, spot, w, h));
+          }
+        });
+        for (const n of nodes) m = Math.min(m, boxGap(n, spot, w, h) - g.nodeR - 2);
+        for (const o of placed) {
+          m = Math.min(
+            m,
+            Math.hypot(
+              Math.max(Math.abs(o.p.x - spot.x) - (w + o.w) / 2, 0),
+              Math.max(Math.abs(o.p.y - spot.y) - (h + o.h) / 2, 0),
+            ),
+          );
+        }
+        if (spot.x - w / 2 < 0 || spot.x + w / 2 > g.w || spot.y - h / 2 < 0 || spot.y + h / 2 > g.h) m = Math.min(m, 0);
+        return m;
+      };
+      // Prefer t = 0.38 on the outer side; slide along the line or cross it only when that clears more.
+      let spot = labelSpots(c, g)[0];
+      let m = clear(spot);
+      for (const at of [LABEL_T, 0.3, 0.48]) {
+        for (const cand of labelSpots(c, g, at)) {
+          const cm = clear(cand);
+          if (cm > m + 2) {
+            spot = cand;
+            m = cm;
+          }
+        }
+      }
+      placed.push({ p: spot, w, h });
+      worst = Math.min(worst, m);
+      total += Math.min(m, 16);
+      out[live[i].key] = { ...c, label: spot };
+    });
+
+    if (
+      !best ||
+      worst > best.worst + 0.5 ||
+      (Math.abs(worst - best.worst) <= 0.5 && total > best.total)
+    )
+      best = { worst, total, out };
+  }
+  return best?.out ?? {};
 }
 
 function nameLabel(p: Pt & { angle: number }, g: Geo) {
@@ -207,10 +333,13 @@ export function SkillExchangeGraph({
   pod,
   names,
   viewerId,
+  explanations,
 }: {
   pod: Pod;
   names: Record<string, string>;
   viewerId?: string;
+  /** The matchmaker's plain-English reasons. Each one sits under the viewer's swap with that podmate. */
+  explanations?: MatchExplanation[];
 }) {
   const reduce = useReducedMotion();
   const wrapRef = React.useRef<HTMLDivElement>(null);
@@ -226,6 +355,16 @@ export function SkillExchangeGraph({
   const edges = React.useMemo(() => buildExchangeEdges(pod), [pod]);
   const groups = React.useMemo(() => groupExchangeEdges(edges), [edges]);
   const pos = React.useMemo(() => nodePositions(ids, geo), [ids, geo]);
+  const layout = React.useMemo(() => {
+    // Podmates' names are obstacles too, so a skill label never lands on "Priya" or "Mei".
+    const nameBoxes = ids.map((id) => {
+      const nl = nameLabel(pos[id], geo);
+      const w = firstName(names, id).length * geo.nameSize * 0.56 + 4;
+      const x = nl.anchor === "middle" ? nl.x : nl.anchor === "start" ? nl.x + w / 2 : nl.x - w / 2;
+      return { p: { x, y: nl.y - geo.nameSize * 0.35 }, w, h: geo.nameSize + 2 };
+    });
+    return layoutEdges(groups, pos, geo, nameBoxes);
+  }, [groups, pos, geo, ids, names]);
   const isViewer = (id: string) => !!viewerId && id === viewerId;
   const focusId = hover ?? pinned;
   const spotlight =
@@ -238,6 +377,22 @@ export function SkillExchangeGraph({
       g.to === viewerId ? 0 : g.from === viewerId ? 1 : 2;
     return [...groups].sort((a, b) => rank(a) - rank(b));
   }, [groups, viewerId]);
+  // Each reason goes under the first swap between those two people; any left over is listed after.
+  const notes = React.useMemo(() => {
+    const byKey: Record<string, string[]> = {};
+    const loose: string[] = [];
+    for (const e of explanations ?? []) {
+      const hit = ordered.find(
+        (g) =>
+          (g.from === e.fromUserId && g.to === e.toUserId) ||
+          (g.from === e.toUserId && g.to === e.fromUserId),
+      );
+      if (hit) (byKey[hit.key] ??= []).push(e.text);
+      else loose.push(e.text);
+    }
+    return { byKey, loose };
+  }, [explanations, ordered]);
+  const everyReason = (explanations ?? []).map((e) => e.text);
   const teachers = new Set(edges.map((e) => e.from)).size;
   const uid = React.useId().replace(/[^a-zA-Z0-9]/g, "");
   const titleId = `seg-title-${uid}`;
@@ -247,21 +402,13 @@ export function SkillExchangeGraph({
   const ariaLabel = `${pod.name} skill exchange graph: ${ids.length} podmates and ${edges.length} skills taught between them. Each one is listed below.`;
 
   return (
-    <figure
-      className="@container rounded-2xl border bg-card p-4 shadow-sm sm:p-6"
-      aria-labelledby={titleId}
-    >
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+    <figure className="@container" aria-labelledby={titleId}>
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <Network className="size-4" aria-hidden />
-            </span>
-            <h3 id={titleId} className="text-base font-semibold tracking-tight">
-              Who teaches whom
-            </h3>
-          </div>
-          <p className="text-sm text-muted-foreground text-pretty">
+          <h3 id={titleId} className="text-xl font-semibold">
+            Who teaches whom
+          </h3>
+          <p className="max-w-[60ch] text-pretty text-muted-foreground">
             Every arrow is a skill one podmate teaches another. You learn by
             building and teach by reviewing.
           </p>
@@ -270,26 +417,36 @@ export function SkillExchangeGraph({
       </div>
 
       {edges.length === 0 ? (
-        <p className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
-          No skill swaps yet. Once podmates share what they can teach, arrows
-          appear here.
-        </p>
+        <div className="space-y-4">
+          <p className="rounded-xl bg-muted p-6 text-center text-muted-foreground">
+            No skill swaps yet. Once podmates share what they can teach, arrows
+            appear here.
+          </p>
+          {everyReason.length > 0 && (
+            <ul aria-label="Why this pod works" className="space-y-2">
+              {everyReason.map((t, i) => (
+                <li key={i} className="max-w-[70ch] text-pretty">
+                  {t}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       ) : (
-        <div className="grid items-start gap-5 @2xl:grid-cols-[minmax(0,1fr)_16rem]">
+        <div className="grid items-start gap-8 @2xl:grid-cols-[minmax(0,1fr)_minmax(0,20rem)] @4xl:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
           <div ref={wrapRef} className="min-w-0">
             <svg
               role="img"
               aria-label={ariaLabel}
               aria-describedby={summaryId}
               viewBox={`0 0 ${geo.w} ${geo.h}`}
-              className="mx-auto block h-auto max-h-[360px] w-full max-w-[440px] select-none"
+              className="mx-auto block h-auto max-h-[26rem] w-full max-w-[34rem] select-none"
             >
               {/* edges */}
               {groups.map((g, i) => {
-                const a = pos[g.from],
-                  b = pos[g.to];
-                if (!a || !b) return null;
-                const { d, arrow } = edgeGeometry(a, b, geo);
+                const laid = layout[g.key];
+                if (!laid) return null;
+                const { d, arrow } = laid;
                 const on = touches(g, spotlight);
                 const dim = !!focusId && !on;
                 const delay = 0.2 + i * 0.12;
@@ -299,7 +456,7 @@ export function SkillExchangeGraph({
                     data-edge={g.key}
                     data-active={on || undefined}
                     className={cn(
-                      "transition-opacity duration-200",
+                      "transition-opacity duration-(--dur-short)",
                       dim && "opacity-15",
                     )}
                   >
@@ -309,7 +466,7 @@ export function SkillExchangeGraph({
                       strokeLinecap="round"
                       strokeWidth={on ? 2.5 : 1.75}
                       className={cn(
-                        "transition-colors duration-200",
+                        "transition-[stroke] duration-(--dur-short)",
                         on ? "stroke-primary" : "stroke-muted-foreground/50",
                       )}
                       initial={reduce ? false : { pathLength: 0 }}
@@ -319,7 +476,7 @@ export function SkillExchangeGraph({
                     <motion.polygon
                       points={arrow}
                       className={cn(
-                        "transition-colors duration-200",
+                        "transition-[fill] duration-(--dur-short)",
                         on ? "fill-primary" : "fill-muted-foreground/60",
                       )}
                       initial={reduce ? false : { opacity: 0 }}
@@ -331,17 +488,12 @@ export function SkillExchangeGraph({
               })}
               {/* edge labels */}
               {groups.map((g, i) => {
-                const a = pos[g.from],
-                  b = pos[g.to];
-                if (!a || !b) return null;
-                const { label } = edgeGeometry(a, b, geo);
+                const laid = layout[g.key];
+                if (!laid) return null;
+                const { label } = laid;
                 const on = touches(g, spotlight);
                 const dim = !!focusId && !on;
-                const names2 = g.skillIds.map(skillName);
-                const text =
-                  names2.length > 2
-                    ? `${names2.slice(0, 2).join(" · ")} +${names2.length - 2}`
-                    : names2.join(" · ");
+                const text = labelText(g);
                 return (
                   <motion.g
                     key={g.key}
@@ -355,11 +507,11 @@ export function SkillExchangeGraph({
                       dy="0.35em"
                       textAnchor="middle"
                       fontSize={geo.labelSize}
-                      strokeWidth={5}
+                      strokeWidth={8}
                       strokeLinejoin="round"
                       style={{ paintOrder: "stroke" }}
                       className={cn(
-                        "stroke-card font-medium transition-[fill,opacity] duration-200",
+                        "stroke-card font-medium transition-[fill,opacity] duration-(--dur-short)",
                         on
                           ? "fill-foreground font-semibold"
                           : "fill-muted-foreground",
@@ -387,7 +539,7 @@ export function SkillExchangeGraph({
                     data-node={id}
                     data-viewer={you || undefined}
                     className={cn(
-                      "cursor-pointer transition-opacity duration-200",
+                      "cursor-pointer transition-opacity duration-(--dur-short)",
                       dim && "opacity-40",
                     )}
                     onMouseEnter={() => setHover(id)}
@@ -419,7 +571,7 @@ export function SkillExchangeGraph({
                         r={geo.nodeR}
                         strokeWidth={lit && !you ? 2.5 : 1.5}
                         className={cn(
-                          "transition-colors duration-200",
+                          "transition-[fill,stroke] duration-(--dur-short)",
                           you
                             ? "fill-primary stroke-primary"
                             : lit
@@ -434,7 +586,7 @@ export function SkillExchangeGraph({
                         textAnchor="middle"
                         fontSize={geo.nameSize - 0.5}
                         className={cn(
-                          "font-semibold tracking-wide",
+                          "font-semibold",
                           you ? "fill-primary-foreground" : "fill-foreground",
                         )}
                       >
@@ -523,15 +675,15 @@ export function SkillExchangeGraph({
                     onBlur={() => setHover(null)}
                     onClick={() => toggle(id)}
                     className={cn(
-                      "inline-flex h-8 items-center gap-1.5 rounded-full border bg-background pr-3 pl-1 text-sm font-medium transition-colors outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50",
+                      "inline-flex h-9 items-center gap-2 rounded-lg border bg-card pr-3 pl-1 text-sm font-medium transition-[background-color,border-color,transform] duration-(--dur-short) outline-none hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:translate-y-px disabled:cursor-not-allowed disabled:opacity-55",
                       (pressed || focusId === id) &&
-                        "border-primary/50 bg-primary/5",
+                        "border-primary bg-accent",
                     )}
                   >
                     <span
                       aria-hidden
                       className={cn(
-                        "flex size-6 items-center justify-center rounded-full text-[10px] font-semibold",
+                        "flex size-7 items-center justify-center rounded-full text-xs font-semibold",
                         you
                           ? "bg-primary text-primary-foreground"
                           : "bg-muted text-foreground",
@@ -551,9 +703,11 @@ export function SkillExchangeGraph({
             </div>
 
             <div>
-              <p className="mb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                {edges.length} skill {edges.length === 1 ? "swap" : "swaps"} ·{" "}
-                {teachers} of {ids.length} teach
+              <p className="mb-2 text-sm font-medium text-muted-foreground">
+                {edges.length} skill {edges.length === 1 ? "swap" : "swaps"}.{" "}
+                {teachers === ids.length
+                  ? "Everyone teaches something."
+                  : `${teachers} of ${ids.length} podmates teach.`}
               </p>
               <ul
                 id={summaryId}
@@ -568,24 +722,53 @@ export function SkillExchangeGraph({
                       onMouseEnter={() => setHover(g.from)}
                       onMouseLeave={() => setHover(null)}
                       className={cn(
-                        "flex items-start gap-2 rounded-lg px-2 py-1.5 text-sm leading-snug transition-colors",
+                        "flex items-start gap-2 rounded-lg px-2 py-1.5 text-sm leading-snug transition-[background-color,color] duration-(--dur-short)",
                         on
-                          ? "bg-primary/5 text-foreground"
+                          ? "bg-muted text-foreground"
                           : "text-muted-foreground",
                       )}
                     >
                       <ArrowRight
                         className={cn(
-                          "mt-0.5 size-3.5 shrink-0",
+                          "mt-0.5 size-4 shrink-0",
                           on ? "text-primary" : "text-muted-foreground/70",
                         )}
                         aria-hidden
                       />
-                      <span>{describeExchange(g, names, viewerId)}</span>
+                      <span className="min-w-0">
+                        <span
+                          className={cn(
+                            "block",
+                            notes.byKey[g.key] && "font-medium",
+                          )}
+                        >
+                          {describeExchange(g, names, viewerId)}
+                        </span>
+                        {notes.byKey[g.key]?.map((t, i) => (
+                          <span
+                            key={i}
+                            className="mt-1 block text-pretty text-muted-foreground"
+                          >
+                            {t}
+                          </span>
+                        ))}
+                      </span>
                     </li>
                   );
                 })}
               </ul>
+              {notes.loose.length > 0 && (
+                <ul
+                  aria-label="Why this pod works"
+                  className="mt-3 space-y-1.5 border-t pt-3 text-sm"
+                >
+                  {notes.loose.map((t, i) => (
+                    <li key={i} className="px-2 text-pretty">
+                      {t}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
         </div>

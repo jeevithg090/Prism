@@ -3,6 +3,7 @@ import { Providers } from "@/app/providers";
 import { Sidebar, SidebarView } from "@/components/shell/Sidebar";
 import { ReadinessPill, TopBar } from "@/components/shell/TopBar";
 import { MobileNav } from "@/components/shell/MobileNav";
+import { CoachLauncher } from "@/components/coach/CoachLauncher";
 import { loadGraph } from "@/lib/graph/build";
 import { getViewer } from "@/lib/session";
 
@@ -19,7 +20,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <Providers>
       <a
         href="#main"
-        className="sr-only z-50 rounded-xl bg-primary px-4 py-2 text-primary-foreground focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
+        className="sr-only z-(--z-toast) rounded-xl bg-board px-4 py-2 text-board-type focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
       >
         Skip to content
       </a>
@@ -27,7 +28,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <Suspense fallback={<SidebarView pathname={null} viewerId="aisha" />}>
           <Sidebar />
         </Suspense>
-        <div className="flex min-w-0 flex-1 flex-col">
+        {/* The sidebar is fixed, so the column reserves its width instead of a second sticky top:0. */}
+        <div className="flex min-w-0 flex-1 flex-col md:pl-(--sidebar-rail) lg:pl-(--sidebar-width)">
           <TopBar
             readiness={
               <Suspense fallback={null}>
@@ -38,7 +40,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <main
             id="main"
             tabIndex={-1}
-            className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 outline-none max-md:pb-[calc(var(--mobile-nav-height)+env(safe-area-inset-bottom)+2rem)] md:px-8 md:py-8"
+            className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 outline-none max-md:pb-[calc(var(--mobile-nav-height)+env(safe-area-inset-bottom)+6rem)] md:px-8 md:pt-8 md:pb-24"
           >
             {children}
           </main>
@@ -47,6 +49,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <Suspense fallback={null}>
         <MobileNav />
       </Suspense>
+      {/* Ask Keystone on every app page; under 768px it rides above the bottom tab bar. */}
+      <div className="max-md:[&>button]:bottom-[calc(var(--mobile-nav-height,4rem)+env(safe-area-inset-bottom)+1rem)]">
+        <CoachLauncher />
+      </div>
     </Providers>
   );
 }

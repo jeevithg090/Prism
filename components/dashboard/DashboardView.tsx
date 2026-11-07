@@ -1,5 +1,5 @@
 "use client";
-// Dashboard: "what should I do next?" This week's step first, then readiness, then the people and momentum around it.
+// Dashboard: "what should I do next?" This week's step leads, full width; readiness and your pod sit under it, then momentum, market pulse and the coach.
 import Link from "next/link";
 import { Network } from "lucide-react";
 import { toast } from "sonner";
@@ -9,10 +9,13 @@ import { PodSummaryCard } from "@/components/pods/PodSummaryCard";
 import { MomentumWidget } from "@/components/momentum/MomentumWidget";
 import { useActivity } from "@/components/shell/ActivityPanel";
 import type { BridgeMap, Profile } from "@/lib/types";
+import { cn } from "@/lib/utils";
 import { roleName, topGaps, useBridgeMap } from "./data";
 import { ReadinessCard } from "./ReadinessCard";
 import { AskKeystoneCard, MarketPulse, SlotBoundary } from "./SideCards";
 import { ThisWeekCard, ThisWeekSkeleton, primaryLink } from "./ThisWeekCard";
+
+const textLink = "font-medium text-primary underline decoration-1 underline-offset-4 outline-none hover:decoration-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
 
 function firstName(profile: Profile | null, userId: string) {
   const n = profile?.name?.trim().split(/\s+/)[0];
@@ -27,21 +30,29 @@ function useDemoFallback() {
   };
 }
 
+/** Readiness and pod, then momentum, market pulse and the coach, in the same grid the full screen uses. */
+function LowerSkeleton() {
+  return (
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3" aria-hidden>
+      <Skeleton className="h-96 rounded-2xl md:col-span-2" />
+      <Skeleton className="h-96 rounded-2xl md:col-span-2 lg:col-span-1" />
+      <Skeleton className="h-64 rounded-2xl" />
+      <Skeleton className="h-64 rounded-2xl" />
+      <Skeleton className="h-64 rounded-2xl md:col-span-2 lg:col-span-1" />
+    </div>
+  );
+}
+
 export function DashboardSkeleton() {
   return (
     <div aria-busy="true" className="space-y-6">
       <span className="sr-only">Loading your dashboard</span>
-      <div className="mb-6 space-y-3 md:mb-8">
+      <div className="mb-8 space-y-3">
         <Skeleton className="h-10 w-64" />
         <Skeleton className="h-6 w-80 max-w-full" />
       </div>
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="min-w-0 lg:col-span-2"><ThisWeekSkeleton /></div>
-        <Skeleton className="h-96 rounded-2xl" />
-      </div>
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {[0, 1, 2].map((i) => <Skeleton key={i} className="h-56 rounded-2xl" />)}
-      </div>
+      <ThisWeekSkeleton />
+      <LowerSkeleton />
     </div>
   );
 }
@@ -50,8 +61,8 @@ function WatchAgentsLink() {
   const { events, setOpen } = useActivity();
   if (events.length === 0) return null;
   return (
-    <button type="button" onClick={() => setOpen(true)} className="text-sm font-medium text-primary underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring">
-      Watch the agents build it →
+    <button type="button" onClick={() => setOpen(true)} className={cn(textLink, "cursor-pointer text-sm whitespace-nowrap active:translate-y-px disabled:cursor-not-allowed disabled:opacity-55")}>
+      Watch the agents build it
     </button>
   );
 }
@@ -71,7 +82,7 @@ export function DashboardView({
 
   const header = (
     <PageHeader
-      title={`Hi ${name} 👋`}
+      title={`Hi ${name}`}
       subtitle={map ? `You're ${Math.round(map.readinessNow * 100)}% of the way to ${role} roles. Here's this week.` : "Here's this week."}
       actions={profile?.isDemo ? <DemoDataNote /> : undefined}
     />
@@ -82,10 +93,7 @@ export function DashboardView({
     top = (
       <div className="space-y-3">
         <WatchAgentsLink />
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div className="min-w-0 lg:col-span-2"><ThisWeekSkeleton /></div>
-          <Skeleton className="h-96 rounded-2xl" aria-hidden />
-        </div>
+        <ThisWeekSkeleton />
       </div>
     );
   } else if (graph.isError) {
@@ -107,45 +115,60 @@ export function DashboardView({
       />
     );
   } else {
-    top = (
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="min-w-0 lg:col-span-2">
-          <ThisWeekCard userId={userId} map={map} />
-        </div>
-        <ReadinessCard map={map} targetDate={profile?.dna?.targetDate} />
-      </div>
-    );
+    top = <ThisWeekCard userId={userId} map={map} />;
   }
+
+  // Readiness needs the map: a skeleton while it loads, nothing when there is no map to read.
+  const readiness = map ? (
+    <ReadinessCard map={map} targetDate={profile?.dna?.targetDate} />
+  ) : graph.isPending ? (
+    <Skeleton className="h-96 rounded-2xl" aria-hidden />
+  ) : null;
+
+  // The welcome note sits beside your pod: both are the people you can lean on, and it keeps readiness in the first viewport.
+  const welcome = newcomer ? (
+    <div className="flex flex-col items-start gap-2 rounded-xl bg-muted p-4 text-sm text-foreground">
+      <BadgePill badge="new-to-uni" />
+      <p className="text-pretty">Welcome to UoM. Your pod and the helpers in Community are here whenever you&apos;re stuck.</p>
+      <Link href="/community" className={textLink}>
+        Ask for help
+      </Link>
+    </div>
+  ) : null;
 
   return (
     <div>
       {header}
-      {newcomer && (
-        <div className="mb-6 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm">
-          <BadgePill badge="new-to-uni" />
-          <span>Welcome to UoM. Your pod and the helpers in Community are here whenever you&apos;re stuck.</span>
-          <Link href="/community" className="font-medium text-primary underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring">
-            Ask for help
-          </Link>
-        </div>
-      )}
       <div className="space-y-6">
         {top}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <div className="min-w-0 [&>*]:h-full">
-            <SlotBoundary title="Your pod" href="/pods">
-              <PodSummaryCard userId={userId} />
-            </SlotBoundary>
+          {readiness && <div className="min-w-0 md:col-span-2">{readiness}</div>}
+          <div
+            className={cn(
+              "grid min-w-0 grid-cols-1 gap-6 md:col-span-2 md:auto-cols-fr md:grid-flow-col",
+              readiness ? "lg:col-span-1 lg:flex lg:flex-col" : "lg:col-span-3",
+            )}
+          >
+            <div className="min-w-0 lg:flex-1 [&>*]:h-full">
+              <SlotBoundary title="Your pod" href="/pods">
+                <PodSummaryCard userId={userId} />
+              </SlotBoundary>
+            </div>
+            {welcome}
           </div>
-          {/* MomentumWidget's "Breakdown" trigger uses the 12.8px sm button; lift it to the 13px+ floor here. */}
-          <div className="min-w-0 [&>*]:h-full [&_button]:text-sm">
-            <SlotBoundary title="Momentum" href={`/profile/${encodeURIComponent(userId)}`}>
-              <MomentumWidget userId={userId} />
-            </SlotBoundary>
-          </div>
-          <div className="flex flex-col gap-6 md:col-span-2 lg:col-span-1">
+          {/* Momentum, market pulse and the coach share one row at equal width; flex lets the row close up when market pulse is hidden. */}
+          <div className="grid min-w-0 grid-cols-1 gap-6 md:col-span-2 md:grid-cols-2 lg:col-span-3 lg:flex lg:[&>*]:min-w-0 lg:[&>*]:flex-1 lg:[&>*]:basis-0">
+            {/* MomentumWidget's "Breakdown" trigger uses the 12.8px sm button; lift it to the 13px+ floor here. */}
+            <div className="min-w-0 [&>*]:h-full [&_button]:text-sm">
+              <SlotBoundary title="Momentum" href={`/profile/${encodeURIComponent(userId)}`}>
+                <MomentumWidget userId={userId} />
+              </SlotBoundary>
+            </div>
             <MarketPulse roleId={map?.roleId ?? roleId} focus={focus ? { skillId: focus.skillId, name: focus.name } : undefined} />
-            <AskKeystoneCard focusName={focus?.name} />
+            {/* Third in the row at tablet width (market pulse shown): take the full width rather than leave a hole. */}
+            <div className="min-w-0 md:odd:last:col-span-2">
+              <AskKeystoneCard focusName={focus?.name} />
+            </div>
           </div>
         </div>
       </div>

@@ -18,12 +18,12 @@ export function MergedPill({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "inline-flex h-7 items-center gap-1 rounded-full border border-status-proven/25 bg-status-proven/10 px-2.5 text-xs font-medium text-foreground",
+        "inline-flex h-8 items-center gap-1.5 rounded-md border border-status-proven/35 bg-status-proven/10 px-2.5 text-xs font-medium whitespace-nowrap text-foreground",
         className,
       )}
     >
       <GitMerge className="size-3.5 text-status-proven" aria-hidden />
-      Merged ✓
+      Merged
     </span>
   );
 }
@@ -34,6 +34,8 @@ export function MergeProofButton({
   issueTitle,
   merged,
   onProof,
+  variant = "outline",
+  size = "sm",
   className,
 }: {
   podId: string;
@@ -42,6 +44,10 @@ export function MergeProofButton({
   issueTitle?: string;
   merged?: boolean;
   onProof?: (result: ProofResult) => void;
+  /** outline for the viewer's own issues, ghost for the rest of the pod's. */
+  variant?: "outline" | "ghost";
+  /** default on the viewer's own issue (the page's payoff click), sm elsewhere. */
+  size?: "sm" | "default";
   className?: string;
 }) {
   const activity = useActivity();
@@ -85,15 +91,16 @@ export function MergeProofButton({
     : `Mark issue ${issueIndex + 1} as merged`;
   return (
     <Button
-      variant="secondary"
-      size="sm"
+      variant={variant}
+      size={size}
       onClick={() => mutation.mutate()}
       disabled={mutation.isPending}
+      aria-busy={mutation.isPending || undefined}
       aria-label={label}
-      className={cn("rounded-full", className)}
+      className={className}
     >
       {mutation.isPending ? (
-        <Loader2 className="animate-spin" aria-hidden />
+        <Loader2 className="animate-spin motion-reduce:animate-none" aria-hidden />
       ) : (
         <GitMerge aria-hidden />
       )}

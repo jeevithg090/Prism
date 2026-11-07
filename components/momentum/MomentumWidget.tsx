@@ -65,12 +65,12 @@ function MomentumCard({ weeks, isDemo }: { weeks: MomentumWeek[]; isDemo: boolea
 
   return (
     <section aria-labelledby={titleId} className="rounded-2xl border bg-card p-6 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <h2 id={titleId} className="text-base font-semibold">Momentum</h2>
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <h2 id={titleId} className="text-xl font-semibold text-foreground">Momentum</h2>
         <div className="flex items-center gap-2">
           {isDemo && <DemoDataNote />}
           <Popover>
-            <PopoverTrigger className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "focus-visible:ring-2")}>
+            <PopoverTrigger className={cn(buttonVariants({ variant: "ghost" }), "-me-2 active:bg-accent disabled:cursor-not-allowed disabled:opacity-55")}>
               <Info aria-hidden />
               Breakdown
             </PopoverTrigger>
@@ -82,14 +82,14 @@ function MomentumCard({ weeks, isDemo }: { weeks: MomentumWeek[]; isDemo: boolea
                   {latest.breakdown.map((b) => (
                     <li key={b.kind} className="flex justify-between gap-4">
                       <span>{capitalise(describeKind(b.kind, b.count))}</span>
-                      <span className="tabular-nums text-muted-foreground">+{b.points}</span>
+                      <span className="font-mono text-muted-foreground tabular-nums">+{b.points}</span>
                     </li>
                   ))}
                 </ul>
               )}
-              <p className="text-xs text-muted-foreground">
-                Points: merged PR {POINTS["pr-merged"]} · milestone {POINTS["roadmap-milestone"]} · helping a newcomer {POINTS["helped-newcomer"]} · mock
-                interview {POINTS["mock-interview"]} · problem solved {POINTS["problem-solved"]} (up to {PROBLEM_SOLVED_WEEKLY_CAP} a week).
+              <p className="text-sm text-muted-foreground">
+                Points: merged PR {POINTS["pr-merged"]}, milestone {POINTS["roadmap-milestone"]}, helping a newcomer {POINTS["helped-newcomer"]}, mock
+                interview {POINTS["mock-interview"]}, problem solved {POINTS["problem-solved"]} (up to {PROBLEM_SOLVED_WEEKLY_CAP} a week).
               </p>
             </PopoverContent>
           </Popover>
@@ -97,15 +97,15 @@ function MomentumCard({ weeks, isDemo }: { weeks: MomentumWeek[]; isDemo: boolea
       </div>
 
       <div aria-hidden="true">
-        <p className={cn("mt-2 text-[40px] font-semibold leading-none tracking-tight tabular-nums", tone)}>{formatChange(latest.changePct)}</p>
-        <p className="mt-1 text-sm text-muted-foreground">vs your usual week</p>
-        <div className="mt-4 h-16 w-full">
+        <p className={cn("mt-4 font-mono text-4xl leading-none font-semibold tracking-tight tabular-nums", tone)}>{formatChange(latest.changePct)}</p>
+        <p className="mt-2 text-sm text-muted-foreground">vs your usual week</p>
+        <div className="mt-5 h-16 w-full">
           <Sparkline values={weeks.map((w) => w.score)} height={64} />
         </div>
       </div>
       <p className="sr-only">{summary}</p>
 
-      <p className="mt-3 text-xs text-muted-foreground">{MOMENTUM_FOOTNOTE}</p>
+      <p className="mt-4 border-t pt-4 text-sm text-muted-foreground">{MOMENTUM_FOOTNOTE}</p>
     </section>
   );
 }

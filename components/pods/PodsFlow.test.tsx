@@ -5,11 +5,11 @@ import userEvent from "@testing-library/user-event";
 import { PodsFlow } from "./PodsFlow";
 import { demoPod, profileGet, renderWithClient } from "./testUtils";
 
-const { apiGet, apiPost, push, start } = vi.hoisted(() => ({ apiGet: vi.fn(), apiPost: vi.fn(), push: vi.fn(), start: vi.fn() }));
+const { apiGet, apiPost, push, start, setOpen } = vi.hoisted(() => ({ apiGet: vi.fn(), apiPost: vi.fn(), push: vi.fn(), start: vi.fn(), setOpen: vi.fn() }));
 vi.mock("@/lib/fetcher", () => ({ apiGet, apiPost, apiPatch: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push, replace: vi.fn(), back: vi.fn(), refresh: vi.fn(), prefetch: vi.fn() }) }));
 vi.mock("sonner", () => ({ toast: Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn() }) }));
-vi.mock("@/components/shell/ActivityPanel", () => ({ useActivity: () => ({ start, events: [], open: false, setOpen: vi.fn(), runId: null }) }));
+vi.mock("@/components/shell/ActivityPanel", () => ({ useActivity: () => ({ start, events: [], open: false, setOpen, runId: null }) }));
 vi.mock("motion/react", async (importOriginal) => ({
   ...(await importOriginal<typeof import("motion/react")>()),
   useReducedMotion: () => true,
@@ -19,7 +19,7 @@ beforeEach(() => vi.clearAllMocks());
 afterEach(cleanup);
 
 describe("PodsFlow", () => {
-  it("goes hero → matching → pod card, and opens the Activity panel for the match run", async () => {
+  it("goes hero → matching → pod card, and starts the match run with the Activity panel shut", async () => {
     apiGet.mockImplementation(async (url: string) => (url.startsWith("/api/pods") ? [] : profileGet(url)));
     apiPost.mockResolvedValue({ ...demoPod(true), runId: "run_123" });
     const user = userEvent.setup();
@@ -33,6 +33,7 @@ describe("PodsFlow", () => {
     expect(apiPost).toHaveBeenCalledWith("/api/pods/match", { userId: "aisha" });
     expect(await screen.findByTestId("pod-card", {}, { timeout: 2000 })).toBeInTheDocument();
     expect(start).toHaveBeenCalledWith("run_123");
+    expect(setOpen).toHaveBeenLastCalledWith(false);
     // A fresh match always offers to start the project.
     expect(screen.getByRole("button", { name: /Start our project/ })).toBeEnabled();
   });

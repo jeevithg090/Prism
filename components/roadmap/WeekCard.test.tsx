@@ -18,7 +18,7 @@ describe("WeekCard", () => {
     await user.click(screen.getByRole("button", { name: "Why Docker in week 1?" }));
     const dialog = await screen.findByRole("dialog");
     expect(dialog).toHaveTextContent("Why am I seeing this?");
-    expect(dialog).toHaveTextContent("Week 1 · Docker");
+    expect(dialog).toHaveTextContent("Docker in week 1");
     expect(dialog).toHaveTextContent("41% of ML engineer ads ask for Docker");
     expect(dialog).toHaveTextContent("none of your modules teach it");
   });
@@ -48,7 +48,7 @@ describe("WeekCard", () => {
 describe("SkippedPanel", () => {
   it("renders the degree-covers heading and one item per skipped skill", () => {
     render(<SkippedPanel skipped={RM.skipped} hoursPerWeek={8} />);
-    expect(screen.getByRole("heading", { name: "Skipped: your degree covers these" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Your degree covers these" })).toBeInTheDocument();
     const items = within(screen.getByRole("list")).getAllByRole("listitem");
     expect(items).toHaveLength(RM.skipped.length);
     expect(items[0]).toHaveTextContent("Statistics");

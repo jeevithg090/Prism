@@ -59,5 +59,5 @@ export const DEMO_POD_INSIGHTS: PodInsights = {
 };
 
 export const PROGRAMME_LABELS: Record<string, string> = {
-  "uom-bsc-cs": "BSc Computer Science · University of Manchester",
+  "uom-bsc-cs": "BSc Computer Science, University of Manchester",
 };

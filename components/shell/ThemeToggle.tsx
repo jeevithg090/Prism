@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Moon, Sun } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { buttonVariants } from "@/components/ui/button";
 
 export const THEME_KEY = "ks_theme";
 const EVENT = "ks-theme-change";
@@ -44,7 +45,8 @@ export function ThemeToggle({ className }: { className?: string }) {
       aria-label={label}
       title={label}
       className={cn(
-        "inline-flex size-10 items-center justify-center rounded-xl border bg-card text-muted-foreground transition-colors outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring",
+        buttonVariants({ variant: "outline", size: "icon" }),
+        "size-10 text-muted-foreground hover:text-foreground",
         className,
       )}
     >

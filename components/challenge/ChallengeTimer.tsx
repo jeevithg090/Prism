@@ -22,24 +22,27 @@ export function ChallengeTimer({ minutes }: { minutes: number }) {
 
   const started = left !== total;
   return (
-    <div className="flex flex-wrap items-center gap-3">
-      <span className="inline-flex items-center gap-2 rounded-xl bg-muted/60 px-3 py-1.5">
-        <Timer className="size-4 text-muted-foreground" aria-hidden />
-        <span role="timer" aria-label={`${Math.ceil(left / 60)} minutes left`} className="font-mono text-lg font-semibold tabular-nums">{fmt(left)}</span>
+    <div className="flex flex-col items-start gap-3 sm:items-end">
+      <span className="inline-flex items-center gap-2">
+        <Timer className="size-5 text-muted-foreground" aria-hidden />
+        <span role="timer" aria-label={`${Math.ceil(left / 60)} minutes left`} className="font-mono text-3xl leading-none font-semibold text-foreground tabular-nums">{fmt(left)}</span>
       </span>
       {left === 0 ? (
-        <span className="text-sm text-muted-foreground" aria-live="polite">Time&apos;s up. Finish your thought and check your work; there&apos;s no penalty.</span>
-      ) : (
-        <Button variant="outline" onClick={() => setRunning((r) => !r)} aria-pressed={running}>
-          {running ? <Pause aria-hidden /> : <Play aria-hidden />}
-          {running ? "Pause" : started ? "Resume" : `Start ${minutes}-minute timer`}
-        </Button>
-      )}
-      {started && (
-        <Button variant="ghost" onClick={() => { setRunning(false); setLeft(total); }}>
-          <RotateCcw aria-hidden /> Reset timer
-        </Button>
-      )}
+        <span className="max-w-[28ch] text-sm text-pretty text-muted-foreground sm:text-end" aria-live="polite">Time&apos;s up. Finish your thought and check your work; there&apos;s no penalty.</span>
+      ) : null}
+      <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+        {started && (
+          <Button variant="ghost" onClick={() => { setRunning(false); setLeft(total); }}>
+            <RotateCcw aria-hidden /> Reset timer
+          </Button>
+        )}
+        {left > 0 && (
+          <Button variant="outline" onClick={() => setRunning((r) => !r)} aria-pressed={running}>
+            {running ? <Pause aria-hidden /> : <Play aria-hidden />}
+            {running ? "Pause" : started ? "Resume" : `Start ${minutes}-minute timer`}
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

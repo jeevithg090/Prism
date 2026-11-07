@@ -59,7 +59,7 @@ describe("InterviewFlow (Practice mode)", () => {
     expect(body.transcript.split("\n").filter((l: string) => l.startsWith("user: "))).toHaveLength(4);
     expect(body.durationSec).toBeGreaterThanOrEqual(60);
 
-    expect(await screen.findByTestId("saved-proof")).toHaveTextContent("Communication · Docker (explained)");
+    expect(await screen.findByTestId("saved-proof")).toHaveTextContent("Communication, Docker (explained)");
     expect(screen.getAllByRole("meter")).toHaveLength(4);
   });
 

@@ -1,0 +1,7 @@
+/* Hallmark · shape: app screen · genre: modern-minimal · theme: Coral (locked in DESIGN.md) · redesign: full · scope: app
+ * screen: the Coach conversation, every answer drawn as the agent loop on one hairline, with the approval well as the one decision · states: empty, busy, error, full; memory: loading, empty, error, full · v2.0.0 */
+/* Hallmark · pre-emit critique: P4 H4 E4 S4 R5 V3 · weakest: V, a chat column beside a rail is the category's own shape; the loop rail and the live timeline share one set of marks so the screen reads as one agent */
+/* Hallmark · dropped #_R_qatpet9d5rlb_ · a React useId on the Ask the Coach input that regenerates with the tree; the field, its label and its form are all kept */
+/* Hallmark · dismissed F18 · the 32px avatar slots are shadcn's data-slot attribute on member initials in the shell, not picture slots */
+
+/* No rules: the Coach screen is styled with the locked token utilities. This file carries the page's Hallmark record. */

@@ -6,8 +6,8 @@ import * as React from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { toast } from "sonner";
 import {
-  BookmarkPlus, Brain, CheckCircle2, CircleAlert, Eye, Hand, ListChecks, LoaderCircle, ReceiptText, SendHorizontal,
-  ShieldAlert, ShieldCheck, Sparkles, XCircle,
+  BookOpen, BookmarkPlus, Brain, CheckCircle2, CircleAlert, Eye, Globe, Hand, ListChecks, LoaderCircle, PencilLine, ReceiptText,
+  SendHorizontal, ShieldAlert, ShieldCheck, Sparkles, Wrench, XCircle,
 } from "lucide-react";
 import { AgentAvatar, ErrorState } from "@/components/keystone";
 import { Button } from "@/components/ui/button";
@@ -45,18 +45,23 @@ export function plannerLabel(res: Pick<CoachRes, "planner" | "steps">): string {
   return "Planned by Keystone rules (AI model unavailable)";
 }
 
+// One tag recipe for every small label on this screen: 24px, the tag radius, the label in ink.
+const TAG = "inline-flex h-6 shrink-0 items-center gap-1 rounded-md border px-1.5 text-xs font-medium whitespace-nowrap text-foreground";
+
+// The effect's colour sits on the icon, tint and edge; the label stays ink (DESIGN.md "Status").
+const EFFECT_STYLE: Record<ToolEffect, { icon: typeof BookOpen; cls: string; iconCls: string }> = {
+  read: { icon: BookOpen, cls: "border-border bg-muted", iconCls: "text-muted-foreground" },
+  write: { icon: PencilLine, cls: "border-status-degree/35 bg-status-degree/10", iconCls: "text-status-degree" },
+  external: { icon: Globe, cls: "border-status-rising/45 bg-status-rising/12", iconCls: "text-status-rising" },
+};
+
 function EffectPill({ effect }: { effect: ToolEffect }) {
   const e = EFFECT_LABEL[effect];
+  const style = EFFECT_STYLE[effect];
+  const Icon = style.icon;
   return (
-    <span
-      title={e.explain}
-      className={cn(
-        "inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium",
-        effect === "read" && "border-border bg-muted text-muted-foreground",
-        effect === "write" && "border-status-degree/30 bg-status-degree/10 text-status-degree",
-        effect === "external" && "border-status-rising/30 bg-status-rising/10 text-status-rising",
-      )}
-    >
+    <span title={e.explain} className={cn(TAG, style.cls)}>
+      <Icon className={cn("size-3.5", style.iconCls)} aria-hidden />
       {e.label}
       <span className="sr-only">: {e.explain}</span>
     </span>
@@ -64,12 +69,16 @@ function EffectPill({ effect }: { effect: ToolEffect }) {
 }
 
 function StepIcon({ step }: { step: CoachStep }) {
-  const cls = "size-4";
+  const cls = "size-5";
   switch (step.kind) {
     case "context": return <Brain className={cls} aria-hidden />;
     case "plan": return <ListChecks className={cls} aria-hidden />;
     case "observation": return step.status === "error" ? <CircleAlert className={cn(cls, "text-status-gap")} aria-hidden /> : <Eye className={cls} aria-hidden />;
-    case "approval_request": return step.status === "denied" ? <XCircle className={cls} aria-hidden /> : <CheckCircle2 className={cn(cls, "text-status-proven")} aria-hidden />;
+    case "tool_call": return <Wrench className={cls} aria-hidden />;
+    case "approval_request":
+      if (step.status === "denied") return <XCircle className={cls} aria-hidden />;
+      if (step.status === "needs_approval") return <Hand className={cn(cls, "text-status-rising")} aria-hidden />;
+      return <CheckCircle2 className={cn(cls, "text-status-proven")} aria-hidden />;
     case "reflection": return <ShieldCheck className={cn(cls, "text-status-proven")} aria-hidden />;
     case "guardrail": return <ShieldAlert className={cn(cls, step.status === "blocked" ? "text-status-gap" : "text-status-rising")} aria-hidden />;
     case "memory": return <BookmarkPlus className={cls} aria-hidden />;
@@ -82,6 +91,24 @@ const KIND_LABEL: Record<CoachStep["kind"], string> = {
   reflection: "Reflect", guardrail: "Guardrail", memory: "Remember", answer: "Answer",
 };
 
+/**
+ * Display-only copy pass on the loop's server text (DESIGN.md Voice): no middle-dot meta strings, no repeated
+ * "Plan:" under the Plan label, no raw tool ids shown to the student. Every fact stays; only joins and wording change.
+ */
+export function tidyStepText(text: string, kind?: CoachStep["kind"]): string {
+  let t = text;
+  if (kind === "plan") t = t.replace(/^Plan:\s*/, "");
+  t = t
+    .replace(/(Year \d+) · (Semester \d+)/g, "$1, $2")
+    .replace(/ · /g, "; ")
+    .replace(/(\d+%) → (\d+%)/g, "$1 to $2")
+    .replace(/Next: start_pod_project sets up the GitHub repo and issues\./g, "Next, I can set up your pod's GitHub repo and issues.")
+    .replace(/start_pod_project sets one up\./g, "I can set one up.")
+    .replace(/\s*\(ask_for_help, kind chat-15\)/g, "");
+  if (kind === "context") t = t.replace(/(^|; )pod (?!yet)/, "$1your pod, ");
+  return t;
+}
+
 function ApprovalCard({
   pending, actionable, decided, busy, onDecide,
 }: {
@@ -92,27 +119,36 @@ function ApprovalCard({
   onDecide: (d: Decision) => void;
 }) {
   const titleId = React.useId();
+  // The human-in-the-loop moment: a calm well inside the answer, the title large, the effect named, one ink action.
   return (
-    <div role="group" aria-labelledby={titleId} className="rounded-2xl border-2 border-status-rising/40 bg-status-rising/10 p-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <Hand className="size-4 text-status-rising" aria-hidden />
-        <span className="rounded-full bg-foreground px-2 py-0.5 text-xs font-semibold text-background">You decide</span>
+    <div role="group" aria-labelledby={titleId} className="rounded-xl bg-muted p-4 md:p-5">
+      <p id={titleId} className="text-lg font-semibold text-balance text-foreground">{pending.title}</p>
+      <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
         <EffectPill effect={pending.effect} />
+        <span className="text-sm text-muted-foreground">{EFFECT_LABEL[pending.effect].explain}</span>
       </div>
-      <p id={titleId} className="mt-2 text-base font-semibold">{pending.title}</p>
-      <p className="mt-1 text-sm leading-relaxed">{pending.reason}</p>
-      <p className="mt-1 text-xs text-muted-foreground">{EFFECT_LABEL[pending.effect].explain}. Nothing happens unless you approve.</p>
+      <p className="mt-3 max-w-[65ch] text-base text-pretty text-foreground">{pending.reason}</p>
       {actionable ? (
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Button onClick={() => onDecide("approve")} disabled={busy} className="h-9 rounded-xl px-4">
-            <CheckCircle2 aria-hidden /> Approve
-          </Button>
-          <Button variant="outline" onClick={() => onDecide("deny")} disabled={busy} className="h-9 rounded-xl px-4">
-            Not now
-          </Button>
+        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-3 border-t pt-4">
+          <p className="text-sm text-muted-foreground">
+            <span className="font-semibold text-foreground">You decide</span>: nothing happens unless you approve.
+          </p>
+          <div className="flex gap-2 sm:ml-auto">
+            <Button onClick={() => onDecide("approve")} disabled={busy}>
+              <CheckCircle2 aria-hidden /> Approve
+            </Button>
+            <Button variant="outline" onClick={() => onDecide("deny")} disabled={busy}>
+              Not now
+            </Button>
+          </div>
         </div>
       ) : decided ? (
-        <p className="mt-3 text-sm font-medium">{decided === "approve" ? "You approved this." : "You chose not now. Nothing changed."}</p>
+        <p className="mt-4 flex items-center gap-2 border-t pt-4 text-sm font-medium text-foreground">
+          {decided === "approve"
+            ? <CheckCircle2 className="size-4 text-status-proven" aria-hidden />
+            : <XCircle className="size-4 text-muted-foreground" aria-hidden />}
+          {decided === "approve" ? "You approved this." : "You chose not now. Nothing changed."}
+        </p>
       ) : null}
     </div>
   );
@@ -136,55 +172,61 @@ function StepRow({
       initial={reduce ? false : { opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
       transition={reduce ? { duration: 0 } : { delay: index * 0.06, duration: 0.2 }}
-      className="relative"
+      className="group relative grid grid-cols-[1.25rem_minmax(0,1fr)] gap-x-3 pb-5 last:pb-0"
       data-step={step.kind}
     >
-      <span className="absolute -left-[25px] top-0.5 flex size-[18px] items-center justify-center rounded-full border bg-background text-muted-foreground">
-        {step.kind === "tool_call" ? <span className="size-1.5 rounded-full bg-foreground" aria-hidden /> : <StepIcon step={step} />}
+      {/* One hairline joins the marks, the same line the "How the Coach works" rail draws. */}
+      <span aria-hidden className="absolute top-7 bottom-1 left-2.5 w-px bg-border group-last:hidden" />
+      <span className="mt-0.5 flex h-5 items-center justify-center text-muted-foreground">
+        <StepIcon step={step} />
       </span>
-      {children ?? (
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{KIND_LABEL[step.kind]}</span>
-            {step.kind === "tool_call" && (
-              <>
-                <AgentAvatar agent={meta.agent} size={22} />
-                <span className="text-sm font-medium">{step.text}</span>
-                <EffectPill effect={meta.effect} />
-                {step.status === "error" && <span className="rounded-full bg-status-gap/10 px-2 py-0.5 text-[11px] font-medium text-status-gap">Failed</span>}
-                {step.durationMs !== undefined && <span className="text-[11px] tabular-nums text-muted-foreground">{step.durationMs} ms</span>}
-              </>
-            )}
-            {step.kind === "guardrail" && step.status === "modified" && (
-              <span className="rounded-full bg-status-rising/10 px-2 py-0.5 text-[11px] font-medium text-status-rising">Answer modified</span>
-            )}
-          </div>
-          {step.kind !== "tool_call" && (
-            <p className={cn("mt-0.5 text-sm leading-relaxed", step.kind === "observation" && "text-muted-foreground")}>
-              {step.text}
-              {memoryId && (
-                forgotten.has(memoryId)
-                  ? <span className="ml-2 text-xs text-muted-foreground">Forgotten.</span>
-                  : (
-                    <button
-                      type="button"
-                      onClick={() => onForget(memoryId)}
-                      className="ml-2 rounded text-xs font-medium text-primary underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      Forget
-                    </button>
-                  )
+      <div className="min-w-0">
+        <div className="flex min-h-6 flex-wrap items-center gap-x-2 gap-y-1.5">
+          <span className="text-base font-semibold text-foreground">{KIND_LABEL[step.kind]}</span>
+          {step.kind === "tool_call" && (
+            <>
+              <AgentAvatar agent={meta.agent} size={24} />
+              <span className="text-base font-medium text-foreground">{tidyStepText(step.text, step.kind)}</span>
+              <EffectPill effect={meta.effect} />
+              {step.status === "error" && (
+                <span className={cn(TAG, "border-status-gap/35 bg-status-gap/10")}>
+                  <CircleAlert className="size-3.5 text-status-gap" aria-hidden />Failed
+                </span>
               )}
-            </p>
+              {step.durationMs !== undefined && <span className="text-sm text-muted-foreground"><span className="font-mono tabular-nums">{step.durationMs}</span>&nbsp;ms</span>}
+            </>
           )}
-          {brief && (
-            <details className="mt-1 text-xs">
-              <summary className="cursor-pointer rounded text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">What I read</summary>
-              <pre className="mt-1 whitespace-pre-wrap rounded-lg bg-muted p-2 font-sans text-xs leading-relaxed">{brief.replace(/<\/?untrusted>/g, "")}</pre>
-            </details>
+          {step.kind === "guardrail" && step.status === "modified" && (
+            <span className={cn(TAG, "border-status-rising/45 bg-status-rising/12")}>
+              <ShieldAlert className="size-3.5 text-status-rising" aria-hidden />Answer modified
+            </span>
           )}
         </div>
-      )}
+        {children ? <div className="mt-2">{children}</div> : step.kind !== "tool_call" && (
+          <p className="mt-0.5 max-w-[70ch] text-base text-pretty text-foreground">
+            {tidyStepText(step.text, step.kind)}
+            {memoryId && (
+              forgotten.has(memoryId)
+                ? <span className="ml-2 text-muted-foreground">Forgotten.</span>
+                : (
+                  <button
+                    type="button"
+                    onClick={() => onForget(memoryId)}
+                    className="ml-2 rounded-sm font-medium text-primary underline decoration-1 underline-offset-4 hover:decoration-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:text-foreground disabled:cursor-not-allowed disabled:opacity-55"
+                  >
+                    Forget
+                  </button>
+                )
+            )}
+          </p>
+        )}
+        {brief && (
+          <details className="mt-1.5 text-sm">
+            <summary className="w-fit cursor-pointer rounded-sm text-muted-foreground underline decoration-1 underline-offset-4 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">What I read</summary>
+            <pre className="mt-2 rounded-xl bg-muted p-3 font-sans text-sm whitespace-pre-wrap text-foreground">{brief.replace(/<\/?untrusted>/g, "")}</pre>
+          </details>
+        )}
+      </div>
     </motion.li>
   );
 }
@@ -192,15 +234,15 @@ function StepRow({
 function Answer({ text }: { text: string }) {
   const lines = text.split("\n").filter((l) => l.trim());
   return (
-    <div className="mt-4 space-y-2">
+    <div className="mt-5 space-y-3 border-t pt-5">
       {lines.map((line, i) =>
         line.startsWith("Receipt · ") ? (
-          <p key={i} className="flex items-start gap-2 rounded-xl border bg-muted/50 px-3 py-2 text-sm">
+          <p key={i} className="flex items-start gap-2.5 rounded-xl bg-muted px-4 py-3 text-sm text-foreground">
             <ReceiptText className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
-            <span><span className="font-semibold">Receipt:</span> {line.slice("Receipt · ".length)}</span>
+            <span><span className="font-semibold">Receipt:</span> {tidyStepText(line.slice("Receipt · ".length))}</span>
           </p>
         ) : (
-          <p key={i} className="text-[15px] leading-relaxed">{line}</p>
+          <p key={i} className="max-w-[65ch] text-lg text-pretty text-foreground">{tidyStepText(line)}</p>
         ),
       )}
     </div>
@@ -208,8 +250,9 @@ function Answer({ text }: { text: string }) {
 }
 
 function AssistantTurn({
-  turn, latest, actionable, busy, reduce, forgotten, onDecide, onSuggest, onForget,
+  turn, latest, actionable, busy, reduce, forgotten, onDecide, onSuggest, onForget, articleRef,
 }: {
+  articleRef?: React.Ref<HTMLElement>;
   turn: Extract<Turn, { role: "assistant" }>;
   latest: boolean;
   actionable: boolean;
@@ -223,7 +266,7 @@ function AssistantTurn({
   const { res } = turn;
   const steps = res.steps.filter((s) => s.kind !== "answer");
   const timeline = (
-    <ol className="ml-[9px] space-y-3 border-l pl-4" aria-label="What the Coach did">
+    <ol aria-label="What the Coach did">
       {steps.map((s, i) => (
         <StepRow key={i} step={s} index={i} reduce={reduce} forgotten={forgotten} onForget={onForget}>
           {s.kind === "approval_request" && s.status === "needs_approval" && res.pendingApproval ? (
@@ -234,27 +277,27 @@ function AssistantTurn({
     </ol>
   );
   return (
-    <article className="rounded-2xl border bg-card p-4 shadow-sm md:p-5" aria-label="Coach answer">
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        <span className="inline-flex items-center gap-1.5 text-sm font-semibold">
-          <span className="inline-flex size-6 items-center justify-center rounded-lg bg-primary/10 text-primary"><Sparkles className="size-3.5" aria-hidden /></span>
+    <article ref={articleRef} className="rounded-2xl border bg-card p-5 shadow-sm md:p-6" aria-label="Coach answer">
+      <div className="mb-5 flex flex-wrap items-center gap-x-3 gap-y-2">
+        <span className="inline-flex items-center gap-2 text-base font-semibold text-foreground">
+          <Sparkles className="size-4 text-muted-foreground" aria-hidden />
           Keystone Coach
         </span>
-        <span className="rounded-full border bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">{plannerLabel(res)}</span>
+        <span className={cn(TAG, "h-auto min-h-6 border-border bg-muted py-0.5 whitespace-normal text-muted-foreground")}>{plannerLabel(res)}</span>
       </div>
       {latest ? timeline : (
         <details>
-          <summary className="cursor-pointer rounded text-sm text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <summary className="w-fit cursor-pointer rounded-sm text-sm text-muted-foreground underline decoration-1 underline-offset-4 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
             Show the {steps.length} steps
           </summary>
-          <div className="mt-3">{timeline}</div>
+          <div className="mt-4">{timeline}</div>
         </details>
       )}
       <Answer text={res.answer} />
       {latest && !!res.suggestions?.length && (
-        <div className="mt-4 flex flex-wrap gap-2" aria-label="Suggested next steps">
+        <div className="mt-5 flex flex-wrap gap-2" aria-label="Suggested next steps">
           {res.suggestions.map((s) => (
-            <Button key={s} variant="outline" size="sm" className="h-auto min-h-8 rounded-full px-3 py-1 whitespace-normal" disabled={busy} onClick={() => onSuggest(s)}>
+            <Button key={s} variant="outline" disabled={busy} onClick={() => onSuggest(s)}>
               {s}
             </Button>
           ))}
@@ -286,10 +329,25 @@ export function CoachPanel({ userId: userIdProp, className, streamToActivity = f
   const [live, setLive] = React.useState("");
   const inputRef = React.useRef<HTMLInputElement>(null);
   const endRef = React.useRef<HTMLDivElement>(null);
+  const logRef = React.useRef<HTMLDivElement>(null);
+  const latestRef = React.useRef<HTMLElement>(null);
 
   React.useEffect(() => {
-    endRef.current?.scrollIntoView?.({ block: "end", behavior: reduce ? "auto" : "smooth" });
-  }, [turns.length, busy, reduce]);
+    if (!turns.length) return;
+    const behavior: ScrollBehavior = reduce ? "auto" : "smooth";
+    const article = latestRef.current;
+    if (!busy && turns[turns.length - 1]?.role === "assistant" && article) {
+      // A new answer lands at its top, so the loop reads Perceive first, top-down.
+      const log = logRef.current;
+      if (log && log.scrollHeight > log.clientHeight + 1) {
+        log.scrollTo?.({ top: log.scrollTop + article.getBoundingClientRect().top - log.getBoundingClientRect().top - 4, behavior });
+      } else {
+        article.scrollIntoView?.({ block: "start", behavior });
+      }
+      return;
+    }
+    endRef.current?.scrollIntoView?.({ block: "end", behavior });
+  }, [turns, busy, reduce]);
 
   const send = async (raw: string, opts: { approval?: Approval; display?: string; asUser?: string; retry?: boolean } = {}) => {
     const message = raw.trim();
@@ -300,7 +358,12 @@ export function CoachPanel({ userId: userIdProp, className, streamToActivity = f
     setBusy(true);
     setFailed(null);
     const runId = `run_${randomId()}`;
-    if (streamToActivity) activity.start(runId);
+    if (streamToActivity) {
+      // Stream into the Agents panel without opening it over the answer: the Agents button shows the run is live.
+      const wasOpen = activity.open;
+      activity.start(runId);
+      if (!wasOpen) activity.setOpen(false);
+    }
     try {
       const history = prior.slice(-10).map((t) =>
         t.role === "user" ? { role: "user" as const, content: t.content.slice(0, 4000) } : { role: "assistant" as const, content: t.res.answer.slice(0, 4000) },
@@ -348,18 +411,26 @@ export function CoachPanel({ userId: userIdProp, className, streamToActivity = f
   const lastAssistant = turns.reduce((idx, t, i) => (t.role === "assistant" ? i : idx), -1);
 
   return (
-    <section className={cn("flex h-full min-h-0 flex-col", className)} aria-label="Keystone Coach">
-      <div role="log" aria-label="Conversation with the Coach" className="min-h-0 flex-1 space-y-4 overflow-y-auto pb-2">
+    <section
+      className={cn(
+        "flex min-h-0 flex-col",
+        // Full page: bounded to the screen only once there is a conversation to scroll; in the sheet it fills the sheet.
+        streamToActivity ? turns.length > 0 && "lg:h-[calc(100dvh-15rem)] lg:min-h-[560px]" : "h-full",
+        className,
+      )}
+      aria-label="Keystone Coach"
+    >
+      <div ref={logRef} role="log" aria-label="Conversation with the Coach" className="-mx-1 -mt-1 min-h-0 flex-1 space-y-4 overflow-y-auto px-1 pt-1 pb-2">
         {turns.length === 0 && (
-          <div className="rounded-2xl border bg-card p-6 shadow-sm">
-            <span className="inline-flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary"><Sparkles className="size-5" aria-hidden /></span>
-            <h2 className="mt-3 text-xl font-semibold">Ask me what to do next</h2>
-            <p className="mt-1 text-muted-foreground">
-              I read your Bridge Map, roadmap and pod, ask Keystone&apos;s specialist agents, and show you every step. I always check with you before changing anything.
+          <div className="rounded-2xl border bg-card p-5 shadow-sm md:p-6">
+            <h2 className="text-xl font-semibold text-balance text-foreground">Ask me what to do next</h2>
+            <p className="mt-2 max-w-[60ch] text-pretty text-muted-foreground">
+              I read your Bridge Map, roadmap and pod, ask Keystone&apos;s specialist agents, and show you every step. I ask you first before anything touches GitHub or acts outside Keystone.
             </p>
-            <div className="mt-4 flex flex-wrap gap-2" aria-label="Starter questions">
-              {STARTER_PROMPTS.map((p) => (
-                <Button key={p} variant="outline" className="h-auto min-h-9 rounded-full px-4 py-1.5 whitespace-normal" onClick={() => void send(p)}>
+            <div className="mt-5 grid grid-cols-[repeat(auto-fill,minmax(min(100%,17.5rem),1fr))] gap-2" aria-label="Starter questions">
+              {STARTER_PROMPTS.map((p, i) => (
+                // The first starter is the page's one ink action: the question the subtitle promises.
+                <Button key={p} variant={i === 0 ? "default" : "outline"} size="lg" className="justify-start" onClick={() => void send(p)}>
                   {p}
                 </Button>
               ))}
@@ -369,13 +440,14 @@ export function CoachPanel({ userId: userIdProp, className, streamToActivity = f
         {turns.map((t, i) =>
           t.role === "user" ? (
             <div key={t.id} className="flex justify-end">
-              <p className="max-w-[85%] rounded-2xl rounded-br-md bg-primary px-4 py-2 text-[15px] text-primary-foreground">{t.content}</p>
+              <p className="max-w-[85%] rounded-xl bg-paper-3 px-4 py-2.5 text-base text-pretty text-foreground">{t.content}</p>
             </div>
           ) : (
             <AssistantTurn
               key={t.id}
               turn={t}
               latest={i === lastAssistant}
+              articleRef={i === lastAssistant ? latestRef : undefined}
               actionable={i === lastAssistant && !t.decided && !busy}
               busy={busy}
               reduce={reduce}
@@ -387,8 +459,8 @@ export function CoachPanel({ userId: userIdProp, className, streamToActivity = f
           ),
         )}
         {busy && (
-          <div className="flex items-center gap-2 rounded-2xl border bg-card p-4 text-sm text-muted-foreground" aria-busy="true">
-            <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden />
+          <div className="flex items-center gap-3 rounded-2xl border bg-card p-5 text-base text-muted-foreground shadow-sm md:px-6" aria-busy="true">
+            <LoaderCircle className="size-5 shrink-0 motion-safe:animate-spin" aria-hidden />
             The Coach is reading your context and planning…
           </div>
         )}
@@ -404,14 +476,14 @@ export function CoachPanel({ userId: userIdProp, className, streamToActivity = f
       </div>
       <p className="sr-only" aria-live="polite" aria-atomic="true">{live}</p>
       <form
-        className="mt-2 border-t pt-3"
+        className="mt-4 rounded-2xl border bg-card p-4 shadow-sm md:px-5"
         onSubmit={(e) => {
           e.preventDefault();
           void send(input);
         }}
       >
-        <Label htmlFor={inputId} className="text-sm font-medium">Ask the Coach</Label>
-        <div className="mt-1.5 flex gap-2">
+        <Label htmlFor={inputId} className="text-sm font-medium text-foreground">Ask the Coach</Label>
+        <div className="mt-2 flex gap-2">
           <Input
             id={inputId}
             ref={inputRef}
@@ -420,13 +492,13 @@ export function CoachPanel({ userId: userIdProp, className, streamToActivity = f
             placeholder="e.g. What should I do this week?"
             autoComplete="off"
             maxLength={2000}
-            className="h-10 rounded-xl text-[15px]"
+            className="h-11 md:text-base"
           />
-          <Button type="submit" size="icon-lg" aria-label="Send" disabled={busy || !input.trim()} className="size-10 rounded-xl">
+          <Button type="submit" variant="outline" size="icon-lg" aria-label="Send" disabled={busy || !input.trim()}>
             <SendHorizontal aria-hidden />
           </Button>
         </div>
-        <p className="mt-1.5 text-xs text-muted-foreground">Every step is shown. Anything that changes data or GitHub waits for your OK.</p>
+        <p className="mt-2 text-sm text-muted-foreground">Every step is shown. Anything that touches GitHub or acts outside Keystone waits for your Approve.</p>
       </form>
     </section>
   );

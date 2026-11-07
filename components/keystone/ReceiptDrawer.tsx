@@ -1,10 +1,11 @@
 "use client";
-// Contract §9.6 ReceiptDrawer: every recommendation's "Why?". A sheet that shows the numbers behind it:
+// ReceiptDrawer: every recommendation's "Why?". A sheet that shows the numbers behind it:
 // share of job ads, the trend, what your degree covers, your proof, and the agent that worked it out.
 import * as React from "react";
 import { BadgeCheck, BarChart3, ExternalLink, GraduationCap, TrendingUp } from "lucide-react";
 import type { AgentName, EvidenceItem, Receipt } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { buttonVariants } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { AgentAvatar, StatusBadge } from "./index";
 
@@ -41,9 +42,7 @@ function degreeLine(r: Receipt, moduleLabel?: string): string {
 function Row({ icon: Icon, label, children, tone }: { icon: typeof BarChart3; label: string; children: React.ReactNode; tone: string }) {
   return (
     <div className="flex gap-4 py-4">
-      <span className={cn("mt-0.5 inline-flex size-10 shrink-0 items-center justify-center rounded-xl", tone)}>
-        <Icon className="size-5" aria-hidden />
-      </span>
+      <Icon className={cn("mt-0.5 size-5 shrink-0", tone)} aria-hidden />
       <div className="min-w-0 flex-1">
         <dt className="text-sm font-medium text-muted-foreground">{label}</dt>
         <dd className="mt-1 text-base text-foreground">{children}</dd>
@@ -67,7 +66,7 @@ export function ReceiptDrawer({
             trigger ?? (
               <button
                 type="button"
-                className="inline-flex h-10 items-center rounded-xl border bg-card px-4 text-sm font-medium outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+                className={cn(buttonVariants({ variant: "outline" }), "h-10 px-4")}
               />
             )
           }
@@ -82,11 +81,11 @@ export function ReceiptDrawer({
         </SheetHeader>
         <div className="px-6">
           <dl className="divide-y">
-            <Row icon={BarChart3} label="Job ads" tone="bg-primary/10 text-primary">
-              <span className="font-mono text-4xl font-semibold tabular-nums">{receipt.demandPct}%</span>
+            <Row icon={BarChart3} label="Job ads" tone="text-primary">
+              <span className="font-mono text-4xl leading-none font-semibold tabular-nums">{receipt.demandPct}%</span>
               <span className="ml-2 text-muted-foreground">of {roleName} ads ask for it</span>
             </Row>
-            <Row icon={TrendingUp} label="Trend" tone="bg-status-rising/10 text-status-rising">
+            <Row icon={TrendingUp} label="Trend" tone="text-status-rising">
               {receipt.trend ? (
                 <span className="flex flex-wrap items-center gap-2">
                   <span className={cn("inline-flex [&>span]:text-foreground", receipt.trend === "rising" && "[&_svg]:text-status-rising")}>
@@ -98,10 +97,10 @@ export function ReceiptDrawer({
                 <span className="text-muted-foreground">No trend data for this skill yet.</span>
               )}
             </Row>
-            <Row icon={GraduationCap} label="Your degree" tone="bg-status-degree/10 text-status-degree">
+            <Row icon={GraduationCap} label="Your degree" tone="text-status-degree">
               {degreeLine(receipt, moduleLabel)}
             </Row>
-            <Row icon={BadgeCheck} label="Your proof" tone="bg-status-proven/10 text-status-proven">
+            <Row icon={BadgeCheck} label="Your proof" tone="text-status-proven">
               {linked.length ? (
                 <ul className="space-y-2">
                   {linked.map((e) => (
@@ -110,7 +109,7 @@ export function ReceiptDrawer({
                         href={e.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-start gap-1.5 rounded-md text-primary underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+                        className="inline-flex items-start gap-1.5 rounded-md text-primary underline decoration-1 underline-offset-4 hover:decoration-2"
                       >
                         <span>{SOURCE_LABEL[e.source]}{e.quote ? `: ${e.quote}` : ""}</span>
                         <ExternalLink className="mt-1 size-3.5 shrink-0" aria-hidden />
@@ -126,7 +125,7 @@ export function ReceiptDrawer({
               )}
             </Row>
           </dl>
-          <p className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-base text-foreground">{receipt.reason}</p>
+          <p className="rounded-xl bg-muted p-4 text-base text-foreground">{receipt.reason}</p>
         </div>
         <div className="mt-auto flex items-start gap-3 border-t p-6 text-sm text-muted-foreground">
           <AgentAvatar agent={agent} />

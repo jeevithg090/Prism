@@ -20,7 +20,7 @@ describe("FeedbackCard", () => {
     const improvements = screen.getByRole("list", { name: "Improvements" });
     expect(improvements.querySelectorAll("li")).toHaveLength(2);
     expect(improvements).toHaveTextContent("situation → action → result");
-    expect(screen.getByTestId("saved-proof")).toHaveTextContent("Saved as proof: Communication · Docker (explained)");
+    expect(screen.getByTestId("saved-proof")).toHaveTextContent("Saved as proof: Communication, Docker (explained)");
     expect(screen.getByText(/Interview-ready/)).toBeInTheDocument(); // avg 3.5
     expect(screen.getByRole("link", { name: "See it on your passport" })).toHaveAttribute("href", "/profile/aisha");
     await userEvent.click(screen.getByRole("button", { name: /Practise again/ }));

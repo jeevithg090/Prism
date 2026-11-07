@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import type { ProofResult } from "@/lib/schemas/studio";
 import { BadgePill, StatusBadge } from "@/components/keystone";
+import { LadderStep } from "@/components/ladder/LadderStep";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,7 +20,6 @@ import {
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
 
 const firstName = (names: Record<string, string>, id: string) =>
   (names[id]?.trim() || (id ? id[0].toUpperCase() + id.slice(1) : id)).split(
@@ -48,16 +48,40 @@ function useCountUp(
   return run ? value : to;
 }
 
-const BURST = Array.from({ length: 12 }, (_, i) => {
-  const a = (i / 12) * Math.PI * 2;
-  const dist = i % 2 ? 64 : 80;
-  return {
-    x: Math.cos(a) * dist,
-    y: Math.sin(a) * dist,
-    cls: ["bg-status-proven", "bg-primary", "bg-status-rising"][i % 3],
-    size: i % 2 ? "size-1.5" : "size-2",
-  };
-});
+/** Readiness as an arc: coral for where you were, green for what this proof added, drawn in once. */
+function ReadinessArc({ before, after, reduce }: { before: number; after: number; reduce: boolean }) {
+  const gained = Math.max(after - before, 0);
+  return (
+    <svg viewBox="0 0 120 120" className="size-32 shrink-0 -rotate-90" aria-hidden focusable="false">
+      <circle cx="60" cy="60" r="50" fill="none" strokeWidth="12" className="stroke-paper-3" />
+      <circle
+        cx="60"
+        cy="60"
+        r="50"
+        fill="none"
+        strokeWidth="12"
+        pathLength={100}
+        strokeDasharray={`${before} 100`}
+        className="stroke-primary"
+      />
+      <g transform={`rotate(${before * 3.6} 60 60)`}>
+        <motion.circle
+          cx="60"
+          cy="60"
+          r="50"
+          fill="none"
+          strokeWidth="12"
+          pathLength={100}
+          strokeDasharray={`${gained} 100`}
+          className="stroke-status-proven"
+          initial={reduce ? false : { strokeDashoffset: gained }}
+          animate={{ strokeDashoffset: 0 }}
+          transition={{ delay: 0.9, duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+        />
+      </g>
+    </svg>
+  );
+}
 
 function CelebrationBody({
   result,
@@ -80,179 +104,123 @@ function CelebrationBody({
 
   return (
     <>
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-56 bg-linear-to-b from-status-proven/15 via-status-proven/5 to-transparent"
-      />
-
-      {/* hero: the Bridge Map node turns green */}
-      <div aria-hidden className="relative mx-auto mb-6 size-24">
-        {!reduce &&
-          BURST.map((d, i) => (
-            <motion.span
-              key={i}
-              className={cn(
-                "absolute top-1/2 left-1/2 -mt-1 -ml-1 rounded-full",
-                d.cls,
-                d.size,
-              )}
-              initial={{ x: 0, y: 0, opacity: 0, scale: 0.4 }}
-              animate={{
-                x: d.x,
-                y: d.y,
-                opacity: [0, 1, 0],
-                scale: [0.4, 1, 0.6],
-              }}
-              transition={{ delay: 0.75, duration: 0.9, ease: "easeOut" }}
-            />
-          ))}
+      {/* The Bridge Map node: the gap target gives way to a proven check, once. */}
+      <div aria-hidden className="relative mx-auto mb-6 size-20">
         {!reduce && (
           <motion.span
-            className="absolute inset-0 rounded-full bg-status-proven/30"
+            className="absolute inset-0 rounded-full border-2 border-status-proven"
             initial={{ scale: 1, opacity: 0 }}
-            animate={{ scale: [1, 1.8], opacity: [0.55, 0] }}
-            transition={{
-              delay: 0.8,
-              duration: 1.3,
-              repeat: 1,
-              ease: "easeOut",
-            }}
+            animate={{ scale: [1, 1.7], opacity: [0.7, 0] }}
+            transition={{ delay: 0.8, duration: 0.9, ease: "easeOut" }}
           />
         )}
         {!reduce && (
           <motion.span
-            className="absolute inset-0 flex items-center justify-center rounded-full border-2 border-status-gap/40 bg-status-gap/10 text-status-gap"
+            className="absolute inset-0 flex items-center justify-center rounded-full border-2 border-status-gap/45 bg-status-gap/10 text-status-gap"
             initial={{ opacity: 1, scale: 1 }}
             animate={{ opacity: 0, scale: 0.7 }}
             transition={{ delay: 0.55, duration: 0.3 }}
           >
-            <Target className="size-10" />
+            <Target className="size-9" />
           </motion.span>
         )}
         <motion.span
-          className="absolute inset-0 flex items-center justify-center rounded-full bg-status-proven text-background shadow-lg shadow-status-proven/30"
+          className="absolute inset-0 flex items-center justify-center rounded-full bg-status-proven text-background"
           initial={reduce ? false : { opacity: 0, scale: 0.4 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{
-            delay: 0.7,
-            type: "spring",
-            stiffness: 260,
-            damping: 15,
-          }}
+          transition={{ delay: 0.7, type: "spring", stiffness: 260, damping: 16 }}
         >
-          <Check className="size-12" strokeWidth={3} />
+          <Check className="size-10" strokeWidth={3} />
         </motion.span>
       </div>
 
-      <DialogTitle className="text-center text-3xl leading-tight font-semibold tracking-tight text-balance sm:text-4xl">
+      <DialogTitle className="text-center text-3xl leading-tight font-semibold text-balance text-foreground sm:text-4xl">
         {result.skillName} is now proven
       </DialogTitle>
-      <DialogDescription className="mx-auto mt-2 max-w-sm text-center text-base text-pretty">
+      <DialogDescription className="mx-auto mt-2 max-w-sm text-center text-base text-pretty text-muted-foreground">
         Your merged pull request is real evidence, not a self-claim. It&apos;s
         on your Bridge Map now.
       </DialogDescription>
 
-      {/* status change: Gap → Proven */}
-      <div className="mt-5 flex items-center justify-center gap-3 [&_svg]:size-4 [&>span>span]:px-3 [&>span>span]:py-1 [&>span>span]:text-sm">
+      {/* Status change: Gap to Proven */}
+      <div className="mt-5 flex items-center justify-center gap-3">
         <span className="sr-only">
           {result.skillName} changed from Gap to Proven.
         </span>
         <motion.span
           aria-hidden
           initial={reduce ? false : { opacity: 1 }}
-          animate={{ opacity: 0.45 }}
+          animate={{ opacity: 0.5 }}
           transition={{ delay: 0.6, duration: 0.4 }}
         >
           <StatusBadge status="gap" />
         </motion.span>
-        <ArrowRight aria-hidden className="text-muted-foreground" />
+        <ArrowRight aria-hidden className="size-4 text-muted-foreground" />
         <motion.span
           aria-hidden
           initial={reduce ? false : { opacity: 0, scale: 0.6 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{
-            delay: 0.8,
-            type: "spring",
-            stiffness: 300,
-            damping: 18,
-          }}
+          transition={{ delay: 0.8, type: "spring", stiffness: 300, damping: 18 }}
         >
           <StatusBadge status="proven" />
         </motion.span>
       </div>
 
-      {/* readiness count-up */}
-      <div className="mt-6 rounded-2xl border bg-muted/40 p-5 sm:p-6">
-        <p className="text-center text-xs font-medium tracking-wide text-muted-foreground uppercase">
-          Job readiness
-        </p>
-        <p className="sr-only">
-          Readiness went from {before}% to {after}%, {deltaLabel}.
-        </p>
-        <div
-          aria-hidden
-          className="mt-1 flex flex-wrap items-end justify-center gap-x-4 gap-y-2"
-        >
-          <span
-            data-testid="readiness-before"
-            className="pb-2 text-2xl font-semibold text-muted-foreground tabular-nums sm:text-3xl"
-          >
-            {before}%
-          </span>
-          <ArrowRight className="mb-3.5 size-6 text-muted-foreground" />
-          <span
-            data-testid="readiness-after"
-            className="text-6xl leading-none font-bold tracking-tight tabular-nums sm:text-7xl"
-          >
-            {shown}%
-          </span>
-          <motion.span
-            initial={reduce ? false : { opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.6, duration: 0.3 }}
-            className="mb-2 rounded-full bg-status-proven/10 px-3 py-1 text-sm font-semibold text-foreground tabular-nums"
-          >
-            {deltaLabel}
-          </motion.span>
-        </div>
-        <div
-          aria-hidden
-          className="relative mt-5 h-2.5 overflow-hidden rounded-full bg-background ring-1 ring-border"
-        >
-          <div
-            className="absolute inset-y-0 left-0 rounded-full bg-primary/70"
-            style={{ width: `${before}%` }}
-          />
-          <motion.div
-            className="absolute inset-y-0 rounded-r-full bg-status-proven"
-            style={{ left: `${before}%` }}
-            initial={reduce ? false : { width: "0%" }}
-            animate={{ width: `${Math.max(delta, 0)}%` }}
-            transition={{ delay: 0.9, duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-          />
+      <LadderStep skillName={result.skillName} from={1} level={2} className="mt-6" />
+
+      {/* Readiness: before, after, and what moved it */}
+      <div className="mt-6 flex flex-col items-center gap-5 rounded-xl bg-muted p-5 sm:flex-row sm:gap-6 sm:p-6">
+        <ReadinessArc before={before} after={after} reduce={reduce} />
+        <div className="min-w-0 text-center sm:text-left">
+          <p className="text-sm font-medium text-muted-foreground">Job readiness</p>
+          <p className="sr-only">
+            Readiness went from {before}% to {after}%, {deltaLabel}.
+          </p>
+          <div aria-hidden className="mt-1 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 sm:justify-start">
+            <span
+              data-testid="readiness-before"
+              className="font-mono text-3xl font-semibold text-muted-foreground tabular-nums"
+            >
+              {before}%
+            </span>
+            <ArrowRight className="size-5 text-muted-foreground" />
+            <span
+              data-testid="readiness-after"
+              className="font-mono text-5xl leading-none font-semibold text-foreground tabular-nums"
+            >
+              {shown}%
+            </span>
+          </div>
+          <div aria-hidden className="mt-3 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+            <motion.span
+              initial={reduce ? false : { opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.6, duration: 0.22 }}
+              className="inline-flex h-8 items-center rounded-md border border-status-proven/35 bg-status-proven/10 px-2.5 text-base font-semibold text-foreground tabular-nums"
+            >
+              {deltaLabel}
+            </motion.span>
+            <span className="text-sm text-muted-foreground">for proving {result.skillName}</span>
+          </div>
         </div>
       </div>
 
-      {/* rewards */}
-      <div className="mt-5 flex flex-wrap items-center justify-center gap-2 [&>span>span]:px-3 [&>span>span]:py-1 [&>span>span]:text-sm">
+      {/* What you and your reviewer earned */}
+      <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
         {result.badgesEarned.map((b) => (
-          <span key={b}>
-            <BadgePill badge={b} />
-          </span>
+          <BadgePill key={b} badge={b} />
         ))}
-        <span>
-          <span className="inline-flex items-center gap-1 rounded-full border border-status-rising/25 bg-status-rising/10 font-medium text-foreground">
-            <TrendingUp className="size-4 text-status-rising" aria-hidden />+
-            {result.momentumPoints} momentum
-          </span>
+        <span className="inline-flex h-7 items-center gap-1.5 rounded-md border bg-card px-2 text-sm font-medium text-foreground">
+          <TrendingUp className="size-4 text-muted-foreground" aria-hidden />
+          <span className="tabular-nums">+{result.momentumPoints} momentum</span>
         </span>
       </div>
       <p
         data-testid="reviewer-proof"
-        className="mx-auto mt-4 max-w-md text-center text-sm text-balance text-muted-foreground sm:text-base"
+        className="mx-auto mt-4 max-w-md text-center text-base text-balance text-muted-foreground"
       >
         <HeartHandshake
-          className="mr-1.5 inline size-4 -translate-y-px text-primary sm:size-5"
+          className="mr-1.5 inline size-5 -translate-y-px text-muted-foreground"
           aria-hidden
         />
         <strong className="font-semibold text-foreground">{reviewer}</strong>{" "}
@@ -261,21 +229,11 @@ function CelebrationBody({
         proof for teaching you
       </p>
 
-      <div className="mt-8 flex flex-col gap-2 sm:flex-row sm:justify-center">
-        <Link
-          href={mapHref}
-          onClick={onClose}
-          className={cn(buttonVariants({ size: "lg" }), "h-11 px-5 text-base")}
-        >
+      <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+        <Link href={mapHref} onClick={onClose} className={buttonVariants({ size: "lg" })}>
           See it on my Bridge Map
-          <ArrowRight aria-hidden />
         </Link>
-        <Button
-          variant="outline"
-          size="lg"
-          onClick={onClose}
-          className="h-11 px-5 text-base"
-        >
+        <Button variant="outline" size="lg" onClick={onClose}>
           Back to the project
         </Button>
       </div>
@@ -302,7 +260,7 @@ export function ProofCelebration({
   return (
     <Dialog open={!!result} onOpenChange={(open) => !open && onClose()}>
       {shown && (
-        <DialogContent className="max-h-[calc(100dvh-2rem)] gap-0 overflow-x-hidden overflow-y-auto rounded-3xl p-6 pt-10 sm:max-w-xl sm:p-10">
+        <DialogContent className="max-h-[calc(100dvh-2rem)] gap-0 overflow-x-clip overflow-y-auto p-6 pt-10 sm:max-w-xl sm:p-10">
           <CelebrationBody
             key={`${shown.podId}:${shown.issueIndex}:${shown.evidenceIds.join(",")}`}
             result={shown}

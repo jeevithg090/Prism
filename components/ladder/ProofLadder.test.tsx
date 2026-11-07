@@ -95,6 +95,6 @@ describe("LadderStep", () => {
   it("announces the climb and shows the rung label", () => {
     render(<LadderStep skillName="Docker" level={2} from={1} />);
     expect(screen.getByText(/Docker climbed to rung 2 of 3, Built it\./)).toBeInTheDocument();
-    expect(screen.getByTestId("ladder-step")).toHaveTextContent("Rung 2 · Built it");
+    expect(screen.getByTestId("ladder-step")).toHaveTextContent("Rung 2: Built it");
   });
 });

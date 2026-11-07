@@ -5,7 +5,7 @@ import * as React from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "motion/react";
 import { toast } from "sonner";
-import { BadgeCheck, CheckCircle2, Circle, Mic, MicOff, Sparkles, Square, Volume2 } from "lucide-react";
+import { AlertTriangle, BadgeCheck, CheckCircle2, Circle, Keyboard, Loader2, Mic, MicOff, Sparkles, Square, Volume2 } from "lucide-react";
 import { ErrorState, SectionCard } from "@/components/keystone";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -13,7 +13,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useViewerId } from "@/components/community/useViewerId";
 import { apiGet, apiPost } from "@/lib/fetcher";
-import { cn } from "@/lib/utils";
 import {
   estimateDurationSec, formatTranscript, practiceQuestions, PRACTICE_QUESTION_COUNT, sampleAnswers, type TranscriptTurn,
 } from "@/lib/voice/questions";
@@ -43,12 +42,17 @@ const mmss = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${St
 
 function PreCallSkeleton() {
   return (
-    <div className="rounded-2xl border bg-card p-6 shadow-sm md:p-8" aria-busy="true" aria-label="Loading your interview">
-      <Skeleton className="h-8 w-56" />
-      <Skeleton className="mt-2 h-5 w-72" />
-      <Skeleton className="mt-6 h-24 w-full rounded-xl" />
-      <div className="mt-6 grid gap-4 md:grid-cols-2"><Skeleton className="h-14" /><Skeleton className="h-14" /></div>
-      <Skeleton className="mt-6 h-12 w-56 rounded-xl" />
+    <div className="rounded-2xl border bg-card shadow-sm" aria-busy="true" aria-label="Loading your interview">
+      <div className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between md:px-8 md:pt-8">
+        <Skeleton className="h-7 w-52" />
+        <Skeleton className="h-10 w-full rounded-lg sm:w-64" />
+      </div>
+      <div className="px-6 pb-6 md:px-8 md:pb-8">
+        <Skeleton className="h-44 w-full rounded-xl" />
+        <Skeleton className="mt-6 h-11 w-full rounded-xl sm:w-56" />
+        <Skeleton className="mt-3 h-4 w-72" />
+        <div className="mt-8 grid gap-5 md:grid-cols-2 md:gap-x-8"><Skeleton className="h-14" /><Skeleton className="h-14" /><Skeleton className="h-14" /></div>
+      </div>
     </div>
   );
 }
@@ -56,8 +60,15 @@ function PreCallSkeleton() {
 function ScoringSkeleton() {
   return (
     <div className="rounded-2xl border bg-card p-6 shadow-sm md:p-8" aria-busy="true">
-      <p className="mb-4 font-medium">Scoring your answers…</p>
-      <div className="space-y-4">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-8 w-full rounded-xl" />)}</div>
+      <p className="flex items-center gap-2 text-lg font-semibold text-foreground">
+        <Loader2 className="size-5 text-muted-foreground motion-safe:animate-spin" aria-hidden />Scoring your answers…
+      </p>
+      <div className="mt-6 grid grid-cols-2 gap-6 border-t pt-6"><Skeleton className="h-20" /><Skeleton className="h-20" /></div>
+      <div className="mt-6 space-y-5 border-t pt-6">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="grid grid-cols-[11rem_minmax(0,1fr)] items-center gap-4"><Skeleton className="h-5" /><Skeleton className="h-2.5" /></div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -70,20 +81,20 @@ function ProofAside({ vars, explained }: { vars: Record<string, string>; explain
   ];
   return (
     <SectionCard title="Why this counts as proof" description={`${vars.pr_skill ?? "Your skill"} on your Proof Ladder`}>
-      <ol className="space-y-3">
+      <ol>
         {rows.map((r) => (
-          <li key={r.label} className="flex gap-3">
+          <li key={r.label} className="flex gap-3 border-t py-4 first:border-t-0 first:pt-0">
             {r.done
               ? <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-status-proven" aria-hidden />
               : <Circle className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden />}
             <div>
-              <p className="font-medium">{r.label} <span className="sr-only">{r.done ? "(done)" : "(not yet)"}</span></p>
-              <p className="text-sm text-muted-foreground">{r.body}</p>
+              <p className="font-medium text-foreground">{r.label} <span className="sr-only">{r.done ? "(done)" : "(not yet)"}</span></p>
+              <p className="mt-1 text-sm text-pretty text-muted-foreground">{r.body}</p>
             </div>
           </li>
         ))}
       </ol>
-      <p className="mt-4 text-sm text-muted-foreground">Keystone doesn&apos;t grade you for credit. You choose when to practise, and the feedback is yours.</p>
+      <p className="border-t pt-4 text-sm text-pretty text-muted-foreground">Keystone doesn&apos;t grade you for credit. You choose when to practise, and the feedback is yours.</p>
     </SectionCard>
   );
 }
@@ -141,9 +152,9 @@ export function InterviewFlow({ initialRoleId = "ml-engineer", forceDemo = false
     onSuccess: (r) => {
       setResult({ view: r, demo: false });
       setPhase("post");
-      const proof = r.evidence.map((e) => e.label).join(" · ");
+      const proof = r.evidence.map((e) => e.label).join(", ");
       if (proof) toast.success(`Saved as proof: ${proof}`, { description: "It's on your Proof Ladder now." });
-      if (average(r.scores) >= 3.5) toast.success("🎤 Interview-ready badge earned", { description: `Average ${average(r.scores).toFixed(1)} of 5.` });
+      if (average(r.scores) >= 3.5) toast.success("Interview-ready badge earned", { description: `Average ${average(r.scores).toFixed(1)} of 5.` });
     },
     onError: () => setPhase("score-error"),
   });
@@ -288,30 +299,38 @@ export function InterviewFlow({ initialRoleId = "ml-engineer", forceDemo = false
   } else if (phase === "pre") {
     main = (
       <div className="space-y-4">
-        {micError && <p role="alert" className="rounded-xl border border-status-gap/25 bg-status-gap/10 px-3 py-2 text-sm text-foreground">{micError}</p>}
+        {micError && (
+          <p role="alert" className="flex items-start gap-2 rounded-xl border border-status-gap/35 bg-card px-4 py-3 text-sm text-foreground shadow-sm">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-status-gap" aria-hidden />{micError}
+          </p>
+        )}
         <PreCallCard vars={vars} roleId={roleId} onRoleChange={(r) => { setRoleId(r); setForcePractice(false); }} onStart={start} mode={mode} isDemo={isDemo} />
       </div>
     );
   } else if (phase === "connecting" || phase === "call") {
     main = (
-      <section aria-labelledby="call-title" className="rounded-2xl border bg-card p-6 shadow-sm md:p-8">
-        <div className="flex flex-col gap-6 md:flex-row md:items-center">
-          <InterviewOrb state={orb} className="mx-auto md:mx-0" />
-          <div className="min-w-0 flex-1 space-y-2">
-            <div className="flex flex-wrap items-center gap-3 text-sm">
-              <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 font-medium",
-                phase === "call" ? "border-status-proven/30 bg-status-proven/10 text-foreground" : "bg-muted text-foreground")}>
-                <span className={cn("size-2 rounded-full", phase === "call" ? "bg-status-proven" : "bg-muted-foreground")} aria-hidden />
-                {phase === "call" ? (mode === "voice" ? "Live" : "Practice mode") : "Connecting"}
-              </span>
-              {mode === "practice" && phase === "call" && <span className="text-muted-foreground">Question {qIndex + 1} of {PRACTICE_QUESTION_COUNT}</span>}
-              <span className="font-mono tabular-nums text-muted-foreground" aria-label={`Elapsed ${mmss(elapsed)}`}>{mmss(elapsed)}</span>
-            </div>
-            <h2 id="call-title" className="text-xl font-semibold text-balance md:text-2xl">
+      <section aria-labelledby="call-title" className="rounded-2xl border bg-card shadow-sm">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b px-6 py-4 text-sm md:px-8">
+          <span className="inline-flex h-7 items-center gap-1.5 rounded-md border px-2 font-medium text-foreground">
+            {phase !== "call"
+              ? <Loader2 className="size-4 text-muted-foreground motion-safe:animate-spin" aria-hidden />
+              : mode === "voice"
+                ? <Mic className="size-4 text-status-proven" aria-hidden />
+                : <Keyboard className="size-4 text-muted-foreground" aria-hidden />}
+            {phase === "call" ? (mode === "voice" ? "Live" : "Practice mode") : "Connecting"}
+          </span>
+          {mode === "practice" && phase === "call" && <span className="font-medium text-muted-foreground">Question {qIndex + 1} of {PRACTICE_QUESTION_COUNT}</span>}
+          <span className="ml-auto font-mono text-lg text-foreground tabular-nums" aria-label={`Elapsed ${mmss(elapsed)}`}>{mmss(elapsed)}</span>
+        </div>
+
+        <div className="flex flex-col gap-6 p-6 md:flex-row md:items-center md:gap-8 md:p-8">
+          <InterviewOrb state={orb} progress={mode === "practice" ? { at: qIndex + 1, of: PRACTICE_QUESTION_COUNT } : undefined} className="mx-auto md:mx-0" />
+          <div className="min-w-0 flex-1 space-y-3">
+            <h2 id="call-title" className="max-w-[34ch] text-2xl font-semibold text-pretty text-foreground md:text-3xl">
               {phase === "connecting" ? "Connecting to your interviewer…" : currentQuestion}
             </h2>
             {mode === "practice" && phase === "call" && canSpeak() && (
-              <Button variant="ghost" className="h-10 rounded-xl px-2 text-muted-foreground" onClick={() => void speak(currentQuestion)}>
+              <Button variant="ghost" className="-ml-3.5" onClick={() => void speak(currentQuestion)}>
                 <Volume2 className="size-4" aria-hidden /> Read the question again
               </Button>
             )}
@@ -319,43 +338,43 @@ export function InterviewFlow({ initialRoleId = "ml-engineer", forceDemo = false
         </div>
 
         {mode === "practice" && phase === "call" && (
-          <div className="mt-6 space-y-3">
+          <div className="space-y-3 border-t p-6 md:p-8">
             <div className="flex items-end justify-between gap-3">
               <Label htmlFor="answer">Your answer</Label>
-              <span className="text-xs tabular-nums text-muted-foreground">{answer.trim() ? answer.trim().split(/\s+/).length : 0} words</span>
+              <span className="text-sm text-muted-foreground tabular-nums">{answer.trim() ? answer.trim().split(/\s+/).length : 0} words</span>
             </div>
             <Textarea
-              id="answer" value={answer} onChange={(e) => setAnswer(e.target.value)} rows={5} className="text-base"
+              id="answer" value={answer} onChange={(e) => setAnswer(e.target.value)} rows={5} className="md:text-base"
               placeholder={recognitionAvailable ? "Press Record and talk, or type here." : "Type your answer here."}
             />
             {micError && <p role="alert" className="text-sm text-status-gap">{micError}</p>}
-            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+            <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:flex-wrap">
               {recognitionAvailable && (
-                <Button variant="outline" className="h-10 rounded-xl" onClick={toggleRecord} aria-pressed={listening}>
+                <Button variant="outline" onClick={toggleRecord} aria-pressed={listening}>
                   {listening ? <Square className="size-4" aria-hidden /> : <Mic className="size-4" aria-hidden />}
                   {listening ? "Stop recording" : "Record answer"}
                 </Button>
               )}
-              <Button variant="outline" className="h-10 rounded-xl" onClick={() => setAnswer(samples[qIndex] ?? "")}>
+              <Button variant="outline" onClick={() => setAnswer(samples[qIndex] ?? "")}>
                 <Sparkles className="size-4" aria-hidden /> Use sample answer
               </Button>
-              <Button className="h-10 rounded-xl sm:ml-auto" onClick={commitAndNext} disabled={!answer.trim()}>
+              <Button className="sm:ml-auto" onClick={commitAndNext} disabled={!answer.trim()}>
                 {qIndex + 1 >= PRACTICE_QUESTION_COUNT ? "Finish and get feedback" : "Next question"}
               </Button>
             </div>
           </div>
         )}
 
-        <div className="mt-6 space-y-3">
-          <LiveCaptions turns={turns} interim={interim} />
+        <div className="space-y-4 border-t p-6 md:p-8">
+          <LiveCaptions turns={mode === "practice" && turns.at(-1)?.speaker === "ai" ? turns.slice(0, -1) : turns} interim={interim} />
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             {mode === "voice" && phase === "call" && (
-              <Button variant="outline" className="h-10 rounded-xl" aria-pressed={muted} onClick={() => setMuted((m) => { conv.current?.setMuted(!m); return !m; })}>
+              <Button variant="outline" aria-pressed={muted} onClick={() => setMuted((m) => { conv.current?.setMuted(!m); return !m; })}>
                 {muted ? <MicOff className="size-4" aria-hidden /> : <Mic className="size-4" aria-hidden />}
                 {muted ? "Unmute" : "Mute"} <span className="text-muted-foreground">(Space)</span>
               </Button>
             )}
-            <Button variant="outline" className="h-10 rounded-xl border-destructive/40 text-destructive hover:bg-destructive/5" onClick={finish}>
+            <Button variant="destructive" onClick={finish}>
               <Square className="size-4" aria-hidden /> End interview
             </Button>
           </div>
@@ -391,10 +410,10 @@ export function InterviewFlow({ initialRoleId = "ml-engineer", forceDemo = false
       >
         {main}
       </motion.div>
-      <aside className="space-y-6 lg:sticky lg:top-6 lg:self-start">
+      <aside className="space-y-4 lg:sticky lg:top-[calc(var(--topbar-height)+1.5rem)] lg:z-(--z-sticky) lg:self-start">
         <ProofAside vars={vars} explained={phase === "post" && !!result?.view.evidence?.some((e) => e.label.includes("explained"))} />
         {phase === "post" && result?.view.evidence?.length ? (
-          <p className="flex items-center gap-2 text-sm text-muted-foreground"><BadgeCheck className="size-4 text-status-proven" aria-hidden />Your passport and badges update from this interview.</p>
+          <p className="flex items-start gap-2 px-1 text-sm text-muted-foreground"><BadgeCheck className="mt-0.5 size-4 shrink-0 text-status-proven" aria-hidden />Your passport and badges update from this interview.</p>
         ) : null}
       </aside>
     </div>

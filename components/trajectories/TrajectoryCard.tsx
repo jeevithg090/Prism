@@ -1,7 +1,7 @@
 "use client";
 // P5 · one senior's journey: outcome, a mini step timeline, their advice, and (if they opted in) Ask for 15 minutes.
 import * as React from "react";
-import { MessageCircleHeart, Sparkles } from "lucide-react";
+import { MessageCircleHeart } from "lucide-react";
 import type { Trajectory } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -12,75 +12,88 @@ const KIND_LABEL: Record<Trajectory["steps"][number]["kind"], string> = {
   internship: "Internship", placement: "Placement", "first-role": "First role",
 };
 
+/** Keeps compound words like "health-tech" on one line (non-breaking hyphen). */
+function keepCompounds(text: string) {
+  return text.replace(/(?<=\p{L})-(?=\p{L})/gu, "\u2011");
+}
+
 function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase()).join("");
 }
 
 export function TrajectoryCard({
-  trajectory, similarity, onAsk, className,
+  trajectory, similarity, onAsk, className, showDemoNote = true,
 }: {
   trajectory: Trajectory;
   /** 0..1, from /api/trajectories/similar */
   similarity?: number;
   onAsk?: (t: Trajectory) => void;
   className?: string;
+  /** Off when a row of cards shares one demo note beside its heading. */
+  showDemoNote?: boolean;
 }) {
   const first = trajectory.name.split(/\s+/)[0] ?? trajectory.name;
   const headingId = `traj-${trajectory.id}-name`;
   return (
     <article
       aria-labelledby={headingId}
-      className={cn("relative flex h-full flex-col gap-4 rounded-2xl border bg-card p-6 shadow-sm", className)}
+      className={cn("relative flex flex-col gap-5 rounded-2xl border bg-card p-6 shadow-sm", className)}
     >
       <header className="flex items-start gap-3">
-        <span aria-hidden className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base font-semibold text-primary">
+        <span aria-hidden className="flex size-11 shrink-0 items-center justify-center rounded-full bg-muted text-base font-semibold text-foreground">
           {initials(trajectory.name)}
         </span>
         <div className="min-w-0 flex-1">
-          <h3 id={headingId} className="text-lg font-semibold leading-tight">{trajectory.name}</h3>
-          <p className="mt-0.5 text-[15px] leading-snug text-muted-foreground">
-            <span className="sr-only">Now: </span>{trajectory.outcomeRole}
+          <h3 id={headingId} className="text-lg leading-tight font-semibold [overflow-wrap:break-word] text-foreground">{trajectory.name}</h3>
+          <p className="mt-1 min-h-[2lh] text-sm leading-snug text-pretty text-muted-foreground">
+            <span className="sr-only">Now: </span>{keepCompounds(trajectory.outcomeRole)}
           </p>
         </div>
       </header>
 
       {similarity !== undefined && (
-        <p className="inline-flex w-fit items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-sm font-medium text-primary">
-          <Sparkles className="size-3.5" aria-hidden />
-          <span className="tabular-nums">{Math.round(similarity * 100)}%</span> similar to you
+        <p className="flex items-baseline gap-2 border-t pt-4 text-sm text-muted-foreground">
+          <span className="font-mono text-3xl leading-none font-medium tabular-nums text-foreground">{Math.round(similarity * 100)}%</span>
+          similar to you
         </p>
       )}
 
       <ol aria-label={`${first}'s journey`} className="relative space-y-3 pl-6">
-        <span aria-hidden className="absolute top-1.5 bottom-1.5 left-[7px] w-px bg-border" />
+        <span aria-hidden className="absolute top-2 bottom-2 left-[6px] w-px bg-border" />
         {trajectory.steps.map((s, i) => {
           const last = i === trajectory.steps.length - 1;
+          const reached = last || s.kind === "first-role";
+          // The role already shows under the name; a last step that repeats it keeps only its meta line.
+          const repeatsRole = last && s.label.trim() === trajectory.outcomeRole.trim();
           return (
             <li key={`${s.year}-${i}`} className="relative">
               <span
                 aria-hidden
                 className={cn(
-                  "absolute top-1 -left-6 size-[15px] rounded-full border-2 bg-card",
-                  last || s.kind === "first-role" ? "border-primary bg-primary" : "border-primary/60",
+                  "absolute top-1.5 -left-6 size-[13px] rounded-full border-2",
+                  reached ? "border-foreground bg-foreground" : "border-rule-2 bg-card",
                 )}
               />
-              <p className="text-[13px] font-medium tracking-wide text-muted-foreground uppercase">
-                Year {s.year} · {KIND_LABEL[s.kind]}
+              <p className="text-sm text-muted-foreground">
+                Year {s.year}, {KIND_LABEL[s.kind].toLowerCase()}
+                {repeatsRole && <span className="sr-only">: {s.label}</span>}
               </p>
-              <p className="text-[15px] leading-snug">{s.label}</p>
+              {!repeatsRole && (
+                <p className={cn("text-base leading-snug text-foreground", reached && "font-medium")}>{keepCompounds(s.label)}</p>
+              )}
             </li>
           );
         })}
       </ol>
 
-      <blockquote className="border-l-2 border-primary/40 pl-3 text-[15px] leading-relaxed text-foreground/80 italic">
+      <blockquote className="rounded-xl bg-muted p-4 text-base leading-relaxed text-pretty text-foreground">
         “{trajectory.advice}”
       </blockquote>
 
-      <footer className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-1">
-        {trajectory.isDemo ? <DemoDataNote /> : <span />}
+      <footer className="flex flex-wrap items-center justify-between gap-3">
+        {trajectory.isDemo && showDemoNote ? <DemoDataNote /> : <span />}
         {trajectory.openToChat ? (
-          <Button variant="outline" size="lg" className="h-10 rounded-xl px-4" onClick={() => onAsk?.(trajectory)} aria-label={`Ask for 15 minutes with ${first}`}>
+          <Button variant="outline" onClick={() => onAsk?.(trajectory)} aria-label={`Ask for 15 minutes with ${first}`}>
             <MessageCircleHeart aria-hidden />
             Ask for 15 minutes
           </Button>

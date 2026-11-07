@@ -1,6 +1,7 @@
 "use client";
 import * as React from "react";
 import { motion, useReducedMotion } from "motion/react";
+import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MemberAvatar } from "./MemberAvatar";
 import { fallbackMember, SEEDED_STUDENT_IDS, type MemberInfo } from "./members";
@@ -64,11 +65,9 @@ export function MatchingAnimation({ user, picks, candidates = SEEDED_STUDENT_IDS
 
   if (reduce) {
     return (
-      <div role="status" aria-live="polite" className="rounded-2xl border bg-card p-6 shadow-sm md:p-8">
+      <div role="status" aria-live="polite" className="flex items-center gap-3 rounded-2xl border bg-card p-6 shadow-sm md:p-8">
+        <Loader2 className="size-5 shrink-0 text-muted-foreground motion-safe:animate-spin" aria-hidden />
         <p className="text-lg font-medium">{caption(count)}</p>
-        <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-muted">
-          <div className="h-full w-2/3 rounded-full bg-primary" />
-        </div>
       </div>
     );
   }
@@ -78,10 +77,7 @@ export function MatchingAnimation({ user, picks, candidates = SEEDED_STUDENT_IDS
 
   return (
     <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
-      <div
-        aria-hidden
-        className="relative h-80 w-full bg-[radial-gradient(ellipse_at_center,color-mix(in_oklch,var(--primary)_9%,transparent),transparent_65%)]"
-      >
+      <div aria-hidden className="relative h-80 w-full">
         <div className="absolute top-1/2 left-1/2 md:scale-125">
           {slots.map((id, i) => {
             const angle = (i / count) * Math.PI * 2 - Math.PI / 2;
@@ -108,7 +104,7 @@ export function MatchingAnimation({ user, picks, candidates = SEEDED_STUDENT_IDS
                     : { duration: 0.36, ease: "easeOut", delay: i * 0.03 }
                 }
               >
-                <MemberAvatar member={fallbackMember(id)} size="lg" className={cn("shadow-sm", isPick && "ring-2 ring-primary/40")} />
+                <MemberAvatar member={fallbackMember(id)} size="lg" className={cn("shadow-sm ring-2 ring-card", isPick && "ring-primary/45")} />
               </motion.div>
             );
           })}
@@ -118,18 +114,12 @@ export function MatchingAnimation({ user, picks, candidates = SEEDED_STUDENT_IDS
             animate={{ x: settling ? rowX(0) : 0, scale: 1, opacity: 1 }}
             transition={{ duration: settling ? SETTLE_MS / 1000 : 0.3, ease: [0.22, 1, 0.36, 1] }}
           >
-            {!settling && (
-              <motion.span
-                className="absolute inset-0 rounded-full bg-primary/20"
-                animate={{ scale: [1, 1.7], opacity: [0.6, 0] }}
-                transition={{ duration: 1.1, repeat: Infinity, ease: "easeOut" }}
-              />
-            )}
-            <MemberAvatar member={user} size="xl" className="ring-4 ring-primary/30" />
+            <MemberAvatar member={user} size="xl" className="ring-2 ring-primary ring-offset-4 ring-offset-card" />
           </motion.div>
         </div>
       </div>
-      <p role="status" aria-live="polite" className="border-t px-6 py-4 text-center text-lg font-medium">
+      <p role="status" aria-live="polite" className="flex items-center justify-center gap-3 border-t px-6 py-4 text-center text-lg font-medium text-pretty">
+        {!settling && <Loader2 className="size-5 shrink-0 text-muted-foreground motion-safe:animate-spin" aria-hidden />}
         {settling ? `Found ${pickOrder.length} students who fill your gaps` : caption(count)}
       </p>
     </div>
