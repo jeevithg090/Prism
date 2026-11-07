@@ -161,7 +161,12 @@ export function JourneySankey({ trajectories, focus = "ML" }: { trajectories: Tr
 
       <figure className="m-0">
         {asList ? (
-          <div className="relative overflow-x-auto rounded-xl border">
+          <div
+            role="region"
+            aria-label="Journeys table, scroll sideways for more"
+            tabIndex={0}
+            className="relative overflow-x-auto rounded-xl border outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
             <table className="w-full text-left text-[15px]">
               <caption className="sr-only">Journeys by path{filter === "All" ? "" : `, ${OUTCOME_LABEL[filter]} only`}</caption>
               <thead className="bg-muted/60 text-sm text-muted-foreground">

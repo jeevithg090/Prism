@@ -49,10 +49,10 @@ function GuideCard({ guide, index }: { guide: GuideSuggestion; index: number }) 
   }
 
   return (
-    <li className="flex flex-col gap-3 rounded-2xl border bg-card p-5 shadow-sm">
+    <li className="flex flex-col gap-3 rounded-xl bg-muted/60 p-5">
       <div className="flex items-start justify-between gap-2">
         <h3 className="font-semibold break-words">{guide.name}</h3>
-        <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs font-medium">{guide.source === "github" ? "GitHub" : "Web"}</span>
+        <span className="shrink-0 rounded-full border bg-card px-2 py-0.5 text-xs font-medium">{guide.source === "github" ? "GitHub" : "Web"}</span>
       </div>
       <p className="text-sm">{guide.whyRelevant}</p>
       <a
@@ -71,7 +71,7 @@ function GuideCard({ guide, index }: { guide: GuideSuggestion; index: number }) 
       </div>
       <div className="space-y-1.5">
         <Label htmlFor={draftId}>Draft message</Label>
-        <Textarea id={draftId} ref={ref} readOnly value={guide.draftMessage} rows={5} className="rounded-xl bg-muted/40 text-sm" />
+        <Textarea id={draftId} ref={ref} readOnly value={guide.draftMessage} rows={5} className="rounded-xl bg-card text-sm" />
       </div>
       <Button variant="outline" onClick={copy} aria-label={`Copy message for ${guide.name}`} className="focus-visible:ring-2 focus-visible:ring-ring">
         <Copy aria-hidden />
@@ -98,7 +98,7 @@ export function GuidesSection({ viewerId }: { viewerId: string }) {
       title="Learn from practitioners"
       description="People in Manchester who already work with your top gap skill, plus a friendly first message you can send."
       actions={guides !== null ? (
-        <Button variant="outline" size="sm" onClick={() => find.mutate(false)} disabled={find.isPending}>Find new guides</Button>
+        <Button variant="outline" onClick={() => find.mutate(false)} disabled={find.isPending}>Find new guides</Button>
       ) : undefined}
     >
       <p className="mb-4 flex items-center gap-2 rounded-xl bg-primary/10 px-3 py-2 text-sm text-primary">
