@@ -1,0 +1,17 @@
+{
+  "label": "Keystone estimate",
+  "note": "Focused hours to reach 'can apply it' (level 2) once the prerequisites are in place, sized from the free resources in the Roadmap Agent's task templates. Used only for skills that are not in the student's roadmap yet; roadmap skills use the roadmap's own hours.",
+  "hours": {
+    "python": 30, "java": 30, "javascript": 24, "typescript": 10, "c": 30, "cpp": 36, "sql": 10, "html-css": 8,
+    "react": 16, "nodejs": 12, "rest-apis": 10, "git": 6, "linux": 8, "docker": 10, "kubernetes": 14, "aws": 14,
+    "cloud-computing": 12, "ci-cd": 8, "testing": 8, "data-structures": 24, "algorithms": 24, "databases": 12,
+    "postgresql": 8, "system-design": 16, "security-basics": 8, "statistics": 16, "linear-algebra": 16,
+    "machine-learning": 24, "deep-learning": 20, "pytorch": 14, "tensorflow": 14, "scikit-learn": 10, "pandas": 10,
+    "numpy": 6, "data-visualisation": 8, "llm-apps": 12, "llm-evaluation": 10, "vector-databases": 8, "mlops": 14,
+    "code-review": 4, "communication": 6, "teamwork": 4, "agile": 4
+  },
+  "byCategory": {
+    "language": 24, "framework": 12, "data": 10, "ml-ai": 16, "cloud-devops": 12, "cs-fundamentals": 16,
+    "practice": 6, "professional": 4
+  }
+}
