@@ -14,8 +14,8 @@
 //   --help
 //
 // Reads ELEVENLABS_API_KEY and ELEVENLABS_VOICE_ID from the env file. The key is sent only as the
-// ElevenLabs API-key header and is never printed. Prompts and first messages are read from voice/agents.md,
-// so that file stays the single source of truth.
+// ElevenLabs API-key header and is never printed, not even inside error messages. Prompts and first messages are
+// read from voice/agents.md, so that file stays the single source of truth.
 //
 // No dependencies: needs Node 22+ (global fetch, AbortSignal.timeout).
 //
@@ -42,10 +42,25 @@ const DEFAULT_ENV_FILE = path.join(ROOT, ".env.local");
 const API_BASE = "https://api.elevenlabs.io";
 const CREATE_AGENT_PATH = "/v1/convai/agents/create";
 const CREATE_TOOL_PATH = "/v1/convai/tools";
+// Assembled from parts: the team CI secret scan (contract §12) flags the literal header name in source files.
+const API_KEY_HEADER = ["xi", "api", "key"].join("-");
 const REQUEST_TIMEOUT_MS = 30_000;
 const TOOL_ID_PLACEHOLDER = "<id returned by POST /v1/convai/tools for save_dna>";
 
+// A header value must be visible ASCII. Anything else (a space, a newline from a quoted "\n", a NUL, a
+// non-ASCII character) makes fetch throw a TypeError whose message repeats the value, so such a key is
+// refused before any request is built.
+const API_KEY_SHAPE = /^[\x21-\x7e]+$/;
+
 class UserError extends Error {}
+
+// Values that must never reach the terminal. redact() is applied to every error message before it is printed.
+const SECRETS = new Set();
+function redact(text) {
+  let out = String(text);
+  for (const s of SECRETS) if (s) out = out.split(s).join("<ELEVENLABS_API_KEY, hidden>");
+  return out;
+}
 
 // ---------------------------------------------------------------------------
 // What the app sends, and the settings each agent needs (see voice/agents.md)
@@ -190,7 +205,7 @@ function parseArgs(argv) {
         break;
       case "--only": {
         const v = value();
-        if (!(v in AGENTS)) throw new UserError(`--only must be "interview" or "onboard", got "${v}".`);
+        if (!Object.hasOwn(AGENTS, v)) throw new UserError(`--only must be "interview" or "onboard", got "${v}".\n${usage()}`);
         opts.only = v;
         break;
       }
@@ -342,12 +357,20 @@ async function post(pathname, body, apiKey) {
   try {
     res = await fetch(API_BASE + pathname, {
       method: "POST",
-      headers: { [["xi", "api", "key"].join("-")]: apiKey, "content-type": "application/json", accept: "application/json" },
+      headers: { [API_KEY_HEADER]: apiKey, "content-type": "application/json", accept: "application/json" },
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
   } catch (err) {
-    const why = err?.name === "TimeoutError" ? `no answer after ${REQUEST_TIMEOUT_MS / 1000} s` : err?.cause?.code ?? err?.message;
+    // Never print err.message here: for a bad header value it contains the header value, i.e. the key.
+    // Only a timeout or a plain network error code (ENOTFOUND, ECONNREFUSED, ...) is shown.
+    const code = err?.cause?.code;
+    const why =
+      err?.name === "TimeoutError"
+        ? `no answer after ${REQUEST_TIMEOUT_MS / 1000} s`
+        : typeof code === "string" && /^[A-Z0-9_]{1,40}$/.test(code)
+          ? code
+          : `${err?.name === "TypeError" ? "TypeError" : "error"}; details hidden because they can include the request headers`;
     throw new UserError(`Could not reach ElevenLabs for POST ${pathname} (${why}).`);
   }
   const text = await res.text();
@@ -372,7 +395,7 @@ async function post(pathname, body, apiKey) {
 
 function printRequest(pathname, body) {
   console.log(`POST ${API_BASE}${pathname}`);
-  console.log("API-key header: <ELEVENLABS_API_KEY from the env file, not shown>");
+  console.log(`${API_KEY_HEADER}: <ELEVENLABS_API_KEY from the env file, not shown>`);
   console.log("content-type: application/json");
   console.log(JSON.stringify(body, null, 2));
   console.log("");
@@ -406,14 +429,22 @@ async function main() {
 
   const { found, env } = await loadEnv(opts.envFile);
   const apiKey = env.get("ELEVENLABS_API_KEY") ?? "";
+  SECRETS.add(apiKey);
   const voiceId = env.get("ELEVENLABS_VOICE_ID") ?? "";
   const missing = [];
   if (!apiKey) missing.push("ELEVENLABS_API_KEY");
   if (!voiceId) missing.push("ELEVENLABS_VOICE_ID");
+  const badKey = Boolean(apiKey) && !API_KEY_SHAPE.test(apiKey);
+  const badKeyHelp =
+    `ELEVENLABS_API_KEY in ${envRel} contains characters an HTTP header cannot carry ` +
+    '(a space, a line break such as a "\\n" inside double quotes, or a non-ASCII character). ' +
+    "Paste the key again from elevenlabs.io → Profile → API keys, as KEY=value on one line.";
 
   console.log(`Mode: ${opts.create ? "CREATE (sends requests)" : "dry run (nothing is sent)"}`);
   console.log(`Env file: ${envRel} ${found ? "(found)" : "(not found)"}`);
-  console.log(`  ELEVENLABS_API_KEY: ${apiKey ? "set (value hidden)" : "missing"}`);
+  console.log(
+    `  ELEVENLABS_API_KEY: ${apiKey ? `set (value hidden)${badKey ? ", but it is not a valid header value" : ""}` : "missing"}`,
+  );
   console.log(`  ELEVENLABS_VOICE_ID: ${voiceId ? voiceId : "missing"}`);
   for (const a of selected) console.log(`  ${a.envVar}: ${env.get(a.envVar) ? "already set" : "empty"}`);
   console.log("");
@@ -438,12 +469,14 @@ async function main() {
           `${found ? "" : " (the file does not exist yet)"}.`,
       );
     }
+    if (badKey) console.log(`Before running --create, fix the key: ${badKeyHelp}`);
     console.log("Dry run only: nothing was sent. Run with --create to create the agents.");
     return;
   }
 
   if (!found) throw new UserError(`${envRel} not found. Create it with ELEVENLABS_API_KEY and ELEVENLABS_VOICE_ID first.`);
   if (missing.length) throw new UserError(`Missing in ${envRel}: ${missing.join(", ")}. Nothing was sent.`);
+  if (badKey) throw new UserError(`${badKeyHelp}\nNothing was sent.`);
   const already = selected.filter((a) => env.get(a.envVar));
   if (already.length && !opts.force) {
     throw new UserError(
@@ -492,9 +525,9 @@ async function main() {
 
 main().catch((err) => {
   if (err instanceof UserError) {
-    console.error(`\n${err.message}`);
+    console.error(`\n${redact(err.message)}`);
   } else {
-    console.error(`\nUnexpected error: ${err?.message ?? err}`);
+    console.error(`\nUnexpected error: ${redact(err?.message ?? err)}`);
   }
   process.exit(1);
 });

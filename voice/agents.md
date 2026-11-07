@@ -16,8 +16,9 @@ The button asks for a fresh signed URL each time the student taps it, because si
 > (`voiceConfigured()` in `lib/voice/elevenlabs.ts`) looks for the API key **and** the interviewer's agent id, even for
 > `agent=onboard`. If you set up only the coach, the config returns `text-mode` and the voice button stays hidden.
 
-ElevenLabs renames dashboard menus now and then. If a label below doesn't match, look for the closest one, and check the
-docs for anything marked **(verify)**.
+ElevenLabs renames dashboard menus now and then. If a label below doesn't match, look for the closest one. The dry run of
+`voice/create-agents.mjs` (below) prints the API fields for the settings it sends, and the top of that script lists the
+docs pages each one was checked against.
 
 ## Checklist: settings that must be right (checked against the ElevenLabs docs, Nov 2026)
 
