@@ -355,11 +355,16 @@ async function embeddingSim(cands: CandidateSkills[]): Promise<InterestSim> {
 
 // ---------- pods I/O (used by the routes) ----------
 /** Pods whose members include `userId`, newest first. */
+/** The seeded demo fixture pod. It stays reachable by id (and as the DEMO fallback), but it is not
+ *  listed as anyone's pod, so the demo starts on "Find my pod" and the matchmaker forms the pod live. */
+export const DEMO_FIXTURE_POD_ID = "pod_demo01";
+
 export async function listPodsForUser(userId: string): Promise<Pod[]> {
   const all = await getStore().list<Pod>("pods");
   return all
     .map((p) => PodZ.safeParse(p))
     .flatMap((r) => (r.success ? [r.data] : []))
+    .filter((p) => p.id !== DEMO_FIXTURE_POD_ID)
     .filter((p) => p.members.some((m) => m.userId === userId))
     .sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0));
 }
