@@ -1,0 +1,19 @@
+# Contract §4 ownership. Replace the TODO handles with each person's GitHub login.
+# P5 · Community
+/lib/agents/matchmaker.ts @jeevithg090
+/lib/agents/architect.ts @jeevithg090
+/lib/agents/techlead.ts @jeevithg090
+/lib/agents/trajectories.ts @jeevithg090
+/lib/agents/guides.ts @jeevithg090
+/lib/momentum.ts @jeevithg090
+/lib/badges.ts @jeevithg090
+/lib/schemas/community.ts @jeevithg090
+/data/seed/ @jeevithg090
+/components/pods/ @jeevithg090
+/components/trajectories/ @jeevithg090
+/components/community/ @jeevithg090
+/components/momentum/ @jeevithg090
+# P1 · Data agents: /lib/agents/{syllabus,skillmap,market,trends,lecturer}.ts /lib/cache.ts /lib/connectors/{firecrawl,adzuna,reed,hn}.ts /data/skills.json  → TODO @p1
+# P2 · Brain: /lib/llm.ts /lib/store.ts /lib/agents/{events,orchestrator,evidence,roadmap}.ts /lib/graph/ /supabase/  → TODO @p2
+# P3 · Frontend: /app/layout.tsx /app/globals.css /components/{ui,shell,keystone}/ /lib/{types,env,session,utils,fetcher}.ts /.github/  → TODO @p3
+# P4 · Voice + automation: /lib/voice/ /lib/n8n.ts /lib/briefing.ts /n8n/ /components/voice/  → TODO @p4

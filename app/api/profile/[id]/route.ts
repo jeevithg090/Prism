@@ -1,4 +1,4 @@
-// LOCAL SHIM of P2's GET /api/profile/[id]
+// SCAFFOLD STUB (owner: P2). GET /api/profile/[id] from the store; P2 replaces it.
 import { getStore } from "@/lib/store";
 import type { Profile } from "@/lib/types";
 export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {

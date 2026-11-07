@@ -1,7 +1,7 @@
 import "server-only";
 import fs from "node:fs";
 import path from "node:path";
-// LOCAL SHIM of P1's lib/cache.ts
+// SCAFFOLD STUB (owner: P1). Contract §8 signature; P1 replaces it with the real implementation.
 export async function withCache<T>(key: string, fn: () => Promise<T>, opts?: { ttlSec?: number; fixture?: string }): Promise<T> {
   if (process.env.DEMO_MODE === "true") {
     for (const rel of [`data/cache/${key}.json`, opts?.fixture ? `data/fixtures/${opts.fixture}` : ""]) {

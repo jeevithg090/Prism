@@ -1,5 +1,5 @@
 import "server-only";
-// LOCAL SHIM of P1's fcSearch. Returns [] without a key.
+// SCAFFOLD STUB (owner: P1). fcSearch returns [] without a key; P1 replaces it with the real connector.
 export type FcResult = { url: string; title: string; description?: string };
 export async function fcSearch(query: string, opts?: { limit?: number }): Promise<FcResult[]> {
   const key = process.env.FIRECRAWL_API_KEY;

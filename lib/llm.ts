@@ -1,7 +1,7 @@
 import "server-only";
 import type { z } from "zod";
 import type { AgentName } from "@/lib/types";
-// LOCAL SHIM of P2's lib/llm.ts — not committed on P5 branches.
+// SCAFFOLD STUB (owner: P2). Contract signatures; llmJSON/llmText throw LLMError("no_key") so callers use their deterministic fallbacks until P2 lands the OpenAI-backed version.
 export class LLMError extends Error { constructor(msg: string, public cause?: unknown) { super(msg); } }
 export async function llmJSON<T>(o: { agent: AgentName; runId?: string; system: string; user: string; schema: z.ZodType<T>; schemaName: string; model?: string; temperature?: number; cacheKey?: string }): Promise<T> {
   void o; throw new LLMError("no_key");
