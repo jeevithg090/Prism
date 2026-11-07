@@ -1,0 +1,148 @@
+# Keystone CI/CD on GitLab (replaces GitHub Actions).
+# Same gates as contract §12: secret scan → typecheck → lint → test → build (DEMO_MODE), plus e2e,
+# optional Vercel deploys (review apps per branch, production on main) and a commit status back to GitHub
+# named "ci" so GitHub branch protection can require it.
+#
+# Optional CI/CD variables (Settings → CI/CD → Variables, masked):
+#   VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID   → enables deploy jobs
+#   GITHUB_STATUS_TOKEN (fine-grained PAT, "Commit statuses: RW" on the GitHub repo) → enables status reporting
+#   GITHUB_REPO (default jeevithg090/Reply_Hack)
+
+default:
+  image: node:22
+  interruptible: true
+  cache:
+    key:
+      files: [package-lock.json]
+    paths: [.npm/]
+    policy: pull-push
+  before_script:
+    - npm ci --cache .npm --prefer-offline --no-audit --no-fund
+
+variables:
+  DEMO_MODE: "true"
+  NEXT_TELEMETRY_DISABLED: "1"
+  GITHUB_REPO: "jeevithg090/Reply_Hack"
+
+stages: [verify, build, e2e, deploy, report]
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - if: $CI_COMMIT_BRANCH
+
+secret-scan:
+  stage: verify
+  image: alpine/git:latest
+  cache: []
+  before_script: []
+  script:
+    - |
+      if git grep -nE '(sk-[A-Za-z0-9]{20,}|ghp_[A-Za-z0-9]{30,}|github_pat_|glpat-[A-Za-z0-9_-]{20,}|xi-api-key)' -- ':!*.md' ':!.github/**' ':!.gitlab-ci.yml'; then
+        echo "Secret-like string found: remove it and rotate the key." >&2
+        exit 1
+      fi
+      echo "No secret-like strings found."
+
+typecheck:
+  stage: verify
+  script:
+    - npm run typecheck
+
+lint:
+  stage: verify
+  script:
+    - npm run lint
+
+test:
+  stage: verify
+  script:
+    - npx vitest run --reporter=default --reporter=junit --outputFile.junit=junit.xml
+  artifacts:
+    when: always
+    expire_in: 1 week
+    reports:
+      junit: junit.xml
+
+build:
+  stage: build
+  script:
+    - npm run build
+
+e2e:
+  stage: e2e
+  image: mcr.microsoft.com/playwright:v1.65.0-noble
+  allow_failure: true
+  script:
+    - npm run test:e2e -- --project=desktop
+  artifacts:
+    when: always
+    expire_in: 1 week
+    paths: [playwright-report/, test-results/]
+
+.vercel:
+  stage: deploy
+  needs: [build, test, typecheck, lint, secret-scan]
+  variables:
+    DEMO_MODE: "true"
+  script:
+    - npx --yes vercel@latest pull --yes --environment="$VERCEL_ENV" --token="$VERCEL_TOKEN"
+    - npx --yes vercel@latest build $VERCEL_BUILD_FLAGS --token="$VERCEL_TOKEN"
+    - DEPLOY_URL=$(npx --yes vercel@latest deploy --prebuilt $VERCEL_BUILD_FLAGS --token="$VERCEL_TOKEN")
+    - echo "DEPLOY_URL=$DEPLOY_URL" >> deploy.env
+    - echo "Deployed to $DEPLOY_URL"
+  artifacts:
+    reports:
+      dotenv: deploy.env
+
+deploy-review:
+  extends: .vercel
+  variables:
+    VERCEL_ENV: preview
+    VERCEL_BUILD_FLAGS: ""
+  environment:
+    name: review/$CI_COMMIT_REF_SLUG
+    url: $DEPLOY_URL
+    auto_stop_in: 1 day
+  rules:
+    - if: $VERCEL_TOKEN && $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH
+
+deploy-production:
+  extends: .vercel
+  variables:
+    VERCEL_ENV: production
+    VERCEL_BUILD_FLAGS: "--prod"
+  environment:
+    name: production
+    url: $DEPLOY_URL
+  rules:
+    - if: $VERCEL_TOKEN && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+.github-status:
+  stage: report
+  image: curlimages/curl:latest
+  cache: []
+  before_script: []
+  script:
+    - >
+      curl -sS -X POST
+      -H "Authorization: Bearer $GITHUB_STATUS_TOKEN"
+      -H "Accept: application/vnd.github+json"
+      "https://api.github.com/repos/$GITHUB_REPO/statuses/$CI_COMMIT_SHA"
+      -d "{\"state\":\"$STATE\",\"context\":\"ci\",\"description\":\"GitLab pipeline $STATE\",\"target_url\":\"$CI_PIPELINE_URL\"}"
+
+github-status-success:
+  extends: .github-status
+  variables: { STATE: success }
+  rules:
+    - if: $GITHUB_STATUS_TOKEN
+      when: on_success
+
+github-status-failure:
+  extends: .github-status
+  variables: { STATE: failure }
+  rules:
+    - if: $GITHUB_STATUS_TOKEN
+      when: on_failure
