@@ -668,7 +668,6 @@ export function SkillExchangeGraph({
                     key={id}
                     type="button"
                     aria-pressed={pressed}
-                    aria-label={`Trace ${you ? "your" : `${firstName(names, id)}'s`} skill swaps`}
                     onMouseEnter={() => setHover(id)}
                     onMouseLeave={() => setHover(null)}
                     onFocus={() => setHover(id)}
@@ -691,11 +690,15 @@ export function SkillExchangeGraph({
                     >
                       {initials(names, id)}
                     </span>
+                    {/* The name is built from the visible text (WCAG 2.5.3 label in name): "Trace Mei's skill swaps". */}
+                    <span className="sr-only">Trace</span>{" "}
                     {firstName(names, id)}
+                    <span className="sr-only">&apos;s skill swaps</span>
                     {you && (
-                      <span className="text-xs font-normal text-primary">
-                        you
-                      </span>
+                      <>
+                        {" "}
+                        <span className="text-xs font-normal text-primary">you</span>
+                      </>
                     )}
                   </button>
                 );

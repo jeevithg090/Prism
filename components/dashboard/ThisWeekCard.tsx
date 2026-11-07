@@ -3,12 +3,12 @@
 // The screen's signature: the week's skill and why, its tasks in order, and the proof that closes it.
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { BadgeCheck, BookOpen, Dumbbell, GitPullRequest, Hammer, Lightbulb, type LucideIcon } from "lucide-react";
+import { BadgeCheck, BookOpen, CheckCircle2, Dumbbell, GitPullRequest, Hammer, Lightbulb, type LucideIcon } from "lucide-react";
 import { StatusBadge } from "@/components/keystone";
 import { buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiGet } from "@/lib/fetcher";
-import type { BridgeMap, BridgeNode, Pod, Receipt, RoadmapTask } from "@/lib/types";
+import type { BridgeMap, BridgeNode, Pod, Receipt, Roadmap, RoadmapTask, RoadmapWeek } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { currentWeek, dayMonth, proofHint, roleName, topGaps, useRoadmap } from "./data";
 
@@ -56,10 +56,28 @@ function PodIssueLine({ userId, skillId }: { userId: string; skillId: string }) 
   );
 }
 
+/**
+ * The week to show: the roadmap's current week, moved on past any week whose skill the map already shows proven
+ * (a merged pod PR flips the node before the roadmap catches up). `proven` names the skill that was just closed.
+ */
+export function weekToShow(roadmap: Roadmap, map: BridgeMap): { week: RoadmapWeek | null; proven?: string } {
+  const statusOf = (id: string) => map.nodes.find((n) => n.skillId === id)?.status;
+  const nameOf = (id: string) => map.nodes.find((n) => n.skillId === id)?.name ?? id;
+  const start = currentWeek(roadmap);
+  if (!start) return { week: null };
+  const weeks = [...roadmap.weeks].sort((a, b) => a.week - b.week);
+  const next = weeks.find((w) => w.week >= start.week && statusOf(w.focusSkillId) !== "proven") ?? null;
+  if (!next) return { week: start };
+  const before = weeks.filter((w) => w.week < next.week && statusOf(w.focusSkillId) === "proven").pop();
+  return { week: next, ...(before ? { proven: nameOf(before.focusSkillId) } : {}) };
+}
+
 function WeekBody({
-  userId, label, name, skillId, role, receipt, tasks, proof, isExamWeek, note,
+  userId, label, name, skillId, role, receipt, tasks, proof, isExamWeek, note, proven,
 }: {
   userId: string; label: string; name: string; skillId: string; role: string; receipt: Receipt; tasks: RoadmapTask[]; proof: string; isExamWeek?: boolean; note?: React.ReactNode;
+  /** The skill a merged PR just proved, so last week's focus reads as done. */
+  proven?: string;
 }) {
   return (
     <section aria-labelledby="this-week-title" className={card}>
@@ -72,6 +90,12 @@ function WeekBody({
             <p className="text-sm font-medium text-muted-foreground">{label}</p>
             {isExamWeek && <span className="inline-flex h-6 items-center rounded-md border bg-muted px-2 text-xs font-medium text-foreground">Lighter week: exams</span>}
           </div>
+          {proven && (
+            <p className="mt-3 flex items-center gap-2 text-base font-medium text-foreground" data-testid="this-week-proven">
+              <CheckCircle2 className="size-5 shrink-0 text-status-proven" aria-hidden />
+              {proven} proven
+            </p>
+          )}
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <StatusBadge status={receipt.coveredByDegree === "no" ? "gap" : receipt.coveredByDegree === "done" ? "degree-done" : "degree-upcoming"} />
             {receipt.trend === "rising" && <StatusBadge status="rising" />}
@@ -146,7 +170,7 @@ export function ThisWeekCard({ userId, map }: { userId: string; map: BridgeMap }
 
   if (q.isPending) return <ThisWeekSkeleton />;
 
-  const week = q.data ? currentWeek(q.data) : null;
+  const { week, proven } = q.data ? weekToShow(q.data, map) : { week: null, proven: undefined };
   if (week) {
     const date = dayMonth(week.startDate);
     return (
@@ -160,6 +184,7 @@ export function ThisWeekCard({ userId, map }: { userId: string; map: BridgeMap }
         tasks={week.tasks}
         proof={week.proof}
         isExamWeek={week.isExamWeek}
+        proven={proven}
       />
     );
   }

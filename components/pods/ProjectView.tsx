@@ -152,9 +152,10 @@ export function ProjectView({ podId }: { podId: string }) {
     queryKey: ["pod", podId],
     queryFn: () => apiGet<Pod>(`/api/pods/${encodeURIComponent(podId)}`),
   });
-  const progress = useProjectProgress(podId);
-  const [proof, setProof] = React.useState<ProofResult | null>(null);
   const pod = q.data;
+  // Ask for merge progress only once the pod exists and has a project: an unknown pod id must not 404 twice.
+  const progress = useProjectProgress(pod?.project ? podId : null);
+  const [proof, setProof] = React.useState<ProofResult | null>(null);
   const people = useMemberProfiles(pod ? memberIds(pod) : []);
 
   if (q.isPending) return <ProjectViewSkeleton />;

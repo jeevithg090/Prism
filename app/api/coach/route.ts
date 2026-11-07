@@ -5,11 +5,12 @@ import { runCoach } from "@/lib/agents/coach/loop";
 import { TOOLS } from "@/lib/agents/tools/registry";
 import { CoachReqZ } from "@/lib/schemas/coach";
 import { badRequest, internal, ok } from "@/lib/schemas/community";
+import { withReplayInfo } from "@/lib/replay";
 
 /** The client may pick the runId so the Activity panel can stream the run live. */
 const RUN_ID = /^run_[a-z0-9]{6,16}$/;
 
-export async function POST(req: Request) {
+async function handlePOST(req: Request) {
   let body: unknown;
   try {
     body = await req.json();
@@ -33,3 +34,6 @@ export async function POST(req: Request) {
     return internal();
   }
 }
+
+/** Demo toggle: the envelope says whether its AI / connector values were replayed from a real run (lib/replay.ts). */
+export const POST = withReplayInfo(handlePOST);

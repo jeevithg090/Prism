@@ -46,4 +46,13 @@ describe("/api/mode", () => {
     const fallback = await (await GET(new Request("http://localhost/api/mode"))).json();
     expect(fallback.data.mode).toBe("live");
   });
+
+  it("POST {reset: true} clears the in-memory demo store outside production", async () => {
+    const { getStore } = await import("@/lib/store");
+    await getStore().upsert("evidence", "ev_tmp", { id: "ev_tmp" }, "aisha");
+    const res = await post({ mode: "demo", reset: true });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ ok: true, data: { mode: "demo", reset: true } });
+    expect(await getStore().get("evidence", "ev_tmp")).toBeNull();
+  });
 });

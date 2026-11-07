@@ -78,7 +78,7 @@ describe("MergeProofButton", () => {
       />,
     );
     const btn = screen.getByRole("button", {
-      name: "Mark Containerise the captioning API with Docker as merged",
+      name: "Mark as merged: Containerise the captioning API with Docker",
     });
     expect(btn).toHaveTextContent("Mark as merged");
     await userEvent.click(btn);
@@ -101,7 +101,7 @@ describe("MergeProofButton", () => {
     apiPost.mockResolvedValue(proof);
     renderWithQuery(<MergeProofButton podId="pod_demo01" issueIndex={0} />);
     await userEvent.click(
-      screen.getByRole("button", { name: "Mark issue 1 as merged" }),
+      screen.getByRole("button", { name: "Mark as merged: issue 1" }),
     );
     await vi.waitFor(() =>
       expect(toast.success).toHaveBeenCalledWith("Docker is now proven", {
@@ -125,12 +125,12 @@ describe("MergeProofButton", () => {
       <MergeProofButton podId="pod_x" issueIndex={3} onProof={onProof} />,
     );
     await userEvent.click(
-      screen.getByRole("button", { name: "Mark issue 4 as merged" }),
+      screen.getByRole("button", { name: "Mark as merged: issue 4" }),
     );
     await vi.waitFor(() => expect(toast.error).toHaveBeenCalled());
     expect(onProof).not.toHaveBeenCalled();
     expect(
-      screen.getByRole("button", { name: "Mark issue 4 as merged" }),
+      screen.getByRole("button", { name: "Mark as merged: issue 4" }),
     ).toBeEnabled();
   });
 });

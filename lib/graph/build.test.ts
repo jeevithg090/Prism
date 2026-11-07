@@ -60,6 +60,14 @@ describe("buildBridgeMap", () => {
 });
 
 describe("mergeEvidence", () => {
+  it("doesn't let a mock interview alone prove a skill or move readiness", () => {
+    const out = mergeEvidence(AISHA_MAP, [{ ...ev("docker", 3, 0.9), id: "ev_iv_docker", userId: "aisha", source: "keystone-interview" }]);
+    const docker = out.nodes.find((n) => n.skillId === "docker")!;
+    expect(docker.status).toBe(AISHA_MAP.nodes.find((n) => n.skillId === "docker")!.status);
+    expect(docker.level).toBeLessThanOrEqual(1);
+    expect(out.readinessNow).toBe(AISHA_MAP.readinessNow);
+  });
+
   it("never demotes a node and adds links and levels", () => {
     const out = mergeEvidence(AISHA_MAP, [{ ...ev("javascript", 1, 0.4), id: "ev_js", userId: "aisha" }]);
     const js = out.nodes.find((n) => n.skillId === "javascript")!;

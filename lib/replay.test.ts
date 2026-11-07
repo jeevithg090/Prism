@@ -10,9 +10,10 @@ const emit = vi.fn();
 vi.mock("@/lib/agents/events", () => ({ emit }));
 
 import {
-  canonicalJSON, hasRecording, listRecordings, looseReplayKey, modeFromCookieHeader, normaliseVolatile, replayKey,
-  replayOrRecord, replayOrRecordBinary, replayStats, withReplayTrace,
+  canonicalJSON, defaultRunMode, hasRecording, listRecordings, looseReplayKey, modeFromCookieHeader, normaliseVolatile, replayKey,
+  replayOrRecord, replayOrRecordBinary, replayStats, strictFromCookieHeader, withReplayInfo, withReplayTrace,
 } from "./replay";
+import { replayInfoOf, replayNoteText } from "./replay-info";
 
 let bundle: string;
 let tmp: string;
@@ -46,6 +47,15 @@ describe("replay keys", () => {
   it("keep words that only look like ids (tool names) and sort object keys", () => {
     expect(normaliseVolatile("Action: start_pod_project then review_my_pr")).toBe("Action: start_pod_project then review_my_pr");
     expect(canonicalJSON({ b: 1, a: [2, "x"] })).toBe('{"a":[2,"x"],"b":1}');
+  });
+
+  it("normalise long prefixed ids, challenge ids, short weekdays and epoch seconds; trailing spaces don't matter loosely", () => {
+    expect(normaliseVolatile("att_aisha_ch_docker_aisha_mh3k2j1x_abcdefghijklmnopqrstuvwxyz0123")).toBe("att_<id>");
+    expect(normaliseVolatile("challenge ch_docker_aisha_mhabcdef done")).toBe("challenge ch_<id> done");
+    expect(normaliseVolatile("Sat 8 Nov, due Mon")).toBe("<day> <date>, due <day>");
+    expect(normaliseVolatile("at 1762524000 seconds")).toBe("at <epoch> seconds");
+    expect(normaliseVolatile("help_V1StGXR8_Z5jdHi6B-")).toBe("help_<id>");
+    expect(looseReplayKey({ user: "Why Docker? " })).toBe(looseReplayKey({ user: "why docker?" }));
   });
 
   it("the loose key ignores numbers, case and whitespace; the exact key does not", () => {
@@ -118,6 +128,64 @@ describe("replayOrRecord", () => {
     const offline = { requires: ["OPENAI_API_KEY"] }; // unset here, so a miss can't call live
     await expect(replayOrRecord("llm", { user: "You are 41% ready" }, async () => "live", { ...offline, loose: false })).rejects.toThrow("not_recorded");
     await expect(replayOrRecord("llm", { user: "You are 38% ready" }, async () => "live", { ...offline, validate: () => false })).rejects.toThrow("not_recorded");
+  });
+
+  it("strict Demo (KEYSTONE_REPLAY_STRICT) never calls live, even with the key, and reports the miss", async () => {
+    vi.stubEnv("KEYSTONE_DEFAULT_MODE", "demo");
+    vi.stubEnv("KEYSTONE_REPLAY_STRICT", "true");
+    vi.stubEnv("FIRECRAWL_API_KEY", "fc-test");
+    const fn = vi.fn(async () => ["live"]);
+    const onMiss = vi.fn();
+    const traced = withReplayTrace(() => replayOrRecord("firecrawl", { op: "search", query: "strict" }, fn, { requires: ["FIRECRAWL_API_KEY"], onMiss }));
+    await expect(traced).rejects.toThrow("not_recorded");
+    expect(fn).not.toHaveBeenCalled();
+    expect(onMiss).toHaveBeenCalledWith(false);
+    expect(strictFromCookieHeader(null)).toBe(true);
+  });
+
+  it("the dev-only ks_replay=strict cookie makes Demo strict outside production", () => {
+    expect(strictFromCookieHeader("ks_mode=demo; ks_replay=strict")).toBe(true);
+    expect(strictFromCookieHeader("ks_mode=demo")).toBe(false);
+    vi.stubEnv("NODE_ENV", "production");
+    expect(strictFromCookieHeader("ks_mode=demo; ks_replay=strict")).toBe(false);
+  });
+
+  it("an alt key replays the same question recorded in another app state, only in Demo and only as a last resort", async () => {
+    await replayOrRecord("llm", { system: "pod: none", user: "Find me a pod" }, async () => "recorded before the pod", { alt: { user: "Find me a pod" } });
+    vi.stubEnv("KEYSTONE_DEFAULT_MODE", "demo");
+    const offline = { requires: ["OPENAI_API_KEY"] };
+    const traced = await withReplayTrace(() =>
+      replayOrRecord("llm", { system: "pod: Pod Orbit, 2 merged", user: "Find me a pod" }, async () => "live", { ...offline, alt: { user: "Find me a pod" } }));
+    expect(traced.value).toBe("recorded before the pod");
+    expect(traced.events[0]).toMatchObject({ kind: "replayed", match: "alt" });
+    await expect(replayOrRecord("llm", { system: "pod: Pod Orbit", user: "Find me a pod" }, async () => "live", offline)).rejects.toThrow("not_recorded");
+    await expect(replayOrRecord("llm", { system: "x", user: "Why Docker?" }, async () => "live", { ...offline, alt: { user: "Why Docker?" } })).rejects.toThrow("not_recorded");
+  });
+
+  it("withReplayInfo adds where the answer came from to a JSON envelope and the x-keystone-replay header", async () => {
+    await replayOrRecord("llm", { user: "Plan my week" }, async () => "real plan", { meta: { model: "gpt-4.1-mini" } });
+    vi.stubEnv("KEYSTONE_DEFAULT_MODE", "demo");
+    const route = withReplayInfo(async (q: string) => Response.json({ ok: true, data: await replayOrRecord("llm", { user: q }, async () => "live", { requires: ["OPENAI_API_KEY"] }).catch(() => "template") }));
+    const hit = await route("Plan my week");
+    expect(hit.headers.get("x-keystone-replay")).toBe("replayed");
+    const j = await hit.json();
+    expect(j).toMatchObject({ ok: true, data: "real plan", replay: { mode: "demo", source: "replayed", replayed: 1, missed: 0, model: "gpt-4.1-mini" } });
+    expect(replayNoteText(replayInfoOf(j))).toMatch(/^Replayed from a real run · gpt-4\.1-mini · /);
+    const miss = await route("Never recorded");
+    expect(miss.headers.get("x-keystone-replay")).toBe("template");
+    expect((await miss.json()).replay).toMatchObject({ source: "template", missed: 1 });
+    const plain = await withReplayInfo(async () => Response.json({ ok: true, data: 1 }))();
+    expect(plain.headers.get("x-keystone-replay")).toBeNull();
+  });
+
+  it("defaults to Demo on Vercel unless KEYSTONE_DEFAULT_MODE says otherwise", () => {
+    vi.stubEnv("KEYSTONE_DEFAULT_MODE", "");
+    vi.stubEnv("OPENAI_API_KEY", "sk-test");
+    expect(defaultRunMode()).toBe("live");
+    vi.stubEnv("VERCEL", "1");
+    expect(defaultRunMode()).toBe("demo");
+    vi.stubEnv("KEYSTONE_DEFAULT_MODE", "live");
+    expect(defaultRunMode()).toBe("live");
   });
 
   it("skips recording when shouldRecord rejects the value", async () => {

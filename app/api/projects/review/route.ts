@@ -4,8 +4,9 @@ import { NotFoundError } from "@/lib/agents/proof";
 import { reviewNow } from "@/lib/agents/techlead";
 import { badRequest, fail, internal, ok } from "@/lib/schemas/community";
 import { ProjectReviewReqZ } from "@/lib/schemas/studio";
+import { withReplayInfo } from "@/lib/replay";
 
-export async function POST(req: Request) {
+async function handlePOST(req: Request) {
   let body: unknown;
   try {
     body = await req.json();
@@ -22,3 +23,6 @@ export async function POST(req: Request) {
     return internal();
   }
 }
+
+/** Demo toggle: the envelope says whether its AI / connector values were replayed from a real run (lib/replay.ts). */
+export const POST = withReplayInfo(handlePOST);

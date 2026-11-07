@@ -1,9 +1,11 @@
 "use client";
 // The Demo toggle in the top bar: "Demo" replays recorded results of real runs; "Live AI" calls the services now
 // and records what they return (lib/replay.ts). The choice is the ks_mode cookie, set by POST /api/mode; after a
-// switch the page re-renders on the server with router.refresh(). On phones the switch sits in the popover.
+// switch the page re-renders on the server with router.refresh(), every React Query panel refetches, and a
+// "keystone:mode" window event tells any other client fetcher. On phones the switch sits in the popover.
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { QueryClientContext } from "@tanstack/react-query";
 import { Info } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -28,7 +30,10 @@ const OPTIONS: { value: RunMode; label: string }[] = [
 const NS_LABEL: Record<string, [string, string]> = {
   llm: ["AI answer", "AI answers"], embed: ["embedding batch", "embedding batches"], firecrawl: ["Firecrawl page or search", "Firecrawl pages and searches"],
   tts: ["voice clip", "voice clips"], hn: ["Hacker News backfill", "Hacker News backfills"],
+  github: ["GitHub read", "GitHub reads"], market: ["job-ad search", "job-ad searches"],
 };
+
+export const MODE_EVENT = "keystone:mode";
 
 function when(iso: string | null | undefined): string | null {
   if (!iso) return null;
@@ -77,6 +82,8 @@ function Segments({ mode, busy, onChoose, idPrefix }: { mode: RunMode | null; bu
 
 export function ModeToggle({ className, initial }: { className?: string; initial?: ModeState }) {
   const router = useRouter();
+  // Optional: the toggle also works outside a QueryClientProvider (tests, a bare page).
+  const queryClient = React.useContext(QueryClientContext);
   const [state, setState] = React.useState<ModeState | null>(initial ?? null);
   const [mode, setMode] = React.useState<RunMode | null>(initial?.mode ?? null);
   const [busy, setBusy] = React.useState(false);
@@ -109,6 +116,9 @@ export function ModeToggle({ className, initial }: { className?: string; initial
       if (j.data) setState(j.data);
       setLive(next === "demo" ? "Demo: replaying recorded results of real runs." : "Live AI: calling OpenAI, Firecrawl and ElevenLabs now.");
       startTransition(() => router.refresh());
+      // Client-fetched panels still hold the other mode's answers: refetch them under the new cookie.
+      void queryClient?.invalidateQueries();
+      try { window.dispatchEvent(new CustomEvent(MODE_EVENT, { detail: { mode: next } })); } catch { /* old browsers */ }
     } catch {
       setMode(prev);
       toast.error("Couldn't switch mode", { description: "Nothing changed. Please try again." });

@@ -405,5 +405,10 @@ export function buildUserPrompt(message: string, history: CoachReq["history"], s
 export const observationLine = (text: string) => `Observation: ${untrusted(text)}`;
 
 export async function llmDecide(o: { system: string; user: string; runId: string }): Promise<Decision> {
-  return llmJSON({ agent: "orchestrator", runId: o.runId, system: o.system, user: o.user, schema: DecisionZ, schemaName: "coach_step", temperature: 0.2 });
+  return llmJSON({
+    agent: "orchestrator", runId: o.runId, system: o.system, user: o.user, schema: DecisionZ, schemaName: "coach_step", temperature: 0.2,
+    // Demo toggle: the system prompt carries the student's live context (pod claimed, proofs, memory), which a
+    // fresh server instance won't share; the same message, history and scratchpad still replay a real answer.
+    replayAlt: { user: o.user },
+  });
 }

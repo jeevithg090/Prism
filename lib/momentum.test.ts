@@ -95,10 +95,16 @@ describe("computeMomentum", () => {
 
   it("the bundled Aisha events rise to +18% in 2026-W45", () => {
     const weeks = computeMomentum(fixture, "aisha", NOW);
-    expect(weeks.map((w) => w.score)).toEqual([4, 7, 8, 9, 10, 10]);
+    expect(weeks.map((w) => w.score)).toEqual([2, 3, 4, 5, 5, 5]);
     expect(weeks.at(-1)).toMatchObject({ week: "2026-W45", changePct: 18 });
     expect(fixture.length).toBeGreaterThanOrEqual(8);
     expect(fixture.length).toBeLessThanOrEqual(12);
+  });
+
+  it("the bundled Aisha events stop before roadmap Week 1 and hold no pod merges or roadmap weeks", () => {
+    for (const e of fixture) expect(Date.parse(e.ts)).toBeLessThan(Date.parse("2026-11-09T00:00:00Z"));
+    expect(fixture.filter((e) => e.kind === "pr-merged")).toEqual([]);
+    expect(fixture.filter((e) => /pod-vision-demo|Completed Week/.test(`${e.label} ${e.url ?? ""}`))).toEqual([]);
   });
 });
 

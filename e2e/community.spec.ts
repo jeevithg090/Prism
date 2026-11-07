@@ -11,7 +11,7 @@ test("I can help → thank-you toast and the request leaves the feed", async ({ 
   expect(res.status()).toBe(200);
 
   const watch = watchPage(page);
-  await page.goto("/community");
+  await page.goto("/community?demo=1");
   await expect(page.getByRole("heading", { level: 1, name: "Community" })).toBeVisible();
   const feed = page.getByRole("list", { name: "Open help requests" });
   await expect(feed).toBeVisible({ timeout: 15_000 });
@@ -30,15 +30,19 @@ test("I can help → thank-you toast and the request leaves the feed", async ({ 
 
 test("an empty ask is blocked; a real ask appears in the feed as yours", async ({ page }, testInfo) => {
   const watch = watchPage(page);
-  await page.goto("/community");
+  await page.goto("/community?demo=1");
   const form = page.getByRole("form", { name: "Ask for help" });
   const box = form.getByRole("textbox", { name: "What do you need help with?" });
   const submit = form.getByRole("button", { name: "Ask for help" });
   await expect(box).toBeVisible({ timeout: 15_000 });
 
-  await expect(submit).toBeDisabled();
+  // Hallmark: submit is disabled only while a request is in flight. An empty or whitespace ask posts nothing
+  // and points back to the box ("Write a sentence first.", aria-invalid) instead of greying the button out.
+  await expect(submit).toBeEnabled();
   await box.fill("    ");
-  await expect(submit).toBeDisabled();
+  await submit.click();
+  await expect(page.getByText("Write a sentence first.")).toBeVisible();
+  await expect(box).toHaveAttribute("aria-invalid", "true");
   await box.press("Enter"); // a newline in a textarea, never a submit
   await expect(page.getByText("Posted. A helper will pick it up soon.")).toHaveCount(0);
 
@@ -61,7 +65,7 @@ test("an empty ask is blocked; a real ask appears in the feed as yours", async (
 test("helpers this week, and Find guides drafts messages (or explains the 3-a-day limit)", async ({ page }, testInfo) => {
   // Each user gets 3 guide drafts a day; on a reused server the friendly limit message is the expected state.
   const watch = watchPage(page, { allow: [/\/api\/guides\/find$/] });
-  await page.goto("/community");
+  await page.goto("/community?demo=1");
   const helpers = page.locator("section", { has: page.getByRole("heading", { name: "Helpers this week" }) });
   await expect(helpers).toBeVisible({ timeout: 15_000 });
   // Opt-in: nothing is listed until the viewer asks to see it.

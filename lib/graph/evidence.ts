@@ -2,6 +2,7 @@
 // Language bytes alone never prove a skill (confidence 0.5 < 0.6): they add links and levels to the map.
 import "server-only";
 import { emit } from "@/lib/agents/events";
+import { replayOrRecord } from "@/lib/replay";
 import { getStore } from "@/lib/store";
 import type { EvidenceItem, Level, SkillId } from "@/lib/types";
 import { listEvidence, skillMeta } from "./data";
@@ -23,10 +24,18 @@ function headers(): HeadersInit {
   return h;
 }
 
-async function getJSON<T>(url: string): Promise<T> {
-  const res = await fetch(url, { headers: headers(), signal: AbortSignal.timeout(8000) });
-  if (!res.ok) throw new Error(`GitHub ${res.status}`);
-  return (await res.json()) as T;
+/** A public GitHub API read. Demo toggle: replayed from the recorded run, so the map built from it matches. */
+function getJSON<T>(url: string): Promise<T> {
+  return replayOrRecord<T>(
+    "github",
+    { op: "get", url },
+    async () => {
+      const res = await fetch(url, { headers: headers(), signal: AbortSignal.timeout(8000) });
+      if (!res.ok) throw new Error(`GitHub ${res.status}`);
+      return (await res.json()) as T;
+    },
+    { loose: false, meta: { kind: "github", label: url }, validate: (v) => v !== null && typeof v === "object" },
+  );
 }
 
 /** Bytes per language summed into skills, with the repo that holds most of each. Pure. */

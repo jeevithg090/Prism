@@ -83,6 +83,18 @@ export interface RecordMergedPRInput {
   mergedAt?: string;
 }
 
+/**
+ * The Bridge Map status the skill had before this merge. "proven" means the PR added the Built it rung to a skill
+ * that was already proven, so readiness can't move; the celebration then shows the rung, not Gap to Proven.
+ * Carried beside the contract fields (ProofResultZ strips it, so the stored copy keeps it separately).
+ */
+export type ProofOutcome = ProofResult & { statusBefore?: SkillStatus };
+const STATUSES: SkillStatus[] = ["proven", "degree-done", "degree-upcoming", "gap"];
+const statusOf = (raw: unknown): SkillStatus | undefined => {
+  const v = (raw as { statusBefore?: unknown } | null)?.statusBefore;
+  return STATUSES.find((s) => s === v);
+};
+
 const g = globalThis as unknown as { __ksProofInflight?: Map<string, Promise<ProofResult>> };
 const inflight: Map<string, Promise<ProofResult>> = (g.__ksProofInflight ??= new Map());
 
@@ -90,7 +102,7 @@ const inflight: Map<string, Promise<ProofResult>> = (g.__ksProofInflight ??= new
  * Records a merged pod PR as proof of skill. Idempotent per (podId, issueIndex): a second call returns the
  * stored result and writes nothing. Throws NotFoundError for an unknown pod or issue index.
  */
-export async function recordMergedPR(input: RecordMergedPRInput): Promise<ProofResult> {
+export async function recordMergedPR(input: RecordMergedPRInput): Promise<ProofOutcome> {
   const key = `${input.podId}:${input.issueIndex}`;
   const running = inflight.get(key);
   if (running) return running;
@@ -99,7 +111,7 @@ export async function recordMergedPR(input: RecordMergedPRInput): Promise<ProofR
   return p;
 }
 
-async function doRecord({ podId, issueIndex, prUrl, runId, mergedAt }: RecordMergedPRInput): Promise<ProofResult> {
+async function doRecord({ podId, issueIndex, prUrl, runId, mergedAt }: RecordMergedPRInput): Promise<ProofOutcome> {
   const store = getStore();
   const pod = await loadPod(podId);
   if (!pod) throw new NotFoundError(`We couldn't find pod ${podId}.`);
@@ -109,8 +121,12 @@ async function doRecord({ podId, issueIndex, prUrl, runId, mergedAt }: RecordMer
   }
 
   const proofId = `${podId}:${issueIndex}`;
-  const existing = ProofResultZ.safeParse(await store.get<unknown>("proofs", proofId));
-  if (existing.success) return existing.data;
+  const stored = await store.get<unknown>("proofs", proofId);
+  const existing = ProofResultZ.safeParse(stored);
+  if (existing.success) {
+    const was = statusOf(stored);
+    return was ? { ...existing.data, statusBefore: was } : existing.data;
+  }
 
   const rid = runId ?? newRunId();
   const now = new Date().toISOString();
@@ -175,11 +191,13 @@ async function doRecord({ podId, issueIndex, prUrl, runId, mergedAt }: RecordMer
   const map = role ? await loadMap(learnerId, role) : null;
   let readinessBefore = 0;
   let readinessAfter = 0;
+  let statusBefore: SkillStatus | undefined;
   if (map) {
     readinessBefore = typeof map.readinessNow === "number" ? map.readinessNow : round2(readinessFormula(map.nodes));
     readinessAfter = readinessBefore;
     const node = map.nodes.find((n) => n.skillId === skillId);
     if (node) {
+      statusBefore = node.status;
       const fBefore = readinessFormula(map.nodes);
       const nodes = map.nodes.map((n) =>
         n.skillId !== skillId ? n : {
@@ -230,12 +248,16 @@ async function doRecord({ podId, issueIndex, prUrl, runId, mergedAt }: RecordMer
   };
   await store.upsert("pod_progress", podId, nextProgress, pod.members[0]?.userId);
 
-  const message = map
+  const alreadyProven = statusBefore === "proven";
+  const message = alreadyProven
+    ? `${skill} was already proven on ${learner}'s Bridge Map, and this merged PR adds Built it to the Proof Ladder`
+    : map
     ? `${skill} is now proven on ${learner}'s Bridge Map · readiness ${pct(readinessBefore)} → ${pct(readinessAfter)}`
     : `${skill} is now proven for ${learner}${hasReviewer ? ` · reviewed by ${reviewer}` : ""}`;
-  const result: ProofResult = {
+  const result: ProofOutcome = {
     podId, issueIndex, userId: learnerId, skillId, skillName: skill, reviewerUserId: reviewerId,
     evidenceIds, readinessBefore, readinessAfter, badgesEarned, momentumPoints: PR_MERGED_POINTS, message, runId: rid,
+    ...(statusBefore ? { statusBefore } : {}),
   };
   await store.upsert("proofs", proofId, { id: proofId, ...result }, learnerId);
   emit({ runId: rid, agent: "orchestrator", status: "done", message, data: { readinessBefore, readinessAfter, badgesEarned } });

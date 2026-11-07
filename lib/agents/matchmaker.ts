@@ -462,13 +462,20 @@ async function runMatch(userId: string, ctx: AgentCtx, demo: boolean): Promise<P
     const fixture = readDemoPod();
     const ids = new Set(team.map((t) => t.userId));
     if (fixture && fixture.members.length === ids.size && fixture.members.every((m) => ids.has(m.userId))) {
-      await store.upsert("pods", fixture.id, fixture, userId);
+      // The explanations are written for this user by the model (Live), or replayed from a real run (Demo);
+      // DEMO_MODE keeps the fixture text. A project already designed for the pod is kept.
+      const explanations = demo
+        ? fixture.explanations
+        : await polishExplanations(templateExplanations(userId, fixture.members, names), fixture.members, ctx.runId);
+      const existing = await store.get<Pod>("pods", fixture.id).catch(() => null);
+      const pod: Pod = PodZ.parse({ ...fixture, explanations, ...(existing?.project ? { project: existing.project } : {}) });
+      await store.upsert("pods", pod.id, pod, userId);
       // Record that this user has joined the demo pod, so it shows up as *their* pod from now on.
       await store.upsert("pod_claims", `${userId}:${fixture.id}`, { id: `${userId}:${fixture.id}`, userId, podId: fixture.id }, userId);
       ctx.done(`${fixture.name} is ready: ${team.map((t) => firstName(t.userId, names)).join(", ")}`, {
         podId: fixture.id, score: fixture.score, memberIds: team.map((t) => t.userId),
       });
-      return fixture;
+      return pod;
     }
   }
 

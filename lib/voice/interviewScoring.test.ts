@@ -78,6 +78,8 @@ describe("scoreInterview", () => {
     expect(ev.map((e) => e.skillId)).toEqual(["communication", "docker"]);
     expect(ev.every((e) => e.source === "keystone-interview")).toBe(true);
     expect(ev[1].level).toBe(3);
+    // No merged Docker PR yet: explaining it stays below proof confidence (0.6), so the map doesn't flip to proven.
+    expect((h.upsert.mock.calls.filter((c) => c[0] === "evidence")[1][2] as { confidence: number }).confidence).toBeLessThan(0.6);
     expect(r.evidence.map((e) => e.label)).toEqual(["Communication", "Docker (explained)"]);
   });
 

@@ -11,6 +11,7 @@ import { maxItems, noOutboundMessaging, redactForLLM } from "@/lib/agents/guardr
 import { runAgent, type AgentCtx, type Checkpoint } from "@/lib/agents/harness";
 import { fcSearch } from "@/lib/connectors/firecrawl";
 import { llmJSON } from "@/lib/llm";
+import { replayOrRecord } from "@/lib/replay";
 import { UNTRUSTED_RULE, guardOutput, scanForInjection, wrapUntrusted } from "@/lib/agents/safety/injection";
 import { GuideSuggestionZ, skillName } from "@/lib/schemas/community";
 import type { BridgeMap, BridgeNode, GuideSuggestion, Profile } from "@/lib/types";
@@ -56,22 +57,35 @@ async function searchGitHub(language: string, report: AgentCtx["emit"]): Promise
     "user-agent": "keystone-guides",
   };
   if (process.env.GITHUB_TOKEN) headers.authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
+  const langName = language === "python" ? "Python" : "TypeScript";
   try {
-    const res = await fetch(url, { headers });
-    if (!res.ok) {
-      report("progress", `GitHub search unavailable (HTTP ${res.status}), using the web only`);
-      return [];
-    }
-    const json = (await res.json()) as { items?: { login?: string; html_url?: string; type?: string }[] };
-    const langName = language === "python" ? "Python" : "TypeScript";
-    return (json.items ?? [])
-      .filter((i) => i.login && isHttpUrl(i.html_url) && i.type !== "Organization")
-      .map((i) => ({
-        name: i.login as string,
-        publicUrl: i.html_url as string,
-        source: "github" as const,
-        context: `GitHub developer ${i.login}, based in Manchester, writes ${langName}, more than 20 followers.`,
-      }));
+    // Demo toggle: the recorded search results of a real run, so the guide drafts below replay too.
+    const items = await replayOrRecord<{ login: string; html_url: string }[]>(
+      "github",
+      { op: "search-users", url },
+      async () => {
+        const res = await fetch(url, { headers, signal: AbortSignal.timeout(15_000) });
+        if (!res.ok) {
+          report("progress", `GitHub search unavailable (HTTP ${res.status}), using the web only`);
+          return [];
+        }
+        const json = (await res.json()) as { items?: { login?: string; html_url?: string; type?: string }[] };
+        return (json.items ?? [])
+          .filter((i) => i.login && isHttpUrl(i.html_url) && i.type !== "Organization")
+          .map((i) => ({ login: i.login as string, html_url: i.html_url as string }));
+      },
+      {
+        loose: false, quietErrors: true, meta: { kind: "github-search", label: url },
+        validate: (v) => Array.isArray(v) && v.every((i) => isHttpUrl((i as { html_url?: unknown })?.html_url)),
+        shouldRecord: (v) => v.length > 0,
+      },
+    );
+    return items.map((i) => ({
+      name: i.login,
+      publicUrl: i.html_url,
+      source: "github" as const,
+      context: `GitHub developer ${i.login}, based in Manchester, writes ${langName}, more than 20 followers.`,
+    }));
   } catch {
     return [];
   }

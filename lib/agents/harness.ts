@@ -33,6 +33,13 @@ export type GuardrailCtx = { runId: string; agent: AgentName; input: unknown; me
 export type Guardrail<O> = { name: string; apply(output: O, ctx: GuardrailCtx): GuardrailResult<O> };
 
 export type RunStatus = "ok" | "fallback" | "error";
+/**
+ * Where a run's answer came from: a live model call, a replay of a recorded real run, a cached or precomputed
+ * result (the run was too fast to have called a model), or plain rules with no model at all.
+ */
+export type RunSource = "model" | "replay" | "cache" | "rules";
+/** No model call finishes this fast: a quicker run that names a model served a cached or precomputed answer. */
+export const MIN_MODEL_MS = 50;
 
 export type StepDescribe<T> = (result: T) => string | { message: string; data?: Record<string, unknown> };
 
@@ -97,9 +104,13 @@ export interface AgentRunEntry {
   /** First 12 hex chars of sha256(JSON input). Never the raw input. */
   inputDigest: string;
   model: string;
+  /** Where the answer came from (see RunSource). Older entries without it are labelled when read. */
+  source?: RunSource;
   steps: { name: string; durationMs: number }[];
   /** Short error message when status is `error`. */
   error?: string;
+  /** A curated sample entry (demo data), never a real run. */
+  sample?: boolean;
 }
 
 // ---------- errors ----------
@@ -156,6 +167,18 @@ function nextEntryId(runId: string, agent: AgentName): string {
   const n = (seq.get(key) ?? 0) + 1;
   seq.set(key, n);
   return `${key}:${n}`;
+}
+
+// The event bus keeps each run's events on globalThis (lib/agents/events.ts). The ledger reads it to see whether a
+// run really called a model, replayed a recorded answer, or ran on rules, and to log agent steps that report
+// through events only (the on-demand PR review).
+type Bus = { __ksEvents?: Map<string, AgentEvent[]> };
+const busLogs = (): Map<string, AgentEvent[]> => (globalThis as unknown as Bus).__ksEvents ?? new Map();
+
+function runSource(events: AgentEvent[], durationMs: number, fastIsCache = true): RunSource {
+  if (events.some((e) => e.data?.replay === true)) return "replay";
+  if (events.some((e) => e.message === "thinking…" || e.data?.live === true)) return "model";
+  return fastIsCache && durationMs < MIN_MODEL_MS && !!process.env.LLM_MODEL ? "cache" : "rules";
 }
 
 function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
@@ -298,6 +321,10 @@ export async function runAgent<O>(spec: AgentSpec<O>): Promise<{ output: O; meta
     ...(spec.checkpoint ? { checkpoint: spec.checkpoint } : {}),
     inputDigest: digestInput(spec.input),
     model: process.env.LLM_MODEL || "deterministic",
+    source: runSource(
+      (busLogs().get(runId) ?? []).filter((e) => e.agent === agent && e.ts >= startedAt.toISOString()),
+      durationMs,
+    ),
     steps,
     ...(status === "error" ? { error: shortError(failure) } : {}),
   };
@@ -325,13 +352,81 @@ export async function runAgent<O>(spec: AgentSpec<O>): Promise<{ output: O; meta
 }
 
 // ---------- ledger reads (GET /api/agents/runs) ----------
+/** Entries written before `source` existed: label them from what they recorded. */
+const withSource = (e: AgentRunEntry): AgentRunEntry =>
+  e.source ? e : { ...e, source: e.model === "deterministic" ? "rules" : e.durationMs < MIN_MODEL_MS ? "cache" : "model" };
+
+const REVIEW_NOTE = "The AI comments with questions only; a podmate approves and merges, never the AI";
+const MERGE_CHECKPOINT: Checkpoint = {
+  kind: "peer-approval", who: "your pod reviewer", note: "A podmate approved and merged this PR, never the AI",
+};
+
+type MergedRow = { podId?: string; merged?: { issueIndex?: number; skillId?: string; mergedAt?: string }[] };
+type ProofRow = { id?: string; runId?: string; skillName?: string };
+
+/**
+ * Agent steps that never pass through runAgent but end in a human decision, so the ledger shows their checkpoint:
+ * every merged pod PR (from pod_progress, durable) and every "Review my PR now" review (from the event bus;
+ * written to the ledger the first time it is seen, so it outlives the bus).
+ */
+async function checkpointRuns(stored: AgentRunEntry[]): Promise<AgentRunEntry[]> {
+  const store = getStore();
+  const out: AgentRunEntry[] = [];
+  try {
+    const [progress, proofs] = await Promise.all([store.list<MergedRow>("pod_progress"), store.list<ProofRow>("proofs")]);
+    const proofById = new Map(proofs.filter((p) => p && typeof p.id === "string").map((p) => [p.id as string, p]));
+    for (const row of progress) {
+      if (!row?.podId) continue;
+      for (const m of row.merged ?? []) {
+        if (!Number.isInteger(m?.issueIndex) || !m.mergedAt) continue;
+        const key = `${row.podId}:${m.issueIndex}`;
+        const proof = proofById.get(key);
+        const issue = (m.issueIndex as number) + 1;
+        out.push({
+          id: `merge:${key}`, runId: proof?.runId ?? `merge_${key}`, agent: "evidence",
+          purpose: `A podmate merged the PR for issue #${issue}, so ${proof?.skillName ?? "its skill"} counts as proven`,
+          startedAt: m.mergedAt, durationMs: -1, status: "ok", usedFallback: false, guardrails: [],
+          checkpoint: MERGE_CHECKPOINT, inputDigest: digestInput({ podId: row.podId, issueIndex: m.issueIndex }),
+          model: "deterministic", source: "rules", steps: [],
+        });
+      }
+    }
+  } catch {
+    /* merges are best-effort in the ledger */
+  }
+
+  const known = new Set(stored.map((e) => `${e.runId}:${e.agent}`));
+  const fresh: AgentRunEntry[] = [];
+  for (const [runId, events] of busLogs()) {
+    if (known.has(`${runId}:techlead`)) continue; // a harness run already logged it, or it was logged before
+    const lead = events.filter((e) => e.agent === "techlead");
+    const done = lead.find((e) => e.status === "done" && typeof e.data?.prNumber === "number" && e.data?.usedFallback === undefined);
+    if (!done) continue;
+    const started = lead.find((e) => e.status === "started" && e.ts <= done.ts);
+    const startedAt = started?.ts ?? done.ts;
+    const durationMs = Math.max(0, new Date(done.ts).getTime() - new Date(startedAt).getTime());
+    const source = runSource(lead, durationMs, false);
+    const pr = done.data?.prNumber as number;
+    fresh.push({
+      id: `${runId}:techlead:review`, runId, agent: "techlead", purpose: `Reviewing PR #${pr} with guiding questions`,
+      startedAt, durationMs, status: "ok", usedFallback: false, guardrails: [],
+      checkpoint: { kind: "peer-approval", who: "your pod reviewer", note: REVIEW_NOTE },
+      inputDigest: digestInput({ pr, sample: started?.data?.sample === true }),
+      model: source === "model" ? process.env.LLM_MODEL || "gpt-4.1-mini" : "deterministic", source, steps: [],
+    });
+  }
+  await Promise.all(fresh.map((e) => Promise.resolve().then(() => store.upsert(AGENT_RUNS, e.id, e)).catch(() => undefined)));
+  return [...out, ...fresh];
+}
+
 export async function listRuns(filter: { runId?: string; agent?: AgentName | string; limit?: number } = {}): Promise<AgentRunEntry[]> {
   const limit = Math.max(1, Math.min(200, filter.limit ?? 50));
-  const all = await getStore().list<AgentRunEntry>(AGENT_RUNS);
+  const stored = (await getStore().list<AgentRunEntry>(AGENT_RUNS)).filter((e) => e && typeof e.id === "string");
+  const all = [...stored, ...(await checkpointRuns(stored))];
   return all
-    .filter((e) => e && typeof e.id === "string")
     .filter((e) => !filter.runId || e.runId === filter.runId)
     .filter((e) => !filter.agent || e.agent === filter.agent)
     .sort((a, b) => (a.startedAt < b.startedAt ? 1 : a.startedAt > b.startedAt ? -1 : b.id.localeCompare(a.id)))
-    .slice(0, limit);
+    .slice(0, limit)
+    .map(withSource);
 }

@@ -5,6 +5,7 @@ import { z } from "zod";
 import skillsJson from "@/data/skills.json";
 import { emit } from "@/lib/agents/events";
 import { llmJSON } from "@/lib/llm";
+import { canReplay } from "@/lib/replay";
 import type { Level, ModuleSkill, Skill, SkillId } from "@/lib/types";
 
 /**
@@ -151,7 +152,8 @@ export async function mapTextToSkills(
 ): Promise<{ skills: ModuleSkill[]; unknownTerms: string[] }> {
   const found = matchSkills(text);
   let unknownTerms: string[] = [];
-  if (opts.useLLM !== false && process.env.OPENAI_API_KEY && text.trim()) {
+  // Demo toggle: without a key, a recorded skill mapping from a real run can still replay.
+  if (opts.useLLM !== false && (process.env.OPENAI_API_KEY || (await canReplay())) && text.trim()) {
     try {
       const out = await llmJSON({
         agent: "skillmap",

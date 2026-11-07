@@ -2,8 +2,9 @@
 import { newRunId } from "@/lib/agents/events";
 import { similarForUser } from "@/lib/community/trajectories";
 import { badRequest, fail, internal, ok, TrajectoriesSimilarQueryZ } from "@/lib/schemas/community";
+import { withReplayInfo } from "@/lib/replay";
 
-export async function GET(req: Request) {
+async function handleGET(req: Request) {
   try {
     const sp = new URL(req.url).searchParams;
     const parsed = TrajectoriesSimilarQueryZ.safeParse({ userId: sp.get("userId") ?? undefined, limit: sp.get("limit") ?? undefined });
@@ -18,3 +19,6 @@ export async function GET(req: Request) {
     return internal();
   }
 }
+
+/** Demo toggle: the envelope says whether its AI / connector values were replayed from a real run (lib/replay.ts). */
+export const GET = withReplayInfo(handleGET);

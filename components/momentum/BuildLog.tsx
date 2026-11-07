@@ -1,5 +1,6 @@
 "use client";
 // P5 slot component (P3's dashboard + passport): a timeline of verified steps, with optional CV bullets.
+/* Hallmark · dropped github.com/keystone-demo/pod-vision-demo/pull, 16days, 18days, 21days, 24days, 28days · the demo fixture invented pod PR merges and roadmap weeks before Week 1 starts on 9 Nov, so those rows and their relative dates are gone; the first merge is the one recordMergedPR writes on stage */
 import * as React from "react";
 import { format, formatDistanceToNow } from "date-fns";
 import { Code2, Copy, ExternalLink, GitPullRequest, HeartHandshake, Mic, Route, Sparkles, type LucideIcon } from "lucide-react";
@@ -17,7 +18,7 @@ import { turnIntoCvBullets } from "./actions";
 
 const KIND: Record<MomentumEvent["kind"], { icon: LucideIcon; label: string }> = {
   "pr-merged": { icon: GitPullRequest, label: "Merged pull request" },
-  "roadmap-milestone": { icon: Route, label: "Roadmap milestone" },
+  "roadmap-milestone": { icon: Route, label: "Milestone" },
   "helped-newcomer": { icon: HeartHandshake, label: "Helped a newcomer" },
   "mock-interview": { icon: Mic, label: "Mock interview" },
   "problem-solved": { icon: Code2, label: "Problem solved" },

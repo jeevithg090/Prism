@@ -45,7 +45,7 @@ function LabCard({ idea, index }: { idea: string; index: number }) {
 
 export function LabIdeas({ ideas }: { ideas: string[] }) {
   return (
-    <ul className="divide-y" aria-label="Labs that would close these gaps">
+    <ul className="divide-y" aria-label="Suggested practical labs">
       {ideas.map((idea, i) => (
         <li key={idea} className="py-5 first:pt-0 last:pb-0">
           <LabCard idea={idea} index={i} />

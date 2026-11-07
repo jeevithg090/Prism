@@ -5,13 +5,14 @@ import { verifySecret } from "@/lib/n8n";
 import { badRequest, fail, internal, ok, UserIdParamZ } from "@/lib/schemas/community";
 import { readJSON } from "@/lib/voice/data";
 import { BriefingZ } from "@/lib/voice/schemas";
+import { withReplayInfo } from "@/lib/replay";
 
 function cookieUser(req: Request): string | null {
   const m = (req.headers.get("cookie") ?? "").match(/(?:^|;\s*)ks_uid=([^;]+)/);
   return m ? decodeURIComponent(m[1]) : null;
 }
 
-export async function GET(req: Request, ctx: { params: Promise<{ userId: string }> }) {
+async function handleGET(req: Request, ctx: { params: Promise<{ userId: string }> }) {
   const params = UserIdParamZ.safeParse(await ctx.params);
   if (!params.success) return badRequest(params.error);
   const { userId } = params.data;
@@ -24,3 +25,6 @@ export async function GET(req: Request, ctx: { params: Promise<{ userId: string 
     return fx.success ? ok(fx.data) : internal();
   }
 }
+
+/** Demo toggle: the envelope says whether its AI / connector values were replayed from a real run (lib/replay.ts). */
+export const GET = withReplayInfo(handleGET);

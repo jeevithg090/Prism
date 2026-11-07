@@ -1,5 +1,6 @@
 // The Bridge Map (P2 Task 5): your degree, the job market and your proof, in one graph.
 import "server-only";
+import { connection } from "next/server";
 import { getStore } from "@/lib/store";
 import type {
   BridgeEdge, BridgeMap, BridgeNode, EvidenceItem, Level, Profile, Programme, RoleDemand, SkillId, TrendSeries,
@@ -31,7 +32,15 @@ export const CURATED_PREREQS: Record<SkillId, SkillId[]> = {
   "code-review": ["git"], "data-visualisation": ["pandas"],
 };
 
-const isProof = (e: Pick<EvidenceItem, "level" | "confidence">) => e.level >= PROVEN_LEVEL && e.confidence >= PROVEN_CONFIDENCE;
+/**
+ * Proof is level 2+ at confidence 0.6+. A mock interview on its own never proves a skill (communication excepted):
+ * talking about Docker is "Explained it" on the Proof Ladder, and only a build (a merged PR, a challenge) turns it proven.
+ */
+const talkOnly = (e: Partial<Pick<EvidenceItem, "source" | "skillId">>) => e.source === "keystone-interview" && e.skillId !== "communication";
+const isProof = (e: Pick<EvidenceItem, "level" | "confidence"> & Partial<Pick<EvidenceItem, "source" | "skillId">>) =>
+  !talkOnly(e) && e.level >= PROVEN_LEVEL && e.confidence >= PROVEN_CONFIDENCE;
+/** The level a piece of evidence lifts a node to: weak or talk-only evidence counts as "tried it" (1) at most. */
+const levelOf = (e: EvidenceItem) => (isProof(e) ? e.level : Math.min(e.level, 1));
 const maxLevel = (xs: number[]) => Math.max(0, ...xs) as Level;
 
 function groupBy<T>(xs: T[], key: (x: T) => string): Map<string, T[]> {
@@ -80,7 +89,7 @@ export function buildBridgeMap(i: {
     const done = mods.filter((x) => isTermDone(x.module, i.profile.startedAt, now));
     const upcoming = mods.filter((x) => !isTermDone(x.module, i.profile.startedAt, now))
       .sort((a, b) => termStart(a.module, i.profile.startedAt).getTime() - termStart(b.module, i.profile.startedAt).getTime());
-    const status: BridgeNode["status"] = ev[0] && isProof(ev[0]) ? "proven" : done.length ? "degree-done" : upcoming.length ? "degree-upcoming" : "gap";
+    const status: BridgeNode["status"] = ev.some(isProof) ? "proven" : done.length ? "degree-done" : upcoming.length ? "degree-upcoming" : "gap";
     const node: BridgeNode = {
       skillId, name: meta.name, category: meta.category, status,
       demand: demand.get(skillId) ?? 0,
@@ -121,7 +130,7 @@ export function mergeEvidence(map: BridgeMap, evidence: EvidenceItem[]): BridgeM
     const ev = bySkill.get(n.skillId);
     if (!ev) return n;
     const evidenceIds = [...new Set([...(n.evidenceIds ?? []), ...ev.map((e) => e.id)])];
-    const level = maxLevel([n.level ?? 0, ...ev.map((e) => e.level)]);
+    const level = maxLevel([n.level ?? 0, ...ev.map(levelOf)]);
     const status = n.status !== "proven" && ev.some(isProof) ? ("proven" as const) : n.status;
     if (status === n.status && level === n.level && evidenceIds.length === (n.evidenceIds ?? []).length) return n;
     changed = true;
@@ -245,6 +254,19 @@ async function seededMap(userId: string, roleId: string, now: Date): Promise<Bri
 }
 
 /**
+ * The current time, read only once the render is serving a real request. Under cacheComponents a page that
+ * reads the clock while prerendering logs an error (and shows the dev "Issue" pill), so in a render we wait on
+ * connection() first. Outside a request render (agent runs, after(), scripts, tests) connection() throws
+ * synchronously and the clock is read directly.
+ */
+async function requestTime(): Promise<Date> {
+  let pending: Promise<void> | undefined;
+  try { pending = connection(); } catch { pending = undefined; }
+  if (pending) await pending;
+  return new Date();
+}
+
+/**
  * A user's Bridge Map for a role. Reads, in order: the store map `${userId}:${roleId}` (the proof loop writes
  * there, so merged pod PRs show up) → (DEMO_MODE) the curated fixture → for seeded students, a map derived from
  * their seed skills (their only proof: building from their empty evidence would mark proven skills as gaps) → a
@@ -252,7 +274,7 @@ async function seededMap(userId: string, roleId: string, now: Date): Promise<Bri
  * micro-challenges, GitHub) is then merged in. Null if the user has no map.
  */
 export async function loadGraph(userId: string, roleId: string): Promise<BridgeMap | null> {
-  const now = new Date();
+  const now = await requestTime();
   let base: BridgeMap | null = null;
   try {
     const stored = await getStore().get<BridgeMap>("maps", `${userId}:${roleId}`);

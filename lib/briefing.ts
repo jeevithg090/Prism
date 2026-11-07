@@ -101,7 +101,7 @@ export async function buildBriefing(userId: string, now: Date = new Date()): Pro
   let script = briefingScript(facts);
   if (process.env.DEMO_MODE !== "true") {
     try {
-      const text = (await llmText({ agent: "voice", system: HOST_SYSTEM, user: JSON.stringify(facts) })).trim();
+      const text = (await llmText({ agent: "voice", system: HOST_SYSTEM, user: JSON.stringify(facts), replayAlt: { briefingFor: userId } })).trim();
       const words = text.match(/\S+/g)?.length ?? 0;
       if (words >= 60 && words <= 260) script = text;
     } catch {

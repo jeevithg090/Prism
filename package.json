@@ -15,7 +15,7 @@
     "hn-backfill": "tsx scripts/hn-backfill.ts",
     "seed": "tsx scripts/seed.ts",
     "ui-gate": "node scripts/ui-gate.mjs",
-    "record-demo": "node scripts/record-demo.mjs"
+    "record-demo": "tsx scripts/record-demo.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

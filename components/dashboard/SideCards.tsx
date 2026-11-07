@@ -24,7 +24,6 @@ export function MarketPulse({ roleId, focus }: { roleId: string; focus?: { skill
   return (
     <Link
       href="/market"
-      aria-label={`Market pulse: ${m.adsAnalysed} ${hint}. Open the Industry Radar`}
       className="block rounded-2xl outline-none transition-[transform] duration-(--dur-short) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-safe:hover:-translate-y-px motion-safe:active:translate-y-0"
     >
       {/* Same head as the Momentum and Ask Keystone cards beside it: region title, then the key number. */}
@@ -32,6 +31,8 @@ export function MarketPulse({ roleId, focus }: { roleId: string; focus?: { skill
         <h2 className="text-xl font-semibold text-foreground">Market pulse</h2>
         <p className="mt-4 font-mono text-4xl leading-none font-semibold text-foreground tabular-nums">{m.adsAnalysed}</p>
         <p className="mt-2 text-sm text-pretty text-muted-foreground">{hint}</p>
+        {/* The link is named by its visible text (WCAG 2.5.3 label in name), plus where it goes. */}
+        <span className="sr-only">Open the Industry Radar</span>
       </section>
     </Link>
   );

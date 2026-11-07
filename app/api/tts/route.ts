@@ -5,7 +5,7 @@
 import { LLMError } from "@/lib/llm-error";
 import { replayOrRecordBinary } from "@/lib/replay";
 import { badRequest, fail, internal } from "@/lib/schemas/community";
-import { DEFAULT_VOICE_ID, TTS_MODEL_ID, tts, ttsConfigured, VoiceError } from "@/lib/voice/elevenlabs";
+import { TTS_MODEL_ID, tts, ttsConfigured, VoiceError } from "@/lib/voice/elevenlabs";
 import { TtsReqZ } from "@/lib/voice/schemas";
 
 const NOT_CONFIGURED = "Voice isn't set up here, so your browser will read it aloud instead.";
@@ -36,12 +36,13 @@ export async function POST(req: Request) {
     }
   }
 
-  const voice = voiceId || process.env.ELEVENLABS_VOICE_ID?.trim() || DEFAULT_VOICE_ID;
   let replayed = false;
   try {
     const audio = await replayOrRecordBinary(
       "tts",
-      { text, voice, model: TTS_MODEL_ID },
+      // The env voice is "default" in the key, so a deploy with a different (or no) ELEVENLABS_VOICE_ID still
+      // replays the clips recorded on the Mac; an explicit voiceId is part of the key.
+      { text, voice: voiceId || "default", model: TTS_MODEL_ID },
       async () => {
         if (!ttsConfigured()) throw new VoiceError("not_configured", "ELEVENLABS_API_KEY isn't set");
         return tts(text, voiceId);

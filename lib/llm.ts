@@ -4,7 +4,7 @@ import { z } from "zod";
 import type { AgentName } from "@/lib/types";
 import { emit } from "@/lib/agents/events";
 import { LLMError } from "@/lib/llm-error";
-import { formatRecordedAt, replayOrRecord, type ReplayRecord } from "@/lib/replay";
+import { formatRecordedAt, replayOrRecord, type ReplayMatch, type ReplayRecord } from "@/lib/replay";
 
 // Keystone's single LLM wrapper (contract §8). OpenAI-backed when OPENAI_API_KEY is set and DEMO_MODE is
 // off; otherwise every call throws LLMError so callers use their deterministic fallbacks (demo stays instant).
@@ -45,9 +45,19 @@ function progress(runId: string | undefined, agent: AgentName, message: string, 
 
 /** Activity panel line for a replayed answer: it came from a real run, not a template. */
 function replayed(runId: string | undefined, agent: AgentName) {
-  return (rec: ReplayRecord) =>
-    progress(runId, agent, `replayed from a real run (${rec.meta.model ?? "AI model"}, recorded ${formatRecordedAt(rec.recordedAt)})`, {
-      replay: true, recordedAt: rec.recordedAt, model: rec.meta.model ?? null,
+  return (rec: ReplayRecord, match: ReplayMatch = "exact") =>
+    progress(
+      runId, agent,
+      `replayed from a ${match === "exact" ? "" : "similar "}real run (${rec.meta.model ?? "AI model"}, recorded ${formatRecordedAt(rec.recordedAt)})`,
+      { replay: true, match, recordedAt: rec.recordedAt, model: rec.meta.model ?? null },
+    );
+}
+
+/** Activity panel line for a Demo miss: say plainly that no real run was recorded for this call. */
+function missed(runId: string | undefined, agent: AgentName) {
+  return (live: boolean) =>
+    progress(runId, agent, live ? "not recorded yet: asking the AI model live" : "not recorded: used Keystone's template", {
+      replay: false, missed: true, live,
     });
 }
 
@@ -66,6 +76,11 @@ function jsonSchemaFor(schema: z.ZodType): Record<string, unknown> {
 type JSONCall<T> = {
   agent: AgentName; runId?: string; system: string; user: string;
   schema: z.ZodType<T>; schemaName: string; model?: string; temperature?: number; cacheKey?: string;
+  /**
+   * Demo toggle: coarser key parts for a last-resort replay when the app's state differs from the recorded
+   * run (e.g. the coach step without its student-context system prompt). See ReplayOptions.alt.
+   */
+  replayAlt?: unknown;
 };
 
 async function liveJSON<T>(o: JSONCall<T>, modelName: string): Promise<T> {
@@ -131,13 +146,15 @@ export async function llmJSON<T>(o: JSONCall<T>): Promise<T> {
       // A recording only replays while it still matches the caller's schema.
       validate: (v) => o.schema.safeParse(v).success,
       onReplay: replayed(o.runId, o.agent),
+      onMiss: missed(o.runId, o.agent),
+      ...(o.replayAlt === undefined ? {} : { alt: { fn: "llmJSON", agent: o.agent, schemaName: o.schemaName, model: m, alt: o.replayAlt } }),
     },
   );
   if (o.cacheKey) cache.set(o.cacheKey, result);
   return result;
 }
 
-export async function llmText(o: { agent: AgentName; runId?: string; system: string; user: string; model?: string }): Promise<string> {
+export async function llmText(o: { agent: AgentName; runId?: string; system: string; user: string; model?: string; replayAlt?: unknown }): Promise<string> {
   if (isDemo()) throw new LLMError("demo_mode");
   const m = model(o.model);
   return replayOrRecord<string>(
@@ -168,6 +185,8 @@ export async function llmText(o: { agent: AgentName; runId?: string; system: str
       meta: { agent: o.agent, model: m, label: o.user },
       validate: (v) => typeof v === "string" && v.trim().length > 0,
       onReplay: replayed(o.runId, o.agent),
+      onMiss: missed(o.runId, o.agent),
+      ...(o.replayAlt === undefined ? {} : { alt: { fn: "llmText", agent: o.agent, model: m, alt: o.replayAlt } }),
     },
   );
 }

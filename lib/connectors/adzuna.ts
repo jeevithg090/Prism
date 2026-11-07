@@ -1,6 +1,8 @@
 import "server-only";
 // Adzuna job search (UK). Docs: https://developer.adzuna.com/docs/search
 // Needs ADZUNA_APP_ID + ADZUNA_APP_KEY; without them the Market Agent serves its cached snapshot.
+// Demo toggle (lib/replay.ts): Live records the ads; Demo replays them for the same search.
+import { replayOrRecord } from "@/lib/replay";
 
 export type JobAd = {
   title: string; company: string; description: string; url: string;
@@ -32,7 +34,20 @@ export function mapAdzunaResult(r: AdzunaResult): JobAd {
 }
 
 /** Pages 1..pages of `what` in the UK (optionally narrowed to `where`), 50 results each. */
-export async function searchAdzuna(what: string, opts: { where?: string; pages?: number; perPage?: number } = {}): Promise<JobAd[]> {
+export function searchAdzuna(what: string, opts: { where?: string; pages?: number; perPage?: number } = {}): Promise<JobAd[]> {
+  // The key parts never include the app id or key.
+  return replayOrRecord<JobAd[]>(
+    "market",
+    { op: "adzuna", what, where: opts.where ?? null, pages: opts.pages ?? 2, perPage: opts.perPage ?? 50 },
+    () => fetchAdzuna(what, opts),
+    {
+      requires: ["ADZUNA_APP_ID", "ADZUNA_APP_KEY"], missError: () => new AdzunaError("no_key"), loose: false,
+      meta: { kind: "job-ads", label: `adzuna: ${what}` }, validate: (v) => Array.isArray(v), shouldRecord: (v) => v.length > 0,
+    },
+  );
+}
+
+async function fetchAdzuna(what: string, opts: { where?: string; pages?: number; perPage?: number }): Promise<JobAd[]> {
   if (!hasAdzunaKey()) throw new AdzunaError("no_key");
   const pages = opts.pages ?? 2;
   const out: JobAd[] = [];
