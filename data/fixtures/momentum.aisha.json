@@ -1,0 +1,156 @@
+[
+  {
+    "userId": "aisha",
+    "week": "2026-W40",
+    "score": 11,
+    "baseline": 6.5,
+    "changePct": 69,
+    "breakdown": [
+      {
+        "kind": "roadmap-milestone",
+        "points": 4,
+        "count": 1
+      },
+      {
+        "kind": "problem-solved",
+        "points": 7,
+        "count": 7
+      }
+    ]
+  },
+  {
+    "userId": "aisha",
+    "week": "2026-W41",
+    "score": 13,
+    "baseline": 8.25,
+    "changePct": 58,
+    "breakdown": [
+      {
+        "kind": "pr-merged",
+        "points": 5,
+        "count": 1
+      },
+      {
+        "kind": "roadmap-milestone",
+        "points": 4,
+        "count": 1
+      },
+      {
+        "kind": "problem-solved",
+        "points": 4,
+        "count": 4
+      }
+    ]
+  },
+  {
+    "userId": "aisha",
+    "week": "2026-W42",
+    "score": 15,
+    "baseline": 10.0,
+    "changePct": 50,
+    "breakdown": [
+      {
+        "kind": "pr-merged",
+        "points": 5,
+        "count": 1
+      },
+      {
+        "kind": "roadmap-milestone",
+        "points": 4,
+        "count": 1
+      },
+      {
+        "kind": "helped-newcomer",
+        "points": 3,
+        "count": 1
+      },
+      {
+        "kind": "problem-solved",
+        "points": 3,
+        "count": 3
+      }
+    ]
+  },
+  {
+    "userId": "aisha",
+    "week": "2026-W43",
+    "score": 16,
+    "baseline": 12.0,
+    "changePct": 33,
+    "breakdown": [
+      {
+        "kind": "pr-merged",
+        "points": 10,
+        "count": 2
+      },
+      {
+        "kind": "roadmap-milestone",
+        "points": 4,
+        "count": 1
+      },
+      {
+        "kind": "problem-solved",
+        "points": 2,
+        "count": 2
+      }
+    ]
+  },
+  {
+    "userId": "aisha",
+    "week": "2026-W44",
+    "score": 17,
+    "baseline": 13.75,
+    "changePct": 24,
+    "breakdown": [
+      {
+        "kind": "pr-merged",
+        "points": 5,
+        "count": 1
+      },
+      {
+        "kind": "roadmap-milestone",
+        "points": 4,
+        "count": 1
+      },
+      {
+        "kind": "mock-interview",
+        "points": 3,
+        "count": 1
+      },
+      {
+        "kind": "problem-solved",
+        "points": 5,
+        "count": 5
+      }
+    ]
+  },
+  {
+    "userId": "aisha",
+    "week": "2026-W45",
+    "score": 18,
+    "baseline": 15.25,
+    "changePct": 18,
+    "breakdown": [
+      {
+        "kind": "pr-merged",
+        "points": 10,
+        "count": 2
+      },
+      {
+        "kind": "roadmap-milestone",
+        "points": 4,
+        "count": 1
+      },
+      {
+        "kind": "helped-newcomer",
+        "points": 3,
+        "count": 1
+      },
+      {
+        "kind": "problem-solved",
+        "points": 1,
+        "count": 1
+      }
+    ]
+  }
+]
