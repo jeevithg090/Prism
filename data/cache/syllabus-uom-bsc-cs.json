@@ -1,0 +1,812 @@
+{
+  "id": "uom-bsc-cs",
+  "university": "University of Manchester",
+  "name": "BSc Computer Science",
+  "url": "https://www.manchester.ac.uk/study/undergraduate/courses/2027/00560/bsc-computer-science/",
+  "modules": [
+    {
+      "code": "COMP10120",
+      "title": "First Year Team Project",
+      "year": 1,
+      "semester": "full-year",
+      "credits": 20,
+      "compulsory": true,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": [
+        {
+          "skillId": "teamwork",
+          "level": 2
+        },
+        {
+          "skillId": "communication",
+          "level": 2
+        },
+        {
+          "skillId": "git",
+          "level": 1
+        }
+      ]
+    },
+    {
+      "code": "COMP11120",
+      "title": "Mathematical Techniques for Computer Science",
+      "year": 1,
+      "semester": "full-year",
+      "credits": 20,
+      "compulsory": true,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": [
+        {
+          "skillId": "linear-algebra",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "code": "COMP11212",
+      "title": "Fundamentals of Computation",
+      "year": 1,
+      "semester": "2",
+      "credits": 10,
+      "compulsory": true,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": [
+        {
+          "skillId": "algorithms",
+          "level": 1
+        }
+      ]
+    },
+    {
+      "code": "COMP12111",
+      "title": "Fundamentals of Computer Engineering",
+      "year": 1,
+      "semester": "1",
+      "credits": 10,
+      "compulsory": true,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": []
+    },
+    {
+      "code": "COMP13212",
+      "title": "Data Science",
+      "year": 1,
+      "semester": "2",
+      "credits": 10,
+      "compulsory": true,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": [
+        {
+          "skillId": "statistics",
+          "level": 2
+        },
+        {
+          "skillId": "python",
+          "level": 2
+        },
+        {
+          "skillId": "data-visualisation",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "code": "COMP15111",
+      "title": "Fundamentals of Computer Architecture",
+      "year": 1,
+      "semester": "1",
+      "credits": 10,
+      "compulsory": true,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": []
+    },
+    {
+      "code": "COMP15212",
+      "title": "Operating Systems",
+      "year": 1,
+      "semester": "2",
+      "credits": 10,
+      "compulsory": true,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": [
+        {
+          "skillId": "operating-systems",
+          "level": 2
+        },
+        {
+          "skillId": "linux",
+          "level": 1
+        }
+      ]
+    },
+    {
+      "code": "COMP16321",
+      "title": "Introduction to Programming 1",
+      "year": 1,
+      "semester": "1",
+      "credits": 20,
+      "compulsory": true,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": [
+        {
+          "skillId": "python",
+          "level": 2
+        },
+        {
+          "skillId": "problem-solving",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "code": "COMP16412",
+      "title": "Introduction to Programming 2",
+      "year": 1,
+      "semester": "2",
+      "credits": 10,
+      "compulsory": true,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": [
+        {
+          "skillId": "java",
+          "level": 2
+        },
+        {
+          "skillId": "oop",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "code": "COMP23311",
+      "title": "Software Engineering 1",
+      "year": 2,
+      "semester": "1",
+      "credits": 10,
+      "compulsory": true,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": [
+        {
+          "skillId": "git",
+          "level": 2
+        },
+        {
+          "skillId": "testing",
+          "level": 2
+        },
+        {
+          "skillId": "teamwork",
+          "level": 2
+        },
+        {
+          "skillId": "java",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "code": "COMP23412",
+      "title": "Software Engineering 2",
+      "year": 2,
+      "semester": "2",
+      "credits": 10,
+      "compulsory": true,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": [
+        {
+          "skillId": "code-review",
+          "level": 1
+        },
+        {
+          "skillId": "agile",
+          "level": 1
+        },
+        {
+          "skillId": "teamwork",
+          "level": 2
+        },
+        {
+          "skillId": "testing",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "code": "COMP26020",
+      "title": "Programming Languages & Paradigms",
+      "year": 2,
+      "semester": "full-year",
+      "credits": 20,
+      "compulsory": true,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": [
+        {
+          "skillId": "functional-programming",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "code": "COMP26120",
+      "title": "Algorithms and Data Structures",
+      "year": 2,
+      "semester": "full-year",
+      "credits": 20,
+      "compulsory": true,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": [
+        {
+          "skillId": "algorithms",
+          "level": 3
+        },
+        {
+          "skillId": "data-structures",
+          "level": 3
+        }
+      ]
+    },
+    {
+      "code": "COMP21111",
+      "title": "Logic and Modelling",
+      "year": 2,
+      "semester": "1",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": []
+    },
+    {
+      "code": "COMP22111",
+      "title": "Processor Microarchitecture",
+      "year": 2,
+      "semester": "1",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": []
+    },
+    {
+      "code": "COMP22712",
+      "title": "Microcontrollers",
+      "year": 2,
+      "semester": "2",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": []
+    },
+    {
+      "code": "COMP23111",
+      "title": "Database Systems",
+      "year": 2,
+      "semester": "1",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": [
+        {
+          "skillId": "sql",
+          "level": 3
+        },
+        {
+          "skillId": "databases",
+          "level": 3
+        }
+      ]
+    },
+    {
+      "code": "COMP24011",
+      "title": "Introduction to AI",
+      "year": 2,
+      "semester": "1",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": [
+        {
+          "skillId": "machine-learning",
+          "level": 1
+        },
+        {
+          "skillId": "python",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "code": "COMP24112",
+      "title": "Machine Learning",
+      "year": 2,
+      "semester": "2",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": [
+        {
+          "skillId": "machine-learning",
+          "level": 3
+        },
+        {
+          "skillId": "python",
+          "level": 2
+        },
+        {
+          "skillId": "statistics",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "code": "COMP24412",
+      "title": "Knowledge Based AI",
+      "year": 2,
+      "semester": "2",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": []
+    },
+    {
+      "code": "COMP25212",
+      "title": "System Architecture",
+      "year": 2,
+      "semester": "2",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": [
+        {
+          "skillId": "concurrency",
+          "level": 1
+        }
+      ]
+    },
+    {
+      "code": "COMP27112",
+      "title": "Introduction to Visual Computing",
+      "year": 2,
+      "semester": "2",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": [
+        {
+          "skillId": "computer-vision",
+          "level": 1
+        }
+      ]
+    },
+    {
+      "code": "COMP28112",
+      "title": "Distributed Systems",
+      "year": 2,
+      "semester": "2",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": [
+        {
+          "skillId": "distributed-systems",
+          "level": 2
+        },
+        {
+          "skillId": "networking",
+          "level": 1
+        }
+      ]
+    },
+    {
+      "code": "MCEL10001",
+      "title": "Exploring Enterprise",
+      "year": 2,
+      "semester": "1",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": []
+    },
+    {
+      "code": "MCEL10002",
+      "title": "Entrepreneurial Skills",
+      "year": 2,
+      "semester": "2",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": []
+    },
+    {
+      "code": "MCEL10022",
+      "title": "Exploring Enterprise",
+      "year": 2,
+      "semester": "2",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": []
+    },
+    {
+      "code": "COMP30040",
+      "title": "Third Year Project Laboratory",
+      "year": 3,
+      "semester": "full-year",
+      "credits": 40,
+      "compulsory": true,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": [
+        {
+          "skillId": "system-design",
+          "level": 2
+        },
+        {
+          "skillId": "communication",
+          "level": 3
+        }
+      ]
+    },
+    {
+      "code": "COMP31311",
+      "title": "Giving Meaning to Programs",
+      "year": 3,
+      "semester": "1",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": []
+    },
+    {
+      "code": "COMP32211",
+      "title": "Implementing System-on-Chip Designs",
+      "year": 3,
+      "semester": "1",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": []
+    },
+    {
+      "code": "COMP32412",
+      "title": "The Internet of Things: Architectures and Applications",
+      "year": 3,
+      "semester": "2",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": []
+    },
+    {
+      "code": "COMP33312",
+      "title": "Agile Software Pipelines",
+      "year": 3,
+      "semester": "2",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": [
+        {
+          "skillId": "agile",
+          "level": 2
+        },
+        {
+          "skillId": "tdd",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "code": "COMP33511",
+      "title": "User Experience",
+      "year": 3,
+      "semester": "1",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": [
+        {
+          "skillId": "ux-design",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "code": "COMP34111",
+      "title": "AI and Games",
+      "year": 3,
+      "semester": "1",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": [
+        {
+          "skillId": "algorithms",
+          "level": 2
+        },
+        {
+          "skillId": "python",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "code": "COMP34212",
+      "title": "Cognitive Robotics",
+      "year": 3,
+      "semester": "2",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": [
+        {
+          "skillId": "deep-learning",
+          "level": 1
+        }
+      ]
+    },
+    {
+      "code": "COMP34312",
+      "title": "Mathematical Topics in Machine Learning",
+      "year": 3,
+      "semester": "2",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": [
+        {
+          "skillId": "machine-learning",
+          "level": 3
+        },
+        {
+          "skillId": "linear-algebra",
+          "level": 3
+        },
+        {
+          "skillId": "statistics",
+          "level": 3
+        }
+      ]
+    },
+    {
+      "code": "COMP34612",
+      "title": "Computational Game Theory",
+      "year": 3,
+      "semester": "2",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": []
+    },
+    {
+      "code": "COMP34711",
+      "title": "Natural Language Processing",
+      "year": 3,
+      "semester": "1",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": [
+        {
+          "skillId": "nlp",
+          "level": 3
+        }
+      ]
+    },
+    {
+      "code": "COMP34812",
+      "title": "Natural Language Understanding",
+      "year": 3,
+      "semester": "2",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": [
+        {
+          "skillId": "nlp",
+          "level": 3
+        },
+        {
+          "skillId": "deep-learning",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "code": "COMP35112",
+      "title": "Chip Multiprocessors",
+      "year": 3,
+      "semester": "2",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": [
+        {
+          "skillId": "concurrency",
+          "level": 3
+        }
+      ]
+    },
+    {
+      "code": "COMP36111",
+      "title": "Algorithms and Complexity",
+      "year": 3,
+      "semester": "1",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": [
+        {
+          "skillId": "algorithms",
+          "level": 3
+        }
+      ]
+    },
+    {
+      "code": "COMP36212",
+      "title": "Mathematical Systems and Computation",
+      "year": 3,
+      "semester": "2",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": []
+    },
+    {
+      "code": "COMP37111",
+      "title": "Graphics & Virtual Environments",
+      "year": 3,
+      "semester": "1",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": []
+    },
+    {
+      "code": "COMP37212",
+      "title": "Computer Vision",
+      "year": 3,
+      "semester": "2",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": [
+        {
+          "skillId": "computer-vision",
+          "level": 3
+        }
+      ]
+    },
+    {
+      "code": "COMP38311",
+      "title": "Advanced Distributed Systems",
+      "year": 3,
+      "semester": "1",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": [
+        {
+          "skillId": "distributed-systems",
+          "level": 3
+        },
+        {
+          "skillId": "cloud-computing",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "code": "COMP38412",
+      "title": "Cybersecurity: Principles and Secure Software Systems",
+      "year": 3,
+      "semester": "2",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": [
+        {
+          "skillId": "cybersecurity",
+          "level": 3
+        },
+        {
+          "skillId": "security-basics",
+          "level": 3
+        }
+      ]
+    },
+    {
+      "code": "COMP39112",
+      "title": "Quantum Computing",
+      "year": 3,
+      "semester": "2",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": []
+    },
+    {
+      "code": "EEEN31001",
+      "title": "Independent Study and Technical Explanations",
+      "year": 3,
+      "semester": "1",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": [
+        {
+          "skillId": "communication",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "code": "MCEL30031",
+      "title": "Enterprise Management for Computer Scientists",
+      "year": 3,
+      "semester": "1",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": []
+    },
+    {
+      "code": "MCEL30032",
+      "title": "Managing Finance in Enterprises for Computer Scientists",
+      "year": 3,
+      "semester": "2",
+      "credits": 10,
+      "compulsory": false,
+      "topics": [],
+      "learningOutcomes": [],
+      "skills": []
+    }
+  ],
+  "extractedAt": "2026-11-07T15:15:00.000Z",
+  "source": "firecrawl"
+}
