@@ -1,0 +1,756 @@
+[
+  {
+    "id": "ch_docker_01",
+    "skillId": "docker",
+    "title": "Make the captioning API image rebuild in seconds",
+    "minutes": 20,
+    "context": "Your pod issue is \"Containerise the captioning API with Docker\". Right now every one-line code change reinstalls PyTorch, the image is over 1 GB and the API runs as root. Fix the Dockerfile before Priya reviews it.",
+    "prompt": "Rewrite this Dockerfile so that:\n1. Changing a line of app code doesn't reinstall the dependencies.\n2. The image starts from a smaller official Python base.\n3. The API doesn't run as root.\n4. pip doesn't leave its download cache in the image.\nKeep the API serving on port 8000.",
+    "language": "dockerfile",
+    "fileName": "Dockerfile",
+    "starter": "FROM python:3.12\nWORKDIR /app\nCOPY . .\nRUN pip install -r requirements.txt\nEXPOSE 8000\nCMD [\"uvicorn\", \"app.main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\"]\n",
+    "rubric": [
+      {
+        "id": "deps-layer",
+        "title": "Dependencies install in their own cached layer",
+        "description": "requirements.txt is copied and installed before the rest of the source.",
+        "hint": "When you change one line in app/main.py, which layers does Docker rebuild? Where does pip install sit relative to the step that copies your code?",
+        "rules": [
+          {
+            "kind": "order",
+            "first": "^\\s*COPY\\s+(?:--\\S+\\s+)*\\S*requirements[\\w.-]*\\.txt\\b",
+            "then": "^\\s*RUN\\s+.*\\bpip3?\\s+install\\b",
+            "flags": "im"
+          },
+          {
+            "kind": "order",
+            "first": "^\\s*RUN\\s+.*\\bpip3?\\s+install\\b",
+            "then": "^\\s*COPY\\s+(?:--\\S+\\s+)*(?!\\S*requirements)\\S+\\s+\\S+",
+            "flags": "im"
+          }
+        ]
+      },
+      {
+        "id": "slim-base",
+        "title": "Starts from a smaller base image",
+        "description": "The base image ships only what the API needs.",
+        "hint": "What does the full python:3.12 image include that a web API never uses, like compilers and docs? Does the official image come in a smaller variant?",
+        "rules": [
+          {
+            "kind": "match",
+            "pattern": "^\\s*FROM\\s+(?:--\\S+\\s+)*(?:python:[\\w.-]*(?:slim|alpine)[\\w.-]*|\\S*distroless\\S*)",
+            "flags": "im"
+          }
+        ]
+      },
+      {
+        "id": "non-root",
+        "title": "Runs as a non-root user",
+        "description": "The last USER instruction switches away from root.",
+        "hint": "If someone found a bug in your API and got a shell in the container, which user would they be? Which instruction decides that?",
+        "rules": [
+          {
+            "kind": "last",
+            "pattern": "^\\s*USER\\s+(\\S+)",
+            "not": "^(?:root|0)(?::|$)",
+            "flags": "im"
+          }
+        ]
+      },
+      {
+        "id": "pip-cache",
+        "title": "Leaves no pip cache behind",
+        "description": "Downloaded wheels aren't kept in the image layer.",
+        "hint": "After pip installs a package, does the image still need the file it downloaded? Is there a pip option or environment variable about its cache?",
+        "rules": [
+          {
+            "kind": "match",
+            "pattern": "(?:pip3?\\s+install\\b[^\\n]*--no-cache-dir|PIP_NO_CACHE_DIR\\s*=?\\s*(?:1|true|on|off))",
+            "flags": "im"
+          }
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "id": "serves-8000",
+        "title": "uvicorn listens on 0.0.0.0:8000",
+        "description": "The API is reachable from outside the container.",
+        "hint": "If uvicorn listens on 127.0.0.1 inside the container, can your laptop reach it through the published port?",
+        "rules": [
+          {
+            "kind": "match",
+            "pattern": "^\\s*(?:CMD|ENTRYPOINT)\\b[^\\n]*uvicorn[^\\n]*0\\.0\\.0\\.0[^\\n]*8000",
+            "flags": "im"
+          }
+        ]
+      },
+      {
+        "id": "exec-form",
+        "title": "CMD uses the exec form",
+        "description": "The start command is a JSON array, so stop signals reach uvicorn.",
+        "hint": "When you stop the container, which process receives the signal if CMD is a plain string?",
+        "rules": [
+          {
+            "kind": "match",
+            "pattern": "^\\s*(?:CMD|ENTRYPOINT)\\s*\\[",
+            "flags": "im"
+          }
+        ]
+      },
+      {
+        "id": "workdir",
+        "title": "Sets a working directory",
+        "description": "Paths in COPY and CMD resolve against a known folder.",
+        "hint": "Without a WORKDIR, where do relative paths like app.main end up?",
+        "rules": [
+          {
+            "kind": "match",
+            "pattern": "^\\s*WORKDIR\\s+\\S+",
+            "flags": "im"
+          }
+        ]
+      }
+    ],
+    "sampleAnswer": "FROM python:3.12-slim\nWORKDIR /app\nRUN useradd --create-home --uid 1000 app\nCOPY requirements.txt .\nRUN pip install --no-cache-dir -r requirements.txt\nCOPY --chown=app:app . .\nUSER app\nEXPOSE 8000\nCMD [\"uvicorn\", \"app.main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\"]\n",
+    "resources": [
+      {
+        "title": "Docker docs: Optimise builds with the build cache",
+        "url": "https://docs.docker.com/build/cache/"
+      },
+      {
+        "title": "Docker docs: Dockerfile best practices",
+        "url": "https://docs.docker.com/build/building/best-practices/"
+      }
+    ]
+  },
+  {
+    "id": "ch_pytorch_01",
+    "skillId": "pytorch",
+    "title": "Caption 64 images in one forward pass",
+    "minutes": 20,
+    "context": "The pod's issue \"Add PyTorch batch inference\" needs the API to handle a batch of uploads. The current helper runs the model once per image, tracks gradients it never uses and returns CUDA tensors FastAPI can't serialise.",
+    "prompt": "Rewrite predict_batch so that it:\n1. Puts the model in inference behaviour (dropout and batch norm off).\n2. Doesn't build an autograd graph while predicting.\n3. Sends all images through the model in one batched forward pass.\n4. Runs on whatever device it's given.\nIt must still return a list of predicted class ids.",
+    "language": "python",
+    "fileName": "inference.py",
+    "starter": "import torch\n\n\ndef predict_batch(model, images, device=\"cpu\"):\n    \"\"\"images: a list of 3x224x224 float tensors. Return a list of predicted class ids.\"\"\"\n    preds = []\n    for img in images:\n        out = model(img)\n        preds.append(out.argmax())\n    return preds\n",
+    "rubric": [
+      {
+        "id": "eval-mode",
+        "title": "Switches the model to evaluation mode",
+        "description": "Dropout and batch norm behave as they do at inference time.",
+        "hint": "Dropout randomly zeroes activations while training. How do you tell a PyTorch module you're only predicting now?",
+        "rules": [
+          {
+            "kind": "match",
+            "pattern": "\\bmodel\\.eval\\(\\s*\\)",
+            "flags": "im"
+          }
+        ]
+      },
+      {
+        "id": "no-grad",
+        "title": "Doesn't track gradients",
+        "description": "Prediction runs without building an autograd graph.",
+        "hint": "Does prediction ever call backward()? What is autograd storing for all 64 images, and is there a context that turns it off?",
+        "rules": [
+          {
+            "kind": "match",
+            "pattern": "torch\\.(?:no_grad|inference_mode)\\s*\\(",
+            "flags": "im"
+          }
+        ]
+      },
+      {
+        "id": "batched",
+        "title": "One batched forward pass",
+        "description": "The images become one [N, 3, 224, 224] tensor before the model sees them.",
+        "hint": "What shape does one image have, and what shape does the model expect? How could you combine N tensors into one along a new first dimension?",
+        "rules": [
+          {
+            "kind": "match",
+            "pattern": "torch\\.(?:stack|cat)\\s*\\(",
+            "flags": "im"
+          }
+        ]
+      },
+      {
+        "id": "device",
+        "title": "Model and batch share a device",
+        "description": "Both the model and the input move to the device argument.",
+        "hint": "If the model's weights are on the GPU and the batch is on the CPU, what happens on the forward pass? Which method moves a tensor or a module?",
+        "rules": [
+          {
+            "kind": "match",
+            "pattern": "\\.to\\(\\s*(?:device\\s*=\\s*)?device\\b",
+            "flags": "im"
+          }
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "id": "signature",
+        "title": "Keeps the predict_batch(model, images, device) signature",
+        "description": "Callers in the API don't need to change.",
+        "hint": "The FastAPI route calls predict_batch(model, images, device=...). Does your function still accept those arguments?",
+        "rules": [
+          {
+            "kind": "match",
+            "pattern": "^def\\s+predict_batch\\s*\\(\\s*model\\b[^)]*\\bimages\\b[^)]*\\bdevice\\b",
+            "flags": "im"
+          }
+        ]
+      },
+      {
+        "id": "argmax-dim",
+        "title": "Takes argmax over the class dimension",
+        "description": "One prediction per image, not one for the whole batch.",
+        "hint": "For a [N, classes] tensor, what does argmax() return when you don't name a dimension?",
+        "rules": [
+          {
+            "kind": "match",
+            "pattern": "argmax\\(\\s*(?:dim\\s*=\\s*)?(?:1|-1)\\s*\\)",
+            "flags": "im"
+          }
+        ]
+      },
+      {
+        "id": "json-safe",
+        "title": "Returns values the API can serialise",
+        "description": "Plain Python numbers or a CPU tensor, not a CUDA tensor.",
+        "hint": "Can FastAPI turn a CUDA tensor into JSON? What would you call to get plain Python numbers?",
+        "rules": [
+          {
+            "kind": "match",
+            "pattern": "\\.(?:tolist|item)\\(\\s*\\)",
+            "flags": "im"
+          }
+        ]
+      }
+    ],
+    "sampleAnswer": "import torch\n\n\ndef predict_batch(model, images, device=\"cpu\"):\n    \"\"\"images: a list of 3x224x224 float tensors. Return a list of predicted class ids.\"\"\"\n    model.eval()\n    model.to(device)\n    batch = torch.stack(images).to(device)\n    with torch.inference_mode():\n        logits = model(batch)\n    return logits.argmax(dim=1).cpu().tolist()\n",
+    "resources": [
+      {
+        "title": "PyTorch docs: torch.inference_mode",
+        "url": "https://pytorch.org/docs/stable/generated/torch.inference_mode.html"
+      },
+      {
+        "title": "PyTorch tutorial: Saving and loading models for inference",
+        "url": "https://pytorch.org/tutorials/beginner/saving_loading_models.html"
+      }
+    ]
+  },
+  {
+    "id": "ch_sql_01",
+    "skillId": "sql",
+    "title": "Who uses the captioning API most?",
+    "minutes": 20,
+    "context": "Tom designed the Postgres schema for caption requests. The pod wants a weekly report of heavy users, and the first draft returns millions of rows because it cross-joins two tables.",
+    "prompt": "Write one query that returns, for each user with at least 3 completed requests in the last 7 days: their user_id, how many completed requests they made, and the average caption confidence. Busiest users first.\n\nTables:\n  caption_requests(id, user_id, image_url, status, created_at)\n  captions(id, request_id, text, confidence, created_at)",
+    "language": "sql",
+    "fileName": "weekly_heavy_users.sql",
+    "starter": "-- caption_requests(id, user_id, image_url, status, created_at)\n-- captions(id, request_id, text, confidence, created_at)\nSELECT user_id, confidence\nFROM caption_requests, captions;\n",
+    "rubric": [
+      {
+        "id": "join-key",
+        "title": "Joins captions to their request",
+        "description": "An explicit JOIN on the key that links the two tables.",
+        "hint": "With 10 requests and 10 captions and no join condition, how many rows come back? Which column in captions points at a request?",
+        "rules": [
+          {
+            "kind": "match",
+            "pattern": "\\bJOIN\\s+captions\\b[\\s\\S]*?\\bON\\b[\\s\\S]*?\\brequest_id\\b",
+            "flags": "i"
+          },
+          {
+            "kind": "absent",
+            "pattern": "\\bFROM\\s+caption_requests(?:\\s+\\w+)?\\s*,",
+            "flags": "i"
+          }
+        ]
+      },
+      {
+        "id": "filter-rows",
+        "title": "Filters rows before grouping",
+        "description": "Only completed requests from the last 7 days are counted.",
+        "hint": "Which rows should be thrown away before you count anything? How would you say \"the last 7 days\" relative to now, so the report stays right next week?",
+        "rules": [
+          {
+            "kind": "match",
+            "pattern": "\\bWHERE\\b[\\s\\S]*\\bstatus\\s*=\\s*'completed'",
+            "flags": "i"
+          },
+          {
+            "kind": "match",
+            "pattern": "created_at\\s*>=?\\s*(?:NOW\\(\\)|CURRENT_DATE|CURRENT_TIMESTAMP)\\s*-\\s*INTERVAL",
+            "flags": "i"
+          }
+        ]
+      },
+      {
+        "id": "aggregate",
+        "title": "One row per user, summarised",
+        "description": "Grouped by user, with a count and an average.",
+        "hint": "You want one row per user. Which clause collapses many rows into one, and which functions summarise a group?",
+        "rules": [
+          {
+            "kind": "match",
+            "pattern": "\\bGROUP\\s+BY\\s+[\\w.]*user_id\\b",
+            "flags": "i"
+          },
+          {
+            "kind": "match",
+            "pattern": "\\bCOUNT\\s*\\(",
+            "flags": "i"
+          },
+          {
+            "kind": "match",
+            "pattern": "\\bAVG\\s*\\(",
+            "flags": "i"
+          }
+        ]
+      },
+      {
+        "id": "having",
+        "title": "Filters groups after counting",
+        "description": "Users with fewer than 3 completed requests are left out.",
+        "hint": "Can WHERE see the result of COUNT? Which clause filters after the groups exist?",
+        "rules": [
+          {
+            "kind": "match",
+            "pattern": "\\bHAVING\\s+COUNT\\s*\\(",
+            "flags": "i"
+          }
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "id": "selects-user",
+        "title": "Returns user_id",
+        "description": "The report says who each row is about.",
+        "hint": "Which column tells the pod who each row is about?",
+        "rules": [
+          {
+            "kind": "match",
+            "pattern": "\\bSELECT\\b[\\s\\S]*?\\buser_id\\b[\\s\\S]*?\\bFROM\\b",
+            "flags": "i"
+          }
+        ]
+      },
+      {
+        "id": "sorted",
+        "title": "Busiest users first",
+        "description": "Ordered by the count, descending.",
+        "hint": "In what order do rows come back if you don't ask for one?",
+        "rules": [
+          {
+            "kind": "match",
+            "pattern": "\\bORDER\\s+BY\\b[^;]*\\bDESC\\b",
+            "flags": "i"
+          }
+        ]
+      },
+      {
+        "id": "no-star",
+        "title": "Names its columns",
+        "description": "No SELECT *, so the report doesn't change when the schema does.",
+        "hint": "What happens to this report when someone adds a column to caption_requests?",
+        "rules": [
+          {
+            "kind": "absent",
+            "pattern": "\\bSELECT\\s+\\*",
+            "flags": "i"
+          }
+        ]
+      }
+    ],
+    "sampleAnswer": "SELECT r.user_id,\n       COUNT(DISTINCT r.id) AS completed_requests,\n       ROUND(AVG(c.confidence)::numeric, 2) AS avg_confidence\nFROM caption_requests r\nJOIN captions c ON c.request_id = r.id\nWHERE r.status = 'completed'\n  AND r.created_at >= NOW() - INTERVAL '7 days'\nGROUP BY r.user_id\nHAVING COUNT(DISTINCT r.id) >= 3\nORDER BY completed_requests DESC;\n",
+    "resources": [
+      {
+        "title": "PostgreSQL docs: Aggregate functions and GROUP BY",
+        "url": "https://www.postgresql.org/docs/current/tutorial-agg.html"
+      },
+      {
+        "title": "PostgreSQL docs: Joins between tables",
+        "url": "https://www.postgresql.org/docs/current/tutorial-join.html"
+      }
+    ]
+  },
+  {
+    "id": "ch_aws_01",
+    "skillId": "aws",
+    "title": "Give the captioning API only the access it needs",
+    "minutes": 20,
+    "context": "Priya is deploying the API to AWS. It reads uploads from s3://visionaid-uploads/incoming/ and writes captions to s3://visionaid-captions/. The draft IAM policy lets it do anything to every bucket in the account.",
+    "prompt": "Rewrite the IAM policy with least privilege:\n1. The API can read objects only under visionaid-uploads/incoming/.\n2. It can write objects only to visionaid-captions.\n3. No wildcard actions and no account-wide resources.\nIt must stay valid JSON.",
+    "language": "json",
+    "fileName": "captioning-api-policy.json",
+    "starter": "{\n  \"Version\": \"2012-10-17\",\n  \"Statement\": [\n    {\n      \"Effect\": \"Allow\",\n      \"Action\": \"s3:*\",\n      \"Resource\": \"*\"\n    }\n  ]\n}\n",
+    "rubric": [
+      {
+        "id": "no-wildcard-actions",
+        "title": "Names each action",
+        "description": "No s3:* or * actions.",
+        "hint": "If this role's keys leaked, what could someone do with s3:*? Which S3 calls does a captioning API actually make?",
+        "rules": [
+          {
+            "kind": "absent",
+            "pattern": "\"(?:s3:)?\\*\"",
+            "flags": "i"
+          }
+        ]
+      },
+      {
+        "id": "read-uploads",
+        "title": "Reads only where uploads land",
+        "description": "GetObject, scoped to the incoming/ prefix.",
+        "hint": "Which bucket and which folder does the API read from? Can a Resource ARN name a prefix inside a bucket?",
+        "rules": [
+          {
+            "kind": "match",
+            "pattern": "\"s3:GetObject\"",
+            "flags": "im"
+          },
+          {
+            "kind": "match",
+            "pattern": "\"arn:aws:s3:::visionaid-uploads/incoming/\\*\"",
+            "flags": "im"
+          }
+        ]
+      },
+      {
+        "id": "write-captions",
+        "title": "Writes only captions",
+        "description": "PutObject, scoped to the captions bucket.",
+        "hint": "Where should captions go, and does the API need to write anywhere else?",
+        "rules": [
+          {
+            "kind": "match",
+            "pattern": "\"s3:PutObject\"",
+            "flags": "im"
+          },
+          {
+            "kind": "match",
+            "pattern": "\"arn:aws:s3:::visionaid-captions/\\*\"",
+            "flags": "im"
+          }
+        ]
+      },
+      {
+        "id": "no-star-resource",
+        "title": "No account-wide resources",
+        "description": "Every statement names its bucket.",
+        "hint": "What does \"Resource\": \"*\" include that this API never touches?",
+        "rules": [
+          {
+            "kind": "absent",
+            "pattern": "\"Resource\"\\s*:\\s*(?:\\[\\s*)?\"\\*\"",
+            "flags": "i"
+          }
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "id": "valid-json",
+        "title": "Is valid JSON",
+        "description": "AWS can parse the policy.",
+        "hint": "Paste it into a JSON validator in your head: are all commas and brackets where they should be?",
+        "rules": [
+          {
+            "kind": "json"
+          }
+        ]
+      },
+      {
+        "id": "version",
+        "title": "Uses policy language 2012-10-17",
+        "description": "The current IAM policy grammar.",
+        "hint": "IAM has two policy language versions. Which one supports policy variables?",
+        "rules": [
+          {
+            "kind": "match",
+            "pattern": "\"Version\"\\s*:\\s*\"2012-10-17\"",
+            "flags": "im"
+          }
+        ]
+      },
+      {
+        "id": "no-delete",
+        "title": "Never deletes user uploads",
+        "description": "No s3:Delete* permissions.",
+        "hint": "Does a captioning service ever need to delete what a user uploaded?",
+        "rules": [
+          {
+            "kind": "absent",
+            "pattern": "s3:Delete",
+            "flags": "i"
+          }
+        ]
+      }
+    ],
+    "sampleAnswer": "{\n  \"Version\": \"2012-10-17\",\n  \"Statement\": [\n    {\n      \"Sid\": \"ReadUploads\",\n      \"Effect\": \"Allow\",\n      \"Action\": [\"s3:GetObject\"],\n      \"Resource\": \"arn:aws:s3:::visionaid-uploads/incoming/*\"\n    },\n    {\n      \"Sid\": \"WriteCaptions\",\n      \"Effect\": \"Allow\",\n      \"Action\": [\"s3:PutObject\"],\n      \"Resource\": \"arn:aws:s3:::visionaid-captions/*\"\n    }\n  ]\n}\n",
+    "resources": [
+      {
+        "title": "AWS docs: Security best practices in IAM (least privilege)",
+        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html"
+      },
+      {
+        "title": "AWS docs: Amazon S3 policy examples",
+        "url": "https://docs.aws.amazon.com/AmazonS3/latest/userguide/example-policies-s3.html"
+      }
+    ]
+  },
+  {
+    "id": "ch_python_01",
+    "skillId": "python",
+    "title": "Make the image loader safe to call 1,000 times",
+    "minutes": 20,
+    "context": "Mei's preprocessing module loads every upload through load_image. Under load the API runs out of file handles, transparent PNGs break the model, and a PDF upload crashes the worker with a stack trace.",
+    "prompt": "Improve load_image so that it:\n1. Always closes the file, even when resizing fails.\n2. Returns a 3-channel RGB image whatever the upload's colour mode.\n3. Turns unreadable files into a clear ValueError the API can show the user.\n4. Has type hints, so teammates know what goes in and what comes out.",
+    "language": "python",
+    "fileName": "preprocess.py",
+    "starter": "from PIL import Image\n\n\ndef load_image(path, size=224):\n    img = Image.open(path)\n    img = img.resize((size, size))\n    return img\n",
+    "rubric": [
+      {
+        "id": "closes-file",
+        "title": "Closes the file every time",
+        "description": "The image is opened in a context manager.",
+        "hint": "After 1,000 calls, how many file handles are still open? Which Python statement guarantees cleanup even when an exception is raised halfway?",
+        "rules": [
+          {
+            "kind": "match",
+            "pattern": "\\bwith\\s+Image\\.open\\(",
+            "flags": "im"
+          }
+        ]
+      },
+      {
+        "id": "rgb",
+        "title": "Normalises the colour mode",
+        "description": "Every image comes out as RGB.",
+        "hint": "A transparent PNG has 4 channels and a scanned page may have 1. How many does the model expect, and can Pillow change an image's mode?",
+        "rules": [
+          {
+            "kind": "match",
+            "pattern": "\\.convert\\(\\s*[\"']RGB[\"']\\s*\\)",
+            "flags": "im"
+          }
+        ]
+      },
+      {
+        "id": "clear-error",
+        "title": "Fails with a clear message",
+        "description": "Unreadable files raise ValueError with a readable reason.",
+        "hint": "What does Pillow raise today when someone uploads a PDF? What would you want the API to tell that person instead?",
+        "rules": [
+          {
+            "kind": "match",
+            "pattern": "\\bexcept\\s*\\(?[^:\\n]*\\b(?:UnidentifiedImageError|OSError)\\b",
+            "flags": "im"
+          },
+          {
+            "kind": "match",
+            "pattern": "\\braise\\s+ValueError\\(",
+            "flags": "im"
+          }
+        ]
+      },
+      {
+        "id": "typed",
+        "title": "Typed signature",
+        "description": "Parameters and the return value have type hints.",
+        "hint": "How would a teammate know what load_image returns without reading its body?",
+        "rules": [
+          {
+            "kind": "match",
+            "pattern": "^def\\s+load_image\\s*\\(\\s*path\\s*:\\s*[^,]+,\\s*size\\s*:\\s*int\\s*=\\s*224\\s*\\)\\s*->\\s*\\S+",
+            "flags": "im"
+          }
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "id": "same-name",
+        "title": "Keeps load_image(path, size=224)",
+        "description": "The rest of the pipeline still calls it the same way.",
+        "hint": "Does the function the API imports still exist with the same name and default size?",
+        "rules": [
+          {
+            "kind": "match",
+            "pattern": "^def\\s+load_image\\s*\\([^)]*\\bsize\\b[^)]*=\\s*224",
+            "flags": "im"
+          }
+        ]
+      },
+      {
+        "id": "returns",
+        "title": "Returns the image",
+        "description": "Every successful path returns a value.",
+        "hint": "What does the caller receive if the function reaches its end without a return?",
+        "rules": [
+          {
+            "kind": "match",
+            "pattern": "^\\s+return\\s+\\S",
+            "flags": "im"
+          }
+        ]
+      },
+      {
+        "id": "no-print",
+        "title": "Raises instead of printing",
+        "description": "Errors reach the API, not the server log.",
+        "hint": "If the function prints a warning and carries on, what does the API send back to the user?",
+        "rules": [
+          {
+            "kind": "absent",
+            "pattern": "\\bprint\\(",
+            "flags": "im"
+          }
+        ]
+      }
+    ],
+    "sampleAnswer": "from pathlib import Path\n\nfrom PIL import Image, UnidentifiedImageError\n\n\ndef load_image(path: str | Path, size: int = 224) -> Image.Image:\n    \"\"\"Open an upload as an RGB image, resized to size x size.\"\"\"\n    try:\n        with Image.open(path) as img:\n            return img.convert(\"RGB\").resize((size, size))\n    except (UnidentifiedImageError, OSError) as err:\n        raise ValueError(f\"{path} is not an image we can read\") from err\n",
+    "resources": [
+      {
+        "title": "Pillow docs: Image.open and file handling",
+        "url": "https://pillow.readthedocs.io/en/stable/reference/open_files.html"
+      },
+      {
+        "title": "Python docs: The with statement",
+        "url": "https://docs.python.org/3/reference/compound_stmts.html#the-with-statement"
+      }
+    ]
+  },
+  {
+    "id": "ch_git_01",
+    "skillId": "git",
+    "title": "Ship your Dockerfile as a clean pull request",
+    "minutes": 20,
+    "context": "You're on main with a new Dockerfile and a .env file that holds the pod's API key. The commands below would push the key to GitHub, straight onto main, with the message \"stuff\".",
+    "prompt": "Write the git commands, one per line, to:\n1. Start from an up-to-date main.\n2. Do the work on a new branch.\n3. Commit only the Dockerfile (never .env) with a message that says what changed.\n4. Push the branch so you can open a pull request for Priya to review.",
+    "language": "shell",
+    "fileName": "ship-it.sh",
+    "starter": "git add .\ngit commit -m \"stuff\"\ngit push\n",
+    "rubric": [
+      {
+        "id": "branch",
+        "title": "Works on a branch",
+        "description": "A new branch for the change, not main.",
+        "hint": "If you push straight to main, when does Priya get to review your work?",
+        "rules": [
+          {
+            "kind": "match",
+            "pattern": "\\bgit\\s+(?:switch\\s+(?:-c|--create)|checkout\\s+-b|branch)\\s+\\S+",
+            "flags": "im"
+          }
+        ]
+      },
+      {
+        "id": "stage-only",
+        "title": "Stages only what belongs in the PR",
+        "description": "The Dockerfile is added by name.",
+        "hint": "What does `git add .` pick up besides your Dockerfile? What's inside .env?",
+        "rules": [
+          {
+            "kind": "match",
+            "pattern": "\\bgit\\s+add\\s+(?:[^\\n]*\\s)?(?:\\S*/)?Dockerfile\\b",
+            "flags": "im"
+          },
+          {
+            "kind": "absent",
+            "pattern": "\\bgit\\s+add\\s+(?:\\.|-A|--all|-u)(?:\\s|$)",
+            "flags": "im"
+          }
+        ]
+      },
+      {
+        "id": "message",
+        "title": "The message says what changed",
+        "description": "A commit message a teammate understands in six weeks.",
+        "hint": "Six weeks from now, what will \"stuff\" tell Mei about this commit?",
+        "rules": [
+          {
+            "kind": "match",
+            "pattern": "\\bgit\\s+commit\\b[^\\n]*-m\\s+[\"'][^\"'\\n]{12,}[\"']",
+            "flags": "im"
+          },
+          {
+            "kind": "absent",
+            "pattern": "-m\\s+[\"'](?:stuff|wip|fix|update|changes|done)[\"']",
+            "flags": "im"
+          }
+        ]
+      },
+      {
+        "id": "upstream",
+        "title": "Pushes the branch with an upstream",
+        "description": "The first push says where the branch goes.",
+        "hint": "The first time you push a new branch, how does Git know which remote branch it should track?",
+        "rules": [
+          {
+            "kind": "match",
+            "pattern": "\\bgit\\s+push\\s+(?:-u|--set-upstream)\\s+origin\\s+\\S+",
+            "flags": "im"
+          }
+        ]
+      }
+    ],
+    "checks": [
+      {
+        "id": "no-env",
+        "title": "Never stages .env",
+        "description": "Secrets stay on your machine.",
+        "hint": "Which file in your folder must never reach GitHub?",
+        "rules": [
+          {
+            "kind": "absent",
+            "pattern": "\\bgit\\s+add\\b[^\\n]*(?:^|\\s)\\.env\\b",
+            "flags": "im"
+          }
+        ]
+      },
+      {
+        "id": "fresh-main",
+        "title": "Starts from the latest main",
+        "description": "Fetches or pulls before branching.",
+        "hint": "If main moved while you worked, where does your branch start from?",
+        "rules": [
+          {
+            "kind": "match",
+            "pattern": "\\bgit\\s+(?:pull|fetch)\\b",
+            "flags": "im"
+          }
+        ]
+      },
+      {
+        "id": "commit-then-push",
+        "title": "Commits before pushing",
+        "description": "There's something to push.",
+        "hint": "What does git push send if nothing has been committed yet?",
+        "rules": [
+          {
+            "kind": "order",
+            "first": "\\bgit\\s+commit\\b",
+            "then": "\\bgit\\s+push\\b",
+            "flags": "im"
+          }
+        ]
+      }
+    ],
+    "sampleAnswer": "git switch main\ngit pull origin main\ngit switch -c feat/dockerise-api\necho \".env\" >> .gitignore\ngit add Dockerfile .gitignore\ngit commit -m \"Add a Dockerfile for the captioning API\"\ngit push -u origin feat/dockerise-api\n",
+    "resources": [
+      {
+        "title": "Pro Git book: Basic branching and merging",
+        "url": "https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging"
+      },
+      {
+        "title": "GitHub docs: Ignoring files",
+        "url": "https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files"
+      }
+    ]
+  }
+]
