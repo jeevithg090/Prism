@@ -1,34 +1,53 @@
-import "server-only";
-import fixtureRoadmap from "@/data/fixtures/roadmap.aisha.ml-engineer.json";
-import { getStore } from "@/lib/store";
-import { getRoleDemand } from "@/lib/agents/market";
-import { extractProgramme } from "@/lib/agents/syllabus";
-import { getTrends } from "@/lib/agents/trends";
-import { generateRoadmap } from "@/lib/agents/roadmap";
+// POST /api/roadmap/generate {userId, roleId?, runId?} → Roadmap (+ runId for the Activity panel).
+// Events: orchestrator started → roadmap started/progress/done (with real numbers) → orchestrator done.
+import { emit, newRunId } from "@/lib/agents/events";
+import { generateRoadmap, loadRoadmap, roadmapFixture } from "@/lib/agents/roadmap";
 import { loadGraph } from "@/lib/graph/build";
-import { RoadmapGenerateZ, ok, fail } from "@/lib/schemas/brain";
-import type { BridgeMap, Profile, Roadmap } from "@/lib/types";
+import { getProfile, marketFixture, podFor, programmeFixture, trendsFixture } from "@/lib/graph/data";
+import { RoadmapGenerateReqZ } from "@/lib/graph/schemas";
+import { badRequest, fail, internal, ok } from "@/lib/schemas/community";
+import { withReplayInfo } from "@/lib/replay";
 
-export async function POST(req: Request) {
+const pct = (x: number) => `${Math.round(x * 100)}%`;
+
+async function handlePOST(req: Request) {
+  let runId: string | undefined;
   try {
-    const parsed = RoadmapGenerateZ.safeParse(await req.json().catch(() => null));
-    if (!parsed.success) return fail(400, "bad_request", "userId and roleId are required");
-    const { userId, roleId } = parsed.data;
-    const store = getStore();
-    const profile = await store.get<Profile>("profiles", userId);
-    if (!profile) return fail(404, "not_found", "Profile not found");
-    if (process.env.DEMO_MODE === "true" && userId === "aisha" && roleId === "ml-engineer") {
-      const previous = await store.get<Roadmap>("roadmaps", userId);
-      const roadmap = { ...(fixtureRoadmap as Roadmap), version: (previous?.version ?? 0) + 1, generatedAt: new Date().toISOString() };
-      return ok(await store.upsert("roadmaps", userId, roadmap as Roadmap & { id?: string }, userId));
+    let body: unknown;
+    try { body = await req.json(); } catch { return badRequest("Send a JSON body with a userId."); }
+    const parsed = RoadmapGenerateReqZ.safeParse(body);
+    if (!parsed.success) return badRequest(parsed.error);
+    const { userId } = parsed.data;
+    const profile = await getProfile(userId);
+    if (!profile?.dna) return fail(404, "not_found", `We couldn't find a profile for ${userId}.`);
+    const roleId = parsed.data.roleId ?? profile.dna.targetRoles?.[0] ?? "ml-engineer";
+    runId = parsed.data.runId ?? newRunId();
+    const first = profile.name?.split(" ")[0] || userId;
+    emit({ runId, agent: "orchestrator", status: "started", message: `Re-planning ${first}'s roadmap` });
+
+    const map = await loadGraph(userId, roleId);
+    if (!map) {
+      emit({ runId, agent: "orchestrator", status: "error", message: "No Bridge Map yet: finish onboarding first" });
+      return fail(404, "not_found", "No Bridge Map yet. Finish onboarding to build your roadmap.");
     }
-    const [map, programme, roleDemand, trends] = await Promise.all([
-      loadGraph(userId, roleId),
-      extractProgramme({ programmeId: profile.programmeId }),
-      getRoleDemand(roleId), getTrends(),
-    ]);
-    if (!map) return fail(404, "not_found", "No bridge map for this user and role yet");
-    const roadmap = await generateRoadmap({ profile, map: map as BridgeMap, programme, roleDemand, trends });
-    return ok(roadmap);
-  } catch { return fail(500, "internal", "Something went wrong"); }
+    const demo = process.env.DEMO_MODE === "true";
+    const [previous, pod] = await Promise.all([loadRoadmap(userId, roleId), podFor(userId)]);
+    const roadmap = await generateRoadmap({
+      profile, map, pod, previous, runId,
+      programme: programmeFixture(profile.programmeId), roleDemand: marketFixture(roleId), trends: trendsFixture(),
+      polish: !demo, template: demo ? roadmapFixture(userId, roleId) : null,
+    });
+    emit({
+      runId, agent: "orchestrator", status: "done",
+      message: `Roadmap v${roadmap.version} ready · readiness ${pct(roadmap.readinessNow)} → ${pct(roadmap.readinessProjected)}`,
+      data: { readinessNow: roadmap.readinessNow, readinessProjected: roadmap.readinessProjected, version: roadmap.version },
+    });
+    return ok({ ...roadmap, runId });
+  } catch {
+    if (runId) emit({ runId, agent: "orchestrator", status: "error", message: "Re-planning failed: your last roadmap is unchanged" });
+    return internal();
+  }
 }
+
+/** Demo toggle: the envelope says whether its AI / connector values were replayed from a real run (lib/replay.ts). */
+export const POST = withReplayInfo(handlePOST);

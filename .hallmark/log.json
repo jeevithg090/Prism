@@ -1,0 +1,18 @@
+[
+ {
+  "mode": "redesign",
+  "depth": "full",
+  "scope": "app",
+  "shape": "app screen",
+  "theme": "coral",
+  "axes": "light/grotesk-sans/warm",
+  "nav": "kept shell: fixed desk sidebar, sticky top bar",
+  "footer": "none (app)",
+  "imagery": "none",
+  "photos": [],
+  "signature": "readiness ring, coral arc over ghost plan arc",
+  "waived": [],
+  "prompt": "a university learning platform where AI agents turn a students degree into a plan, a team project and proof of skill",
+  "date": "2026-11-07"
+ }
+]

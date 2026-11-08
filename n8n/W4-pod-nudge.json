@@ -1,0 +1,248 @@
+{
+  "name": "Keystone W4 · pod-nudge (daily 18:00)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## W4 · pod-nudge\nEvery day at 18:00 (or POST /webhook/pod-nudge) it checks each pod's progress and, when a pod hasn't merged anything for 3 days, posts one kind nudge in #pods naming the next issue and its reviewer. No direct messages, ever.\n\n**Credentials:** Discord webhook for #pods. Edit **Config** (app URL, user ids).",
+        "height": 300,
+        "width": 460
+      },
+      "id": "94e1de48-b1a9-5d10-81e9-3f7c2a50a751",
+      "name": "Setup notes",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -200,
+        -340
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 18 * * *"
+            }
+          ]
+        }
+      },
+      "id": "3f78e207-638f-5fd7-a6cc-8692324aec12",
+      "name": "Every day 18:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pod-nudge",
+        "authentication": "headerAuth",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "013c099f-f44b-5820-b4ca-700e09b75633",
+      "name": "Webhook: pod-nudge",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        200
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_ME_keystone_secret",
+          "name": "Keystone shared secret (x-keystone-secret)"
+        }
+      },
+      "webhookId": "856d834d-ca2c-53f9-ad63-fc651a8f3f0a"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Edit these once after importing (no secrets here: secrets live in n8n credentials).\nreturn [{ json: {\n  appUrl: 'https://REPLACE-WITH-YOUR-KEYSTONE-URL',   // e.g. https://keystone.vercel.app (no trailing slash)\n  userIds: ['aisha'],\n  roles: ['ml-engineer', 'software-engineer', 'data-analyst'],\n  voiceId: 'JBFqnCBsd6RMkjVDRZzb',                      // ELEVENLABS_VOICE_ID\n} }];"
+      },
+      "id": "e4e5b5a3-dd36-5c1f-bc48-90a907434b41",
+      "name": "Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Config').first().json.appUrl }}/api/pods?userId={{ $('Config').first().json.userIds[0] }}",
+        "options": {}
+      },
+      "id": "7aa0d200-8fb5-5309-926a-1f035f6b0a2e",
+      "name": "GET my pods",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return ($json.data ?? []).map((pod) => ({ json: { pod } }));"
+      },
+      "id": "229e63af-21dd-5014-be1d-9e957fc55c81",
+      "name": "One item per pod",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Config').first().json.appUrl }}/api/projects/progress?podId={{ $json.pod.id }}",
+        "options": {}
+      },
+      "id": "e1f440d6-6942-597d-ae04-2eaf4db1e79c",
+      "name": "GET pod progress",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        960,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const out = [];\nconst pods = $('One item per pod').all().map((i) => i.json.pod);\n$input.all().forEach((item, idx) => {\n  const pod = pods[idx]; const merged = item.json.data?.merged ?? [];\n  const last = merged.map((m) => Date.parse(m.mergedAt)).sort((a, b) => b - a)[0] ?? Date.parse(pod.createdAt);\n  const days = (Date.now() - last) / 86400000;\n  const done = new Set(merged.map((m) => m.issueIndex));\n  const next = (pod.project?.issues ?? []).find((_, i) => !done.has(i));\n  if (days >= 3 && next) out.push({ json: { content: `👋 ${pod.name}: it's been ${Math.floor(days)} days since the last merge. Next up: \"${next.title}\". ${next.reviewerUserId} is ready to review. Small PRs count.` } });\n});\nreturn out;"
+      },
+      "id": "6ca05400-4246-5ca2-9412-3454073d8437",
+      "name": "Find stalled pods",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "content": "={{ $json.content }}",
+        "options": {}
+      },
+      "id": "c5fa2e40-5dd5-5223-9d90-20f971f98cd0",
+      "name": "Nudge in #pods",
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        100
+      ],
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "REPLACE_ME_discord_webhook",
+          "name": "Discord webhook (#pods / #briefings)"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Every day 18:00": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook: pod-nudge": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "GET my pods",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET my pods": {
+      "main": [
+        [
+          {
+            "node": "One item per pod",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "One item per pod": {
+      "main": [
+        [
+          {
+            "node": "GET pod progress",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET pod progress": {
+      "main": [
+        [
+          {
+            "node": "Find stalled pods",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find stalled pods": {
+      "main": [
+        [
+          {
+            "node": "Nudge in #pods",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/London",
+    "saveManualExecutions": true
+  },
+  "pinData": {},
+  "tags": [
+    {
+      "name": "keystone"
+    }
+  ],
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

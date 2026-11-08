@@ -7,12 +7,131 @@
       "name": "Python",
       "category": "language",
       "status": "proven",
-      "demand": 0.86,
+      "demand": 0.62,
       "level": 2,
       "evidenceIds": [
-        "ev_python_github"
+        "ev_aisha_py1"
       ],
       "moduleCodes": []
+    },
+    {
+      "skillId": "git",
+      "name": "Git",
+      "category": "practice",
+      "status": "proven",
+      "demand": 0.3,
+      "level": 2,
+      "evidenceIds": [
+        "ev_aisha_git1"
+      ],
+      "moduleCodes": []
+    },
+    {
+      "skillId": "html-css",
+      "name": "HTML & CSS",
+      "category": "language",
+      "status": "proven",
+      "demand": 0.05,
+      "level": 2,
+      "evidenceIds": [],
+      "moduleCodes": []
+    },
+    {
+      "skillId": "javascript",
+      "name": "JavaScript",
+      "category": "language",
+      "status": "proven",
+      "demand": 0.1,
+      "level": 1,
+      "evidenceIds": [],
+      "moduleCodes": []
+    },
+    {
+      "skillId": "data-structures",
+      "name": "Data structures",
+      "category": "cs-fundamentals",
+      "status": "degree-done",
+      "demand": 0.22,
+      "level": 2,
+      "evidenceIds": [],
+      "moduleCodes": [
+        "COMP1xxx1"
+      ]
+    },
+    {
+      "skillId": "algorithms",
+      "name": "Algorithms",
+      "category": "cs-fundamentals",
+      "status": "degree-done",
+      "demand": 0.2,
+      "level": 2,
+      "evidenceIds": [],
+      "moduleCodes": [
+        "COMP1xxx1"
+      ]
+    },
+    {
+      "skillId": "java",
+      "name": "Java",
+      "category": "language",
+      "status": "degree-done",
+      "demand": 0.08,
+      "level": 2,
+      "evidenceIds": [],
+      "moduleCodes": [
+        "COMP1xxx2"
+      ]
+    },
+    {
+      "skillId": "linux",
+      "name": "Linux",
+      "category": "cloud-devops",
+      "status": "degree-done",
+      "demand": 0.18,
+      "level": 1,
+      "evidenceIds": [],
+      "moduleCodes": [
+        "COMP1xxx3"
+      ]
+    },
+    {
+      "skillId": "statistics",
+      "name": "Statistics",
+      "category": "data",
+      "status": "degree-upcoming",
+      "demand": 0.3,
+      "level": 0,
+      "evidenceIds": [],
+      "moduleCodes": [
+        "COMP1xxx4"
+      ],
+      "upcomingLabel": "Year 1 · Semester 2"
+    },
+    {
+      "skillId": "linear-algebra",
+      "name": "Linear algebra",
+      "category": "data",
+      "status": "degree-upcoming",
+      "demand": 0.2,
+      "level": 0,
+      "evidenceIds": [],
+      "moduleCodes": [
+        "COMP1xxx4"
+      ],
+      "upcomingLabel": "Year 1 · Semester 2"
+    },
+    {
+      "skillId": "databases",
+      "name": "Databases",
+      "category": "data",
+      "status": "degree-upcoming",
+      "demand": 0.25,
+      "level": 0,
+      "evidenceIds": [],
+      "moduleCodes": [
+        "COMP2xxx1"
+      ],
+      "upcomingLabel": "Year 2 · Semester 1"
     },
     {
       "skillId": "machine-learning",
@@ -23,32 +142,61 @@
       "level": 0,
       "evidenceIds": [],
       "moduleCodes": [
-        "COMP1xxx4"
+        "COMP2xxx2"
       ],
-      "upcomingLabel": "Year 1 · Semester 2"
+      "upcomingLabel": "Year 2 · Semester 2"
     },
     {
-      "skillId": "sql",
-      "name": "SQL",
-      "category": "data",
-      "status": "gap",
-      "demand": 0.52,
+      "skillId": "deep-learning",
+      "name": "Deep learning",
+      "category": "ml-ai",
+      "status": "degree-upcoming",
+      "demand": 0.3,
       "level": 0,
       "evidenceIds": [],
-      "moduleCodes": [],
-      "trend": "stable"
+      "moduleCodes": [
+        "COMP3xxx1"
+      ],
+      "upcomingLabel": "Year 3 · Semester 1"
     },
     {
-      "skillId": "git",
-      "name": "Git",
+      "skillId": "testing",
+      "name": "Testing",
       "category": "practice",
-      "status": "proven",
-      "demand": 0.57,
-      "level": 2,
-      "evidenceIds": [
-        "ev_git_github"
+      "status": "degree-upcoming",
+      "demand": 0.15,
+      "level": 0,
+      "evidenceIds": [],
+      "moduleCodes": [
+        "COMP2xxx3"
       ],
-      "moduleCodes": []
+      "upcomingLabel": "Year 2 · Semester 1"
+    },
+    {
+      "skillId": "system-design",
+      "name": "System design",
+      "category": "cs-fundamentals",
+      "status": "degree-upcoming",
+      "demand": 0.12,
+      "level": 0,
+      "evidenceIds": [],
+      "moduleCodes": [
+        "COMP3xxx2"
+      ],
+      "upcomingLabel": "Year 3 · Semester 2"
+    },
+    {
+      "skillId": "security-basics",
+      "name": "Security basics",
+      "category": "cs-fundamentals",
+      "status": "degree-upcoming",
+      "demand": 0.06,
+      "level": 0,
+      "evidenceIds": [],
+      "moduleCodes": [
+        "COMP2xxx4"
+      ],
+      "upcomingLabel": "Year 2 · Semester 2"
     },
     {
       "skillId": "docker",
@@ -59,27 +207,12 @@
       "level": 0,
       "evidenceIds": [],
       "moduleCodes": [],
-      "trend": "stable"
+      "trend": "rising"
     },
     {
-      "skillId": "pandas",
-      "name": "pandas",
-      "category": "data",
-      "status": "proven",
-      "demand": 0.4,
-      "level": 2,
-      "evidenceIds": [
-        "ev_pandas_github"
-      ],
-      "moduleCodes": [
-        "COMP1xx10"
-      ],
-      "trend": "stable"
-    },
-    {
-      "skillId": "aws",
-      "name": "AWS",
-      "category": "cloud-devops",
+      "skillId": "pytorch",
+      "name": "PyTorch",
+      "category": "ml-ai",
       "status": "gap",
       "demand": 0.38,
       "level": 0,
@@ -88,38 +221,33 @@
       "trend": "rising"
     },
     {
-      "skillId": "pytorch",
-      "name": "PyTorch",
-      "category": "ml-ai",
+      "skillId": "sql",
+      "name": "SQL",
+      "category": "data",
       "status": "gap",
-      "demand": 0.36,
+      "demand": 0.35,
       "level": 0,
       "evidenceIds": [],
       "moduleCodes": [],
-      "trend": "rising"
-    },
-    {
-      "skillId": "numpy",
-      "name": "NumPy",
-      "category": "data",
-      "status": "degree-upcoming",
-      "demand": 0.34,
-      "level": 1,
-      "evidenceIds": [
-        "ev_numpy_github"
-      ],
-      "moduleCodes": [
-        "COMP1xx10"
-      ],
-      "upcomingLabel": "Year 1 · Semester 2",
       "trend": "stable"
     },
     {
-      "skillId": "deep-learning",
-      "name": "Deep learning",
-      "category": "ml-ai",
+      "skillId": "aws",
+      "name": "AWS",
+      "category": "cloud-devops",
       "status": "gap",
       "demand": 0.33,
+      "level": 0,
+      "evidenceIds": [],
+      "moduleCodes": [],
+      "trend": "stable"
+    },
+    {
+      "skillId": "mlops",
+      "name": "MLOps",
+      "category": "ml-ai",
+      "status": "gap",
+      "demand": 0.28,
       "level": 0,
       "evidenceIds": [],
       "moduleCodes": [],
@@ -130,187 +258,33 @@
       "name": "LLM apps",
       "category": "ml-ai",
       "status": "gap",
-      "demand": 0.31,
+      "demand": 0.26,
       "level": 0,
       "evidenceIds": [],
       "moduleCodes": [],
       "trend": "rising"
-    },
-    {
-      "skillId": "mlops",
-      "name": "MLOps",
-      "category": "cloud-devops",
-      "status": "gap",
-      "demand": 0.3,
-      "level": 0,
-      "evidenceIds": [],
-      "moduleCodes": [],
-      "trend": "rising"
-    },
-    {
-      "skillId": "scikit-learn",
-      "name": "scikit-learn",
-      "category": "ml-ai",
-      "status": "gap",
-      "demand": 0.3,
-      "level": 0,
-      "evidenceIds": [],
-      "moduleCodes": [],
-      "trend": "stable"
-    },
-    {
-      "skillId": "communication",
-      "name": "Communication",
-      "category": "professional",
-      "status": "degree-upcoming",
-      "demand": 0.3,
-      "level": 0,
-      "evidenceIds": [],
-      "moduleCodes": [
-        "COMP1xxx8"
-      ],
-      "upcomingLabel": "Year 1 · Semester 2"
-    },
-    {
-      "skillId": "databases",
-      "name": "Databases",
-      "category": "data",
-      "status": "degree-upcoming",
-      "demand": 0.3,
-      "level": 0,
-      "evidenceIds": [],
-      "moduleCodes": [
-        "COMP1xxx5"
-      ],
-      "upcomingLabel": "Year 1 · Semester 2"
-    },
-    {
-      "skillId": "statistics",
-      "name": "Statistics",
-      "category": "data",
-      "status": "degree-upcoming",
-      "demand": 0.28,
-      "level": 0,
-      "evidenceIds": [],
-      "moduleCodes": [
-        "COMP1xxx3"
-      ],
-      "upcomingLabel": "Year 1 · Semester 2"
     },
     {
       "skillId": "kubernetes",
       "name": "Kubernetes",
       "category": "cloud-devops",
       "status": "gap",
-      "demand": 0.27,
+      "demand": 0.18,
       "level": 0,
       "evidenceIds": [],
       "moduleCodes": [],
       "trend": "stable"
     },
     {
-      "skillId": "cloud-computing",
-      "name": "Cloud computing",
-      "category": "cloud-devops",
-      "status": "degree-done",
-      "demand": 0.26,
-      "level": 1,
-      "evidenceIds": [],
-      "moduleCodes": [
-        "COMP1xxx9"
-      ]
-    },
-    {
-      "skillId": "ci-cd",
-      "name": "CI/CD",
-      "category": "cloud-devops",
+      "skillId": "vector-databases",
+      "name": "Vector databases",
+      "category": "ml-ai",
       "status": "gap",
-      "demand": 0.24,
+      "demand": 0.12,
       "level": 0,
       "evidenceIds": [],
-      "moduleCodes": []
-    },
-    {
-      "skillId": "linear-algebra",
-      "name": "Linear algebra",
-      "category": "cs-fundamentals",
-      "status": "degree-upcoming",
-      "demand": 0.24,
-      "level": 0,
-      "evidenceIds": [],
-      "moduleCodes": [
-        "COMP1xxx2"
-      ],
-      "upcomingLabel": "Year 1 · Semester 1"
-    },
-    {
-      "skillId": "algorithms",
-      "name": "Algorithms",
-      "category": "cs-fundamentals",
-      "status": "degree-upcoming",
-      "demand": 0.22,
-      "level": 1,
-      "evidenceIds": [
-        "ev_algorithms_leetcode"
-      ],
-      "moduleCodes": [
-        "COMP1xxx6"
-      ],
-      "upcomingLabel": "Year 1 · Semester 2"
-    },
-    {
-      "skillId": "linux",
-      "name": "Linux",
-      "category": "cloud-devops",
-      "status": "degree-done",
-      "demand": 0.22,
-      "level": 1,
-      "evidenceIds": [],
-      "moduleCodes": [
-        "COMP1xxx9"
-      ]
-    },
-    {
-      "skillId": "teamwork",
-      "name": "Teamwork",
-      "category": "professional",
-      "status": "degree-upcoming",
-      "demand": 0.21,
-      "level": 0,
-      "evidenceIds": [],
-      "moduleCodes": [
-        "COMP1xxx8"
-      ],
-      "upcomingLabel": "Year 1 · Semester 2"
-    },
-    {
-      "skillId": "data-structures",
-      "name": "Data structures",
-      "category": "cs-fundamentals",
-      "status": "degree-done",
-      "demand": 0.2,
-      "level": 1,
-      "evidenceIds": [
-        "ev_data-structures_leetcode"
-      ],
-      "moduleCodes": [
-        "COMP1xxx1"
-      ]
-    },
-    {
-      "skillId": "testing",
-      "name": "Testing",
-      "category": "practice",
-      "status": "degree-upcoming",
-      "demand": 0.19,
-      "level": 1,
-      "evidenceIds": [
-        "ev_testing_github"
-      ],
-      "moduleCodes": [
-        "COMP1xxx8"
-      ],
-      "upcomingLabel": "Year 1 · Semester 2"
+      "moduleCodes": [],
+      "trend": "rising"
     },
     {
       "skillId": "llm-evaluation",
@@ -324,215 +298,100 @@
       "trend": "rising"
     },
     {
-      "skillId": "vector-databases",
-      "name": "Vector databases",
+      "skillId": "pandas",
+      "name": "pandas",
       "category": "data",
-      "status": "gap",
-      "demand": 0.08,
-      "level": 0,
-      "evidenceIds": [],
-      "moduleCodes": [],
-      "trend": "rising"
-    },
-    {
-      "skillId": "rest-apis",
-      "name": "REST APIs",
-      "category": "framework",
       "status": "degree-upcoming",
-      "demand": 0.16,
+      "demand": 0.34,
       "level": 0,
       "evidenceIds": [],
       "moduleCodes": [
-        "COMP1xx11"
+        "COMP2xxx2"
       ],
-      "upcomingLabel": "Year 1 · Semester 2"
+      "upcomingLabel": "Year 2 · Semester 2"
+    },
+    {
+      "skillId": "numpy",
+      "name": "NumPy",
+      "category": "data",
+      "status": "degree-upcoming",
+      "demand": 0.3,
+      "level": 0,
+      "evidenceIds": [],
+      "moduleCodes": [
+        "COMP2xxx2"
+      ],
+      "upcomingLabel": "Year 2 · Semester 2"
+    },
+    {
+      "skillId": "scikit-learn",
+      "name": "scikit-learn",
+      "category": "ml-ai",
+      "status": "degree-upcoming",
+      "demand": 0.27,
+      "level": 0,
+      "evidenceIds": [],
+      "moduleCodes": [
+        "COMP2xxx2"
+      ],
+      "upcomingLabel": "Year 2 · Semester 2"
     },
     {
       "skillId": "tensorflow",
       "name": "TensorFlow",
       "category": "ml-ai",
-      "status": "degree-upcoming",
+      "status": "gap",
+      "demand": 0.16,
+      "level": 0,
+      "evidenceIds": [],
+      "moduleCodes": [],
+      "trend": "declining"
+    },
+    {
+      "skillId": "ci-cd",
+      "name": "CI/CD",
+      "category": "cloud-devops",
+      "status": "gap",
+      "demand": 0.2,
+      "level": 0,
+      "evidenceIds": [],
+      "moduleCodes": []
+    },
+    {
+      "skillId": "communication",
+      "name": "Communication",
+      "category": "professional",
+      "status": "gap",
       "demand": 0.15,
       "level": 0,
       "evidenceIds": [],
-      "moduleCodes": [
-        "COMP1xxx4"
-      ],
-      "upcomingLabel": "Year 1 · Semester 2"
+      "moduleCodes": []
     },
     {
-      "skillId": "data-visualisation",
-      "name": "Data visualisation",
-      "category": "data",
-      "status": "degree-upcoming",
-      "demand": 0.14,
-      "level": 0,
-      "evidenceIds": [],
-      "moduleCodes": [
-        "COMP1xx10"
-      ],
-      "upcomingLabel": "Year 1 · Semester 2"
-    },
-    {
-      "skillId": "system-design",
-      "name": "System design",
-      "category": "cs-fundamentals",
-      "status": "degree-upcoming",
+      "skillId": "teamwork",
+      "name": "Teamwork",
+      "category": "professional",
+      "status": "gap",
       "demand": 0.12,
       "level": 0,
       "evidenceIds": [],
-      "moduleCodes": [
-        "COMP1xx11"
-      ],
-      "upcomingLabel": "Year 1 · Semester 2"
-    },
-    {
-      "skillId": "code-review",
-      "name": "Code review",
-      "category": "practice",
-      "status": "degree-upcoming",
-      "demand": 0.1,
-      "level": 0,
-      "evidenceIds": [],
-      "moduleCodes": [
-        "COMP1xxx8"
-      ],
-      "upcomingLabel": "Year 1 · Semester 2"
-    },
-    {
-      "skillId": "agile",
-      "name": "Agile",
-      "category": "professional",
-      "status": "degree-upcoming",
-      "demand": 0.08,
-      "level": 0,
-      "evidenceIds": [],
-      "moduleCodes": [
-        "COMP1xxx8"
-      ],
-      "upcomingLabel": "Year 1 · Semester 2"
-    },
-    {
-      "skillId": "security-basics",
-      "name": "Security basics",
-      "category": "cs-fundamentals",
-      "status": "degree-done",
-      "demand": 0.06,
-      "level": 1,
-      "evidenceIds": [],
-      "moduleCodes": [
-        "COMP1xxx9"
-      ]
-    },
-    {
-      "skillId": "postgresql",
-      "name": "PostgreSQL",
-      "category": "data",
-      "status": "gap",
-      "demand": 0.29,
-      "level": 0,
-      "evidenceIds": [],
-      "moduleCodes": []
-    },
-    {
-      "skillId": "html-css",
-      "name": "HTML & CSS",
-      "category": "language",
-      "status": "proven",
-      "demand": 0,
-      "level": 2,
-      "evidenceIds": [
-        "ev_html-css_github"
-      ],
-      "moduleCodes": []
-    },
-    {
-      "skillId": "java",
-      "name": "Java",
-      "category": "language",
-      "status": "degree-upcoming",
-      "demand": 0,
-      "level": 1,
-      "evidenceIds": [
-        "ev_java_github"
-      ],
-      "moduleCodes": [
-        "COMP1xxx7"
-      ],
-      "upcomingLabel": "Year 1 · Semester 1"
-    },
-    {
-      "skillId": "javascript",
-      "name": "JavaScript",
-      "category": "language",
-      "status": "gap",
-      "demand": 0,
-      "level": 1,
-      "evidenceIds": [
-        "ev_javascript_github"
-      ],
       "moduleCodes": []
     }
   ],
   "edges": [
     {
       "from": "python",
+      "to": "pytorch",
+      "kind": "prereq"
+    },
+    {
+      "from": "python",
       "to": "pandas",
       "kind": "prereq"
     },
     {
       "from": "numpy",
       "to": "pandas",
-      "kind": "prereq"
-    },
-    {
-      "from": "python",
-      "to": "numpy",
-      "kind": "prereq"
-    },
-    {
-      "from": "numpy",
-      "to": "scikit-learn",
-      "kind": "prereq"
-    },
-    {
-      "from": "pandas",
-      "to": "scikit-learn",
-      "kind": "prereq"
-    },
-    {
-      "from": "statistics",
-      "to": "machine-learning",
-      "kind": "prereq"
-    },
-    {
-      "from": "linear-algebra",
-      "to": "machine-learning",
-      "kind": "prereq"
-    },
-    {
-      "from": "machine-learning",
-      "to": "deep-learning",
-      "kind": "prereq"
-    },
-    {
-      "from": "python",
-      "to": "pytorch",
-      "kind": "prereq"
-    },
-    {
-      "from": "deep-learning",
-      "to": "pytorch",
-      "kind": "prereq"
-    },
-    {
-      "from": "deep-learning",
-      "to": "tensorflow",
-      "kind": "prereq"
-    },
-    {
-      "from": "docker",
-      "to": "kubernetes",
       "kind": "prereq"
     },
     {
@@ -541,13 +400,8 @@
       "kind": "prereq"
     },
     {
-      "from": "git",
-      "to": "ci-cd",
-      "kind": "prereq"
-    },
-    {
       "from": "docker",
-      "to": "ci-cd",
+      "to": "kubernetes",
       "kind": "prereq"
     },
     {
@@ -557,12 +411,12 @@
     },
     {
       "from": "machine-learning",
-      "to": "mlops",
+      "to": "deep-learning",
       "kind": "prereq"
     },
     {
-      "from": "cloud-computing",
-      "to": "aws",
+      "from": "deep-learning",
+      "to": "pytorch",
       "kind": "prereq"
     },
     {
@@ -571,42 +425,12 @@
       "kind": "prereq"
     },
     {
-      "from": "llm-apps",
-      "to": "llm-evaluation",
-      "kind": "prereq"
-    },
-    {
-      "from": "llm-apps",
-      "to": "vector-databases",
-      "kind": "prereq"
-    },
-    {
-      "from": "databases",
-      "to": "vector-databases",
-      "kind": "prereq"
-    },
-    {
       "from": "databases",
       "to": "sql",
-      "kind": "prereq"
-    },
-    {
-      "from": "sql",
-      "to": "postgresql",
-      "kind": "prereq"
-    },
-    {
-      "from": "data-structures",
-      "to": "algorithms",
-      "kind": "prereq"
-    },
-    {
-      "from": "python",
-      "to": "rest-apis",
       "kind": "prereq"
     }
   ],
   "readinessNow": 0.38,
   "readinessProjected": 0.84,
-  "generatedAt": "2026-11-07T14:30:00.000Z"
+  "generatedAt": "2026-11-07T14:00:00.000Z"
 }

@@ -1,14 +1,21 @@
+// GET /api/trends?skills=docker,python&demo=1&runId= → TrendSeries[] (contract §6).
+// History from HN "Who is hiring?" posts; the projection and label are computed by the forecaster's OLS fit.
 import { getTrends } from "@/lib/agents/trends";
-import type { ApiResult, TrendSeries } from "@/lib/types";
+import { badRequest, internal, ok } from "@/lib/schemas/community";
+import { TrendsQueryZ } from "@/lib/schemas/data";
+import { withReplayInfo } from "@/lib/replay";
 
-export async function GET(req: Request) {
-  const param = new URL(req.url).searchParams.get("skills");
-  const skills = param ? param.split(",").map((s) => s.trim()).filter(Boolean) : undefined;
+async function handleGET(req: Request) {
   try {
-    const body: ApiResult<TrendSeries[]> = { ok: true, data: await getTrends(skills) };
-    return Response.json(body);
+    const query = TrendsQueryZ.safeParse(Object.fromEntries(new URL(req.url).searchParams));
+    if (!query.success) return badRequest(query.error);
+    const { skills, runId } = query.data;
+    const demo = process.env.DEMO_MODE === "true" || query.data.demo;
+    return ok(await getTrends(skills, { runId, demo }));
   } catch {
-    const body: ApiResult<never> = { ok: false, error: { code: "internal", message: "Couldn't load trends." } };
-    return Response.json(body, { status: 500 });
+    return internal();
   }
 }
+
+/** Demo toggle: the envelope says whether its AI / connector values were replayed from a real run (lib/replay.ts). */
+export const GET = withReplayInfo(handleGET);

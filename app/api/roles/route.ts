@@ -1,7 +1,11 @@
+// GET /api/roles → Role[] (contract §6): the role catalogue the Market Agent covers.
 import { getRoles } from "@/lib/agents/market";
-import type { ApiResult, Role } from "@/lib/types";
+import { internal, ok } from "@/lib/schemas/community";
 
 export async function GET() {
-  const body: ApiResult<Role[]> = { ok: true, data: getRoles() };
-  return Response.json(body);
+  try {
+    return ok(getRoles());
+  } catch {
+    return internal();
+  }
 }

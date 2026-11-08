@@ -1,79 +1,140 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { emit } from "@/lib/agents/events";
-import { clearMemCache } from "@/lib/cache";
-import { fcCrawl, fcScrapeJSON, fcScrapeMarkdown, fcSearch } from "@/lib/connectors/firecrawl";
-import { llmJSON } from "@/lib/llm";
-import { dedupeUnits, extractProgramme, normaliseSemester, yearFromCode } from "./syllabus";
+const { emit, fcSearch } = vi.hoisted(() => ({ emit: vi.fn(), fcSearch: vi.fn() }));
+vi.mock("@/lib/agents/events", () => ({ emit, newRunId: () => "run_test" }));
+vi.mock("@/lib/connectors/firecrawl", () => ({ fcSearch }));
 
-vi.mock("@/lib/connectors/firecrawl", () => ({
-  fcCrawl: vi.fn(), fcScrapeJSON: vi.fn(), fcScrapeMarkdown: vi.fn(), fcSearch: vi.fn(),
-}));
-vi.mock("@/lib/llm", () => ({ llmJSON: vi.fn() }));
-vi.mock("@/lib/agents/events", () => ({ emit: vi.fn() }));
-vi.mock("node:fs/promises", async (original) => ({
-  default: { ...(await original<{ default: object }>()).default, writeFile: vi.fn(), mkdir: vi.fn() },
-}));
+import { dedupeUnits, extractProgramme, getProgramme, normaliseSemester, parseUnitsFromText, yearFromCode } from "./syllabus";
+import { ProgrammeZ } from "@/lib/schemas/data";
 
-const unit = { code: "COMP23111", title: "Database Systems", topics: ["SQL"], semester: "Semester 1" };
-const pages = (n: number) => Array.from({ length: n }, (_, i) => ({ url: `https://u/${i}`, markdown: "" }));
+const COURSE_TEXT = `
+COMP23111 Database Systems (20 credits)
+Semester 1
+Topics
+- The relational model and SQL queries
+- Transactions and concurrency
+Learning outcomes
+- Design a normalised database schema
 
+COMP24112 Machine Learning
+Semester 2
+- Supervised learning with scikit-learn
+- Build models in Python with pandas
+`;
+
+let prev: string | undefined;
 beforeEach(() => {
   vi.clearAllMocks();
-  clearMemCache();
-  vi.stubEnv("DEMO_MODE", "false");
-  vi.stubEnv("OPENAI_API_KEY", "");
-  vi.mocked(fcScrapeMarkdown).mockResolvedValue("# BSc Computer Science");
-  vi.mocked(fcScrapeJSON).mockResolvedValue({ units: [unit] });
-  vi.mocked(fcSearch).mockResolvedValue(Array.from({ length: 10 }, (_, i) => ({ url: `https://s/${i}`, title: "t" })));
+  prev = process.env.FIRECRAWL_API_KEY;
+  delete process.env.FIRECRAWL_API_KEY;
+  delete process.env.OPENAI_API_KEY;
 });
-afterEach(() => vi.unstubAllEnvs());
+afterEach(() => {
+  vi.restoreAllMocks();
+  if (prev === undefined) delete process.env.FIRECRAWL_API_KEY; else process.env.FIRECRAWL_API_KEY = prev;
+});
 
 describe("normalisation", () => {
-  it("maps semester strings and derives the year from the code", () => {
+  it("semester strings and years from codes", () => {
     expect(normaliseSemester("Semester 2")).toBe("2");
     expect(normaliseSemester("Full year")).toBe("full-year");
+    expect(normaliseSemester("Semesters 1 and 2")).toBe("full-year");
+    expect(normaliseSemester(undefined)).toBe("1");
     expect(yearFromCode("COMP23111")).toBe(2);
+    expect(yearFromCode("COMP1xxx4")).toBe(1);
+    expect(yearFromCode("nonsense")).toBeUndefined();
   });
 
-  it("falls back to the code's last digit for the semester", () => {
-    expect(normaliseSemester(undefined, "COMP16412")).toBe("2");
-    expect(normaliseSemester(undefined, "COMP10120")).toBe("full-year");
+  it("dedupes units by code, then title", () => {
+    expect(dedupeUnits([{ code: "COMP23111", title: "Databases" }, { code: "COMP23111", title: "Database Systems" }, { title: "Ethics" }, { title: "ethics" }])).toHaveLength(2);
   });
 
-  it("dedupes units by code", () => {
-    expect(dedupeUnits([unit, { ...unit, title: "Same code" }])).toHaveLength(1);
+  it("parses units, topics and outcomes from pasted text", () => {
+    const units = parseUnitsFromText(COURSE_TEXT);
+    expect(units.map((u) => u.code)).toEqual(["COMP23111", "COMP24112"]);
+    expect(units[0]).toMatchObject({ title: "Database Systems", credits: 20, semester: "Semester 1" });
+    expect(units[0].topics).toEqual(["The relational model and SQL queries", "Transactions and concurrency"]);
+    expect(units[0].learning_outcomes).toEqual(["Design a normalised database schema"]);
   });
 });
 
 describe("extractProgramme", () => {
-  it("falls back to search and caps it at 8 results when the crawl finds one page", async () => {
-    vi.mocked(fcCrawl).mockResolvedValue(pages(1));
-    await extractProgramme({ url: "https://prog", programmeId: "t-fallback" });
-    expect(fcSearch).toHaveBeenCalled();
-    expect(fcScrapeJSON).toHaveBeenCalledTimes(9); // the programme page plus 8 results
+  it("text mode never calls Firecrawl and maps skills per module", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    const p = await extractProgramme({ text: COURSE_TEXT, programmeId: "uom-bsc-cs", runId: "run_s" });
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(fcSearch).not.toHaveBeenCalled();
+    expect(ProgrammeZ.parse(p)).toBeTruthy();
+    expect(p.source).toBe("manual");
+    expect(p.modules.map((m) => [m.code, m.year, m.semester])).toEqual([["COMP23111", 2, "1"], ["COMP24112", 2, "2"]]);
+    expect(p.modules[0].skills.map((s) => s.skillId)).toEqual(expect.arrayContaining(["sql", "databases"]));
+    expect(p.modules[1].skills.find((s) => s.skillId === "python")?.level).toBe(3);
+    expect(p.modules[1].industryNote).toBeTruthy();
+    const steps = emit.mock.calls.map(([e]) => `${e.status}:${String(e.message).split(":")[1]?.trim().split(" ")[0]}`);
+    expect(steps).toEqual(["started:reading", "progress:extracted", "progress:mapped", "done:2"]);
   });
 
-  it("never crawls in text mode", async () => {
-    vi.mocked(llmJSON).mockResolvedValue({ units: [unit] });
-    const p = await extractProgramme({ text: "x".repeat(60), programmeId: "t-text" });
-    expect(fcCrawl).not.toHaveBeenCalled();
-    expect(p.modules[0].code).toBe("COMP23111");
+  it("without a Firecrawl key, a URL returns the saved syllabus", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    const p = await extractProgramme({ url: "https://www.manchester.ac.uk/cs", programmeId: "uom-bsc-cs" });
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(p.source).toBe("cache");
+    expect(p.modules.length).toBeGreaterThanOrEqual(12);
   });
 
-  it("emits events in pipeline order", async () => {
-    vi.mocked(fcCrawl).mockResolvedValue(pages(3));
-    await extractProgramme({ url: "https://prog", programmeId: "t-events", runId: "r" });
-    const events = vi.mocked(emit).mock.calls.map(([e]) => e).filter((e) => e.agent === "syllabus");
-    expect(events.map((e) => e.status)).toEqual(["started", "progress", "progress", "progress", "done"]);
-    expect(events[1].message).toContain("crawled 3 pages");
-    expect(events[2].message).toContain("extracted 1 course units");
-    expect(events[3].message).toContain("mapped");
+  it("with a key, scrapes the page and searches for more unit pages when it finds fewer than 3 units", async () => {
+    process.env.FIRECRAWL_API_KEY = "fc";
+    fcSearch.mockResolvedValue([{ url: "https://uni.ac.uk/unit-1", title: "u1" }, { url: "https://uni.ac.uk/unit-2", title: "u2" }]);
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (_u, init) => {
+      const { url } = JSON.parse(String(init?.body));
+      const md = url.endsWith("unit-1") ? "COMP11120 Mathematical Techniques\n- Linear algebra and statistics" : url.endsWith("unit-2") ? "COMP16321 Programming 1\n- Write Python programs" : "# BSc Computer Science\nA great course.";
+      return Response.json({ success: true, data: { markdown: md } });
+    });
+    const p = await extractProgramme({ url: "https://uni.ac.uk/bsc-cs", programmeId: "test-prog" });
+    expect(fcSearch).toHaveBeenCalledTimes(1);
+    expect(fetchSpy).toHaveBeenCalledTimes(3);
+    expect(p.source).toBe("firecrawl");
+    expect(p.modules.map((m) => m.code)).toEqual(["COMP11120", "COMP16321"]);
+    expect(p.modules[0].skills.map((s) => s.skillId)).toEqual(expect.arrayContaining(["linear-algebra", "statistics"]));
   });
 
-  it("uses the stored data in demo mode without touching Firecrawl", async () => {
-    vi.stubEnv("DEMO_MODE", "true");
-    const p = await extractProgramme({ url: "https://prog", programmeId: "uom-bsc-cs" });
+  it("in DEMO_MODE returns the fixture without any network", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    const p = await extractProgramme({ url: "https://example.com", programmeId: "uom-bsc-cs", demo: true });
+    expect(fetchSpy).not.toHaveBeenCalled();
     expect(p.id).toBe("uom-bsc-cs");
-    expect(fcCrawl).not.toHaveBeenCalled();
+  });
+});
+
+describe("the UoM fixture", () => {
+  const p = getProgramme("uom-bsc-cs")!;
+  const all = p.modules.flatMap((m) => m.skills.map((s) => s.skillId));
+
+  it("has ≥ 12 modules across years 1–3 and parses", () => {
+    expect(ProgrammeZ.parse(p)).toBeTruthy();
+    expect(p.modules.length).toBeGreaterThanOrEqual(12);
+    expect(new Set(p.modules.map((m) => m.year))).toEqual(new Set([1, 2, 3]));
+    expect(p.modules.every((m) => m.industryNote && m.learningOutcomes.length)).toBe(true);
+  });
+
+  it("puts statistics + linear algebra in Y1S2, databases in Y2, ML in Y2S2", () => {
+    const where = (id: string) => p.modules.filter((m) => m.skills.some((s) => s.skillId === id)).map((m) => `${m.year}:${m.semester}`);
+    expect(where("statistics")).toEqual(["1:2"]);
+    expect(where("linear-algebra")).toEqual(["1:2"]);
+    expect(where("databases")).toEqual(["2:1"]);
+    expect(where("machine-learning")).toContain("2:2");
+  });
+
+  it("covers none of the demo gaps (Docker, AWS, MLOps, LLM apps…)", () => {
+    for (const gap of ["docker", "aws", "mlops", "llm-apps", "llm-evaluation", "kubernetes", "ci-cd", "vector-databases", "pytorch", "sql"]) expect(all).not.toContain(gap);
+  });
+});
+
+describe("parseUnitsFromText: markdown table rows", () => {
+  it("takes the title from the name cell and credits/compulsory from their own cells", async () => {
+    const { parseUnitsFromText } = await import("./syllabus");
+    const units = parseUnitsFromText("| Unit code | Unit title | Unit lead | Credits | Status |\n| COMP10120 | First Year Team Project |  | 20 | Mandatory |\n| COMP13212 | Data Science | Dr X | 10 | Optional |");
+    expect(units.map((u) => u.title)).toEqual(["First Year Team Project", "Data Science"]);
+    expect(units[0]).toMatchObject({ code: "COMP10120", credits: 20, compulsory: true });
+    expect(units[1]).toMatchObject({ credits: 10, compulsory: false });
   });
 });

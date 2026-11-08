@@ -1,26 +1,21 @@
-import "server-only";
-import { getStore } from "@/lib/store";
-import { TaskPatchZ, ok, fail } from "@/lib/schemas/brain";
-import type { Roadmap } from "@/lib/types";
-import { nanoid } from "nanoid";
+// PATCH /api/roadmap/[userId]/tasks/[taskId] {done} → RoadmapTask. Finishing a week records a momentum milestone.
+import { setTaskDone, TaskNotFoundError } from "@/lib/agents/roadmap";
+import { TaskParamZ, TaskPatchReqZ } from "@/lib/graph/schemas";
+import { badRequest, fail, internal, ok } from "@/lib/schemas/community";
 
-export async function PATCH(req: Request, { params }: { params: Promise<{ userId: string; taskId: string }> }) {
+export async function PATCH(req: Request, ctx: { params: Promise<{ userId: string; taskId: string }> }) {
   try {
-    const { userId, taskId } = await params;
-    const parsed = TaskPatchZ.safeParse(await req.json().catch(() => null));
-    if (!parsed.success) return fail(400, "bad_request", "done must be a boolean");
-    const store = getStore();
-    const roadmap = await store.get<Roadmap>("roadmaps", userId);
-    const week = roadmap?.weeks.find((w) => w.tasks.some((t) => t.id === taskId));
-    const task = week?.tasks.find((t) => t.id === taskId);
-    if (!roadmap || !week || !task) return fail(404, "not_found", "Task not found");
-    const wasWeekComplete = week.tasks.every((item) => item.done);
-    task.done = parsed.data.done;
-    await store.upsert("roadmaps", userId, roadmap as Roadmap & { id?: string }, userId);
-    if (!wasWeekComplete && week.tasks.every((item) => item.done)) {
-      const id = nanoid();
-      await store.upsert("momentum_events", id, { id, userId, kind: "roadmap-milestone", ts: new Date().toISOString() }, userId);
-    }
-    return ok(task);
-  } catch { return fail(500, "internal", "Something went wrong"); }
+    const params = TaskParamZ.safeParse(await ctx.params);
+    if (!params.success) return badRequest(params.error);
+    let body: unknown;
+    try { body = await req.json(); } catch { return badRequest("Send a JSON body like {\"done\": true}."); }
+    const parsed = TaskPatchReqZ.safeParse(body);
+    if (!parsed.success) return badRequest(parsed.error);
+    const result = await setTaskDone(params.data.userId, params.data.taskId, parsed.data.done);
+    if (!result) return fail(404, "not_found", "No roadmap yet. Build one from your Bridge Map.");
+    return ok(result.task);
+  } catch (e) {
+    if (e instanceof TaskNotFoundError) return fail(404, "not_found", "That task isn't in your roadmap any more. Refresh to see the latest plan.");
+    return internal();
+  }
 }

@@ -1,0 +1,27 @@
+# Render Blueprint: Keystone backend (Next.js server: API routes + pages) on Render's free web service.
+# One long-running instance keeps the in-memory demo store consistent across requests.
+# Render → New → Blueprint → pick this repo. Free instances sleep after ~15 min idle; the first request wakes it (~1 min).
+services:
+  - type: web
+    name: keystone-backend
+    runtime: node
+    plan: free
+    region: frankfurt
+    branch: p5/integration
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: DEMO_MODE
+        value: "true"
+      - key: NEXT_TELEMETRY_DISABLED
+        value: "1"
+      # Add real keys in the Render dashboard (never in this file): OPENAI_API_KEY, LLM_MODEL,
+      # GITHUB_TOKEN, GITHUB_ORG, GITHUB_WEBHOOK_SECRET, N8N_WEBHOOK_BASE_URL, KEYSTONE_SHARED_SECRET.
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false

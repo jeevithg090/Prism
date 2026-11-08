@@ -1,41 +1,8 @@
 {
-  "id": "aisha",
-  "name": "Aisha Rahman",
-  "githubLogin": "aisha-demo",
-  "programmeId": "uom-bsc-cs",
-  "year": 1,
-  "startedAt": "2026-09-21",
-  "badges": [
-    "new-to-uni",
-    "international"
-  ],
-  "interests": [
-    "computer vision",
-    "healthcare AI",
-    "open source"
-  ],
-  "availability": [
-    "tue-eve",
-    "sat-am"
-  ],
+  "id": "aisha", "name": "Aisha Rahman", "programmeId": "uom-bsc-cs", "year": 1, "startedAt": "2026-09-21",
+  "badges": ["new-to-uni", "international"],
+  "interests": ["computer vision", "healthcare AI", "open source"],
+  "availability": ["tue-eve", "thu-eve", "sat-am"],
   "isDemo": true,
-  "dna": {
-    "targetRoles": [
-      "ml-engineer"
-    ],
-    "timelineLabel": "Summer internship applications, Sept 2027",
-    "targetDate": "2027-09-01",
-    "hoursPerWeek": 8,
-    "theoryPractice": 70,
-    "formats": [
-      "projects",
-      "video"
-    ],
-    "budget": "free",
-    "constraints": [
-      "part-time job"
-    ],
-    "accessibility": [],
-    "language": "en"
-  }
+  "dna": { "targetRoles": ["ml-engineer"], "timelineLabel": "Placement applications Sept 2027", "targetDate": "2027-09-01", "hoursPerWeek": 8, "theoryPractice": 70, "formats": ["projects", "video"], "budget": "free", "constraints": [], "accessibility": [], "language": "en" }
 }

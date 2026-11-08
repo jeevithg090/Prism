@@ -1,88 +1,290 @@
+// The Bridge Map (P2 Task 5): your degree, the job market and your proof, in one graph.
 import "server-only";
-import skillsJson from "@/data/skills.json";
-import { getSkills } from "@/lib/agents/skillmap";
-import { getRoleDemand } from "@/lib/agents/market";
-import { extractProgramme } from "@/lib/agents/syllabus";
-import { getTrends } from "@/lib/agents/trends";
+import { connection } from "next/server";
 import { getStore } from "@/lib/store";
-import { readiness, projectedReadiness } from "@/lib/graph/readiness";
-import type { BridgeMap, BridgeNode, EvidenceItem, Module, Profile, Programme, RoleDemand, Skill, SkillId, TrendSeries } from "@/lib/types";
+import type {
+  BridgeEdge, BridgeMap, BridgeNode, EvidenceItem, Level, Profile, Programme, RoleDemand, SkillId, TrendSeries,
+} from "@/lib/types";
+import {
+  bridgemapFixture, getProfile, listEvidence, marketFixture, podFor, programmeFixture, skillMeta, studentSkillsSeed,
+  trendsFixture,
+} from "./data";
+import { planRoadmap } from "./plan";
+import { computeReadiness, projectNodes, round2, shiftReadiness } from "./readiness";
+import { isTermDone, parseUpcomingLabel, termStart, upcomingLabel } from "./terms";
 
-const catalogue = skillsJson as Skill[];
-const skillById = new Map(catalogue.map((skill) => [skill.id, skill]));
-const round2 = (n: number) => Math.round(n * 100) / 100;
+export { computeReadiness, readiness, projectedReadiness } from "./readiness";
 
-export function termStart(module: Module, startedAt: string): Date {
-  const startYear = new Date(`${startedAt}T00:00:00`).getFullYear() + module.year - 1;
-  const month = module.semester === "2" ? 0 : 8;
-  const day = module.semester === "2" ? 26 : 22;
-  return new Date(startYear, month, day);
+export const NODE_CAP = 80;
+export const ROLE_SKILL_CAP = 30;
+const PROVEN_LEVEL = 2;
+const PROVEN_CONFIDENCE = 0.6;
+
+/** Used when the skills catalogue carries no prereqs for a skill (data/skills.json ships them empty). */
+export const CURATED_PREREQS: Record<SkillId, SkillId[]> = {
+  numpy: ["python"], pandas: ["python", "numpy"], "scikit-learn": ["python", "numpy"], pytorch: ["python", "numpy"],
+  tensorflow: ["python"], "machine-learning": ["python", "statistics", "linear-algebra"],
+  "deep-learning": ["machine-learning"], mlops: ["docker", "machine-learning"], docker: ["linux"],
+  kubernetes: ["docker"], aws: ["linux"], "cloud-computing": ["linux"], "ci-cd": ["git", "testing"],
+  "llm-apps": ["python", "rest-apis"], "llm-evaluation": ["llm-apps"], "vector-databases": ["llm-apps"],
+  postgresql: ["sql"], sql: ["databases"], algorithms: ["data-structures"], "system-design": ["algorithms", "databases"],
+  react: ["javascript", "html-css"], typescript: ["javascript"], nodejs: ["javascript"], "rest-apis": ["python"],
+  "code-review": ["git"], "data-visualisation": ["pandas"],
+};
+
+/**
+ * Proof is level 2+ at confidence 0.6+. A mock interview on its own never proves a skill (communication excepted):
+ * talking about Docker is "Explained it" on the Proof Ladder, and only a build (a merged PR, a challenge) turns it proven.
+ */
+const talkOnly = (e: Partial<Pick<EvidenceItem, "source" | "skillId">>) => e.source === "keystone-interview" && e.skillId !== "communication";
+const isProof = (e: Pick<EvidenceItem, "level" | "confidence"> & Partial<Pick<EvidenceItem, "source" | "skillId">>) =>
+  !talkOnly(e) && e.level >= PROVEN_LEVEL && e.confidence >= PROVEN_CONFIDENCE;
+/** The level a piece of evidence lifts a node to: weak or talk-only evidence counts as "tried it" (1) at most. */
+const levelOf = (e: EvidenceItem) => (isProof(e) ? e.level : Math.min(e.level, 1));
+const maxLevel = (xs: number[]) => Math.max(0, ...xs) as Level;
+
+function groupBy<T>(xs: T[], key: (x: T) => string): Map<string, T[]> {
+  const m = new Map<string, T[]>();
+  for (const x of xs) m.set(key(x), [...(m.get(key(x)) ?? []), x]);
+  return m;
 }
-export function termEnd(module: Module, startedAt: string): Date {
-  const startYear = new Date(`${startedAt}T00:00:00`).getFullYear() + module.year - 1;
-  if (module.semester === "1") return new Date(startYear + 1, 0, 23);
-  if (module.semester === "2") return new Date(startYear, 5, 12);
-  return new Date(startYear + 1, 5, 12);
-}
-const labelFor = (module: Module) => `Year ${module.year} · ${module.semester === "full-year" ? "Full year" : `Semester ${module.semester}`}`;
 
-export function buildBridgeMap(input: { profile: Profile; programme: Programme; roleDemand: RoleDemand; evidence: EvidenceItem[]; trends: TrendSeries[]; now?: Date }): BridgeMap {
-  const { profile, programme, roleDemand, evidence, trends } = input;
-  const now = input.now ?? new Date();
-  const role = roleDemand.skills.slice(0, 30);
-  const demand = new Map(role.map((item) => [item.skillId, item.share]));
-  const evidenceIds = [...new Set(evidence.map((item) => item.skillId))];
-  const moduleSkills = [...new Set(programme.modules.flatMap((module) => module.skills.map((item) => item.skillId)))];
-  const ordered = [...new Set([...role.map((item) => item.skillId), ...evidenceIds, ...moduleSkills])];
-  const ids = ordered.slice(0, Math.max(80, role.length));
-  const trendById = new Map(trends.map((trend) => [trend.skillId, trend]));
-  const nodes: BridgeNode[] = ids.map((skillId) => {
-    const skill = skillById.get(skillId) ?? getSkills().find((candidate) => candidate.id === skillId);
-    const skillEvidence = evidence.filter((item) => item.skillId === skillId).sort((a, b) => b.level - a.level || b.confidence - a.confidence);
-    const modules = programme.modules.filter((module) => module.skills.some((item) => item.skillId === skillId));
-    const done = modules.filter((module) => termEnd(module, profile.startedAt) < now).sort((a, b) => termEnd(b, profile.startedAt).getTime() - termEnd(a, profile.startedAt).getTime());
-    const upcoming = modules.filter((module) => termEnd(module, profile.startedAt) >= now).sort((a, b) => termStart(a, profile.startedAt).getTime() - termStart(b, profile.startedAt).getTime());
-    const maxEv = skillEvidence[0];
-    const status: BridgeNode["status"] = maxEv && maxEv.level >= 2 && maxEv.confidence >= 0.6 ? "proven" : done.length ? "degree-done" : upcoming.length ? "degree-upcoming" : "gap";
-    const moduleLevel = done.length ? Math.max(...done.map((module) => module.skills.find((item) => item.skillId === skillId)?.level ?? 0)) : 0;
-    const trend = trendById.get(skillId);
-    return {
-      skillId, name: skill?.name ?? skillId, category: skill?.category ?? "practice", status,
-      demand: demand.get(skillId) ?? 0, trend: trend?.label ?? role.find((item) => item.skillId === skillId)?.trend,
-      level: maxEv?.level ?? (status === "degree-done" ? moduleLevel as BridgeNode["level"] : 0),
-      evidenceIds: skillEvidence.map((item) => item.id), moduleCodes: modules.map((module) => module.code),
-      ...(status === "degree-upcoming" && upcoming[0] ? { upcomingLabel: labelFor(upcoming[0]) } : {}),
-    };
-  });
-  const nodeIds = new Set(nodes.map((node) => node.skillId));
-  const edges: BridgeMap["edges"] = [];
-  for (const node of nodes) for (const prereq of skillById.get(node.skillId)?.prereqs ?? []) {
-    if (nodeIds.has(prereq)) edges.push({ from: prereq, to: node.skillId, kind: "prereq" });
+function prereqEdges(nodes: BridgeNode[]): BridgeEdge[] {
+  const ids = new Set(nodes.map((n) => n.skillId));
+  const edges: BridgeEdge[] = [];
+  for (const n of nodes) {
+    const meta = skillMeta(n.skillId).prereqs;
+    for (const p of meta.length ? meta : (CURATED_PREREQS[n.skillId] ?? [])) {
+      if (p !== n.skillId && ids.has(p)) edges.push({ from: p, to: n.skillId, kind: "prereq" });
+    }
   }
-  const beforeTarget = new Date(`${profile.dna.targetDate}T23:59:59`);
-  const upcomingByTarget = nodes.filter((node) => node.status === "degree-upcoming" && programme.modules.some((module) => module.skills.some((item) => item.skillId === node.skillId) && termEnd(module, profile.startedAt) < beforeTarget)).map((node) => node.skillId);
-  const capacity = Math.max(0, Math.min(52, Math.ceil((beforeTarget.getTime() - now.getTime()) / (7 * 86400000)))) * profile.dna.hoursPerWeek;
-  const planned = nodes.filter((node) => node.status === "gap" && node.demand > 0).sort((a, b) => b.demand - a.demand).slice(0, Math.floor(capacity / 8)).map((node) => node.skillId);
+  return edges;
+}
+
+/** Builds the map from the programme, the role's job-ad demand, your evidence and the trends. Pure. */
+export function buildBridgeMap(i: {
+  profile: Profile; programme: Programme; roleDemand: RoleDemand; evidence: EvidenceItem[]; trends: TrendSeries[];
+  now?: Date; podLearns?: SkillId[];
+}): BridgeMap {
+  const now = i.now ?? new Date();
+  const roleSkills = [...i.roleDemand.skills].sort((a, b) => b.share - a.share).slice(0, ROLE_SKILL_CAP);
+  const demand = new Map(roleSkills.map((s) => [s.skillId, s.share]));
+  const roleTrend = new Map(roleSkills.map((s) => [s.skillId, s.trend]));
+  const trendLabel = new Map(i.trends.map((t) => [t.skillId, t.label]));
+  const evBySkill = groupBy(i.evidence.filter((e) => e.userId === i.profile.id || !e.userId), (e) => e.skillId);
+  const modBySkill = new Map<SkillId, { module: Programme["modules"][number]; level: Level }[]>();
+  for (const m of i.programme.modules) for (const s of m.skills) modBySkill.set(s.skillId, [...(modBySkill.get(s.skillId) ?? []), { module: m, level: s.level }]);
+
+  const ids: SkillId[] = [];
+  const add = (id: SkillId) => { if (!ids.includes(id)) ids.push(id); };
+  roleSkills.forEach((s) => add(s.skillId));
+  [...evBySkill.keys()].forEach(add);
+  [...modBySkill.entries()].sort((a, b) => maxLevel(b[1].map((x) => x.level)) - maxLevel(a[1].map((x) => x.level))).forEach(([id]) => add(id));
+  const kept = ids.slice(0, Math.max(NODE_CAP, roleSkills.length));
+
+  const nodes: BridgeNode[] = kept.map((skillId) => {
+    const meta = skillMeta(skillId);
+    const ev = [...(evBySkill.get(skillId) ?? [])].sort((a, b) => b.level - a.level || b.confidence - a.confidence);
+    const mods = modBySkill.get(skillId) ?? [];
+    const done = mods.filter((x) => isTermDone(x.module, i.profile.startedAt, now));
+    const upcoming = mods.filter((x) => !isTermDone(x.module, i.profile.startedAt, now))
+      .sort((a, b) => termStart(a.module, i.profile.startedAt).getTime() - termStart(b.module, i.profile.startedAt).getTime());
+    const status: BridgeNode["status"] = ev.some(isProof) ? "proven" : done.length ? "degree-done" : upcoming.length ? "degree-upcoming" : "gap";
+    const node: BridgeNode = {
+      skillId, name: meta.name, category: meta.category, status,
+      demand: demand.get(skillId) ?? 0,
+      level: (ev[0]?.level ?? (status === "degree-done" ? maxLevel(done.map((x) => x.level)) : 0)) as Level,
+      evidenceIds: ev.map((e) => e.id),
+      moduleCodes: mods.map((x) => x.module.code),
+    };
+    const trend = trendLabel.get(skillId) ?? roleTrend.get(skillId);
+    if (trend) node.trend = trend;
+    if (status === "degree-upcoming" && upcoming[0]) node.upcomingLabel = upcomingLabel(upcoming[0].module);
+    return node;
+  });
+
+  const edges = prereqEdges(nodes);
+  const plan = planRoadmap({
+    nodes, edges, startedAt: i.profile.startedAt, targetDate: i.profile.dna.targetDate, programme: i.programme,
+    trends: i.trends, podLearns: i.podLearns, now,
+  });
   return {
-    userId: profile.id, roleId: roleDemand.roleId, nodes, edges,
-    readinessNow: readiness(nodes), readinessProjected: projectedReadiness(nodes, planned, upcomingByTarget), generatedAt: now.toISOString(),
+    userId: i.profile.id, roleId: i.roleDemand.roleId, nodes, edges,
+    readinessNow: computeReadiness(nodes),
+    readinessProjected: computeReadiness(projectNodes(nodes, plan.planned, plan.upcomingByTarget)),
+    generatedAt: now.toISOString(),
   };
 }
 
-export async function loadGraph(userId: string, roleId: string, options: { runId?: string } = {}): Promise<BridgeMap | null> {
-  const store = getStore();
-  const profile = await store.get<Profile>("profiles", userId);
-  if (!profile) return null;
-  if ((process.env.NODE_ENV === "test" || process.env.DEMO_MODE === "true") && userId === "aisha" && roleId === "ml-engineer") {
-    const fixture = await import("@/data/fixtures/bridgemap.aisha.ml-engineer.json");
-    return fixture.default as BridgeMap;
+/**
+ * Folds evidence into a map at read time: evidence ids and levels are added, and a node with proof (level ≥ 2 at
+ * confidence ≥ 0.6) turns proven. Readiness moves by the formula's change. Evidence for a skill the map lacks adds
+ * a proven node with demand 0 (it shows on the map but never changes readiness). Pure; never demotes a node.
+ */
+export function mergeEvidence(map: BridgeMap, evidence: EvidenceItem[]): BridgeMap {
+  const mine = evidence.filter((e) => e && (!e.userId || e.userId === map.userId));
+  if (!mine.length) return map;
+  const bySkill = groupBy(mine, (e) => e.skillId);
+  let changed = false;
+  const nodes = map.nodes.map((n) => {
+    const ev = bySkill.get(n.skillId);
+    if (!ev) return n;
+    const evidenceIds = [...new Set([...(n.evidenceIds ?? []), ...ev.map((e) => e.id)])];
+    const level = maxLevel([n.level ?? 0, ...ev.map(levelOf)]);
+    const status = n.status !== "proven" && ev.some(isProof) ? ("proven" as const) : n.status;
+    if (status === n.status && level === n.level && evidenceIds.length === (n.evidenceIds ?? []).length) return n;
+    changed = true;
+    return { ...n, status, level, evidenceIds };
+  });
+  const known = new Set(map.nodes.map((n) => n.skillId));
+  for (const [skillId, ev] of bySkill) {
+    if (known.has(skillId) || !ev.some(isProof)) continue;
+    const meta = skillMeta(skillId);
+    nodes.push({
+      skillId, name: meta.name, category: meta.category, status: "proven", demand: 0,
+      level: maxLevel(ev.map((e) => e.level)), evidenceIds: ev.map((e) => e.id), moduleCodes: [],
+    });
+    changed = true;
   }
-  const [programme, roleDemand, evidence, trends] = await Promise.all([
-    extractProgramme({ programmeId: profile.programmeId, runId: options.runId }),
-    getRoleDemand(roleId, { runId: options.runId }),
-    store.list<EvidenceItem>("evidence", { userId }), getTrends(),
-  ]);
-  const map = buildBridgeMap({ profile, programme, roleDemand, evidence, trends });
-  await store.upsert("maps", `${userId}:${roleId}`, map as BridgeMap & { id?: string }, userId);
-  return map;
+  if (!changed) return map;
+  const readinessNow = shiftReadiness(map.readinessNow ?? computeReadiness(map.nodes), map.nodes, nodes);
+  return { ...map, nodes, readinessNow, readinessProjected: Math.max(map.readinessProjected ?? 0, readinessNow) };
+}
+
+/**
+ * A seeded student's map: the same skills as the demo map for the role (or the role's market demand), with
+ * status from data/seed/student-skills.json. Degree statuses follow the student's own start date.
+ */
+export function deriveSeededMap(i: {
+  userId: string; roleId: string; skills: { proven: SkillId[]; gaps: SkillId[] }; base: BridgeMap | null;
+  roleDemand: RoleDemand | null; profile: Profile | null; now: Date;
+}): BridgeMap | null {
+  const proven = new Set(i.skills.proven);
+  const gaps = new Set(i.skills.gaps);
+  const startedAt = i.profile?.startedAt;
+  let universe: BridgeNode[];
+  if (i.base) universe = i.base.nodes.map((n) => ({ ...n, evidenceIds: [] }));
+  else if (i.roleDemand) {
+    universe = i.roleDemand.skills.slice(0, ROLE_SKILL_CAP).map((s) => {
+      const meta = skillMeta(s.skillId);
+      return { skillId: s.skillId, name: meta.name, category: meta.category, status: "gap" as const, demand: s.share, level: 0 as Level, evidenceIds: [], moduleCodes: [], ...(s.trend ? { trend: s.trend } : {}) };
+    });
+  } else return null;
+  if (i.roleDemand) {
+    const share = new Map(i.roleDemand.skills.map((s) => [s.skillId, s.share]));
+    universe = universe.map((n) => ({ ...n, demand: share.get(n.skillId) ?? 0 }));
+  }
+  const ids = new Set(universe.map((n) => n.skillId));
+  for (const id of [...proven, ...gaps]) {
+    if (ids.has(id)) continue;
+    const meta = skillMeta(id);
+    universe.push({ skillId: id, name: meta.name, category: meta.category, status: "gap", demand: 0, level: 0, evidenceIds: [], moduleCodes: [] });
+    ids.add(id);
+  }
+  const nodes: BridgeNode[] = universe.map((n) => {
+    if (proven.has(n.skillId)) {
+      const { upcomingLabel: _drop, ...rest } = n;
+      void _drop;
+      return { ...rest, status: "proven", level: Math.max(2, n.level) as Level };
+    }
+    if (gaps.has(n.skillId)) {
+      const { upcomingLabel: _drop, ...rest } = n;
+      void _drop;
+      return { ...rest, status: "gap", level: 0 };
+    }
+    if (n.status === "degree-upcoming" && startedAt) {
+      const term = parseUpcomingLabel(n.upcomingLabel);
+      if (term && isTermDone(term, startedAt, i.now)) {
+        const { upcomingLabel: _drop, ...rest } = n;
+        void _drop;
+        return { ...rest, status: "degree-done", level: Math.max(1, n.level) as Level };
+      }
+    }
+    return n.status === "proven" ? { ...n, status: "gap", level: 0 } : n;
+  });
+  const edges = (i.base?.edges ?? prereqEdges(nodes)).filter((e) => ids.has(e.from) && ids.has(e.to));
+  const readinessNow = computeReadiness(nodes);
+  let readinessProjected = readinessNow;
+  if (i.profile?.dna?.targetDate && startedAt) {
+    const plan = planRoadmap({ nodes, edges, startedAt, targetDate: i.profile.dna.targetDate, now: i.now });
+    readinessProjected = computeReadiness(projectNodes(nodes, plan.planned, plan.upcomingByTarget));
+  }
+  return { userId: i.userId, roleId: i.roleId, nodes, edges, readinessNow, readinessProjected: round2(Math.max(readinessNow, readinessProjected)), generatedAt: i.now.toISOString() };
+}
+
+const validMap = (m: unknown): m is BridgeMap =>
+  !!m && typeof m === "object" && Array.isArray((m as BridgeMap).nodes) && (m as BridgeMap).nodes.length > 0 && Array.isArray((m as BridgeMap).edges);
+
+/**
+ * Pod evidence counts once its proof is recorded. While the proof loop is mid-run it applies the evidence to the
+ * map itself (and measures readiness before → after), so folding it in early would erase that delta.
+ */
+async function committedEvidence(userId: string): Promise<EvidenceItem[]> {
+  const all = await listEvidence(userId);
+  if (!all.some((e) => e.source === "keystone-pod" && e.id.startsWith("ev_pod_"))) return all;
+  let recorded: Set<string>;
+  try {
+    const proofs = await getStore().list<{ evidenceIds?: string[] }>("proofs");
+    recorded = new Set(proofs.flatMap((p) => (Array.isArray(p?.evidenceIds) ? p.evidenceIds : [])));
+  } catch {
+    return all;
+  }
+  return all.filter((e) => !(e.source === "keystone-pod" && e.id.startsWith("ev_pod_")) || recorded.has(e.id));
+}
+
+async function buildFromInputs(userId: string, roleId: string, now: Date): Promise<BridgeMap | null> {
+  const profile = await getProfile(userId);
+  const programme = programmeFixture(profile?.programmeId);
+  const roleDemand = marketFixture(roleId);
+  if (!profile?.dna || !programme || !roleDemand) return null;
+  // Committed evidence only: a pod proof mid-recording must not count yet, or the proof loop's before -> after jump vanishes.
+  const [evidence, pod] = await Promise.all([committedEvidence(userId), podFor(userId)]);
+  return buildBridgeMap({
+    profile, programme, roleDemand, evidence, trends: trendsFixture() ?? [], now,
+    podLearns: pod?.members.find((m) => m.userId === userId)?.learns,
+  });
+}
+
+async function seededMap(userId: string, roleId: string, now: Date): Promise<BridgeMap | null> {
+  const skills = studentSkillsSeed()[userId];
+  if (!skills) return null;
+  const base = bridgemapFixture("aisha", roleId);
+  const roleDemand = marketFixture(roleId);
+  return deriveSeededMap({ userId, roleId, skills, base, roleDemand, profile: await getProfile(userId), now });
+}
+
+/**
+ * The current time, read only once the render is serving a real request. Under cacheComponents a page that
+ * reads the clock while prerendering logs an error (and shows the dev "Issue" pill), so in a render we wait on
+ * connection() first. Outside a request render (agent runs, after(), scripts, tests) connection() throws
+ * synchronously and the clock is read directly.
+ */
+async function requestTime(): Promise<Date> {
+  let pending: Promise<void> | undefined;
+  try { pending = connection(); } catch { pending = undefined; }
+  if (pending) await pending;
+  return new Date();
+}
+
+/**
+ * A user's Bridge Map for a role. Reads, in order: the store map `${userId}:${roleId}` (the proof loop writes
+ * there, so merged pod PRs show up) → (DEMO_MODE) the curated fixture → for seeded students, a map derived from
+ * their seed skills (their only proof: building from their empty evidence would mark proven skills as gaps) → a
+ * map built from the programme and market fixtures plus evidence → the fixture. Store evidence (pod proofs,
+ * micro-challenges, GitHub) is then merged in. Null if the user has no map.
+ */
+export async function loadGraph(userId: string, roleId: string): Promise<BridgeMap | null> {
+  const now = await requestTime();
+  let base: BridgeMap | null = null;
+  try {
+    const stored = await getStore().get<BridgeMap>("maps", `${userId}:${roleId}`);
+    if (validMap(stored)) base = stored;
+  } catch { /* store down: rebuild */ }
+  if (!base && process.env.DEMO_MODE === "true") base = bridgemapFixture(userId, roleId);
+  if (!base) base = await seededMap(userId, roleId, now).catch(() => null);
+  if (!base) base = await buildFromInputs(userId, roleId, now).catch(() => null);
+  if (!base) base = bridgemapFixture(userId, roleId);
+  if (!base) return null;
+  const evidence = await committedEvidence(userId).catch(() => [] as EvidenceItem[]);
+  return mergeEvidence(base, evidence);
 }

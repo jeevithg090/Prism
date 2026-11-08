@@ -1,0 +1,14 @@
+{
+  "userId": "aisha",
+  "weekOf": "2026-11-09",
+  "script": "Good morning, Aisha. Here's your Keystone briefing for the week of 9 November. First, the job market for ML engineer roles: Docker is rising, in 41% of ML engineer ads, and PyTorch is rising, in 38% of ML engineer ads. Your momentum is up 18% on your usual week, so keep that rhythm going. In Pod Orbit, nothing is merged yet, so your pull request for Containerise the captioning API with Docker could be the first, and Priya is your reviewer. This is week 1 of your roadmap, and the focus is Docker. Your tasks: One, Watch a 20-minute Docker basics primer. Two, Write a Dockerfile for a small Flask app. Three, Open your pod PR: Containerise the captioning API. Small steps every week build the bridge. Have a good week.",
+  "topTasks": [
+    "Watch a 20-minute Docker basics primer",
+    "Write a Dockerfile for a small Flask app",
+    "Open your pod PR: Containerise the captioning API"
+  ],
+  "marketMoves": [
+    "Docker is rising, in 41% of ML engineer ads",
+    "PyTorch is rising, in 38% of ML engineer ads"
+  ]
+}

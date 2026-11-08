@@ -1,112 +1,26 @@
 [
   {
-    "id": "ev_python_github",
-    "userId": "aisha",
-    "skillId": "python",
-    "level": 2,
-    "confidence": 0.85,
-    "source": "github",
-    "url": "https://github.com/aisha-demo/ml-notebooks",
-    "quote": "train.py:42 uses pandas groupby and sklearn pipelines",
-    "createdAt": "2026-11-07T14:30:00.000Z"
+    "id": "ev_aisha_py1", "userId": "aisha", "skillId": "python", "level": 2, "confidence": 0.82, "source": "github",
+    "url": "https://github.com/aisha-rahman-demo/clinic-queue-sim/blob/main/sim/queue.py",
+    "quote": "sim/queue.py:42 models a clinic waiting room with a priority queue and dataclasses",
+    "createdAt": "2026-10-28T19:12:00.000Z"
   },
   {
-    "id": "ev_git_github",
-    "userId": "aisha",
-    "skillId": "git",
-    "level": 2,
-    "confidence": 0.75,
-    "source": "github",
-    "url": "https://github.com/aisha-demo/ml-notebooks",
-    "quote": "14 commits with descriptive messages across 3 repos",
-    "createdAt": "2026-11-07T14:30:00.000Z"
+    "id": "ev_aisha_git1", "userId": "aisha", "skillId": "git", "level": 2, "confidence": 0.75, "source": "github",
+    "url": "https://github.com/aisha-rahman-demo/clinic-queue-sim/commits/main",
+    "quote": "23 commits across 3 repos, with feature branches and two merged pull requests",
+    "createdAt": "2026-10-28T19:12:00.000Z"
   },
   {
-    "id": "ev_html-css_github",
-    "userId": "aisha",
-    "skillId": "html-css",
-    "level": 2,
-    "confidence": 0.7,
-    "source": "github",
-    "url": "https://github.com/aisha-demo/ml-notebooks",
-    "quote": "index.html: semantic layout with flexbox",
-    "createdAt": "2026-11-07T14:30:00.000Z"
+    "id": "ev_aisha_html1", "userId": "aisha", "skillId": "html-css", "level": 2, "confidence": 0.7, "source": "github",
+    "url": "https://github.com/aisha-rahman-demo/portfolio/blob/main/index.html",
+    "quote": "index.html builds a responsive portfolio with semantic landmarks and CSS grid",
+    "createdAt": "2026-10-28T19:12:00.000Z"
   },
   {
-    "id": "ev_javascript_github",
-    "userId": "aisha",
-    "skillId": "javascript",
-    "level": 1,
-    "confidence": 0.6,
-    "source": "github",
-    "url": "https://github.com/aisha-demo/ml-notebooks",
-    "quote": "app.js:18 fetches JSON and renders a list",
-    "createdAt": "2026-11-07T14:30:00.000Z"
-  },
-  {
-    "id": "ev_pandas_github",
-    "userId": "aisha",
-    "skillId": "pandas",
-    "level": 2,
-    "confidence": 0.65,
-    "source": "github",
-    "url": "https://github.com/aisha-demo/ml-notebooks",
-    "quote": "train.py:42 uses pandas groupby",
-    "createdAt": "2026-11-07T14:30:00.000Z"
-  },
-  {
-    "id": "ev_numpy_github",
-    "userId": "aisha",
-    "skillId": "numpy",
-    "level": 1,
-    "confidence": 0.5,
-    "source": "github",
-    "url": "https://github.com/aisha-demo/ml-notebooks",
-    "quote": "features.py:9 vectorised numpy ops",
-    "createdAt": "2026-11-07T14:30:00.000Z"
-  },
-  {
-    "id": "ev_testing_github",
-    "userId": "aisha",
-    "skillId": "testing",
-    "level": 1,
-    "confidence": 0.5,
-    "source": "github",
-    "url": "https://github.com/aisha-demo/ml-notebooks",
-    "quote": "tests/test_utils.py asserts on helper output",
-    "createdAt": "2026-11-07T14:30:00.000Z"
-  },
-  {
-    "id": "ev_java_github",
-    "userId": "aisha",
-    "skillId": "java",
-    "level": 1,
-    "confidence": 0.5,
-    "source": "github",
-    "url": "https://github.com/aisha-demo/ml-notebooks",
-    "quote": "Library.java: classes and interfaces",
-    "createdAt": "2026-11-07T14:30:00.000Z"
-  },
-  {
-    "id": "ev_data-structures_leetcode",
-    "userId": "aisha",
-    "skillId": "data-structures",
-    "level": 1,
-    "confidence": 0.7,
-    "source": "leetcode",
-    "url": "https://leetcode.com/u/aisha-demo/",
-    "quote": "22 Array/Hash Table problems solved",
-    "createdAt": "2026-11-07T14:30:00.000Z"
-  },
-  {
-    "id": "ev_algorithms_leetcode",
-    "userId": "aisha",
-    "skillId": "algorithms",
-    "level": 1,
-    "confidence": 0.7,
-    "source": "leetcode",
-    "url": "https://leetcode.com/u/aisha-demo/",
-    "quote": "9 Binary Search/Sorting problems solved",
-    "createdAt": "2026-11-07T14:30:00.000Z"
+    "id": "ev_aisha_js1", "userId": "aisha", "skillId": "javascript", "level": 1, "confidence": 0.6, "source": "github",
+    "url": "https://github.com/aisha-rahman-demo/portfolio/blob/main/scripts/theme.js",
+    "quote": "scripts/theme.js toggles a dark theme and saves the choice in localStorage",
+    "createdAt": "2026-10-28T19:12:00.000Z"
   }
 ]

@@ -1,63 +1,41 @@
 import "server-only";
-import { Firecrawl } from "@mendable/firecrawl-js";
-
-const TIMEOUT_MS = 60_000;
+// Firecrawl web search (REST v2). [] without a key, in DEMO_MODE, or on any failure, so callers degrade.
+// Demo toggle (lib/replay.ts): Live mode records non-empty results; Demo mode replays them for the same query.
+import { LLMError } from "@/lib/llm-error";
+import { replayOrRecord } from "@/lib/replay";
 
 export type FcResult = { url: string; title: string; description?: string };
 
-export class FirecrawlError extends Error {
-  override name = "FirecrawlError";
-}
-
-let client: Firecrawl | null = null;
-const fc = () => (client ??= new Firecrawl({ apiKey: process.env.FIRECRAWL_API_KEY }));
-
-async function guarded<T>(label: string, work: () => Promise<T>, ms = TIMEOUT_MS): Promise<T> {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const timeout = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => reject(new Error(`timed out after ${ms / 1000}s`)), ms);
-  });
+export async function fcSearch(query: string, opts?: { limit?: number }): Promise<FcResult[]> {
+  if (process.env.DEMO_MODE === "true") return [];
+  const limit = opts?.limit ?? 5;
   try {
-    return await Promise.race([work(), timeout]);
-  } catch (err) {
-    throw new FirecrawlError(`${label}: ${err instanceof Error ? err.message : String(err)}`);
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-/** Returns [] with no key, in demo mode, or on failure, because callers treat search as optional. */
-export async function fcSearch(query: string, opts: number | { limit?: number } = 10): Promise<FcResult[]> {
-  if (!process.env.FIRECRAWL_API_KEY || process.env.DEMO_MODE === "true") return [];
-  const limit = typeof opts === "number" ? opts : opts.limit ?? 10;
-  try {
-    const res = await guarded("search", () => fc().search(query, { limit }));
-    return (res.web ?? []).flatMap((hit) => {
-      const r = hit as { url?: string; title?: string; description?: string; metadata?: { sourceURL?: string; title?: string } };
-      const url = r.url ?? r.metadata?.sourceURL;
-      return url ? [{ url, title: r.title ?? r.metadata?.title ?? url, description: r.description }] : [];
-    });
+    return await replayOrRecord<FcResult[]>(
+      "firecrawl",
+      { op: "search", query, limit },
+      async () => {
+        const key = process.env.FIRECRAWL_API_KEY;
+        if (!key) throw new LLMError("no_key");
+        const r = await fetch("https://api.firecrawl.dev/v2/search", {
+          method: "POST",
+          headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
+          body: JSON.stringify({ query, limit }),
+          signal: AbortSignal.timeout(30_000),
+        });
+        if (!r.ok) throw new Error(`Firecrawl ${r.status}`);
+        const j = (await r.json()) as { data?: { web?: FcResult[] } | FcResult[] };
+        const d = j.data;
+        return Array.isArray(d) ? d : d?.web ?? [];
+      },
+      {
+        requires: ["FIRECRAWL_API_KEY"],
+        meta: { kind: "search", label: query },
+        loose: false,
+        validate: (v) => Array.isArray(v),
+        shouldRecord: (v) => v.length > 0,
+      },
+    );
   } catch {
     return [];
   }
-}
-
-export async function fcScrapeMarkdown(url: string): Promise<string> {
-  const doc = await guarded("scrape", () => fc().scrape(url, { formats: ["markdown"] }));
-  return doc.markdown ?? "";
-}
-
-export async function fcScrapeJSON<T>(url: string, jsonSchema: object, prompt: string): Promise<T> {
-  const doc = await guarded("extract", () =>
-    fc().scrape(url, { formats: [{ type: "json", schema: jsonSchema, prompt }] }));
-  return doc.json as T;
-}
-
-export async function fcCrawl(url: string, opts: { limit: number; includePaths?: string[] }): Promise<{ url: string; markdown: string }[]> {
-  const job = await guarded("crawl", () =>
-    fc().crawl(url, { limit: opts.limit, includePaths: opts.includePaths, scrapeOptions: { formats: ["markdown"] } }));
-  return (job.data ?? []).flatMap((d) => {
-    const pageUrl = d.metadata?.sourceURL;
-    return pageUrl ? [{ url: pageUrl, markdown: d.markdown ?? "" }] : [];
-  });
 }

@@ -1,35 +1,66 @@
-import { describe, it, expect, vi } from "vitest";
-vi.mock("server-only", () => ({}));
+import { describe, expect, it } from "vitest";
+import fs from "node:fs";
+import path from "node:path";
 import { POST } from "./route";
-import { GET, PUT } from "./[id]/route";
-import profile from "@/data/fixtures/profile.aisha.json";
+import { GET, PATCH, PUT } from "./[id]/route";
+import type { Profile } from "@/lib/types";
 
-const req = (body: unknown, method = "POST") => new Request("http://x/api/profile", { method, body: JSON.stringify(body) });
-const ctx = (id: string) => ({ params: Promise.resolve({ id }) });
-const { id: _id, ...noId } = profile;
+const aisha = JSON.parse(fs.readFileSync(path.join(process.cwd(), "data/fixtures/profile.aisha.json"), "utf8")) as Profile;
+const { id: _omit, ...newProfile } = { ...aisha, isDemo: undefined };
+void _omit;
+const json = (method: string, url: string, body: unknown) => new Request(url, { method, headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+const params = (id: string) => ({ params: Promise.resolve({ id }) });
 
-describe("profile routes", () => {
-  it("creates then gets the same profile, and sets the ks_uid cookie", async () => {
-    const res = await POST(req({ ...noId, id: "newkid" }));
+describe("POST /api/profile", () => {
+  it("creates a profile with an id from the first name, sets ks_uid, and GET returns it", async () => {
+    const res = await POST(json("POST", "http://x/api/profile", { ...newProfile, name: "Aisha Khan" }));
+    expect(res.status).toBe(201);
+    const { data } = (await res.json()) as { data: Profile };
+    expect(data.id).toBe("aisha-2"); // "aisha" is the seeded demo profile
+    expect(data.name).toBe("Aisha Khan");
+    expect(res.headers.get("set-cookie")).toMatch(/^ks_uid=aisha-2; Path=\/; Max-Age=\d+; SameSite=Lax/);
+    const got = await GET(new Request("http://x"), params("aisha-2"));
+    expect(got.status).toBe(200);
+    expect(((await got.json()) as { data: Profile }).data).toEqual(data);
+
+    const again = await POST(json("POST", "http://x/api/profile", { ...newProfile, name: "Aisha Begum" }));
+    expect(((await again.json()) as { data: Profile }).data.id).toBe("aisha-3");
+  });
+
+  it("makes a safe id from any name and ignores a client-sent id", async () => {
+    const res = await POST(json("POST", "http://x/api/profile", { ...newProfile, id: "aisha", name: "  Zoë O'Neill " }));
+    const { data } = (await res.json()) as { data: Profile };
+    expect(data.id).toBe("zoe");
+    const odd = await POST(json("POST", "http://x/api/profile", { ...newProfile, name: "李雷" }));
+    expect(((await odd.json()) as { data: Profile }).data.id).toMatch(/^student(-\d+)?$/);
+  });
+
+  it("rejects an invalid body with 400", async () => {
+    const res = await POST(json("POST", "http://x/api/profile", { name: "No DNA" }));
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({ ok: false, error: { code: "bad_request" } });
+    expect((await POST(new Request("http://x", { method: "POST", body: "{" }))).status).toBe(400);
+  });
+});
+
+describe("PUT /api/profile/[id]", () => {
+  it("merges dna.theoryPractice without wiping other dna fields (PATCH is the same)", async () => {
+    const created = (await (await POST(json("POST", "http://x/api/profile", { ...newProfile, name: "Priyanka Shah" }))).json()) as { data: Profile };
+    const id = created.data.id;
+    const res = await PUT(json("PUT", "http://x", { dna: { theoryPractice: 30 }, githubLogin: "priyanka-codes" }), params(id));
     expect(res.status).toBe(200);
-    expect(res.headers.get("set-cookie")).toContain("ks_uid=newkid");
-    const got = await (await GET(new Request("http://x"), ctx("newkid"))).json();
-    expect(got.data.name).toBe(profile.name);
+    const { data } = (await res.json()) as { data: Profile };
+    expect(data.dna.theoryPractice).toBe(30);
+    expect(data.dna.hoursPerWeek).toBe(aisha.dna.hoursPerWeek);
+    expect(data.dna.targetRoles).toEqual(aisha.dna.targetRoles);
+    expect(data.githubLogin).toBe("priyanka-codes");
+    expect(data.id).toBe(id);
+    expect(PATCH).toBe(PUT);
   });
-  it("generates an id when none is given", async () => {
-    const body = await (await POST(req(noId))).json();
-    expect(body.data.id).toHaveLength(8);
-  });
-  it("PUT merges dna without wiping other dna fields", async () => {
-    await POST(req({ ...noId, id: "mergeme" }));
-    const res = await PUT(req({ dna: { theoryPractice: 20 } }, "PUT"), ctx("mergeme"));
-    const { data } = await res.json();
-    expect(data.dna.theoryPractice).toBe(20);
-    expect(data.dna.hoursPerWeek).toBe(8);
-  });
-  it("400 on invalid body, 404 on unknown id", async () => {
-    expect((await POST(req({ name: "x" }))).status).toBe(400);
-    expect((await GET(new Request("http://x"), ctx("nobody"))).status).toBe(404);
-    expect((await PUT(req({ year: 2 }, "PUT"), ctx("nobody"))).status).toBe(404);
+
+  it("returns 404 for an unknown id and 400 for invalid fields", async () => {
+    expect((await PUT(json("PUT", "http://x", { name: "x" }), params("nobody"))).status).toBe(404);
+    expect((await PUT(json("PUT", "http://x", { dna: { hoursPerWeek: 99 } }), params("aisha"))).status).toBe(400);
+    expect((await GET(new Request("http://x"), params("nobody"))).status).toBe(404);
   });
 });

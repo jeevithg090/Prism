@@ -1,7 +1,11 @@
-import skills from "@/data/skills.json";
-import type { ApiResult, Skill } from "@/lib/types";
+// GET /api/skills → Skill[] (contract §6): the taxonomy with the Skill Mapper's aliases merged in.
+import { getSkills } from "@/lib/agents/skillmap";
+import { internal, ok } from "@/lib/schemas/community";
 
 export async function GET() {
-  const body: ApiResult<Skill[]> = { ok: true, data: skills as Skill[] };
-  return Response.json(body);
+  try {
+    return ok(getSkills());
+  } catch {
+    return internal();
+  }
 }

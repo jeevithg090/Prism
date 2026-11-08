@@ -1,33 +1,68 @@
 import "server-only";
+// Adzuna job search (UK). Docs: https://developer.adzuna.com/docs/search
+// Needs ADZUNA_APP_ID + ADZUNA_APP_KEY; without them the Market Agent serves its cached snapshot.
+// Demo toggle (lib/replay.ts): Live records the ads; Demo replays them for the same search.
+import { replayOrRecord } from "@/lib/replay";
 
-export interface JobAd {
+export type JobAd = {
   title: string; company: string; description: string; url: string;
   salaryMin?: number; salaryMax?: number; created?: string;
+};
+
+export class AdzunaError extends Error {
+  constructor(message: string, public status?: number) { super(message); }
 }
 
-interface AdzunaResult {
-  title: string; company?: { display_name?: string }; description?: string; redirect_url: string;
-  salary_min?: number; salary_max?: number; created?: string;
+const TIMEOUT_MS = 15_000;
+
+export function hasAdzunaKey(): boolean {
+  return Boolean(process.env.ADZUNA_APP_ID && process.env.ADZUNA_APP_KEY);
 }
 
-export async function searchAdzuna(query: string, location?: string, pages = 2): Promise<JobAd[]> {
-  const { ADZUNA_APP_ID: id, ADZUNA_APP_KEY: key } = process.env;
-  if (!id || !key) throw new Error("Adzuna keys are not set");
-  const ads: JobAd[] = [];
+type AdzunaResult = {
+  title?: string; description?: string; redirect_url?: string; created?: string;
+  company?: { display_name?: string }; salary_min?: number; salary_max?: number;
+};
+
+const clean = (s?: string) => (s ?? "").replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+
+export function mapAdzunaResult(r: AdzunaResult): JobAd {
+  return {
+    title: clean(r.title), company: clean(r.company?.display_name) || "Unknown employer", description: clean(r.description),
+    url: r.redirect_url ?? "", salaryMin: r.salary_min ?? undefined, salaryMax: r.salary_max ?? undefined, created: r.created,
+  };
+}
+
+/** Pages 1..pages of `what` in the UK (optionally narrowed to `where`), 50 results each. */
+export function searchAdzuna(what: string, opts: { where?: string; pages?: number; perPage?: number } = {}): Promise<JobAd[]> {
+  // The key parts never include the app id or key.
+  return replayOrRecord<JobAd[]>(
+    "market",
+    { op: "adzuna", what, where: opts.where ?? null, pages: opts.pages ?? 2, perPage: opts.perPage ?? 50 },
+    () => fetchAdzuna(what, opts),
+    {
+      requires: ["ADZUNA_APP_ID", "ADZUNA_APP_KEY"], missError: () => new AdzunaError("no_key"), loose: false,
+      meta: { kind: "job-ads", label: `adzuna: ${what}` }, validate: (v) => Array.isArray(v), shouldRecord: (v) => v.length > 0,
+    },
+  );
+}
+
+async function fetchAdzuna(what: string, opts: { where?: string; pages?: number; perPage?: number }): Promise<JobAd[]> {
+  if (!hasAdzunaKey()) throw new AdzunaError("no_key");
+  const pages = opts.pages ?? 2;
+  const out: JobAd[] = [];
   for (let page = 1; page <= pages; page++) {
-    const params = new URLSearchParams({
-      app_id: id, app_key: key, what: query, results_per_page: "50", "content-type": "application/json",
+    const q = new URLSearchParams({
+      app_id: process.env.ADZUNA_APP_ID!, app_key: process.env.ADZUNA_APP_KEY!,
+      what, results_per_page: String(opts.perPage ?? 50), "content-type": "application/json",
     });
-    if (location && location.toLowerCase() !== "uk") params.set("where", location);
-    const res = await fetch(`https://api.adzuna.com/v1/api/jobs/gb/search/${page}?${params}`);
-    if (!res.ok) throw new Error(`Adzuna responded ${res.status}`);
-    const { results } = (await res.json()) as { results: AdzunaResult[] };
-    for (const r of results) {
-      ads.push({
-        title: r.title, company: r.company?.display_name ?? "Unknown", description: r.description ?? "",
-        url: r.redirect_url, salaryMin: r.salary_min, salaryMax: r.salary_max, created: r.created,
-      });
-    }
+    if (opts.where && opts.where.toLowerCase() !== "uk") q.set("where", opts.where);
+    const res = await fetch(`https://api.adzuna.com/v1/api/jobs/gb/search/${page}?${q}`, { signal: AbortSignal.timeout(TIMEOUT_MS) });
+    if (!res.ok) throw new AdzunaError(`Adzuna ${res.status}`, res.status);
+    const j = (await res.json()) as { results?: AdzunaResult[] };
+    const rows = (j.results ?? []).map(mapAdzunaResult).filter((a) => a.title);
+    out.push(...rows);
+    if (rows.length < (opts.perPage ?? 50)) break;
   }
-  return ads;
+  return out;
 }

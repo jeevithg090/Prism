@@ -1,181 +1,24 @@
 [
-  {
-    "runId": "run_demo",
-    "agent": "orchestrator",
-    "status": "started",
-    "message": "Building Aisha's bridge",
-    "ts": "2026-11-07T14:30:00.000Z"
-  },
-  {
-    "runId": "run_demo",
-    "agent": "syllabus",
-    "status": "started",
-    "message": "Reading the University of Manchester BSc Computer Science pages",
-    "ts": "2026-11-07T14:30:00.900Z"
-  },
-  {
-    "runId": "run_demo",
-    "agent": "syllabus",
-    "status": "progress",
-    "message": "crawled 32 pages",
-    "ts": "2026-11-07T14:30:01.800Z"
-  },
-  {
-    "runId": "run_demo",
-    "agent": "syllabus",
-    "status": "progress",
-    "message": "extracted 41 course units",
-    "ts": "2026-11-07T14:30:02.700Z"
-  },
-  {
-    "runId": "run_demo",
-    "agent": "syllabus",
-    "status": "done",
-    "message": "Programme ready: 41 course units",
-    "ts": "2026-11-07T14:30:03.600Z"
-  },
-  {
-    "runId": "run_demo",
-    "agent": "skillmap",
-    "status": "started",
-    "message": "Mapping modules to skills",
-    "ts": "2026-11-07T14:30:04.500Z"
-  },
-  {
-    "runId": "run_demo",
-    "agent": "skillmap",
-    "status": "progress",
-    "message": "mapped 87 skills across 41 modules",
-    "ts": "2026-11-07T14:30:05.400Z"
-  },
-  {
-    "runId": "run_demo",
-    "agent": "skillmap",
-    "status": "done",
-    "message": "Skill map ready",
-    "ts": "2026-11-07T14:30:06.300Z"
-  },
-  {
-    "runId": "run_demo",
-    "agent": "market",
-    "status": "started",
-    "message": "Reading ML engineer job ads",
-    "ts": "2026-11-07T14:30:07.200Z"
-  },
-  {
-    "runId": "run_demo",
-    "agent": "market",
-    "status": "progress",
-    "message": "found 231 ads",
-    "ts": "2026-11-07T14:30:08.100Z"
-  },
-  {
-    "runId": "run_demo",
-    "agent": "market",
-    "status": "progress",
-    "message": "analysed 214 ads · top skill python 86%",
-    "ts": "2026-11-07T14:30:09.000Z"
-  },
-  {
-    "runId": "run_demo",
-    "agent": "market",
-    "status": "done",
-    "message": "Industry demand ready",
-    "ts": "2026-11-07T14:30:09.900Z"
-  },
-  {
-    "runId": "run_demo",
-    "agent": "trends",
-    "status": "started",
-    "message": "Forecasting skill demand",
-    "ts": "2026-11-07T14:30:10.800Z"
-  },
-  {
-    "runId": "run_demo",
-    "agent": "trends",
-    "status": "progress",
-    "message": "forecast 40 skills · 6 rising",
-    "ts": "2026-11-07T14:30:11.700Z"
-  },
-  {
-    "runId": "run_demo",
-    "agent": "trends",
-    "status": "done",
-    "message": "Trends ready",
-    "ts": "2026-11-07T14:30:12.600Z"
-  },
-  {
-    "runId": "run_demo",
-    "agent": "evidence",
-    "status": "started",
-    "message": "Evidence Agent: reading GitHub",
-    "ts": "2026-11-07T14:30:13.500Z"
-  },
-  {
-    "runId": "run_demo",
-    "agent": "evidence",
-    "status": "progress",
-    "message": "read 8 repos, 5 files, 23 commits",
-    "ts": "2026-11-07T14:30:14.400Z"
-  },
-  {
-    "runId": "run_demo",
-    "agent": "evidence",
-    "status": "progress",
-    "message": "proved 4 skills (level ≥ 2)",
-    "ts": "2026-11-07T14:30:15.300Z"
-  },
-  {
-    "runId": "run_demo",
-    "agent": "evidence",
-    "status": "done",
-    "message": "Evidence ready",
-    "ts": "2026-11-07T14:30:16.200Z"
-  },
-  {
-    "runId": "run_demo",
-    "agent": "roadmap",
-    "status": "started",
-    "message": "Planning your 12 weeks",
-    "ts": "2026-11-07T14:30:17.100Z"
-  },
-  {
-    "runId": "run_demo",
-    "agent": "roadmap",
-    "status": "progress",
-    "message": "ranked 14 gaps",
-    "ts": "2026-11-07T14:30:18.000Z"
-  },
-  {
-    "runId": "run_demo",
-    "agent": "roadmap",
-    "status": "progress",
-    "message": "skipped 16 skills your degree covers",
-    "ts": "2026-11-07T14:30:18.900Z"
-  },
-  {
-    "runId": "run_demo",
-    "agent": "roadmap",
-    "status": "progress",
-    "message": "planned 12 weeks",
-    "ts": "2026-11-07T14:30:19.800Z"
-  },
-  {
-    "runId": "run_demo",
-    "agent": "roadmap",
-    "status": "done",
-    "message": "Roadmap ready",
-    "ts": "2026-11-07T14:30:20.700Z"
-  },
-  {
-    "runId": "run_demo",
-    "agent": "orchestrator",
-    "status": "done",
-    "message": "Bridge ready: 38% → 84%",
-    "ts": "2026-11-07T14:30:21.600Z",
-    "data": {
-      "readinessNow": 0.38,
-      "readinessProjected": 0.84
-    }
-  }
+  { "runId": "run_demo", "agent": "orchestrator", "status": "started", "message": "Building Aisha's bridge with 7 agents: syllabus, job ads and GitHub in parallel", "ts": "2026-11-07T14:02:00.000Z", "data": { "userId": "aisha", "roleId": "ml-engineer" } },
+  { "runId": "run_demo", "agent": "syllabus", "status": "started", "message": "Reading the BSc Computer Science programme page at manchester.ac.uk", "ts": "2026-11-07T14:02:00.250Z" },
+  { "runId": "run_demo", "agent": "market", "status": "started", "message": "Searching 2 UK job boards for ML engineer ads", "ts": "2026-11-07T14:02:00.500Z", "data": { "roleId": "ml-engineer" } },
+  { "runId": "run_demo", "agent": "evidence", "status": "started", "message": "Reading Aisha's public GitHub repos", "ts": "2026-11-07T14:02:00.700Z" },
+  { "runId": "run_demo", "agent": "syllabus", "status": "progress", "message": "Crawled 32 pages of course units", "ts": "2026-11-07T14:02:01.200Z", "data": { "pages": 32 } },
+  { "runId": "run_demo", "agent": "market", "status": "progress", "message": "Found 231 ML engineer ads posted in the last 30 days", "ts": "2026-11-07T14:02:01.600Z", "data": { "adsFound": 231 } },
+  { "runId": "run_demo", "agent": "evidence", "status": "progress", "message": "Read 6 repos, 23 commits", "ts": "2026-11-07T14:02:02.000Z", "data": { "repos": 6, "commits": 23 } },
+  { "runId": "run_demo", "agent": "syllabus", "status": "done", "message": "Found 41 course units across 3 years", "ts": "2026-11-07T14:02:02.500Z", "data": { "units": 41, "years": 3 } },
+  { "runId": "run_demo", "agent": "market", "status": "progress", "message": "214 ML engineer ads analysed after removing 17 duplicates", "ts": "2026-11-07T14:02:03.000Z", "data": { "adsAnalysed": 214, "duplicates": 17 } },
+  { "runId": "run_demo", "agent": "skillmap", "status": "started", "message": "Mapping 41 course units to industry skills", "ts": "2026-11-07T14:02:03.300Z" },
+  { "runId": "run_demo", "agent": "evidence", "status": "done", "message": "Proved 4 skills from your code: Python, Git, HTML/CSS, JavaScript", "ts": "2026-11-07T14:02:03.700Z", "data": { "proven": ["python", "git", "html-css", "javascript"] } },
+  { "runId": "run_demo", "agent": "market", "status": "done", "message": "Python in 62% of ads, Docker in 41%, PyTorch in 38%", "ts": "2026-11-07T14:02:04.200Z", "data": { "topSkills": { "python": 0.62, "docker": 0.41, "pytorch": 0.38 } } },
+  { "runId": "run_demo", "agent": "trends", "status": "started", "message": "Forecasting demand for 40 skills from 36 months of job posts", "ts": "2026-11-07T14:02:04.500Z" },
+  { "runId": "run_demo", "agent": "skillmap", "status": "done", "message": "87 skills mapped across 41 modules", "ts": "2026-11-07T14:02:05.000Z", "data": { "skills": 87, "modules": 41 } },
+  { "runId": "run_demo", "agent": "trends", "status": "done", "message": "LLM evaluation rising +38%/yr; 6 of your gap skills are rising", "ts": "2026-11-07T14:02:05.600Z", "data": { "skillId": "llm-evaluation", "growthPerYear": 0.38, "risingGaps": 6 } },
+  { "runId": "run_demo", "agent": "roadmap", "status": "started", "message": "Ranking 13 gaps by demand and trend", "ts": "2026-11-07T14:02:05.900Z", "data": { "gaps": 13 } },
+  { "runId": "run_demo", "agent": "roadmap", "status": "progress", "message": "Skipped Statistics: your Semester 2 module covers it", "ts": "2026-11-07T14:02:06.400Z", "data": { "skillId": "statistics" } },
+  { "runId": "run_demo", "agent": "roadmap", "status": "done", "message": "12 weeks planned at 8 hours a week, starting with Docker", "ts": "2026-11-07T14:02:07.000Z", "data": { "weeks": 12, "hoursPerWeek": 8, "firstSkillId": "docker" } },
+  { "runId": "run_demo", "agent": "matchmaker", "status": "started", "message": "Comparing you with 12 students on skills and availability", "ts": "2026-11-07T14:02:07.300Z" },
+  { "runId": "run_demo", "agent": "matchmaker", "status": "done", "message": "3 students fill your gaps, and you fill theirs", "ts": "2026-11-07T14:02:07.900Z", "data": { "candidates": 3 } },
+  { "runId": "run_demo", "agent": "orchestrator", "status": "progress", "message": "Readiness worked out: 4 skills proven, 15 covered by your degree, 13 gaps", "ts": "2026-11-07T14:02:08.200Z" },
+  { "runId": "run_demo", "agent": "orchestrator", "status": "done", "message": "Bridge ready · 38% → 84%", "ts": "2026-11-07T14:02:08.500Z", "data": { "readinessNow": 0.38, "readinessProjected": 0.84, "roleId": "ml-engineer" } }
 ]

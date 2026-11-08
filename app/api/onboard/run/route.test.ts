@@ -1,17 +1,43 @@
-import { describe, it, expect, vi } from "vitest";
-vi.mock("server-only", () => ({}));
-vi.mock("@/lib/agents/orchestrator", () => ({ runOnboarding: vi.fn(async () => ({ runId: "run_x" })) }));
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const h = vi.hoisted(() => ({ run: vi.fn() }));
+vi.mock("next/server", () => ({ after: (fn: () => unknown) => { void fn; } }));
+vi.mock("@/lib/agents/orchestrator", async () => {
+  class ProfileNotFoundError extends Error {}
+  return { ProfileNotFoundError, runOnboarding: h.run };
+});
+
 import { POST } from "./route";
-const post = (body: unknown) => POST(new Request("http://x", { method: "POST", body: JSON.stringify(body) }));
+import { ProfileNotFoundError } from "@/lib/agents/orchestrator";
+
+const post = (body: unknown) => POST(new Request("http://x/api/onboard/run", { method: "POST", headers: { "content-type": "application/json" }, body: typeof body === "string" ? body : JSON.stringify(body) }));
+
+beforeEach(() => h.run.mockReset());
 
 describe("POST /api/onboard/run", () => {
-  it("returns a runId for a known user", async () => {
-    const res = await post({ userId: "aisha" });
+  it("returns {runId} straight away and passes the options through", async () => {
+    h.run.mockResolvedValue({ runId: "run_abc", mode: "demo" });
+    const res = await post({ userId: "aisha", demo: true });
     expect(res.status).toBe(202);
-    expect((await res.json()).data.runId).toBe("run_x");
+    expect(await res.json()).toEqual({ ok: true, data: { runId: "run_abc" } });
+    expect(h.run).toHaveBeenCalledWith("aisha", expect.objectContaining({ demo: true, schedule: expect.any(Function) }));
   });
-  it("404 for an unknown user, 400 for a missing userId", async () => {
-    expect((await post({ userId: "nobody" })).status).toBe(404);
-    expect((await post({})).status).toBe(400);
+
+  it("rejects bad input with 400", async () => {
+    expect((await post("not json")).status).toBe(400);
+    const res = await post({ userId: "" });
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({ ok: false, error: { code: "bad_request" } });
+    expect((await post({ userId: "aisha", programmeUrl: "not a url" })).status).toBe(400);
+    expect(h.run).not.toHaveBeenCalled();
+  });
+
+  it("returns 404 for an unknown user and 500 on other failures", async () => {
+    h.run.mockRejectedValueOnce(new ProfileNotFoundError("nobody"));
+    const res = await post({ userId: "nobody" });
+    expect(res.status).toBe(404);
+    expect(await res.json()).toMatchObject({ ok: false, error: { code: "not_found" } });
+    h.run.mockRejectedValueOnce(new Error("boom"));
+    expect((await post({ userId: "aisha" })).status).toBe(500);
   });
 });

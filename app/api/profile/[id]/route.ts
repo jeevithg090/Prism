@@ -1,27 +1,43 @@
-import "server-only";
 import { getStore } from "@/lib/store";
-import { ProfileUpdateZ, ok, fail } from "@/lib/schemas/brain";
+import { badRequest, fail, internal, LearningDNAZ, ok, ProfileZ } from "@/lib/schemas/community";
 import type { Profile } from "@/lib/types";
 
-type Ctx = { params: Promise<{ id: string }> };
-
-export async function GET(_req: Request, { params }: Ctx) {
+// GET /api/profile/[id] → Profile · PUT (and PATCH) → partial update, `dna` deep-merged (contract §6).
+export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = await params;
+    const { id } = await ctx.params;
     const p = await getStore().get<Profile>("profiles", id);
-    return p ? ok(p) : fail(404, "not_found", "Profile not found");
-  } catch { return fail(500, "internal", "Something went wrong"); }
+    if (!p) return fail(404, "not_found", `No profile ${id}`);
+    return ok(p);
+  } catch {
+    return internal();
+  }
 }
 
-export async function PUT(req: Request, { params }: Ctx) {
+const ProfilePatchZ = ProfileZ.omit({ id: true }).partial().extend({ dna: LearningDNAZ.partial().optional() });
+
+export async function PUT(req: Request, ctx: { params: Promise<{ id: string }> }) {
+  let body: unknown;
   try {
-    const { id } = await params;
-    const parsed = ProfileUpdateZ.safeParse(await req.json().catch(() => null));
-    if (!parsed.success) return fail(400, "bad_request", parsed.error.issues[0]?.message ?? "Invalid update");
+    body = await req.json();
+  } catch {
+    return badRequest("Send the fields to change as JSON.");
+  }
+  const patch = ProfilePatchZ.safeParse(body);
+  if (!patch.success) return badRequest(patch.error);
+  try {
+    const { id } = await ctx.params;
     const store = getStore();
-    const existing = await store.get<Profile>("profiles", id);
-    if (!existing) return fail(404, "not_found", "Profile not found");
-    const merged = { ...existing, ...parsed.data, id, dna: { ...existing.dna, ...parsed.data.dna } } as Profile;
-    return ok(await store.upsert("profiles", id, merged, id));
-  } catch { return fail(500, "internal", "Something went wrong"); }
+    const current = await store.get<Profile>("profiles", id);
+    if (!current) return fail(404, "not_found", `No profile ${id}`);
+    const { dna, ...rest } = patch.data;
+    const merged = ProfileZ.safeParse({ ...current, ...rest, dna: { ...current.dna, ...dna }, id });
+    if (!merged.success) return badRequest(merged.error);
+    await store.upsert("profiles", id, merged.data, id);
+    return ok(merged.data);
+  } catch {
+    return internal();
+  }
 }
+
+export const PATCH = PUT;

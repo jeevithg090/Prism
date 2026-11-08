@@ -1,0 +1,148 @@
+{
+  "id": "pod_demo01",
+  "name": "Pod Orbit",
+  "score": 0.73,
+  "createdAt": "2026-11-07T14:40:00.000Z",
+  "members": [
+    {
+      "userId": "aisha",
+      "learns": [
+        "docker",
+        "pytorch",
+        "sql"
+      ],
+      "teaches": [
+        "python"
+      ],
+      "role": "Learns Docker · Teaches Python"
+    },
+    {
+      "userId": "priya",
+      "learns": [
+        "sql",
+        "aws"
+      ],
+      "teaches": [
+        "python",
+        "pytorch",
+        "docker"
+      ],
+      "role": "Learns SQL · Teaches Python"
+    },
+    {
+      "userId": "tom",
+      "learns": [
+        "pytorch",
+        "react"
+      ],
+      "teaches": [
+        "sql",
+        "aws"
+      ],
+      "role": "Learns PyTorch · Teaches SQL"
+    },
+    {
+      "userId": "mei",
+      "learns": [
+        "python"
+      ],
+      "teaches": [
+        "react",
+        "ci-cd"
+      ],
+      "role": "Learns Python · Teaches React"
+    }
+  ],
+  "explanations": [
+    {
+      "fromUserId": "aisha",
+      "toUserId": "priya",
+      "text": "Priya reviews your Docker and PyTorch work, so you learn from someone a step ahead."
+    },
+    {
+      "fromUserId": "aisha",
+      "toUserId": "tom",
+      "text": "Tom reviews your SQL; you pair up on the project and learn by doing."
+    },
+    {
+      "fromUserId": "aisha",
+      "toUserId": "mei",
+      "text": "You review Mei's Python; teaching it is the fastest way to lock it in."
+    }
+  ],
+  "project": {
+    "title": "VisionAid: accessible image captioning API",
+    "pitch": "A small open-source API that writes alt text for images, so blind and low-vision users get useful descriptions on any website. Each of you builds the part you want to learn, and a podmate who already knows it reviews your pull request.",
+    "milestones": [
+      "Week 1: Captioning API runs in Docker",
+      "Week 2: Fine-tuned model with quality checks",
+      "Week 3: Accessible web app, deployed"
+    ],
+    "issues": [
+      {
+        "title": "Containerise the captioning API with Docker",
+        "body": "Package the FastAPI captioning service so anyone in the pod can run it with one command.\n\n## Acceptance criteria\n- [ ] A `Dockerfile` builds the API on a slim Python base image\n- [ ] `docker compose up` starts the API on port 8000\n- [ ] `GET /health` returns `{\"status\":\"ok\"}` inside the container\n- [ ] The README has a \"Run with Docker\" section\n\n**Learning focus:** Docker · **Reviewer:** Priya (teaches Docker)",
+        "assigneeUserId": "aisha",
+        "reviewerUserId": "priya",
+        "skillId": "docker",
+        "milestone": "Week 1: Captioning API runs in Docker",
+        "githubIssueUrl": "https://github.com/keystone-demo/pod-vision-demo/issues/1"
+      },
+      {
+        "title": "Design the Postgres schema for caption requests",
+        "body": "Store every caption request so the pod can measure quality and latency later.\n\n## Acceptance criteria\n- [ ] A `requests` table with id, image_url, caption, model_version, latency_ms and created_at\n- [ ] A migration script in `db/migrations/`\n- [ ] One SQL query that returns the 10 slowest requests this week\n- [ ] Indexes are explained in a short comment\n\n**Learning focus:** SQL · **Reviewer:** Tom (teaches SQL)",
+        "assigneeUserId": "priya",
+        "reviewerUserId": "tom",
+        "skillId": "sql",
+        "milestone": "Week 1: Captioning API runs in Docker",
+        "githubIssueUrl": "https://github.com/keystone-demo/pod-vision-demo/issues/2"
+      },
+      {
+        "title": "Write the Python image preprocessing module",
+        "body": "Resize and normalise uploaded images before they reach the model.\n\n## Acceptance criteria\n- [ ] `preprocess.py` exposes `load_image(path) -> Tensor`\n- [ ] Images are resized to 384×384 and keep their aspect ratio with padding\n- [ ] Corrupt or non-image files raise a clear `ValueError`\n- [ ] Three pytest tests cover the happy path and both error cases\n\n**Learning focus:** Python · **Reviewer:** Aisha (teaches Python)",
+        "assigneeUserId": "mei",
+        "reviewerUserId": "aisha",
+        "skillId": "python",
+        "milestone": "Week 1: Captioning API runs in Docker",
+        "githubIssueUrl": "https://github.com/keystone-demo/pod-vision-demo/issues/3"
+      },
+      {
+        "title": "Fine-tune a small captioning model in PyTorch",
+        "body": "Fine-tune a pretrained image-captioning model on a small accessibility-focused dataset.\n\n## Acceptance criteria\n- [ ] A training script in `model/train.py` that runs on a laptop CPU in under 20 minutes on the sample set\n- [ ] Training loss is logged every 50 steps\n- [ ] The best checkpoint is saved to `model/checkpoints/`\n- [ ] A short note on what you changed and why\n\n**Learning focus:** PyTorch · **Reviewer:** Priya (teaches PyTorch)",
+        "assigneeUserId": "tom",
+        "reviewerUserId": "priya",
+        "skillId": "pytorch",
+        "milestone": "Week 2: Fine-tuned model with quality checks",
+        "githubIssueUrl": "https://github.com/keystone-demo/pod-vision-demo/issues/4"
+      },
+      {
+        "title": "Add PyTorch batch inference and a caption quality check",
+        "body": "Caption a folder of test images in batches and flag captions that are too vague to be useful as alt text.\n\n## Acceptance criteria\n- [ ] `model/infer.py` captions a folder of images in batches of 8\n- [ ] Captions shorter than 4 words or containing \"image of\" are flagged\n- [ ] Results are written to `reports/quality.csv`\n- [ ] Inference runs under `torch.no_grad()`\n\n**Learning focus:** PyTorch · **Reviewer:** Priya (teaches PyTorch)",
+        "assigneeUserId": "aisha",
+        "reviewerUserId": "priya",
+        "skillId": "pytorch",
+        "milestone": "Week 2: Fine-tuned model with quality checks",
+        "githubIssueUrl": "https://github.com/keystone-demo/pod-vision-demo/issues/5"
+      },
+      {
+        "title": "Build the React upload page with screen-reader support",
+        "body": "A simple page where a user uploads an image and hears the generated caption.\n\n## Acceptance criteria\n- [ ] Drag-and-drop and a keyboard-accessible file button\n- [ ] The caption is announced through an `aria-live` region\n- [ ] Loading and error states are visible and announced\n- [ ] The page passes an axe check with no serious issues\n\n**Learning focus:** React · **Reviewer:** Mei (teaches React)",
+        "assigneeUserId": "tom",
+        "reviewerUserId": "mei",
+        "skillId": "react",
+        "milestone": "Week 3: Accessible web app, deployed",
+        "githubIssueUrl": "https://github.com/keystone-demo/pod-vision-demo/issues/6"
+      },
+      {
+        "title": "Deploy the API to AWS",
+        "body": "Put VisionAid online so the pod can demo it.\n\n## Acceptance criteria\n- [ ] The Docker image is pushed to ECR\n- [ ] The API runs on ECS Fargate or App Runner behind HTTPS\n- [ ] Uploaded images are stored in a private S3 bucket with a 7-day lifecycle rule\n- [ ] The README lists the monthly cost estimate (free tier where possible)\n\n**Learning focus:** AWS · **Reviewer:** Tom (teaches AWS)",
+        "assigneeUserId": "priya",
+        "reviewerUserId": "tom",
+        "skillId": "aws",
+        "milestone": "Week 3: Accessible web app, deployed",
+        "githubIssueUrl": "https://github.com/keystone-demo/pod-vision-demo/issues/7"
+      }
+    ],
+    "repoUrl": "https://github.com/keystone-demo/pod-vision-demo"
+  }
+}

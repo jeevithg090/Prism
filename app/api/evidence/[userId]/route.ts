@@ -1,11 +1,15 @@
-import "server-only";
-import { getStore } from "@/lib/store";
-import { ok, fail } from "@/lib/schemas/brain";
-import type { EvidenceItem } from "@/lib/types";
+// GET /api/evidence/[userId] → EvidenceItem[] (store: pod proofs, challenges, GitHub sync; plus fixture evidence).
+import { listEvidence } from "@/lib/graph/data";
+import { UserParamZ } from "@/lib/graph/schemas";
+import { badRequest, internal, ok } from "@/lib/schemas/community";
 
-export async function GET(_req: Request, { params }: { params: Promise<{ userId: string }> }) {
+export async function GET(_req: Request, ctx: { params: Promise<{ userId: string }> }) {
   try {
-    const { userId } = await params;
-    return ok(await getStore().list<EvidenceItem>("evidence", { userId }));
-  } catch { return fail(500, "internal", "Something went wrong"); }
+    const params = UserParamZ.safeParse(await ctx.params);
+    if (!params.success) return badRequest(params.error);
+    const items = await listEvidence(params.data.userId);
+    return ok([...items].sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+  } catch {
+    return internal();
+  }
 }
