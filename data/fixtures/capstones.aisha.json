@@ -1,0 +1,50 @@
+{
+  "id": "capstone_aisha_001",
+  "userId": "aisha",
+  "title": "Accessible image captioning API",
+  "pitch": "A small open-source API that writes alt text for images, so blind and low-vision users get useful descriptions on any website.",
+  "roleId": "ml-engineer",
+  "targetSkills": ["python", "pytorch", "docker"],
+  "milestones": [
+    {
+      "id": "capstone_ms_001",
+      "title": "Learn the foundations",
+      "skillId": "python",
+      "tasks": [
+        "Learn the fundamentals of Python",
+        "Build a feature using Python",
+        "Demo the Python feature and add it to your CV and LinkedIn"
+      ],
+      "done": false,
+      "dueAt": "2026-11-20T00:00:00.000Z"
+    },
+    {
+      "id": "capstone_ms_002",
+      "title": "Build the project",
+      "skillId": "pytorch",
+      "tasks": [
+        "Learn the fundamentals of PyTorch",
+        "Build a feature using PyTorch",
+        "Demo the PyTorch feature and add it to your CV and LinkedIn"
+      ],
+      "done": false,
+      "dueAt": "2026-11-27T00:00:00.000Z"
+    },
+    {
+      "id": "capstone_ms_003",
+      "title": "Showcase to employers",
+      "skillId": "docker",
+      "tasks": [
+        "Learn the fundamentals of Docker",
+        "Build a feature using Docker",
+        "Demo the Docker feature and add it to your CV and LinkedIn"
+      ],
+      "done": false,
+      "dueAt": "2026-12-04T00:00:00.000Z"
+    }
+  ],
+  "status": "planning",
+  "showcaseUrl": null,
+  "createdAt": "2026-11-01T10:00:00.000Z",
+  "updatedAt": "2026-11-01T10:00:00.000Z"
+}

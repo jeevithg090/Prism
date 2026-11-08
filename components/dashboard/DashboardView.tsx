@@ -14,6 +14,7 @@ import { roleName, topGaps, useBridgeMap } from "./data";
 import { ReadinessCard } from "./ReadinessCard";
 import { AskKeystoneCard, MarketPulse, SlotBoundary } from "./SideCards";
 import { ThisWeekCard, ThisWeekSkeleton, primaryLink } from "./ThisWeekCard";
+import { InterviewPrepCard } from "@/components/interview-prep/InterviewPrepCard";
 
 const textLink = "font-medium text-primary underline decoration-1 underline-offset-4 outline-none hover:decoration-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
 
@@ -169,6 +170,11 @@ export function DashboardView({
             <div className="min-w-0 md:odd:last:col-span-2">
               <AskKeystoneCard focusName={focus?.name} />
             </div>
+            {map && (
+              <div className="min-w-0 [&>*]:h-full">
+                <InterviewPrepCard userId={userId} roleId={roleId} map={map} />
+              </div>
+            )}
           </div>
         </div>
       </div>

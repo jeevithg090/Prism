@@ -7,6 +7,7 @@ import { AskComposer } from "./AskComposer";
 import { GuidesSection } from "./GuidesSection";
 import { HelpFeed } from "./HelpFeed";
 import { HelpersThisWeek } from "./HelpersThisWeek";
+import { ModuleHelpAsk } from "./module-help/ModuleHelpAsk";
 import { isNewcomer, sortHelpFeed } from "./help";
 import { useProfiles } from "./useProfiles";
 import { useViewerId } from "./useViewerId";
@@ -42,6 +43,7 @@ export function CommunityView() {
       <div className="min-w-0 lg:col-start-2 lg:row-start-1">
         <div className="space-y-8 lg:sticky lg:top-[calc(var(--topbar-height)+1.5rem)] lg:z-(--z-sticky)">
           <AskComposer viewerId={viewerId} newcomer={isNewcomer(profiles[viewerId])} />
+          <ModuleHelpAsk viewerId={viewerId} newcomer={isNewcomer(profiles[viewerId])} />
           <HelpersThisWeek requests={all} profiles={profiles} isLoading={help.isPending} isError={help.isError} onRetry={retry} />
         </div>
       </div>
