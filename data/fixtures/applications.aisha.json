@@ -1,0 +1,47 @@
+[
+  {
+    "id": "app_aisha_001",
+    "userId": "aisha",
+    "company": "HealthVision AI",
+    "roleTitle": "Machine Learning Engineer Intern",
+    "roleUrl": "https://example.com/jobs/ml-intern",
+    "status": "applied",
+    "appliedAt": "2026-10-20T09:15:00.000Z",
+    "source": "University careers fair",
+    "notes": "Applied via campus referral. Follow up with the hiring manager next week.",
+    "matchedSkills": ["python", "pytorch", "pandas"],
+    "matchScore": 0.43,
+    "createdAt": "2026-10-20T09:15:00.000Z",
+    "updatedAt": "2026-10-20T09:15:00.000Z"
+  },
+  {
+    "id": "app_aisha_002",
+    "userId": "aisha",
+    "company": "DataFlow",
+    "roleTitle": "Data Analyst",
+    "roleUrl": null,
+    "status": "interviewing",
+    "appliedAt": "2026-10-14T16:30:00.000Z",
+    "source": "LinkedIn",
+    "notes": "First round next Tuesday. Preparing SQL and Python questions.",
+    "matchedSkills": ["sql", "python", "data-visualisation"],
+    "matchScore": 0.57,
+    "createdAt": "2026-10-14T16:30:00.000Z",
+    "updatedAt": "2026-10-18T11:00:00.000Z"
+  },
+  {
+    "id": "app_aisha_003",
+    "userId": "aisha",
+    "company": "OpenCollective",
+    "roleTitle": "Software Engineer",
+    "roleUrl": "https://example.com/jobs/swe",
+    "status": "rejected",
+    "appliedAt": "2026-09-28T12:00:00.000Z",
+    "source": "Company website",
+    "notes": "Declined after technical screen. Asked for feedback.",
+    "matchedSkills": ["javascript", "react", "git"],
+    "matchScore": 0.29,
+    "createdAt": "2026-09-28T12:00:00.000Z",
+    "updatedAt": "2026-10-05T14:20:00.000Z"
+  }
+]

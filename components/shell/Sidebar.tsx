@@ -5,8 +5,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BadgeCheck,
+  Briefcase,
   CalendarDays,
   Flag,
+  FolderKanban,
   GraduationCap,
   HeartHandshake,
   LayoutDashboard,
@@ -38,6 +40,8 @@ export function primaryNav(viewerId: string): NavItem[] {
     { id: "coach", label: "Coach", href: "/coach", icon: Sparkles },
     { id: "challenge", label: "Challenges", href: "/challenge", icon: Flag },
     { id: "interview", label: "Interview", href: "/interview", icon: Mic },
+    { id: "applications", label: "Applications", href: "/applications", icon: Briefcase },
+    { id: "capstone-projects", label: "Capstone Projects", href: "/capstone-projects", icon: FolderKanban },
     { id: "passport", label: "Passport", href: `/profile/${encodeURIComponent(viewerId)}`, icon: BadgeCheck, match: "/profile" },
   ];
 }

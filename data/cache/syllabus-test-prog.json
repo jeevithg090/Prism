@@ -1,0 +1,50 @@
+{
+  "id": "test-prog",
+  "university": "uni.ac.uk",
+  "name": "test-prog",
+  "url": "https://uni.ac.uk/bsc-cs",
+  "modules": [
+    {
+      "code": "COMP11120",
+      "title": "Mathematical Techniques",
+      "year": 1,
+      "semester": "1",
+      "compulsory": true,
+      "topics": [
+        "Linear algebra and statistics"
+      ],
+      "learningOutcomes": [],
+      "skills": [
+        {
+          "skillId": "linear-algebra",
+          "level": 1
+        },
+        {
+          "skillId": "statistics",
+          "level": 1
+        }
+      ],
+      "industryNote": "The maths behind embeddings, recommendations and neural networks."
+    },
+    {
+      "code": "COMP16321",
+      "title": "Programming 1",
+      "year": 1,
+      "semester": "1",
+      "compulsory": true,
+      "topics": [
+        "Write Python programs"
+      ],
+      "learningOutcomes": [],
+      "skills": [
+        {
+          "skillId": "python",
+          "level": 2
+        }
+      ],
+      "industryNote": "Python is the default language for ML and data roles."
+    }
+  ],
+  "extractedAt": "2026-11-08T11:05:33.907Z",
+  "source": "firecrawl"
+}

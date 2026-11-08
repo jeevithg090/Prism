@@ -1,0 +1,24 @@
+{
+  "gaps": [
+    {
+      "skillId": "docker",
+      "demandPct": 41,
+      "studentsTargeting": 11
+    },
+    {
+      "skillId": "sql",
+      "demandPct": 35,
+      "studentsTargeting": 12
+    },
+    {
+      "skillId": "aws",
+      "demandPct": 33,
+      "studentsTargeting": 11
+    }
+  ],
+  "labIdeas": [
+    "Add a containerised deployment step to the COMP23311 Software Engineering coursework: students ship their solution as a Docker image a marker can run with one command (supports learning outcome 3: 'Deploy and evaluate software').",
+    "Add a hands-on SQL lab to COMP23111 Database Systems: students write joins, aggregates and window functions against a real open dataset, checked by automated tests (supports learning outcome 1: 'Design a schema').",
+    "Add a cloud deployment lab to COMP23111 Database Systems: students deploy their service to a free-tier cloud account and explain the cost and security trade-offs (supports learning outcome 1: 'Design a schema')."
+  ]
+}

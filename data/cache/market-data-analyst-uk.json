@@ -1,0 +1,63 @@
+{
+  "roleId": "data-analyst",
+  "roleName": "Data analyst",
+  "location": "UK",
+  "adsAnalysed": 6,
+  "skills": [
+    {
+      "skillId": "python",
+      "share": 1,
+      "trend": "stable"
+    },
+    {
+      "skillId": "sql",
+      "share": 1,
+      "trend": "rising"
+    }
+  ],
+  "salary": {
+    "p25": 31500,
+    "median": 32500,
+    "p75": 34000,
+    "currency": "GBP"
+  },
+  "topCompanies": [
+    {
+      "name": "Co-op",
+      "count": 4
+    },
+    {
+      "name": "NHS",
+      "count": 2
+    }
+  ],
+  "sampleAds": [
+    {
+      "title": "Data Analyst 0",
+      "company": "Co-op",
+      "url": "https://adzuna.co.uk/0"
+    },
+    {
+      "title": "Data Analyst 1",
+      "company": "Co-op",
+      "url": "https://adzuna.co.uk/1"
+    },
+    {
+      "title": "Data Analyst 2",
+      "company": "Co-op",
+      "url": "https://adzuna.co.uk/2"
+    },
+    {
+      "title": "Data Analyst 3",
+      "company": "Co-op",
+      "url": "https://adzuna.co.uk/3"
+    },
+    {
+      "title": "Data Analyst 4",
+      "company": "NHS",
+      "url": "https://adzuna.co.uk/4"
+    }
+  ],
+  "snapshotAt": "2026-11-08T11:05:33.543Z",
+  "source": "adzuna"
+}
