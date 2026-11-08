@@ -71,6 +71,31 @@ describe("evidence routes", () => {
     expect(items.find((e) => e.skillId === "python")).toMatchObject({ level: 2, confidence: 0.5 });
     expect(items.find((e) => e.skillId === "html-css")).toMatchObject({ level: 1 });
   });
+  it("POST sync live: a LeetCode handle alone runs the LeetCode connector", async () => {
+    await h.store.upsert("profiles", "lee", { id: "lee", name: "Lee", programmeId: "uom-bsc-cs", year: 1, startedAt: "2026-09-21", badges: [], interests: [], availability: [], dna: { targetRoles: ["ml-engineer"], timelineLabel: "", targetDate: "2027-09-01", hoursPerWeek: 8, theoryPractice: 50, formats: [], budget: "free", constraints: [], accessibility: [], language: "en" } }, "lee");
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async () => Response.json({ data: {
+      matchedUser: { username: "lee-lc", profile: { ranking: 1000 }, submitStatsGlobal: { acSubmissionNum: [{ difficulty: "All", count: 200 }, { difficulty: "Easy", count: 80 }, { difficulty: "Medium", count: 100 }, { difficulty: "Hard", count: 20 }] }, problemsSolvedBeatsStats: [] },
+      recentAcSubmissionList: [],
+    } }));
+    const res = await syncEvidence(new Request("http://x", json({ userId: "lee", leetcodeUser: "lee-lc" })));
+    expect(res.status).toBe(200);
+    expect(String(fetchSpy.mock.calls[0][0])).toContain("leetcode.com/graphql");
+    const items = (await res.json()).data as { skillId: string; source: string; level: number }[];
+    expect(items.filter((e) => e.source === "leetcode").map((e) => e.skillId).sort()).toEqual(["algorithms", "data-structures"]);
+    expect(items.find((e) => e.skillId === "algorithms")).toMatchObject({ level: 2 });
+  });
+  it("POST sync live: GitHub and LeetCode together return both sources' evidence", async () => {
+    await h.store.upsert("profiles", "duo", { id: "duo", name: "Duo", programmeId: "uom-bsc-cs", year: 1, startedAt: "2026-09-21", badges: [], interests: [], availability: [], dna: { targetRoles: ["ml-engineer"], timelineLabel: "", targetDate: "2027-09-01", hoursPerWeek: 8, theoryPractice: 50, formats: [], budget: "free", constraints: [], accessibility: [], language: "en" } }, "duo");
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
+      const u = String(url);
+      if (u.includes("leetcode.com")) return Response.json({ data: { matchedUser: { username: "duo", profile: {}, submitStatsGlobal: { acSubmissionNum: [{ difficulty: "All", count: 30 }] }, problemsSolvedBeatsStats: [] }, recentAcSubmissionList: [] } });
+      if (u.includes("/users/duo-gh/repos")) return Response.json([{ name: "cv", html_url: "https://github.com/duo-gh/cv", fork: false, pushed_at: "2026-11-01", languages_url: "https://api.github.com/repos/duo-gh/cv/languages" }]);
+      return Response.json({ Python: 80_000 });
+    });
+    const res = await syncEvidence(new Request("http://x", json({ userId: "duo", githubLogin: "duo-gh", leetcodeUser: "duo" })));
+    const items = (await res.json()).data as { source: string }[];
+    expect(new Set(items.map((e) => e.source))).toEqual(new Set(["github", "leetcode"]));
+  });
 });
 
 describe("roadmap routes", () => {
