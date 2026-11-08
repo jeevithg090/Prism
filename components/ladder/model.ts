@@ -23,16 +23,18 @@ export const RUNG_MEANING: Record<RungNumber, string> = {
 
 /** Contract evidence sources plus the two the ladder derives: a completed module and a peer code review. */
 export const LadderSourceZ = z.enum([
-  "github", "leetcode", "codeforces", "stackoverflow", "kaggle", "linkedin-pdf", "certificate",
-  "keystone-pod", "keystone-interview", "micro-challenge", "degree", "code-review",
+  "github", "leetcode", "hackerrank", "codeforces", "stackoverflow", "kaggle", "devto", "linkedin-pdf",
+  "certificate", "keystone-pod", "keystone-interview", "micro-challenge", "degree", "code-review",
 ]);
 export type LadderSource = z.infer<typeof LadderSourceZ>;
 
 export const SOURCE_LABEL: Record<LadderSource, string> = {
   github: "GitHub",
   leetcode: "LeetCode",
+  hackerrank: "HackerRank",
   codeforces: "Codeforces",
   stackoverflow: "Stack Overflow",
+  devto: "DEV",
   kaggle: "Kaggle",
   "linkedin-pdf": "LinkedIn export",
   certificate: "Certificate",

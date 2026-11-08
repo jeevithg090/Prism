@@ -9,7 +9,7 @@ const CategoryZ = z.enum(["language", "framework", "data", "ml-ai", "cloud-devop
 export const EvidenceItemZ = z.object({
   id: z.string().min(1), userId: z.string().min(1), skillId: z.string().min(1), level: LevelZ,
   confidence: z.number().min(0).max(1),
-  source: z.enum(["github", "leetcode", "codeforces", "stackoverflow", "kaggle", "linkedin-pdf", "certificate", "keystone-pod", "keystone-interview", "micro-challenge"]),
+  source: z.enum(["github", "leetcode", "hackerrank", "codeforces", "stackoverflow", "kaggle", "devto", "linkedin-pdf", "certificate", "keystone-pod", "keystone-interview", "micro-challenge"]),
   url: z.string(), quote: z.string().optional(), createdAt: z.string(),
 });
 
@@ -55,6 +55,11 @@ export const EvidenceSyncReqZ = z.object({
   userId: Id,
   githubLogin: z.string().trim().regex(/^[a-z\d](?:[a-z\d-]{0,38})$/i, "a GitHub username").optional(),
   leetcodeUser: z.string().trim().min(1).max(64).optional(),
+  hackerrankLogin: z.string().trim().min(1).max(64).optional(),
+  codeforcesLogin: z.string().trim().min(1).max(24).optional(),
+  /** Stack Overflow numeric user id (not the display name). */
+  stackoverflowId: z.string().trim().regex(/^\d{1,16}$/, "a Stack Overflow user id (digits only)").optional(),
+  devtoUser: z.string().trim().min(1).max(64).optional(),
 });
 export const RoadmapGenerateReqZ = z.object({
   userId: Id,

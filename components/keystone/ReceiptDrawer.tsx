@@ -27,7 +27,8 @@ export interface ReceiptDrawerProps {
 }
 
 const SOURCE_LABEL: Record<EvidenceItem["source"], string> = {
-  github: "GitHub", leetcode: "LeetCode", codeforces: "Codeforces", stackoverflow: "Stack Overflow", kaggle: "Kaggle",
+  github: "GitHub", leetcode: "LeetCode", hackerrank: "HackerRank", codeforces: "Codeforces",
+  stackoverflow: "Stack Overflow", kaggle: "Kaggle", devto: "DEV",
   "linkedin-pdf": "LinkedIn", certificate: "Certificate", "keystone-pod": "Pod PR", "keystone-interview": "Mock interview",
   "micro-challenge": "Challenge",
 };

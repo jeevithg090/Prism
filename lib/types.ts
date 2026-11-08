@@ -46,7 +46,8 @@ export interface Role { id: string; name: string } // catalogue: ml-engineer, so
 
 // ---------- Student ----------
 export type EvidenceSource =
-  | "github" | "leetcode" | "codeforces" | "stackoverflow" | "kaggle" | "linkedin-pdf"
+  | "github" | "leetcode" | "hackerrank" | "codeforces" | "stackoverflow" | "kaggle"
+  | "devto" | "linkedin-pdf"
   | "certificate" | "keystone-pod" | "keystone-interview" | "micro-challenge";
 export interface EvidenceItem {
   id: string; userId: string; skillId: SkillId; level: Level; confidence: number /* 0..1 */;
@@ -69,7 +70,9 @@ export type BadgeId =
   | "helper" | "shipped" | "interview-ready";
 export interface Profile {
   id: string; name: string; avatarUrl?: string;
-  githubLogin?: string; leetcodeUser?: string;
+  /** Public platform handles the Evidence Agent syncs (all optional; nothing is required). */
+  githubLogin?: string; leetcodeUser?: string; hackerrankLogin?: string;
+  codeforcesLogin?: string; stackoverflowId?: string; devtoUser?: string;
   programmeId: string; year: 1 | 2 | 3 | 4; startedAt: string; // ISO, start at uni
   dna: LearningDNA; badges: BadgeId[];
   interests: string[]; availability: string[]; // "mon-eve", "sat-am"
