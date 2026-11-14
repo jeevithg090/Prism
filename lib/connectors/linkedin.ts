@@ -42,8 +42,6 @@ const OTHER_HEADINGS =
 const SKILL_NOISE = /^(?:industry knowledge|tools? & technologies?|technologies|other skills?|endorsed by .*|also knows about.*|skills profile.*)$/i;
 /** Candidate phrases inside a skills-list line (bullets and commas on LinkedIn exports). */
 const LIST_SPLIT = /[•▪‣·|,;\t]+/;
-/** A certification is spelled "Nome — Issuer (Year)" or plain text; split only on real dashes so names like "Front-End" survive. */
-const CERT_DASH = /^(.+?)\s+[—–]\s+(.+?)(?:\s*\(([^()]{1,60})\))?\s*$/;
 /** Experience entries carry tenant dates ("Jun 2025 - Sep 2025 · 3 mos"). */
 const ENTRY_DATE = /\b(?:19|20)\d{2}\b|\b\d+\s+(?:mo(?:s)?|months?|yrs?|years?)\b/i;
 
