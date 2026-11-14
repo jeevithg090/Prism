@@ -59,9 +59,13 @@ export function CapstoneRoadmap({ userId, roleId }: { userId: string; roleId?: s
   const isPending = query.isPending;
   const queryError = query.error;
 
-  if (isPending) return <LoadingSkeleton variant="list" />;
-  if (queryError)
-    return (
+  const list = projects ?? [];
+  // Every state renders inside the same page shell, so the heading and the create dialog exist in all of them
+  // (the empty state's "New project" button opens the dialog below).
+  let state: React.ReactNode = null;
+  if (isPending) state = <LoadingSkeleton variant="list" />;
+  else if (queryError)
+    state = (
       <ErrorState
         title="We could not load your capstone projects"
         body="Try again in a moment."
@@ -71,9 +75,8 @@ export function CapstoneRoadmap({ userId, roleId }: { userId: string; roleId?: s
         }}
       />
     );
-  const list = projects ?? [];
-  if (list.length === 0) {
-    return (
+  else if (list.length === 0)
+    state = (
       <EmptyState
         title="No capstone projects yet"
         body="Your first capstone project turns your biggest skill gaps into a milestone roadmap you can link from your CV and LinkedIn."
@@ -84,7 +87,6 @@ export function CapstoneRoadmap({ userId, roleId }: { userId: string; roleId?: s
         }
       />
     );
-  }
 
   const handleUpdate = async (
     project: CapstoneProject,
@@ -194,126 +196,130 @@ export function CapstoneRoadmap({ userId, roleId }: { userId: string; roleId?: s
         title="Your capstone roadmap"
         subtitle="Turn your biggest skill gaps into a milestone roadmap — build, then showcase it to employers."
         actions={
-          <Button onClick={() => setOpen(true)} size="lg">
-            <Plus aria-hidden /> New project
-          </Button>
+          list.length > 0 ? (
+            <Button onClick={() => setOpen(true)} size="lg">
+              <Plus aria-hidden /> New project
+            </Button>
+          ) : undefined
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-[repeat(3,minmax(0,1fr))]">
-        {list.map((project) => {
-          const { done, total, pct } = progressOf(project);
-          const badge = STATUS_BADGE[project.status];
-          return (
-            <Card key={project.id} className="flex flex-col h-full">
-              <CardHeader>
-                <div className="flex items-center justify-between gap-2">
-                  <CardTitle className="text-base leading-snug">{project.title}</CardTitle>
-                  <Badge variant={badge.variant} className="text-xs">
-                    {badge.label}
-                  </Badge>
-                </div>
-                <CardDescription>{project.pitch}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex flex-wrap gap-2">
-                  {project.targetSkills.map((skillId) => (
-                    <span
-                      key={skillId}
-                      data-skill={skillId}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-input bg-card px-2.5 py-1 text-sm text-foreground"
-                    >
-                      <span className="sr-only">Skill: {skillId}</span>
-                      {skillId.charAt(0).toUpperCase() + skillId.slice(1)}
+      {state ?? (
+        <div className="grid gap-6 lg:grid-cols-[repeat(3,minmax(0,1fr))]">
+          {list.map((project) => {
+            const { done, total, pct } = progressOf(project);
+            const badge = STATUS_BADGE[project.status];
+            return (
+              <Card key={project.id} className="flex flex-col h-full">
+                <CardHeader>
+                  <div className="flex items-center justify-between gap-2">
+                    <CardTitle className="text-base leading-snug">{project.title}</CardTitle>
+                    <Badge variant={badge.variant} className="text-xs">
+                      {badge.label}
+                    </Badge>
+                  </div>
+                  <CardDescription>{project.pitch}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex flex-wrap gap-2">
+                    {project.targetSkills.map((skillId) => (
+                      <span
+                        key={skillId}
+                        data-skill={skillId}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-input bg-card px-2.5 py-1 text-sm text-foreground"
+                      >
+                        <span className="sr-only">Skill: {skillId}</span>
+                        {skillId.charAt(0).toUpperCase() + skillId.slice(1)}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="space-y-2">
+                    {project.milestones.map((m) => {
+                      const mpct = m.tasks.length === 0 ? 0 : m.done ? 100 : 0;
+                      return (
+                        <Card key={m.id} className="border bg-muted/50 p-3">
+                          <CardHeader className="pb-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <CardTitle className="text-sm font-semibold">{m.title}</CardTitle>
+                              <Badge variant="outline" className="text-xs">
+                                {mpct}%
+                              </Badge>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="py-2">
+                            <div className="space-y-1.5">
+                              {m.tasks.map((t, ti) => (
+                                <div key={ti} role="listitem" className="flex items-center gap-3">
+                                  <input
+                                    type="checkbox"
+                                    checked={m.done}
+                                    onChange={() => void handleToggle(project.id, m.id, !m.done)}
+                                    aria-label={`${m.title}: ${t}`}
+                                    className="shrink-0 rounded-lg border border-input bg-card text-primary transition-all duration-200 focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
+                                    disabled={saving}
+                                  />
+                                  <span
+                                    className={cn("text-sm text-foreground leading-snug", m.done && "line-through text-muted-foreground")}
+                                  >
+                                    {t}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="mt-2 flex items-center gap-2">
+                              <Progress value={mpct} className="h-3 w-24 shrink-0" />
+                              <span className="text-xs text-muted-foreground">{m.title}</span>
+                              <span className="ml-auto text-xs text-muted-foreground tabular-nums">{mpct}%</span>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+                <CardFooter className="pt-4 space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-mono text-foreground tabular-nums">{pct}%</span>
+                    <span className="text-xs text-muted-foreground">
+                      {done} of {total} milestones
                     </span>
-                  ))}
-                </div>
-                <div className="space-y-2">
-                  {project.milestones.map((m) => {
-                    const mpct = m.tasks.length === 0 ? 0 : m.done ? 100 : 0;
-                    return (
-                      <Card key={m.id} className="border bg-muted/50 p-3">
-                        <CardHeader className="pb-1">
-                          <div className="flex items-center justify-between gap-2">
-                            <CardTitle className="text-sm font-semibold">{m.title}</CardTitle>
-                            <Badge variant="outline" className="text-xs">
-                              {mpct}%
-                            </Badge>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="py-2">
-                          <div className="space-y-1.5">
-                            {m.tasks.map((t, ti) => (
-                              <div key={ti} role="listitem" className="flex items-center gap-3">
-                                <input
-                                  type="checkbox"
-                                  checked={m.done}
-                                  onChange={() => void handleToggle(project.id, m.id, !m.done)}
-                                  aria-label={`${m.title}: ${t}`}
-                                  className="shrink-0 rounded-lg border border-input bg-card text-primary transition-all duration-200 focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
-                                  disabled={saving}
-                                />
-                                <span
-                                  className={cn("text-sm text-foreground leading-snug", m.done && "line-through text-muted-foreground")}
-                                >
-                                  {t}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                          <div className="mt-2 flex items-center gap-2">
-                            <Progress value={mpct} className="h-3 w-24 shrink-0" />
-                            <span className="text-xs text-muted-foreground">{m.title}</span>
-                            <span className="ml-auto text-xs text-muted-foreground tabular-nums">{mpct}%</span>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              </CardContent>
-              <CardFooter className="pt-4 space-y-3">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-mono text-foreground tabular-nums">{pct}%</span>
-                  <span className="text-xs text-muted-foreground">
-                    {done} of {total} milestones
-                  </span>
-                </div>
-                <div className="flex flex-col sm:flex-row items-center gap-2">
-                  <Input
-                    id={`showcase-${project.id}`}
-                    placeholder="https://your-project.com"
-                    value={showcaseEdits[project.id] ?? project.showcaseUrl ?? ""}
-                    onChange={(e) => setShowcaseEdits((cur) => ({ ...cur, [project.id]: e.target.value }))}
-                    disabled={saving}
-                    className="text-xs md:text-sm"
-                    aria-label={`Showcase URL for ${project.title}`}
-                  />
-                  <Button
-                    onClick={() => void handleShowcaseSave(project)}
-                    disabled={saving || !showcaseEdits[project.id]}
-                    size="icon-sm"
-                    aria-label={`Save showcase URL for ${project.title}`}
-                  >
-                    <Link aria-hidden />
-                  </Button>
-                </div>
-                {project.showcaseUrl && (
-                  <a
-                    href={project.showcaseUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-primary underline decoration-1 underline-offset-4 hover:decoration-2"
-                    aria-label={`Open showcase link for ${project.title} (opens in a new tab)`}
-                  >
-                    View project <span className="sr-only">opens in a new tab</span>
-                  </a>
-                )}
-              </CardFooter>
-            </Card>
-          );
-        })}
-      </div>
+                  </div>
+                  <div className="flex flex-col sm:flex-row items-center gap-2">
+                    <Input
+                      id={`showcase-${project.id}`}
+                      placeholder="https://your-project.com"
+                      value={showcaseEdits[project.id] ?? project.showcaseUrl ?? ""}
+                      onChange={(e) => setShowcaseEdits((cur) => ({ ...cur, [project.id]: e.target.value }))}
+                      disabled={saving}
+                      className="text-xs md:text-sm"
+                      aria-label={`Showcase URL for ${project.title}`}
+                    />
+                    <Button
+                      onClick={() => void handleShowcaseSave(project)}
+                      disabled={saving || !showcaseEdits[project.id]}
+                      size="icon-sm"
+                      aria-label={`Save showcase URL for ${project.title}`}
+                    >
+                      <Link aria-hidden />
+                    </Button>
+                  </div>
+                  {project.showcaseUrl && (
+                    <a
+                      href={project.showcaseUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-primary underline decoration-1 underline-offset-4 hover:decoration-2"
+                      aria-label={`Open showcase link for ${project.title} (opens in a new tab)`}
+                    >
+                      View project <span className="sr-only">opens in a new tab</span>
+                    </a>
+                  )}
+                </CardFooter>
+              </Card>
+            );
+          })}
+        </div>
+      )}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
