@@ -1,7 +1,7 @@
 import { Button as ButtonPrimitive } from "@base-ui/react/button"
 import { cva, type VariantProps } from "class-variance-authority"
 
-import { cn } from "cn"
+import { cn } from "@/lib/utils"
 
 // Keystone controls (DESIGN.md "Controls"): the filled action is ink board, the quiet one is a cotton card.
 // Eight states: rest, hover (one signal), focus (instant 2px ring, never transitioned), active (1px press),
