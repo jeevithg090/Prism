@@ -226,16 +226,15 @@ export default function ApplicationTracker({ userId }: { userId: string }) {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-xl font-semibold text-foreground">Application tracker</h2>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-3xl font-semibold text-balance text-foreground md:text-4xl">Application tracker</h1>
+          <p className="mt-2 max-w-[62ch] text-base text-pretty text-muted-foreground md:text-lg">
             Save the jobs you&apos;re applying to and see which of your proven skills each one asks for.
           </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger>
-            <Button>
-              <Plus className="mr-2 size-4" aria-hidden /> Add application
-            </Button>
+          {/* Base UI triggers render the Button themselves; wrapping one would nest <button>s. */}
+          <DialogTrigger render={<Button />}>
+            <Plus className="mr-2 size-4" aria-hidden /> Add application
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
@@ -330,9 +329,15 @@ export default function ApplicationTracker({ userId }: { userId: string }) {
           title="No applications yet"
           body="Save the jobs you're applying to so you can track their status and tailor your CV and interview prep to the skills each one asks for."
           action={
-            <DialogTrigger>
-              <Button>Add your first application</Button>
-            </DialogTrigger>
+            // Outside the <Dialog> root, so open it through state instead of a DialogTrigger.
+            <Button
+              onClick={() => {
+                resetForm();
+                setOpen(true);
+              }}
+            >
+              Add your first application
+            </Button>
           }
         />
       ) : (
