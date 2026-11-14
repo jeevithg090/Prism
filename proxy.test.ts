@@ -32,6 +32,8 @@ describe("decide (pure proxy policy)", () => {
       "/api/graph/aisha",
       "/favicon.ico",
       "/_next/static/chunks/a.js",
+      "/opengraph-image",
+      "/icon.svg",
       "/logo.svg",
     ]) {
       expect(isOpenPath(p)).toBe(true);
