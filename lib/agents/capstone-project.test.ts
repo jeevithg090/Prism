@@ -16,12 +16,7 @@ vi.mock("@/lib/graph/build", () => ({ loadGraph: h.loadGraph }));
 vi.mock("@/lib/store", () => ({ getStore: () => h.store }));
 vi.mock("@/lib/agents/events", () => ({ emit: h.emit, newRunId: () => "run_capstone_test" }));
 
-import {
-  createCapstone,
-  listCapstones,
-  updateCapstone,
-  toggleMilestone,
-} from "./capstone-project";
+import { createCapstone, listCapstones, updateCapstone, toggleMilestone } from "./capstone-project";
 import type { CapstoneProject, Milestone } from "@/lib/schemas/capstone";
 
 const gapNode = (skillId: string, demand: number): BridgeNode => ({
@@ -95,15 +90,9 @@ describe("createCapstone", () => {
     // Proven skill "git" is not included.
     expect(project.targetSkills).not.toContain("git");
     expect(h.store.upsert).toHaveBeenCalledWith("capstones", project.id, expect.objectContaining({ id: project.id }), "u1");
-    expect(h.emit).toHaveBeenCalledWith(
-      expect.objectContaining({ runId: "run_capstone_test", agent: "architect", status: "started" }),
-    );
-    expect(h.emit).toHaveBeenCalledWith(
-      expect.objectContaining({ runId: "run_capstone_test", agent: "architect", status: "progress" }),
-    );
-    expect(h.emit).toHaveBeenCalledWith(
-      expect.objectContaining({ runId: "run_capstone_test", agent: "architect", status: "done" }),
-    );
+    expect(h.emit).toHaveBeenCalledWith(expect.objectContaining({ runId: "run_capstone_test", agent: "architect", status: "started" }));
+    expect(h.emit).toHaveBeenCalledWith(expect.objectContaining({ runId: "run_capstone_test", agent: "architect", status: "progress" }));
+    expect(h.emit).toHaveBeenCalledWith(expect.objectContaining({ runId: "run_capstone_test", agent: "architect", status: "done" }));
   });
 
   it("uses provided targetSkills instead of the map (no cap on provided skills)", async () => {
@@ -137,7 +126,18 @@ describe("createCapstone", () => {
 
 describe("listCapstones", () => {
   it("returns projects for the user", async () => {
-    const project = { id: "cap_1", userId: "u1", title: "T", pitch: "P", roleId: "ml-engineer", targetSkills: [], milestones: [], status: "planning" as const, createdAt: "2026-11-07T12:00:00Z", updatedAt: "2026-11-07T12:00:00Z" };
+    const project = {
+      id: "cap_1",
+      userId: "u1",
+      title: "T",
+      pitch: "P",
+      roleId: "ml-engineer",
+      targetSkills: [],
+      milestones: [],
+      status: "planning" as const,
+      createdAt: "2026-11-07T12:00:00Z",
+      updatedAt: "2026-11-07T12:00:00Z",
+    };
     stored["cap_1"] = project;
     const list = await listCapstones("u1");
     expect(list).toHaveLength(1);
@@ -156,8 +156,16 @@ describe("listCapstones", () => {
 describe("updateCapstone", () => {
   it("updates title, pitch, status and showcaseUrl", async () => {
     const existing: CapstoneProject = {
-      id: "cap_1", userId: "u1", title: "Old", pitch: "Old pitch", roleId: "ml-engineer",
-      targetSkills: ["python"], milestones: [], status: "planning", createdAt: "2026-11-07T12:00:00Z", updatedAt: "2026-11-07T12:00:00Z",
+      id: "cap_1",
+      userId: "u1",
+      title: "Old",
+      pitch: "Old pitch",
+      roleId: "ml-engineer",
+      targetSkills: ["python"],
+      milestones: [],
+      status: "planning",
+      createdAt: "2026-11-07T12:00:00Z",
+      updatedAt: "2026-11-07T12:00:00Z",
     };
     stored["cap_1"] = existing;
     const updated = await updateCapstone("cap_1", "u1", { title: "New", status: "showcasing", showcaseUrl: "https://example.com" });
@@ -171,13 +179,33 @@ describe("updateCapstone", () => {
 
   it("returns null for a missing project or wrong user", async () => {
     expect(await updateCapstone("nope", "u1", { title: "X" })).toBeNull();
-    stored["cap_1"] = { id: "cap_1", userId: "u1", title: "T", pitch: "P", roleId: "r", targetSkills: [], milestones: [], status: "planning", createdAt: "2026-11-07T12:00:00Z", updatedAt: "2026-11-07T12:00:00Z" };
+    stored["cap_1"] = {
+      id: "cap_1",
+      userId: "u1",
+      title: "T",
+      pitch: "P",
+      roleId: "r",
+      targetSkills: [],
+      milestones: [],
+      status: "planning",
+      createdAt: "2026-11-07T12:00:00Z",
+      updatedAt: "2026-11-07T12:00:00Z",
+    };
     expect(await updateCapstone("cap_1", "u2", { title: "X" })).toBeNull();
   });
 
   it("returns null when validation or store fails", async () => {
     const existing: CapstoneProject = {
-      id: "cap_1", userId: "u1", title: "T", pitch: "P", roleId: "r", targetSkills: [], milestones: [], status: "planning", createdAt: "2026-11-07T12:00:00Z", updatedAt: "2026-11-07T12:00:00Z",
+      id: "cap_1",
+      userId: "u1",
+      title: "T",
+      pitch: "P",
+      roleId: "r",
+      targetSkills: [],
+      milestones: [],
+      status: "planning",
+      createdAt: "2026-11-07T12:00:00Z",
+      updatedAt: "2026-11-07T12:00:00Z",
     };
     stored["cap_1"] = existing;
     h.store.upsert.mockRejectedValueOnce(new Error("store down"));
@@ -189,8 +217,16 @@ describe("toggleMilestone", () => {
   it("flips a milestone's done flag and returns true", async () => {
     const m1: Milestone = { id: "m1", title: "Learn", skillId: "python", tasks: ["a", "b"], done: false };
     const existing: CapstoneProject = {
-      id: "cap_1", userId: "u1", title: "T", pitch: "P", roleId: "r", targetSkills: ["python"],
-      milestones: [m1], status: "planning", createdAt: "2026-11-07T12:00:00Z", updatedAt: "2026-11-07T12:00:00Z",
+      id: "cap_1",
+      userId: "u1",
+      title: "T",
+      pitch: "P",
+      roleId: "r",
+      targetSkills: ["python"],
+      milestones: [m1],
+      status: "planning",
+      createdAt: "2026-11-07T12:00:00Z",
+      updatedAt: "2026-11-07T12:00:00Z",
     };
     stored["cap_1"] = existing;
     const ok = await toggleMilestone("cap_1", "u1", "m1", true);
@@ -207,13 +243,35 @@ describe("toggleMilestone", () => {
 
   it("returns false for a missing project, wrong user or unknown milestone", async () => {
     expect(await toggleMilestone("nope", "u1", "m1", true)).toBe(false);
-    stored["cap_1"] = { id: "cap_1", userId: "u1", title: "T", pitch: "P", roleId: "r", targetSkills: [], milestones: [], status: "planning", createdAt: "2026-11-07T12:00:00Z", updatedAt: "2026-11-07T12:00:00Z" };
+    stored["cap_1"] = {
+      id: "cap_1",
+      userId: "u1",
+      title: "T",
+      pitch: "P",
+      roleId: "r",
+      targetSkills: [],
+      milestones: [],
+      status: "planning",
+      createdAt: "2026-11-07T12:00:00Z",
+      updatedAt: "2026-11-07T12:00:00Z",
+    };
     expect(await toggleMilestone("cap_1", "u2", "m1", true)).toBe(false);
     expect(await toggleMilestone("cap_1", "u1", "m_nope", true)).toBe(false);
   });
 
   it("returns false when the store fails", async () => {
-    stored["cap_1"] = { id: "cap_1", userId: "u1", title: "T", pitch: "P", roleId: "r", targetSkills: [], milestones: [], status: "planning", createdAt: "2026-11-07T12:00:00Z", updatedAt: "2026-11-07T12:00:00Z" };
+    stored["cap_1"] = {
+      id: "cap_1",
+      userId: "u1",
+      title: "T",
+      pitch: "P",
+      roleId: "r",
+      targetSkills: [],
+      milestones: [],
+      status: "planning",
+      createdAt: "2026-11-07T12:00:00Z",
+      updatedAt: "2026-11-07T12:00:00Z",
+    };
     h.store.upsert.mockRejectedValueOnce(new Error("store down"));
     expect(await toggleMilestone("cap_1", "u1", "m1", true)).toBe(false);
   });

@@ -51,7 +51,10 @@ function LadderSkeleton({ compact, single }: { compact?: boolean; single?: boole
           {[0, 1, 2].map((i) => (
             <div key={i} className="flex gap-4 @2xl:items-center @2xl:gap-3">
               <Skeleton className="size-12 shrink-0 rounded-full @2xl:size-9" />
-              <div className="flex-1 space-y-2"><Skeleton className="h-5 w-1/2" /><Skeleton className="h-4 w-full @2xl:hidden" /></div>
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-5 w-1/2" />
+                <Skeleton className="h-4 w-full @2xl:hidden" />
+              </div>
             </div>
           ))}
         </div>
@@ -60,7 +63,9 @@ function LadderSkeleton({ compact, single }: { compact?: boolean; single?: boole
   }
   return (
     <div aria-hidden className="space-y-3">
-      {[0, 1, 2].map((i) => <Skeleton key={i} className={cn("w-full rounded-xl", compact ? "h-10" : "h-16")} />)}
+      {[0, 1, 2].map((i) => (
+        <Skeleton key={i} className={cn("w-full rounded-xl", compact ? "h-10" : "h-16")} />
+      ))}
     </div>
   );
 }
@@ -71,7 +76,14 @@ function SkillRow({ skill, compact }: { skill: SkillLadder; compact?: boolean })
     <li className={cn("flex flex-col gap-2 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:gap-4", !compact && "sm:items-start")}>
       <div className="min-w-0 sm:w-40 sm:shrink-0">
         <p className="font-medium">{skill.skillName}</p>
-        <p className="text-sm text-muted-foreground">{levelLabel(skill.level)}{skill.level ? <>, rung <span className="tabular-nums">{skill.level}</span> of 3</> : null}</p>
+        <p className="text-sm text-muted-foreground">
+          {levelLabel(skill.level)}
+          {skill.level ? (
+            <>
+              , rung <span className="tabular-nums">{skill.level}</span> of 3
+            </>
+          ) : null}
+        </p>
       </div>
       <RungStrip ladder={skill} showLabels={!compact} />
       {!compact && newest && (
@@ -83,7 +95,17 @@ function SkillRow({ skill, compact }: { skill: SkillLadder; compact?: boolean })
   );
 }
 
-export function ProofLadderView({ data, skillId, compact, isDemo }: { data: ProofLadderData; skillId?: string; compact?: boolean; isDemo?: boolean }) {
+export function ProofLadderView({
+  data,
+  skillId,
+  compact,
+  isDemo,
+}: {
+  data: ProofLadderData;
+  skillId?: string;
+  compact?: boolean;
+  isDemo?: boolean;
+}) {
   const skills = skillId ? data.skills.filter((s) => s.skillId === skillId) : data.skills;
   if (skillId && compact) {
     const s = skills[0];
@@ -95,7 +117,11 @@ export function ProofLadderView({ data, skillId, compact, isDemo }: { data: Proo
         icon={FlaskConical}
         title="Your ladder starts with a 20-minute challenge"
         body="Every skill climbs three rungs: Tried it, Built it, Can teach it. Each one is proven by evidence."
-        action={<Link href="/challenge" className={cn("active:translate-y-px", buttonVariants())}>Try a micro-challenge</Link>}
+        action={
+          <Link href="/challenge" className={cn("active:translate-y-px", buttonVariants())}>
+            Try a micro-challenge
+          </Link>
+        }
       />
     );
   }
@@ -115,7 +141,9 @@ export function ProofLadderView({ data, skillId, compact, isDemo }: { data: Proo
   return (
     <div className="space-y-6">
       <ul aria-label="Skills on your proof ladder" className="divide-y">
-        {skills.map((s) => <SkillRow key={s.skillId} skill={s} compact={compact} />)}
+        {skills.map((s) => (
+          <SkillRow key={s.skillId} skill={s} compact={compact} />
+        ))}
       </ul>
       {!compact && (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t pt-4">
@@ -133,7 +161,11 @@ export function ProofLadder({ userId, skillId, compact = false }: { userId: stri
   const data = demo ?? q.data;
 
   if (!demo && q.isPending) {
-    return <div role="status" aria-label="Loading the proof ladder"><LadderSkeleton compact={compact} single={!!skillId} /></div>;
+    return (
+      <div role="status" aria-label="Loading the proof ladder">
+        <LadderSkeleton compact={compact} single={!!skillId} />
+      </div>
+    );
   }
   if (!demo && (q.isError || !data)) {
     if (compact && skillId) return <span className="text-sm text-muted-foreground">Ladder unavailable</span>;
@@ -142,7 +174,10 @@ export function ProofLadder({ userId, skillId, compact = false }: { userId: stri
         title="We couldn't load your proof ladder"
         body="That's on us, not you. Your evidence is safe."
         onRetry={() => void q.refetch()}
-        onUseDemo={() => { setDemo(skillId ? demoSkill(skillId) : DEMO_LADDER); toast("Showing demo proof ladder"); }}
+        onUseDemo={() => {
+          setDemo(skillId ? demoSkill(skillId) : DEMO_LADDER);
+          toast("Showing demo proof ladder");
+        }}
       />
     );
   }

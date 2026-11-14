@@ -11,7 +11,11 @@ import { roleName } from "@/lib/graph/roles";
 import { cn } from "@/lib/utils";
 import { degreeText, FOCUS, nodeReceipt, pctOf } from "./mapUtils";
 
-export interface PodIssueRef { podId: string; title: string; n: number }
+export interface PodIssueRef {
+  podId: string;
+  title: string;
+  n: number;
+}
 
 const dayMonth = (iso: string) => {
   const d = new Date(`${iso}T00:00:00Z`);
@@ -24,7 +28,10 @@ function LevelBars({ level }: { level: number }) {
     <span className="inline-flex items-center gap-2 text-sm text-muted-foreground">
       <span className="flex items-end gap-0.5" aria-hidden>
         {[1, 2, 3].map((i) => (
-          <span key={i} className={cn("w-1.5 rounded-xs", i === 1 ? "h-2" : i === 2 ? "h-3" : "h-4", i <= level ? "bg-foreground" : "bg-rule-2")} />
+          <span
+            key={i}
+            className={cn("w-1.5 rounded-xs", i === 1 ? "h-2" : i === 2 ? "h-3" : "h-4", i <= level ? "bg-foreground" : "bg-rule-2")}
+          />
         ))}
       </span>
       Level {level} of 3
@@ -33,17 +40,30 @@ function LevelBars({ level }: { level: number }) {
 }
 
 export function SkillDetailPanel({
-  node, roleId, uid, evidence, week, skipped, issue,
+  node,
+  roleId,
+  uid,
+  evidence,
+  week,
+  skipped,
+  issue,
 }: {
-  node: BridgeNode; roleId: string; uid: string; evidence: EvidenceItem[];
-  week?: RoadmapWeek; skipped?: SkippedItem; issue?: PodIssueRef;
+  node: BridgeNode;
+  roleId: string;
+  uid: string;
+  evidence: EvidenceItem[];
+  week?: RoadmapWeek;
+  skipped?: SkippedItem;
+  issue?: PodIssueRef;
 }) {
   const mine = evidence.filter((e) => node.evidenceIds.includes(e.id));
   const receipt = week?.receipt ?? nodeReceipt(node, roleId);
   return (
     <section aria-labelledby="skill-detail-h" className="rounded-2xl border bg-card shadow-sm">
       <div className="space-y-3 p-6 pb-5">
-        <h2 id="skill-detail-h" className="text-2xl font-semibold text-foreground">{node.name}</h2>
+        <h2 id="skill-detail-h" className="text-2xl font-semibold text-foreground">
+          {node.name}
+        </h2>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <span className="flex flex-wrap gap-1.5">
             <StatusTag status={node.status} />
@@ -67,7 +87,9 @@ export function SkillDetailPanel({
               {node.status === "gap" ? `Start week ${week.week}: ${node.name}` : `Week ${week.week}: a head start on ${node.name}`}
             </Link>
             <p className="text-sm text-muted-foreground">
-              <span className="block font-medium text-foreground">From {dayMonth(week.startDate)}, {week.tasks.reduce((s, t) => s + t.hours, 0)} hours</span>
+              <span className="block font-medium text-foreground">
+                From {dayMonth(week.startDate)}, {week.tasks.reduce((s, t) => s + t.hours, 0)} hours
+              </span>
               {week.proof}
             </p>
           </div>
@@ -86,11 +108,17 @@ export function SkillDetailPanel({
         {issue && (
           <Link
             href={`/pods/${issue.podId}`}
-            className={cn("group -mx-2 flex items-start gap-2.5 rounded-lg px-2 py-2 text-sm transition-[background-color] duration-(--dur-short) hover:bg-muted", FOCUS)}
+            className={cn(
+              "group -mx-2 flex items-start gap-2.5 rounded-lg px-2 py-2 text-sm transition-[background-color] duration-(--dur-short) hover:bg-muted",
+              FOCUS,
+            )}
           >
             <GitPullRequest className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
             <span className="min-w-0 text-muted-foreground">
-              <span className="font-medium text-primary underline decoration-1 underline-offset-4 group-hover:decoration-2">Pod issue #{issue.n}</span>: {issue.title}
+              <span className="font-medium text-primary underline decoration-1 underline-offset-4 group-hover:decoration-2">
+                Pod issue #{issue.n}
+              </span>
+              : {issue.title}
             </span>
           </Link>
         )}
@@ -118,7 +146,15 @@ export function SkillDetailPanel({
                 <ul className="space-y-1.5">
                   {mine.map((e) => (
                     <li key={e.id}>
-                      <a href={e.url} target="_blank" rel="noreferrer" className={cn("inline-flex items-start gap-1 rounded-sm break-words text-primary underline decoration-1 underline-offset-4 hover:decoration-2", FOCUS)}>
+                      <a
+                        href={e.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={cn(
+                          "inline-flex items-start gap-1 rounded-sm break-words text-primary underline decoration-1 underline-offset-4 hover:decoration-2",
+                          FOCUS,
+                        )}
+                      >
                         {e.quote ?? e.url}
                         <ExternalLink className="mt-1 size-3.5 shrink-0" aria-hidden />
                         <span className="sr-only">(opens in a new tab)</span>

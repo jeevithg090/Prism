@@ -22,10 +22,16 @@ export function ReadinessCard({ map, targetDate }: { map: BridgeMap; targetDate?
 
   return (
     <section aria-labelledby="readiness-title" className="flex h-full flex-col rounded-2xl border bg-card p-6 shadow-sm">
-      <h2 id="readiness-title" className="text-xl font-semibold text-balance text-foreground">Readiness for {role} roles</h2>
+      <h2 id="readiness-title" className="text-xl font-semibold text-balance text-foreground">
+        Readiness for {role} roles
+      </h2>
       <div className="mt-5 grid flex-1 grid-cols-1 gap-6 sm:grid-cols-[auto_minmax(0,1fr)] sm:gap-8">
         <div className="flex items-center gap-5 sm:flex-col sm:items-start">
-          <ReadinessRing value={map.readinessNow} projected={map.readinessProjected} label={by ? `${projected}% by ${by}` : `${projected}%`} />
+          <ReadinessRing
+            value={map.readinessNow}
+            projected={map.readinessProjected}
+            label={by ? `${projected}% by ${by}` : `${projected}%`}
+          />
           <div className="min-w-0 sm:max-w-[13rem]">
             <p className="text-lg font-semibold text-foreground">{now}% ready today</p>
             <p className="mt-1 text-sm text-pretty text-muted-foreground">

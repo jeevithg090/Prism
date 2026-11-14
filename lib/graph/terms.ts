@@ -39,7 +39,10 @@ export function parseUpcomingLabel(label?: string): TermRef | null {
 export function isExamWeek(start: Date): boolean {
   const end = new Date(start.getTime() + 6 * 86_400_000);
   for (const y of new Set([start.getUTCFullYear(), end.getUTCFullYear()])) {
-    const periods: [Date, Date][] = [[utc(y, 1, 11), utc(y, 1, 24)], [utc(y, 5, 18), utc(y, 6, 5)]];
+    const periods: [Date, Date][] = [
+      [utc(y, 1, 11), utc(y, 1, 24)],
+      [utc(y, 5, 18), utc(y, 6, 5)],
+    ];
     if (periods.some(([a, b]) => start.getTime() <= b.getTime() && end.getTime() >= a.getTime())) return true;
   }
   return false;
@@ -49,7 +52,7 @@ export function isExamWeek(start: Date): boolean {
 export function nextMonday(now: Date): Date {
   const d = utc(now.getUTCFullYear(), now.getUTCMonth() + 1, now.getUTCDate());
   const dow = d.getUTCDay(); // 0 Sun … 6 Sat
-  const add = ((8 - dow) % 7) || 7;
+  const add = (8 - dow) % 7 || 7;
   return new Date(d.getTime() + add * 86_400_000);
 }
 

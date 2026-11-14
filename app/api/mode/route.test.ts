@@ -41,7 +41,10 @@ describe("/api/mode", () => {
     await replayOrRecord("tts", { text: "b" }, async () => "B");
     const res = await GET(new Request("http://localhost/api/mode", { headers: { cookie: "ks_uid=aisha; ks_mode=demo" } }));
     const j = await res.json();
-    expect(j).toMatchObject({ ok: true, data: { mode: "demo", defaultMode: "live", demoModeEnv: false, total: 2, recordings: { llm: 1, tts: 1 } } });
+    expect(j).toMatchObject({
+      ok: true,
+      data: { mode: "demo", defaultMode: "live", demoModeEnv: false, total: 2, recordings: { llm: 1, tts: 1 } },
+    });
     expect(j.data.recordedAt.first <= j.data.recordedAt.last).toBe(true);
     const fallback = await (await GET(new Request("http://localhost/api/mode"))).json();
     expect(fallback.data.mode).toBe("live");

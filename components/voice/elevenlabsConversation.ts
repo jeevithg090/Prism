@@ -4,14 +4,20 @@
 // mic as `user_audio_chunk`s, play the agent's PCM audio, answer pings, and surface transcripts as messages.
 
 export type ConversationStatus = "connecting" | "connected" | "ended" | "error";
-export interface ConversationMessage { source: "ai" | "user"; text: string }
+export interface ConversationMessage {
+  source: "ai" | "user";
+  text: string;
+}
 export interface ConversationHandlers {
   onStatus: (s: ConversationStatus) => void;
   onMessage: (m: ConversationMessage) => void;
   onSpeaking: (agentSpeaking: boolean) => void;
   onError: (message: string) => void;
 }
-export interface ConversationHandle { end: () => void; setMuted: (muted: boolean) => void }
+export interface ConversationHandle {
+  end: () => void;
+  setMuted: (muted: boolean) => void;
+}
 
 type Inbound = {
   type?: string;
@@ -63,7 +69,9 @@ export function decodePcm16(bytes: Uint8Array): Float32Array {
   return out;
 }
 
-export async function startConversation(opts: { signedUrl: string; dynamicVariables: Record<string, string> } & ConversationHandlers): Promise<ConversationHandle> {
+export async function startConversation(
+  opts: { signedUrl: string; dynamicVariables: Record<string, string> } & ConversationHandlers,
+): Promise<ConversationHandle> {
   const { onStatus, onMessage, onSpeaking, onError } = opts;
   onStatus("connecting");
   const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
@@ -80,8 +88,21 @@ export async function startConversation(opts: { signedUrl: string; dynamicVariab
   let processor: ScriptProcessorNode | null = null;
   let source: MediaStreamAudioSourceNode | null = null;
 
-  const send = (msg: unknown) => { if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg)); };
-  const stopPlayback = () => { playing.forEach((s) => { try { s.stop(); } catch { /* done */ } }); playing.clear(); playhead = 0; onSpeaking(false); };
+  const send = (msg: unknown) => {
+    if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
+  };
+  const stopPlayback = () => {
+    playing.forEach((s) => {
+      try {
+        s.stop();
+      } catch {
+        /* done */
+      }
+    });
+    playing.clear();
+    playhead = 0;
+    onSpeaking(false);
+  };
 
   const startMic = () => {
     source = inCtx.createMediaStreamSource(stream);
@@ -107,14 +128,22 @@ export async function startConversation(opts: { signedUrl: string; dynamicVariab
     playhead += buf.duration;
     playing.add(src);
     onSpeaking(true);
-    src.onended = () => { playing.delete(src); if (!playing.size) onSpeaking(false); };
+    src.onended = () => {
+      playing.delete(src);
+      if (!playing.size) onSpeaking(false);
+    };
   };
 
   const cleanup = () => {
     if (ended) return;
     ended = true;
     stopPlayback();
-    try { processor?.disconnect(); source?.disconnect(); } catch { /* gone */ }
+    try {
+      processor?.disconnect();
+      source?.disconnect();
+    } catch {
+      /* gone */
+    }
     stream.getTracks().forEach((t) => t.stop());
     void inCtx.close().catch(() => {});
     void outCtx.close().catch(() => {});
@@ -123,7 +152,11 @@ export async function startConversation(opts: { signedUrl: string; dynamicVariab
   ws.onopen = () => send({ type: "conversation_initiation_client_data", dynamic_variables: opts.dynamicVariables });
   ws.onmessage = (ev) => {
     let m: Inbound;
-    try { m = JSON.parse(String(ev.data)) as Inbound; } catch { return; }
+    try {
+      m = JSON.parse(String(ev.data)) as Inbound;
+    } catch {
+      return;
+    }
     switch (m.type) {
       case "conversation_initiation_metadata": {
         const meta = m.conversation_initiation_metadata_event;
@@ -151,15 +184,38 @@ export async function startConversation(opts: { signedUrl: string; dynamicVariab
         send({ type: "pong", event_id: m.ping_event?.event_id });
         break;
       case "client_tool_call":
-        send({ type: "client_tool_result", tool_call_id: m.client_tool_call?.tool_call_id, result: "This tool isn't available in the interview.", is_error: true });
+        send({
+          type: "client_tool_result",
+          tool_call_id: m.client_tool_call?.tool_call_id,
+          result: "This tool isn't available in the interview.",
+          is_error: true,
+        });
         break;
     }
   };
-  ws.onerror = () => { if (!ended) { onError("Voice connection dropped."); onStatus("error"); } cleanup(); };
-  ws.onclose = () => { if (!ended) onStatus("ended"); cleanup(); };
+  ws.onerror = () => {
+    if (!ended) {
+      onError("Voice connection dropped.");
+      onStatus("error");
+    }
+    cleanup();
+  };
+  ws.onclose = () => {
+    if (!ended) onStatus("ended");
+    cleanup();
+  };
 
   return {
-    end: () => { cleanup(); try { ws.close(); } catch { /* closed */ } },
-    setMuted: (v) => { muted = v; },
+    end: () => {
+      cleanup();
+      try {
+        ws.close();
+      } catch {
+        /* closed */
+      }
+    },
+    setMuted: (v) => {
+      muted = v;
+    },
   };
 }

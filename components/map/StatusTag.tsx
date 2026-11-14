@@ -5,8 +5,13 @@ import { StatusBadge } from "@/components/keystone";
 import { cn } from "@/lib/utils";
 
 const ICON: Record<SkillStatus | TrendLabel, string> = {
-  proven: "[&_svg]:text-status-proven", "degree-done": "[&_svg]:text-status-degree", "degree-upcoming": "[&_svg]:text-status-degree",
-  gap: "[&_svg]:text-status-gap", rising: "[&_svg]:text-status-rising", stable: "", declining: "",
+  proven: "[&_svg]:text-status-proven",
+  "degree-done": "[&_svg]:text-status-degree",
+  "degree-upcoming": "[&_svg]:text-status-degree",
+  gap: "[&_svg]:text-status-gap",
+  rising: "[&_svg]:text-status-rising",
+  stable: "",
+  declining: "",
 };
 
 export function StatusTag({ status, className }: { status: SkillStatus | TrendLabel; className?: string }) {

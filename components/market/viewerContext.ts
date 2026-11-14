@@ -46,7 +46,8 @@ function degreeStatus(programme: Programme | null, year: number): StatusBySkill 
 export function roadmapWeeksOf(roadmap: Pick<Roadmap, "weeks"> | null | undefined): RoadmapWeeks | null {
   if (!roadmap?.weeks?.length) return null;
   const out: RoadmapWeeks = {};
-  for (const w of [...roadmap.weeks].sort((a, b) => a.week - b.week)) if (w.focusSkillId && out[w.focusSkillId] === undefined) out[w.focusSkillId] = w.week;
+  for (const w of [...roadmap.weeks].sort((a, b) => a.week - b.week))
+    if (w.focusSkillId && out[w.focusSkillId] === undefined) out[w.focusSkillId] = w.week;
   return out;
 }
 
@@ -60,7 +61,9 @@ async function loadRoadmap(userId: string, roleId: string): Promise<Roadmap | nu
 }
 
 export async function loadViewerContext(userId: string): Promise<ViewerContext> {
-  const profile = await getStore().get<Profile>("profiles", userId).catch(() => null);
+  const profile = await getStore()
+    .get<Profile>("profiles", userId)
+    .catch(() => null);
   const wanted = profile?.dna?.targetRoles?.[0];
   const primaryRole = wanted && isRole(wanted) ? wanted : "ml-engineer";
   const programme = getProgramme(profile?.programmeId ?? "uom-bsc-cs");

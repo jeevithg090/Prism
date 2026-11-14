@@ -27,9 +27,21 @@ export const GLYPH: Record<SkillStatus, { filled: boolean; dashed: boolean; icon
 };
 
 export interface Palette {
-  proven: string; degree: string; gap: string; rising: string;
-  ink: string; ink2: string; ink3: string; field: string; card: string; rule: string; hover: string;
-  signal: string; signalSoft: string; sans: string; mono: string;
+  proven: string;
+  degree: string;
+  gap: string;
+  rising: string;
+  ink: string;
+  ink2: string;
+  ink3: string;
+  field: string;
+  card: string;
+  rule: string;
+  hover: string;
+  signal: string;
+  signalSoft: string;
+  sans: string;
+  mono: string;
 }
 
 /** Every colour and face comes from the tokens (tokens.css), so dark mode and the theme reach the canvas. */
@@ -43,20 +55,51 @@ export function readPalette(): Palette {
   const mono = getComputedStyle(probe).fontFamily;
   probe.remove();
   return {
-    proven: v("--status-proven"), degree: v("--status-degree"), gap: v("--status-gap"), rising: v("--status-rising"),
-    ink: v("--color-ink"), ink2: v("--color-ink-2"), ink3: v("--color-ink-3"),
+    proven: v("--status-proven"),
+    degree: v("--status-degree"),
+    gap: v("--status-gap"),
+    rising: v("--status-rising"),
+    ink: v("--color-ink"),
+    ink2: v("--color-ink-2"),
+    ink3: v("--color-ink-3"),
     // A link at rest: the 3:1 field edge, so lines still read from the back of a room.
-    field: v("--color-field"), card: v("--color-cotton", "Canvas"),
-    rule: v("--color-rule"), hover: v("--color-paper-3", "Canvas"), signal: v("--color-signal"), signalSoft: v("--color-signal-soft", "Canvas"),
-    sans: getComputedStyle(document.body).fontFamily, mono,
+    field: v("--color-field"),
+    card: v("--color-cotton", "Canvas"),
+    rule: v("--color-rule"),
+    hover: v("--color-paper-3", "Canvas"),
+    signal: v("--color-signal"),
+    signalSoft: v("--color-signal-soft", "Canvas"),
+    sans: getComputedStyle(document.body).fontFamily,
+    mono,
   };
 }
 
 // ---------- Layout ----------
 
-export interface LayoutNode { id: string; name: string; status: SkillStatus; demand: number; trend?: TrendLabel }
-export interface BandBox { status: SkillStatus; x0: number; x1: number; y0: number; y1: number; count: number; shown: number }
-export interface Layout { mode: "columns" | "rows"; label: number; pos: Map<string, { x: number; y: number }>; bands: BandBox[]; width: number; height: number }
+export interface LayoutNode {
+  id: string;
+  name: string;
+  status: SkillStatus;
+  demand: number;
+  trend?: TrendLabel;
+}
+export interface BandBox {
+  status: SkillStatus;
+  x0: number;
+  x1: number;
+  y0: number;
+  y1: number;
+  count: number;
+  shown: number;
+}
+export interface Layout {
+  mode: "columns" | "rows";
+  label: number;
+  pos: Map<string, { x: number; y: number }>;
+  bands: BandBox[];
+  width: number;
+  height: number;
+}
 
 export const PAD = 12;
 export const HEAD_H = 56;
@@ -96,7 +139,10 @@ export function computeLayout(nodes: LayoutNode[], width: number, counts: Record
     BANDS.map((s) => Math.max(MIN_BAND, ...inBand(sizing, s).map((n) => SPINE + outer(n) + LABEL_GAP + measure(n.name, px) + 12)));
   let label = 14;
   let need = needs(14);
-  if (need.reduce((a, b) => a + b, 0) > avail) { label = 13; need = needs(13); }
+  if (need.reduce((a, b) => a + b, 0) > avail) {
+    label = 13;
+    need = needs(13);
+  }
   const total = need.reduce((a, b) => a + b, 0);
 
   if (total <= avail) {
@@ -188,7 +234,9 @@ export function drawGlyph(ctx: CanvasRenderingContext2D, status: SkillStatus, x:
 
 const widths = new Map<string, number>();
 /** Forget measured widths (call once the web fonts have loaded, since the fallback face measures differently). */
-export function resetTextWidths() { widths.clear(); }
+export function resetTextWidths() {
+  widths.clear();
+}
 
 /** A measure for computeLayout, in the label face at the label weight. */
 export function labelMeasure(sans: string): (text: string, px: number) => number {

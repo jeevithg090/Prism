@@ -7,7 +7,11 @@ import { withReplayInfo } from "@/lib/replay";
 
 async function handlePOST(req: Request) {
   let body: unknown;
-  try { body = await req.json(); } catch { return badRequest("Body must be JSON like {\"userId\":\"aisha\",\"skillId\":\"docker\"}"); }
+  try {
+    body = await req.json();
+  } catch {
+    return badRequest('Body must be JSON like {"userId":"aisha","skillId":"docker"}');
+  }
   const parsed = ChallengeGenerateReqZ.safeParse(body);
   if (!parsed.success) return badRequest(parsed.error);
   try {

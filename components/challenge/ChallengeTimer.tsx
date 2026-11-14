@@ -13,10 +13,17 @@ export function ChallengeTimer({ minutes }: { minutes: number }) {
 
   React.useEffect(() => {
     if (!running) return;
-    const t = setInterval(() => setLeft((s) => {
-      if (s <= 1) { setRunning(false); return 0; }
-      return s - 1;
-    }), 1000);
+    const t = setInterval(
+      () =>
+        setLeft((s) => {
+          if (s <= 1) {
+            setRunning(false);
+            return 0;
+          }
+          return s - 1;
+        }),
+      1000,
+    );
     return () => clearInterval(t);
   }, [running]);
 
@@ -25,14 +32,28 @@ export function ChallengeTimer({ minutes }: { minutes: number }) {
     <div className="flex flex-col items-start gap-3 sm:items-end">
       <span className="inline-flex items-center gap-2">
         <Timer className="size-5 text-muted-foreground" aria-hidden />
-        <span role="timer" aria-label={`${Math.ceil(left / 60)} minutes left`} className="font-mono text-3xl leading-none font-semibold text-foreground tabular-nums">{fmt(left)}</span>
+        <span
+          role="timer"
+          aria-label={`${Math.ceil(left / 60)} minutes left`}
+          className="font-mono text-3xl leading-none font-semibold text-foreground tabular-nums"
+        >
+          {fmt(left)}
+        </span>
       </span>
       {left === 0 ? (
-        <span className="max-w-[28ch] text-sm text-pretty text-muted-foreground sm:text-end" aria-live="polite">Time&apos;s up. Finish your thought and check your work; there&apos;s no penalty.</span>
+        <span className="max-w-[28ch] text-sm text-pretty text-muted-foreground sm:text-end" aria-live="polite">
+          Time&apos;s up. Finish your thought and check your work; there&apos;s no penalty.
+        </span>
       ) : null}
       <div className="flex flex-wrap items-center gap-2 sm:justify-end">
         {started && (
-          <Button variant="ghost" onClick={() => { setRunning(false); setLeft(total); }}>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setRunning(false);
+              setLeft(total);
+            }}
+          >
             <RotateCcw aria-hidden /> Reset timer
           </Button>
         )}

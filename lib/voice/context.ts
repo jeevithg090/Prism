@@ -2,7 +2,14 @@ import "server-only";
 // P4 · What the interviewer knows about you: role skills, your roadmap week and the pod PR you just merged.
 // Becomes the ElevenLabs agent's dynamic variables ({{pr_title}} …) and the Practice-mode questions.
 import {
-  currentRoadmapWeek, DEFAULT_ROLE, firstName, latestPodWork, loadProfile, provenAndGaps, roleName, roleTopSkills,
+  currentRoadmapWeek,
+  DEFAULT_ROLE,
+  firstName,
+  latestPodWork,
+  loadProfile,
+  provenAndGaps,
+  roleName,
+  roleTopSkills,
   type PodWork,
 } from "@/lib/voice/data";
 

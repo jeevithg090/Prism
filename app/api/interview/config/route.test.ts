@@ -5,9 +5,15 @@ const h = vi.hoisted(() => ({ docs: new Map<string, unknown>() }));
 vi.mock("@/lib/store", () => ({
   getStore: () => ({
     get: async (c: string, id: string) => structuredClone(h.docs.get(`${c}/${id}`) ?? null),
-    list: async (c: string, f?: { userId?: string }) => [...h.docs.entries()].filter(([k]) => k.startsWith(`${c}/`)).map(([, d]) => structuredClone(d))
-      .filter((d) => !f?.userId || (d as { userId?: string }).userId === f.userId),
-    upsert: async (c: string, id: string, doc: unknown) => { h.docs.set(`${c}/${id}`, doc); return doc; },
+    list: async (c: string, f?: { userId?: string }) =>
+      [...h.docs.entries()]
+        .filter(([k]) => k.startsWith(`${c}/`))
+        .map(([, d]) => structuredClone(d))
+        .filter((d) => !f?.userId || (d as { userId?: string }).userId === f.userId),
+    upsert: async (c: string, id: string, doc: unknown) => {
+      h.docs.set(`${c}/${id}`, doc);
+      return doc;
+    },
     remove: async () => {},
   }),
 }));
@@ -25,7 +31,9 @@ beforeEach(() => {
   h.docs.set("profiles/priya", { id: "priya", name: "Priya Shah", year: 2, dna: { targetRoles: ["ml-engineer"] }, badges: [] });
   h.docs.set("pods/pod_demo01", structuredClone(podFixture));
 });
-afterEach(() => { process.env = { ...env }; });
+afterEach(() => {
+  process.env = { ...env };
+});
 
 describe("GET /api/interview/config", () => {
   it("400s without a userId", async () => {
@@ -39,8 +47,14 @@ describe("GET /api/interview/config", () => {
     expect(data.agentId).toBe("practice");
     expect(data.signedUrl).toBeUndefined();
     expect(data.dynamicVariables).toMatchObject({
-      name: "Aisha", role: "ML engineer", pr_title: "Containerise the captioning API with Docker", pr_skill: "Docker",
-      pr_status: "in progress", reviewer: "Priya", pod_name: "Pod Orbit", project_title: "VisionAid: accessible image captioning API",
+      name: "Aisha",
+      role: "ML engineer",
+      pr_title: "Containerise the captioning API with Docker",
+      pr_skill: "Docker",
+      pr_status: "in progress",
+      reviewer: "Priya",
+      pod_name: "Pod Orbit",
+      project_title: "VisionAid: accessible image captioning API",
       week_focus: "Docker",
     });
     expect(Object.values(data.dynamicVariables).every((v) => typeof v === "string")).toBe(true);
@@ -48,12 +62,20 @@ describe("GET /api/interview/config", () => {
   });
 
   it("uses the latest merged pod PR from pod_progress", async () => {
-    h.docs.set("pod_progress/pod_demo01", { id: "pod_demo01", podId: "pod_demo01", merged: [
-      { issueIndex: 0, userId: "aisha", skillId: "docker", mergedAt: "2026-11-03T10:00:00Z" },
-      { issueIndex: 4, userId: "aisha", skillId: "pytorch", mergedAt: "2026-11-06T10:00:00Z" },
-    ] });
+    h.docs.set("pod_progress/pod_demo01", {
+      id: "pod_demo01",
+      podId: "pod_demo01",
+      merged: [
+        { issueIndex: 0, userId: "aisha", skillId: "docker", mergedAt: "2026-11-03T10:00:00Z" },
+        { issueIndex: 4, userId: "aisha", skillId: "pytorch", mergedAt: "2026-11-06T10:00:00Z" },
+      ],
+    });
     const { data } = await (await get("?userId=aisha")).json();
-    expect(data.dynamicVariables).toMatchObject({ pr_title: "Add PyTorch batch inference and a caption quality check", pr_skill_id: "pytorch", pr_status: "merged" });
+    expect(data.dynamicVariables).toMatchObject({
+      pr_title: "Add PyTorch batch inference and a caption quality check",
+      pr_skill_id: "pytorch",
+      pr_status: "merged",
+    });
   });
 
   it("falls back to the demo story for a user with no pod", async () => {
@@ -64,7 +86,11 @@ describe("GET /api/interview/config", () => {
   it("returns a signed URL when ElevenLabs is configured, and Practice mode if that call fails", async () => {
     process.env.ELEVENLABS_API_KEY = "xi_test";
     process.env.ELEVENLABS_INTERVIEW_AGENT_ID = "agent_123";
-    const f = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(Response.json({ signed_url: "wss://api.elevenlabs.io/v1/convai/conversation?agent_id=agent_123&conversation_signature=x" }));
+    const f = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(
+        Response.json({ signed_url: "wss://api.elevenlabs.io/v1/convai/conversation?agent_id=agent_123&conversation_signature=x" }),
+      );
     const { data } = await (await get("?userId=aisha")).json();
     expect(data).toMatchObject({ agentId: "agent_123", signedUrl: expect.stringMatching(/^wss:\/\//) });
     const [url, init] = f.mock.calls[0] as [string, RequestInit];

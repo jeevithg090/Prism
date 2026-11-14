@@ -12,16 +12,35 @@ vi.mock("sonner", () => ({ toast }));
 import { GuidesSection } from "./GuidesSection";
 
 const GUIDES: GuideSuggestion[] = [
-  { name: "mcr-dev", whyRelevant: "Writes TypeScript in Manchester.", publicUrl: "https://github.com/mcr-dev", source: "github", suggestedQuestion: "How did you learn Docker?", draftMessage: "Hi mcr-dev, I'm Aisha, a first-year student learning Docker." },
-  { name: "Docker Manchester", whyRelevant: "Runs monthly Docker talks.", publicUrl: "https://www.meetup.com/docker-manchester/", source: "web", suggestedQuestion: "Any talks for beginners?", draftMessage: "Hi there, I'm Aisha." },
+  {
+    name: "mcr-dev",
+    whyRelevant: "Writes TypeScript in Manchester.",
+    publicUrl: "https://github.com/mcr-dev",
+    source: "github",
+    suggestedQuestion: "How did you learn Docker?",
+    draftMessage: "Hi mcr-dev, I'm Aisha, a first-year student learning Docker.",
+  },
+  {
+    name: "Docker Manchester",
+    whyRelevant: "Runs monthly Docker talks.",
+    publicUrl: "https://www.meetup.com/docker-manchester/",
+    source: "web",
+    suggestedQuestion: "Any talks for beginners?",
+    draftMessage: "Hi there, I'm Aisha.",
+  },
 ];
-const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 
 let fetchSpy: ReturnType<typeof vi.spyOn>;
 function setup() {
   const user = userEvent.setup();
   const qc = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
-  render(<QueryClientProvider client={qc}><GuidesSection viewerId="aisha" /></QueryClientProvider>);
+  render(
+    <QueryClientProvider client={qc}>
+      <GuidesSection viewerId="aisha" />
+    </QueryClientProvider>,
+  );
   return { user };
 }
 beforeEach(() => {
@@ -42,12 +61,18 @@ describe("GuidesSection", () => {
 
     await user.click(screen.getByRole("button", { name: "Find guides" }));
     const list = await screen.findByRole("list", { name: "Suggested guides" });
-    expect(fetchSpy).toHaveBeenCalledWith("/api/guides/find", expect.objectContaining({ method: "POST", body: JSON.stringify({ userId: "aisha" }) }));
+    expect(fetchSpy).toHaveBeenCalledWith(
+      "/api/guides/find",
+      expect.objectContaining({ method: "POST", body: JSON.stringify({ userId: "aisha" }) }),
+    );
 
     const cards = within(list).getAllByRole("listitem");
     expect(cards).toHaveLength(2);
     expect(within(cards[0]).getByText("Writes TypeScript in Manchester.")).toBeInTheDocument();
-    expect(within(cards[0]).getByRole("link", { name: /View public GitHub profile/ })).toHaveAttribute("href", "https://github.com/mcr-dev");
+    expect(within(cards[0]).getByRole("link", { name: /View public GitHub profile/ })).toHaveAttribute(
+      "href",
+      "https://github.com/mcr-dev",
+    );
     expect(within(cards[0]).getByText(/How did you learn Docker\?/)).toBeInTheDocument();
     const draft = within(cards[0]).getByLabelText("Draft message");
     expect(draft).toHaveAttribute("readonly");

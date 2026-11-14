@@ -25,7 +25,9 @@ export function ProductShot({
       <div data-kind="product" className="overflow-hidden rounded-2xl border bg-card shadow-sm">
         <Image src={src} alt={alt} sizes={sizes} preload={preload} className="h-auto w-full" />
       </div>
-      {caption && <figcaption className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted-foreground">{caption}</figcaption>}
+      {caption && (
+        <figcaption className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted-foreground">{caption}</figcaption>
+      )}
     </figure>
   );
 }

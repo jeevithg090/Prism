@@ -49,10 +49,18 @@ async function loadMembers(pod: Pod): Promise<MemberInfo[]> {
   return Promise.all(
     pod.members.map(async (m) => {
       let p: Profile | null = null;
-      try { p = await store.get<Profile>("profiles", m.userId); } catch { p = null; }
+      try {
+        p = await store.get<Profile>("profiles", m.userId);
+      } catch {
+        p = null;
+      }
       return {
-        ...m, name: p?.name ?? capitalise(m.userId), interests: Array.isArray(p?.interests) ? p.interests : [],
-        githubLogin: p?.githubLogin, isDemo: p?.isDemo, targetRole: p?.dna?.targetRoles?.[0],
+        ...m,
+        name: p?.name ?? capitalise(m.userId),
+        interests: Array.isArray(p?.interests) ? p.interests : [],
+        githubLogin: p?.githubLogin,
+        isDemo: p?.isDemo,
+        targetRole: p?.dna?.targetRoles?.[0],
       };
     }),
   );
@@ -105,18 +113,29 @@ async function readRoadmapFixture(userId: string, role?: string): Promise<unknow
 /** Architect → Roadmap Agent: each member's current week focus (store → P2 fixture → first `learns` skill). */
 export async function askRoadmapAgent(members: MemberInfo[], runId: string): Promise<FocusMap> {
   const n = members.length;
-  emit({ runId, agent: "architect", status: "progress", message: `asked Roadmap Agent for ${n} ${n === 1 ? "member's" : "members'"} current week` });
+  emit({
+    runId,
+    agent: "architect",
+    status: "progress",
+    message: `asked Roadmap Agent for ${n} ${n === 1 ? "member's" : "members'"} current week`,
+  });
   const store = getStore();
   const out: FocusMap = new Map();
   for (const m of members) {
     let f: RoadmapFocus | null = null;
-    try { f = currentWeek(await store.get<Roadmap>("roadmaps", m.userId), "roadmap"); } catch { f = null; }
+    try {
+      f = currentWeek(await store.get<Roadmap>("roadmaps", m.userId), "roadmap");
+    } catch {
+      f = null;
+    }
     if (!f) f = currentWeek(await readRoadmapFixture(m.userId, m.targetRole), "fixture");
     if (!f && m.learns[0]) f = { week: 1, skillId: m.learns[0], proof: fallbackProof(m.learns[0]), source: "fallback" };
     if (!f) continue;
     out.set(m.userId, f);
     emit({
-      runId, agent: "roadmap", status: "done",
+      runId,
+      agent: "roadmap",
+      status: "done",
       message: `${firstName(m.name)} · Week ${f.week} focus: ${skillName(f.skillId)}`,
       data: { userId: m.userId, week: f.week, skillId: f.skillId, source: f.source },
     });
@@ -251,8 +270,12 @@ function fixtureBriefFor(pod: Pod): Draft | null {
       pitch: fx.project.pitch,
       milestones: [...fx.project.milestones],
       issues: fx.project.issues.map((i) => ({
-        title: i.title, body: i.body, assigneeUserId: i.assigneeUserId,
-        reviewerUserId: i.reviewerUserId, skillId: i.skillId, milestone: i.milestone,
+        title: i.title,
+        body: i.body,
+        assigneeUserId: i.assigneeUserId,
+        reviewerUserId: i.reviewerUserId,
+        skillId: i.skillId,
+        milestone: i.milestone,
       })),
     };
   } catch {
@@ -316,10 +339,10 @@ function templateBrief(pod: Pod, members: MemberInfo[]): Draft {
     };
   });
   const skills = [...new Set(members.flatMap((m) => m.learns))].slice(0, 3).map(skillName);
-  const skillText = skills.length > 1 ? `${skills.slice(0, -1).join(", ")} & ${skills[skills.length - 1]}` : skills[0] ?? "Teamwork";
+  const skillText = skills.length > 1 ? `${skills.slice(0, -1).join(", ")} & ${skills[skills.length - 1]}` : (skills[0] ?? "Teamwork");
   const podName = pod.name.replace(/^pod\s+/i, "").trim() || pod.id;
   const names = members.map((m) => m.name.split(" ")[0]);
-  const nameText = names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : names[0] ?? "your pod";
+  const nameText = names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : (names[0] ?? "your pod");
   return {
     title: `Pod ${podName} Lab: ${skillText}`,
     pitch: `A 3-week portfolio project where ${nameText} each practise a skill they want to learn and get it reviewed by a teammate who already knows it.`,
@@ -349,10 +372,17 @@ export async function designProject(pod: Pod, runId?: string): Promise<ProjectBr
         try {
           draft = await ctx.step(
             "draft with LLM",
-            () => llmJSON({
-              agent: "architect", runId: rid, system: SYSTEM_PROMPT, user: buildUserPrompt(members, focus),
-              schema: ProjectBriefDraftZ, schemaName: "project_brief", temperature: 0.4, cacheKey: `architect-${pod.id}`,
-            }),
+            () =>
+              llmJSON({
+                agent: "architect",
+                runId: rid,
+                system: SYSTEM_PROMPT,
+                user: buildUserPrompt(members, focus),
+                schema: ProjectBriefDraftZ,
+                schemaName: "project_brief",
+                temperature: 0.4,
+                cacheKey: `architect-${pod.id}`,
+              }),
             (d) => `Drafted "${d.title}" with ${d.issues.length} issues`,
           );
         } catch {
@@ -366,7 +396,8 @@ export async function designProject(pod: Pod, runId?: string): Promise<ProjectBr
       }
       const repaired = repairBrief(draft, pod.members, focus);
       ctx.done(`Designed "${repaired.title}": ${repaired.issues.length} issues across ${repaired.milestones.length} milestones`, {
-        issues: repaired.issues.length, milestones: repaired.milestones.length,
+        issues: repaired.issues.length,
+        milestones: repaired.milestones.length,
       });
       return repaired;
     },
@@ -381,7 +412,12 @@ export async function designProject(pod: Pod, runId?: string): Promise<ProjectBr
 }
 
 export function slug(s: string, max = 30): string {
-  const out = s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, max).replace(/-+$/g, "");
+  const out = s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, max)
+    .replace(/-+$/g, "");
   return out || "project";
 }
 
@@ -448,14 +484,24 @@ export async function createRepoAndIssues(pod: Pod, brief: ProjectBrief, runId?:
       const demoToggle = !isDemo() && (await canReplay());
       if (isDemo() || demoToggle || !token || !org) {
         result = demoResult(brief);
-        ctx.emit("progress", `${demoToggle ? "Demo (no GitHub writes)" : "Demo mode"}: linked ${result.issues.length} issues across ${brief.milestones.length} milestones in keystone-demo/pod-vision-demo`);
+        ctx.emit(
+          "progress",
+          `${demoToggle ? "Demo (no GitHub writes)" : "Demo mode"}: linked ${result.issues.length} issues across ${brief.milestones.length} milestones in keystone-demo/pod-vision-demo`,
+        );
       } else {
         try {
           const octokit = new Octokit({ auth: token });
           const name = `pod-${slug(brief.title)}-${repoSuffix()}`;
           const repo = await ctx.step(
             "create repo",
-            () => octokit.request("POST /orgs/{org}/repos", { org, name, description: brief.pitch.slice(0, 350), private: false, auto_init: true }),
+            () =>
+              octokit.request("POST /orgs/{org}/repos", {
+                org,
+                name,
+                description: brief.pitch.slice(0, 350),
+                private: false,
+                auto_init: true,
+              }),
             (r) => ({ message: `created repo ${r.data.name ?? name}`, data: { url: r.data.html_url } }),
           );
           const owner = repo.data.owner?.login ?? org;
@@ -469,13 +515,23 @@ export async function createRepoAndIssues(pod: Pod, brief: ProjectBrief, runId?:
             if (statusOf(e) !== 404) throw e; // auto_init README not there yet: create instead of update
           }
           await octokit.request("PUT /repos/{owner}/{repo}/contents/{path}", {
-            owner, repo: repoName, path: "README.md", message: "docs: project brief from Keystone",
-            content: Buffer.from(buildReadme(brief, members), "utf8").toString("base64"), ...(sha ? { sha } : {}),
+            owner,
+            repo: repoName,
+            path: "README.md",
+            message: "docs: project brief from Keystone",
+            content: Buffer.from(buildReadme(brief, members), "utf8").toString("base64"),
+            ...(sha ? { sha } : {}),
           });
 
           for (const skill of [...new Set(brief.issues.map((i) => i.skillId))]) {
             try {
-              await octokit.request("POST /repos/{owner}/{repo}/labels", { owner, repo: repoName, name: skill, color: LABEL_COLOR, description: skillName(skill) });
+              await octokit.request("POST /repos/{owner}/{repo}/labels", {
+                owner,
+                repo: repoName,
+                name: skill,
+                color: LABEL_COLOR,
+                description: skillName(skill),
+              });
             } catch (e) {
               if (statusOf(e) !== 422) throw e; // label already exists
             }
@@ -495,8 +551,13 @@ export async function createRepoAndIssues(pod: Pod, brief: ProjectBrief, runId?:
                 const assignee = members.find((m) => m.userId === i.assigneeUserId);
                 const login = assignee?.githubLogin && !assignee.isDemo ? assignee.githubLogin : undefined;
                 const params = {
-                  owner, repo: repoName, title: i.title,
-                  body: githubIssueBody(i.body, `**Assignee:** ${nameOf(i.assigneeUserId)} · **Reviewer:** ${nameOf(i.reviewerUserId)} · **Skill:** ${skillName(i.skillId)}`),
+                  owner,
+                  repo: repoName,
+                  title: i.title,
+                  body: githubIssueBody(
+                    i.body,
+                    `**Assignee:** ${nameOf(i.assigneeUserId)} · **Reviewer:** ${nameOf(i.reviewerUserId)} · **Skill:** ${skillName(i.skillId)}`,
+                  ),
                   labels: [i.skillId],
                   milestone: numbers.get(i.milestone) ?? numbers.get(brief.milestones[0]),
                 };
@@ -511,7 +572,10 @@ export async function createRepoAndIssues(pod: Pod, brief: ProjectBrief, runId?:
               }
               return out;
             },
-            (out) => ({ message: `opened ${out.length} issues across ${numbers.size} milestones`, data: { issues: out.length, milestones: numbers.size } }),
+            (out) => ({
+              message: `opened ${out.length} issues across ${numbers.size} milestones`,
+              data: { issues: out.length, milestones: numbers.size },
+            }),
           );
           result = { ...brief, repoUrl: repo.data.html_url, issues };
         } catch (e) {
@@ -525,8 +589,12 @@ export async function createRepoAndIssues(pod: Pod, brief: ProjectBrief, runId?:
       if (!demoToggle) {
         try {
           await triggerWorkflow("pod-kickoff", {
-            podId: pod.id, podName: pod.name, repoUrl: result.repoUrl,
-            members: members.map((m) => m.name), title: result.title, pitch: result.pitch,
+            podId: pod.id,
+            podName: pod.name,
+            repoUrl: result.repoUrl,
+            members: members.map((m) => m.name),
+            title: result.title,
+            pitch: result.pitch,
           });
         } catch {
           // kickoff is best-effort; the project is already usable

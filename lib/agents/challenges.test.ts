@@ -24,15 +24,30 @@ vi.mock("@/lib/store", () => ({
   getStore: () => ({
     get: async (c: string, id: string) => structuredClone(h.docs.get(`${c}/${id}`)?.doc ?? null),
     list: async (c: string, f?: { userId?: string }) =>
-      [...h.docs.entries()].filter(([k, r]) => k.startsWith(`${c}/`) && (!f?.userId || r.userId === f.userId)).map(([, r]) => structuredClone(r.doc)),
-    upsert: async (c: string, id: string, doc: unknown, userId?: string) => { h.docs.set(`${c}/${id}`, { doc: structuredClone(doc), userId }); return doc; },
-    remove: async (c: string, id: string) => { h.docs.delete(`${c}/${id}`); },
+      [...h.docs.entries()]
+        .filter(([k, r]) => k.startsWith(`${c}/`) && (!f?.userId || r.userId === f.userId))
+        .map(([, r]) => structuredClone(r.doc)),
+    upsert: async (c: string, id: string, doc: unknown, userId?: string) => {
+      h.docs.set(`${c}/${id}`, { doc: structuredClone(doc), userId });
+      return doc;
+    },
+    remove: async (c: string, id: string) => {
+      h.docs.delete(`${c}/${id}`);
+    },
   }),
 }));
 
 import {
-  answerTokens, generateChallenge, getChallengeMenu, gradeChallenge, gradeWithRules, isSafeFeedback,
-  loadChallengeFixtures, NotFoundError, runRule, stripComments,
+  answerTokens,
+  generateChallenge,
+  getChallengeMenu,
+  gradeChallenge,
+  gradeWithRules,
+  isSafeFeedback,
+  loadChallengeFixtures,
+  NotFoundError,
+  runRule,
+  stripComments,
 } from "./challenges";
 
 const all = fixtures as Challenge[];
@@ -55,7 +70,10 @@ CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 beforeEach(() => {
   vi.clearAllMocks();
   h.docs.clear();
-  h.docs.set("profiles/aisha", { doc: { id: "aisha", name: "Aisha Rahman", programmeId: "uom-bsc-cs", dna: { targetRoles: ["ml-engineer"] }, badges: [] }, userId: "aisha" });
+  h.docs.set("profiles/aisha", {
+    doc: { id: "aisha", name: "Aisha Rahman", programmeId: "uom-bsc-cs", dna: { targetRoles: ["ml-engineer"] }, badges: [] },
+    userId: "aisha",
+  });
   h.llmJSON.mockImplementation(noLLM);
   h.llmText.mockImplementation(noLLM);
 });
@@ -110,7 +128,7 @@ describe("AST-lite rules", () => {
   });
 
   it("json rule parses, order rule needs both in sequence", () => {
-    expect(runRule({ kind: "json" }, "{\"a\":1}")).toBe(true);
+    expect(runRule({ kind: "json" }, '{"a":1}')).toBe(true);
     expect(runRule({ kind: "json" }, "{a:1}")).toBe(false);
     expect(runRule({ kind: "order", first: "a", then: "b" }, "b a")).toBe(false);
     expect(runRule({ kind: "order", first: "a", then: "b" }, "a b")).toBe(true);
@@ -122,7 +140,14 @@ describe("gradeChallenge", () => {
   it("a good Docker submission (not the sample) passes and writes rung-1 micro-challenge evidence", async () => {
     const out = await gradeChallenge({ userId: "aisha", challengeId: docker.id, submission: GOOD_DOCKERFILE });
     expect(GradeResultZ.safeParse(out).success).toBe(true);
-    expect(out).toMatchObject({ passed: true, rubricMet: 4, checksPassed: 3, usedSample: false, feedbackSource: "rules", skillName: "Docker" });
+    expect(out).toMatchObject({
+      passed: true,
+      rubricMet: 4,
+      checksPassed: 3,
+      usedSample: false,
+      feedbackSource: "rules",
+      skillName: "Docker",
+    });
     expect(out.rubric.every((r) => r.met && r.hint === undefined)).toBe(true);
     const ev = h.docs.get("evidence/ev_mc_aisha_docker")?.doc as EvidenceItem;
     expect(ev).toMatchObject({ userId: "aisha", skillId: "docker", level: 1, source: "micro-challenge", url: "/challenge?skill=docker" });
@@ -180,7 +205,7 @@ describe("generateChallenge + menu", () => {
     expect(out).toMatchObject({ id: docker.id, skillName: "Docker", minutes: 20, checksCount: 3, source: "fixture", runId: "run_mc" });
     const text = JSON.stringify(out);
     expect(text).not.toContain("sampleAnswer");
-    expect(text).not.toContain("\"rules\"");
+    expect(text).not.toContain('"rules"');
     expect(text).not.toContain("--no-cache-dir");
     expect(h.emit.mock.calls.map((c) => c[0].agent)).toEqual(["roadmap", "roadmap", "orchestrator"]);
   });
@@ -200,7 +225,10 @@ describe("generateChallenge + menu", () => {
 
   it("menu puts the top gap first when there's no roadmap, and marks tried skills", async () => {
     // A roadmap whose weeks are all done means "no current week" (the seeded roadmap fixture is not used then).
-    h.docs.set("roadmaps/aisha", { doc: { userId: "aisha", weeks: [{ week: 1, focusSkillId: "linux", tasks: [{ id: "t0", done: true }] }] }, userId: "aisha" });
+    h.docs.set("roadmaps/aisha", {
+      doc: { userId: "aisha", weeks: [{ week: 1, focusSkillId: "linux", tasks: [{ id: "t0", done: true }] }] },
+      userId: "aisha",
+    });
     const before = await getChallengeMenu("aisha");
     expect(before.focusSkillId).toBe("docker");
     expect(before.options[0]).toMatchObject({ skillId: "docker", status: "gap", demand: 0.41, tried: false });
@@ -212,10 +240,13 @@ describe("generateChallenge + menu", () => {
 
   it("menu follows the roadmap week's focus", async () => {
     h.docs.set("roadmaps/aisha", {
-      doc: { userId: "aisha", weeks: [
-        { week: 1, focusSkillId: "linux", tasks: [{ id: "t1", done: true }] },
-        { week: 2, focusSkillId: "sql", tasks: [{ id: "t2", done: false }] },
-      ] },
+      doc: {
+        userId: "aisha",
+        weeks: [
+          { week: 1, focusSkillId: "linux", tasks: [{ id: "t1", done: true }] },
+          { week: 2, focusSkillId: "sql", tasks: [{ id: "t2", done: false }] },
+        ],
+      },
       userId: "aisha",
     });
     const menu = await getChallengeMenu("aisha");

@@ -8,7 +8,10 @@ export async function expectNoA11yViolations(page: Page) {
   await page.waitForTimeout(250);
   await page
     .waitForFunction(
-      () => document.getAnimations().every((a) => a.effect?.getComputedTiming().iterations === Infinity || (a.playState !== "running" && !a.pending)),
+      () =>
+        document
+          .getAnimations()
+          .every((a) => a.effect?.getComputedTiming().iterations === Infinity || (a.playState !== "running" && !a.pending)),
       null,
       { timeout: 5_000 },
     )
@@ -17,7 +20,13 @@ export async function expectNoA11yViolations(page: Page) {
   const bad = r.violations.filter((v) => ["serious", "critical"].includes(v.impact ?? ""));
   if (bad.length) {
     const detail = bad
-      .map((v) => `${v.id} (${v.impact}): ${v.help}\n${v.nodes.slice(0, 6).map((n) => `  - ${n.target.join(" ")}\n    ${(n.failureSummary ?? "").replace(/\n/g, "\n    ")}`).join("\n")}`)
+      .map(
+        (v) =>
+          `${v.id} (${v.impact}): ${v.help}\n${v.nodes
+            .slice(0, 6)
+            .map((n) => `  - ${n.target.join(" ")}\n    ${(n.failureSummary ?? "").replace(/\n/g, "\n    ")}`)
+            .join("\n")}`,
+      )
       .join("\n");
     throw new Error(`axe found ${bad.length} serious/critical violation(s) on ${page.url()}:\n${detail}`);
   }
@@ -40,7 +49,11 @@ export function watchPage(page: Page, opts: { allow?: RegExp[] } = {}) {
   const missing = new Set<string>();
   const allow = [...IGNORED_FAILURES, ...(opts.allow ?? [])];
   const pathOf = (url: string) => {
-    try { return new URL(url).pathname; } catch { return url; }
+    try {
+      return new URL(url).pathname;
+    } catch {
+      return url;
+    }
   };
   const ignored = (url: string) => allow.some((re) => re.test(pathOf(url)));
   page.on("console", (msg) => {

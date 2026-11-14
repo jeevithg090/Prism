@@ -54,7 +54,10 @@ export function stripHiddenUnicode(text: string): string {
 }
 
 function hiddenUnicodeFindings(text: string): InjectionFinding[] {
-  let zw = 0, bidi = 0, tags = 0, first = -1;
+  let zw = 0,
+    bidi = 0,
+    tags = 0,
+    first = -1;
   for (const m of text.matchAll(HIDDEN_ALL)) {
     const i = m.index ?? 0;
     if (m[0].length === 2) tags++;
@@ -66,11 +69,13 @@ function hiddenUnicodeFindings(text: string): InjectionFinding[] {
   if (first < 0) return [];
   const total = zw + bidi + tags;
   const parts = [zw && `${zw} zero-width`, bidi && `${bidi} bidi-control`, tags && `${tags} tag`].filter(Boolean).join(", ");
-  return [{
-    kind: "hidden_unicode",
-    severity: bidi > 0 || tags > 0 || zw >= 3 ? "high" : "low",
-    excerpt: `${total} hidden character${total === 1 ? "" : "s"} (${parts}) near "${clip(stripHiddenUnicode(text.slice(Math.max(0, first - 20), first + 60)), 60)}"`,
-  }];
+  return [
+    {
+      kind: "hidden_unicode",
+      severity: bidi > 0 || tags > 0 || zw >= 3 ? "high" : "low",
+      excerpt: `${total} hidden character${total === 1 ? "" : "s"} (${parts}) near "${clip(stripHiddenUnicode(text.slice(Math.max(0, first - 20), first + 60)), 60)}"`,
+    },
+  ];
 }
 
 // ---------- phrase detectors (run on text with hidden characters removed, so they can't be used to evade) ----------
@@ -83,41 +88,155 @@ const NOUN = "(?:instructions?|rules?|guidelines?|guardrails?|directives?|prompt
 const AI = "(?:ai|a\\.i\\.|llm|gpt|chatgpt|claude|gemini|copilot|assistant|language model|ai reviewer|ai tech lead|tech lead|keystone)";
 const AI_ONLY_NOUN = "(?:system prompt|prompt|instructions|rules|guidelines|hidden instructions|initial instructions)";
 const SECRET_NOUN = "(?:api[ _-]?keys?|secrets?|tokens?|credentials?|passwords?|env(?:ironment)?(?: variables?| vars?)?|\\.env)";
-const ENV_NAMES = "(?:OPENAI_API_KEY|ANTHROPIC_API_KEY|GITHUB_TOKEN|GH_TOKEN|GITHUB_WEBHOOK_SECRET|FIRECRAWL_API_KEY|SUPABASE_SERVICE_ROLE_KEY|SUPABASE_KEY|KEYSTONE_SHARED_SECRET|AWS_SECRET_ACCESS_KEY|N8N_[A-Z0-9_]+)";
+const ENV_NAMES =
+  "(?:OPENAI_API_KEY|ANTHROPIC_API_KEY|GITHUB_TOKEN|GH_TOKEN|GITHUB_WEBHOOK_SECRET|FIRECRAWL_API_KEY|SUPABASE_SERVICE_ROLE_KEY|SUPABASE_KEY|KEYSTONE_SHARED_SECRET|AWS_SECRET_ACCESS_KEY|N8N_[A-Z0-9_]+)";
 const SOLUTION_VERB = "(?:write|post|give|provide|output|paste|share|send)";
 const ADJ = "(?:full|complete|entire|whole|final|finished|working|correct)";
 
 const RULES: Rule[] = [
   // instruction overrides
-  { kind: "instruction_override", severity: "high", re: new RegExp(`\\b(?:ignore|disregard|forget)\\s+(?:the\\s+)?(?:${QUAL}\\s+){1,3}(?:of\\s+)?(?:the\\s+)?${NOUN}\\b`, "i") },
-  { kind: "instruction_override", severity: "high", re: new RegExp(`\\b(?:ignore|disregard)\\s+(?:the\\s+)?${NOUN}\\s+(?:above|before|you\\s+(?:were|have\\s+been)\\s+given)\\b`, "i") },
-  { kind: "instruction_override", severity: "high", re: new RegExp(`\\b(?:override|bypass)\\s+(?:all\\s+)?(?:of\\s+)?(?:your|safety|the\\s+system|system)\\s+(?:\\w+\\s+)?${NOUN}\\b`, "i") },
+  {
+    kind: "instruction_override",
+    severity: "high",
+    re: new RegExp(`\\b(?:ignore|disregard|forget)\\s+(?:the\\s+)?(?:${QUAL}\\s+){1,3}(?:of\\s+)?(?:the\\s+)?${NOUN}\\b`, "i"),
+  },
+  {
+    kind: "instruction_override",
+    severity: "high",
+    re: new RegExp(`\\b(?:ignore|disregard)\\s+(?:the\\s+)?${NOUN}\\s+(?:above|before|you\\s+(?:were|have\\s+been)\\s+given)\\b`, "i"),
+  },
+  {
+    kind: "instruction_override",
+    severity: "high",
+    re: new RegExp(`\\b(?:override|bypass)\\s+(?:all\\s+)?(?:of\\s+)?(?:your|safety|the\\s+system|system)\\s+(?:\\w+\\s+)?${NOUN}\\b`, "i"),
+  },
   { kind: "instruction_override", severity: "high", re: /\b(?:new|updated|real|actual|revised)\s+(?:system\s+)?instructions\s*:/i },
-  { kind: "instruction_override", severity: "high", re: /\byou\s+(?:are|'re)\s+(?:now\s+)?in\s+(?:developer|dev|god|dan|jailbreak|unrestricted)\s+mode\b/i },
-  { kind: "instruction_override", severity: "high", re: /\byou\s+are\s+now\s+(?:an?\s+)?(?:unrestricted|unfiltered|jailbroken|evil|DAN)\b/i },
-  { kind: "instruction_override", severity: "low", re: /\byou\s+are\s+now\b|\bsystem\s+prompt\b|\bdeveloper\s+mode\b|\bdisregard\b|\bnew\s+instructions\b/i },
+  {
+    kind: "instruction_override",
+    severity: "high",
+    re: /\byou\s+(?:are|'re)\s+(?:now\s+)?in\s+(?:developer|dev|god|dan|jailbreak|unrestricted)\s+mode\b/i,
+  },
+  {
+    kind: "instruction_override",
+    severity: "high",
+    re: /\byou\s+are\s+now\s+(?:an?\s+)?(?:unrestricted|unfiltered|jailbroken|evil|DAN)\b/i,
+  },
+  {
+    kind: "instruction_override",
+    severity: "low",
+    re: /\byou\s+are\s+now\b|\bsystem\s+prompt\b|\bdeveloper\s+mode\b|\bdisregard\b|\bnew\s+instructions\b/i,
+  },
   // role-play jailbreaks
-  { kind: "role_play", severity: "high", re: new RegExp(`\\b(?:pretend|imagine|act\\s+as\\s+if)\\s+(?:that\\s+)?you(?:'re|\\s+are)\\s+(?:an?\\s+)?(?:no\\s+longer|unrestricted|unfiltered|jailbroken|evil|DAN|different\\s+(?:ai|assistant|model)|${AI}\\s+(?:with|without))`, "i") },
+  {
+    kind: "role_play",
+    severity: "high",
+    re: new RegExp(
+      `\\b(?:pretend|imagine|act\\s+as\\s+if)\\s+(?:that\\s+)?you(?:'re|\\s+are)\\s+(?:an?\\s+)?(?:no\\s+longer|unrestricted|unfiltered|jailbroken|evil|DAN|different\\s+(?:ai|assistant|model)|${AI}\\s+(?:with|without))`,
+      "i",
+    ),
+  },
   { kind: "role_play", severity: "high", re: /\bfrom\s+now\s+on,?\s+you\s+(?:are|will|must|should|shall)\b/i },
-  { kind: "role_play", severity: "high", re: /\byou\s+are\s+no\s+longer\s+(?:an?\s+)?(?:ai|assistant|bound|restricted|limited|reviewer|keystone)\b/i },
+  {
+    kind: "role_play",
+    severity: "high",
+    re: /\byou\s+are\s+no\s+longer\s+(?:an?\s+)?(?:ai|assistant|bound|restricted|limited|reviewer|keystone)\b/i,
+  },
   { kind: "role_play", severity: "high", re: /\bdo\s+anything\s+now\b|\b(?:stay|remain)\s+in\s+character\b|\brole-?play\s+as\b/i },
   { kind: "role_play", severity: "low", re: /\bjailbreak(?:ed|ing)?\b|\bpretend\s+to\s+be\b/i },
   // requests aimed at the reviewer
-  { kind: "reviewer_request", severity: "high", re: new RegExp(`\\b${SOLUTION_VERB}\\s+(?:me\\s+|us\\s+)?(?:the\\s+|a\\s+|your\\s+)?${ADJ}\\s+(?:solution|answer)s?\\b`, "i") },
-  { kind: "reviewer_request", severity: "high", re: new RegExp(`\\b${SOLUTION_VERB}\\s+(?:me|us)\\s+(?:the\\s+|a\\s+)?${ADJ}\\s+(?:implementation|code|fix|program)\\b`, "i") },
-  { kind: "reviewer_request", severity: "high", re: new RegExp(`\\b${SOLUTION_VERB}\\s+(?:the\\s+|a\\s+)?${ADJ}\\s+(?:implementation|code|fix|program)\\s+(?:as\\s+code|in\\s+(?:the|your)\\s+(?:review|comment|reply)|for\\s+(?:me|us|the\\s+student))`, "i") },
-  { kind: "reviewer_request", severity: "high", re: new RegExp(`\\b${AI}\\s*[:,]\\s*(?:please\\s+)?(?:just\\s+)?(?:approve|merge|accept|lgtm|mark\\s+(?:this|it)\\s+as\\s+(?:approved|passing))\\b`, "i") },
-  { kind: "reviewer_request", severity: "high", re: /\b(?:approve|merge)\s+(?:this|the|my)\s+(?:pr|pull\s+request|change|code|diff|submission)\b[^\n]{0,30}\b(?:without|automatically|immediately|no\s+matter|regardless)\b/i },
-  { kind: "reviewer_request", severity: "low", re: new RegExp(`(?:^|[\\n/#*>(-]\\s*|\\b(?:dear|hey|hi|hello|attention|attn)\\s+|\\b(?:note|message)\\s+(?:to|for)\\s+(?:the\\s+|any\\s+)?)${AI}\\s*[:,]\\s+\\w|\\bif\\s+you\\s+are\\s+an?\\s+${AI}\\b`, "i") },
-  { kind: "reviewer_request", severity: "low", re: new RegExp(`\\b(?:approve|merge)\\s+(?:this|it)\\b|\\blgtm\\b|\\bgive\\s+(?:me\\s+|us\\s+)?the\\s+answers?\\b|\\b${SOLUTION_VERB}\\s+(?:the\\s+|a\\s+)?${ADJ}\\s+(?:implementation|code|fix|program)\\b`, "i") },
+  {
+    kind: "reviewer_request",
+    severity: "high",
+    re: new RegExp(`\\b${SOLUTION_VERB}\\s+(?:me\\s+|us\\s+)?(?:the\\s+|a\\s+|your\\s+)?${ADJ}\\s+(?:solution|answer)s?\\b`, "i"),
+  },
+  {
+    kind: "reviewer_request",
+    severity: "high",
+    re: new RegExp(`\\b${SOLUTION_VERB}\\s+(?:me|us)\\s+(?:the\\s+|a\\s+)?${ADJ}\\s+(?:implementation|code|fix|program)\\b`, "i"),
+  },
+  {
+    kind: "reviewer_request",
+    severity: "high",
+    re: new RegExp(
+      `\\b${SOLUTION_VERB}\\s+(?:the\\s+|a\\s+)?${ADJ}\\s+(?:implementation|code|fix|program)\\s+(?:as\\s+code|in\\s+(?:the|your)\\s+(?:review|comment|reply)|for\\s+(?:me|us|the\\s+student))`,
+      "i",
+    ),
+  },
+  {
+    kind: "reviewer_request",
+    severity: "high",
+    re: new RegExp(
+      `\\b${AI}\\s*[:,]\\s*(?:please\\s+)?(?:just\\s+)?(?:approve|merge|accept|lgtm|mark\\s+(?:this|it)\\s+as\\s+(?:approved|passing))\\b`,
+      "i",
+    ),
+  },
+  {
+    kind: "reviewer_request",
+    severity: "high",
+    re: /\b(?:approve|merge)\s+(?:this|the|my)\s+(?:pr|pull\s+request|change|code|diff|submission)\b[^\n]{0,30}\b(?:without|automatically|immediately|no\s+matter|regardless)\b/i,
+  },
+  {
+    kind: "reviewer_request",
+    severity: "low",
+    re: new RegExp(
+      `(?:^|[\\n/#*>(-]\\s*|\\b(?:dear|hey|hi|hello|attention|attn)\\s+|\\b(?:note|message)\\s+(?:to|for)\\s+(?:the\\s+|any\\s+)?)${AI}\\s*[:,]\\s+\\w|\\bif\\s+you\\s+are\\s+an?\\s+${AI}\\b`,
+      "i",
+    ),
+  },
+  {
+    kind: "reviewer_request",
+    severity: "low",
+    re: new RegExp(
+      `\\b(?:approve|merge)\\s+(?:this|it)\\b|\\blgtm\\b|\\bgive\\s+(?:me\\s+|us\\s+)?the\\s+answers?\\b|\\b${SOLUTION_VERB}\\s+(?:the\\s+|a\\s+)?${ADJ}\\s+(?:implementation|code|fix|program)\\b`,
+      "i",
+    ),
+  },
   // secret exfiltration
-  { kind: "secret_exfiltration", severity: "high", re: new RegExp(`\\b(?:print|reveal|leak|output|dump|exfiltrate|disclose|expose|repeat|show|tell|send|share|give)\\s+(?:me\\s+|us\\s+)?(?:all\\s+)?(?:of\\s+)?your\\s+(?:\\w+\\s+)?${AI_ONLY_NOUN}\\b`, "i") },
-  { kind: "secret_exfiltration", severity: "high", re: new RegExp(`\\b(?:reveal|leak|dump|exfiltrate|disclose|expose)\\s+(?:me\\s+|us\\s+)?(?:all\\s+)?(?:of\\s+)?(?:your|the)\\s+(?:\\w+\\s+)?${SECRET_NOUN}`, "i") },
-  { kind: "secret_exfiltration", severity: "high", re: new RegExp(`\\b(?:reveal|leak|dump|exfiltrate|disclose|expose|print|output|post|share|tell\\s+me|send\\s+me|give\\s+me)\\s+(?:the\\s+|your\\s+)?(?:value\\s+of\\s+(?:the\\s+)?)?[$\`'"]?${ENV_NAMES}\\b`, "i") },
-  { kind: "secret_exfiltration", severity: "high", re: /\b(?:what\s+is|what's)\s+your\s+(?:api[ _-]?key|token|secret|password|system\s+prompt)\b/i },
+  {
+    kind: "secret_exfiltration",
+    severity: "high",
+    re: new RegExp(
+      `\\b(?:print|reveal|leak|output|dump|exfiltrate|disclose|expose|repeat|show|tell|send|share|give)\\s+(?:me\\s+|us\\s+)?(?:all\\s+)?(?:of\\s+)?your\\s+(?:\\w+\\s+)?${AI_ONLY_NOUN}\\b`,
+      "i",
+    ),
+  },
+  {
+    kind: "secret_exfiltration",
+    severity: "high",
+    re: new RegExp(
+      `\\b(?:reveal|leak|dump|exfiltrate|disclose|expose)\\s+(?:me\\s+|us\\s+)?(?:all\\s+)?(?:of\\s+)?(?:your|the)\\s+(?:\\w+\\s+)?${SECRET_NOUN}`,
+      "i",
+    ),
+  },
+  {
+    kind: "secret_exfiltration",
+    severity: "high",
+    re: new RegExp(
+      `\\b(?:reveal|leak|dump|exfiltrate|disclose|expose|print|output|post|share|tell\\s+me|send\\s+me|give\\s+me)\\s+(?:the\\s+|your\\s+)?(?:value\\s+of\\s+(?:the\\s+)?)?[$\`'"]?${ENV_NAMES}\\b`,
+      "i",
+    ),
+  },
+  {
+    kind: "secret_exfiltration",
+    severity: "high",
+    re: /\b(?:what\s+is|what's)\s+your\s+(?:api[ _-]?key|token|secret|password|system\s+prompt)\b/i,
+  },
   // imperative "print your api key" (sentence start / after punctuation); docs prose "to print your token" stays low
-  { kind: "secret_exfiltration", severity: "high", re: new RegExp(`(?:^|[.,:;!?\\n#/*>-]\\s*|\\b(?:please|now|first|then|and|also|just)\\s+)(?:print|show|tell|send|share|give|output|paste)\\s+(?:me\\s+|us\\s+)?(?:all\\s+)?(?:of\\s+)?your\\s+(?:\\w+\\s+)?${SECRET_NOUN}`, "i") },
-  { kind: "secret_exfiltration", severity: "low", re: new RegExp(`\\b(?:print|show|tell|send|share|give|output|paste)\\s+(?:me\\s+|us\\s+)?your\\s+(?:\\w+\\s+)?${SECRET_NOUN}|\\b${ENV_NAMES}\\b`) },
+  {
+    kind: "secret_exfiltration",
+    severity: "high",
+    re: new RegExp(
+      `(?:^|[.,:;!?\\n#/*>-]\\s*|\\b(?:please|now|first|then|and|also|just)\\s+)(?:print|show|tell|send|share|give|output|paste)\\s+(?:me\\s+|us\\s+)?(?:all\\s+)?(?:of\\s+)?your\\s+(?:\\w+\\s+)?${SECRET_NOUN}`,
+      "i",
+    ),
+  },
+  {
+    kind: "secret_exfiltration",
+    severity: "low",
+    re: new RegExp(
+      `\\b(?:print|show|tell|send|share|give|output|paste)\\s+(?:me\\s+|us\\s+)?your\\s+(?:\\w+\\s+)?${SECRET_NOUN}|\\b${ENV_NAMES}\\b`,
+    ),
+  },
 ];
 
 function phraseFindings(text: string): InjectionFinding[] {
@@ -125,7 +244,8 @@ function phraseFindings(text: string): InjectionFinding[] {
   for (const r of RULES) {
     if (r.severity === "low" && out.some((f) => f.kind === r.kind)) continue; // a stronger rule already fired
     const m = r.re.exec(text);
-    if (m) out.push({ kind: r.kind, severity: r.severity, excerpt: clip(text.slice(Math.max(0, m.index - 20), m.index + m[0].length + 40)) });
+    if (m)
+      out.push({ kind: r.kind, severity: r.severity, excerpt: clip(text.slice(Math.max(0, m.index - 20), m.index + m[0].length + 40)) });
   }
   return out;
 }
@@ -135,10 +255,12 @@ function phraseFindings(text: string): InjectionFinding[] {
 const MD_IMAGE = /!\[([^\]\n]*)\]\(\s*<?((?:https?:)?\/\/[^)\s>]+)>?(?:\s+"[^"\n]*")?\s*\)/gi;
 const MD_LINK = /(?<!!)\[([^\]\n]*)\]\(\s*<?((?:https?:)?\/\/[^)\s>]+)>?(?:\s+"[^"\n]*")?\s*\)/gi;
 const HTML_IMG = /<img\b[^>]*?\bsrc\s*=\s*["']?((?:https?:)?\/\/[^"'\s>]+)[^>]*>/gi;
-const SUSPICIOUS_PARAM = /^(?:q|query|d|data|s|c|p|secret|token|key|apikey|api_key|prompt|text|content|exfil|leak|info|payload|chat|history|conversation|creds?|password|pw)$/i;
+const SUSPICIOUS_PARAM =
+  /^(?:q|query|d|data|s|c|p|secret|token|key|apikey|api_key|prompt|text|content|exfil|leak|info|payload|chat|history|conversation|creds?|password|pw)$/i;
 const PLACEHOLDER = /[{}$<>]|%7B|%24|%3C|SECRET|TOKEN|API.?KEY|PASSWORD|PROMPT|CONVERSATION|HISTORY|INSERT|BASE64/i;
 // Badge and README-widget hosts whose ordinary query strings (?style=flat, ?username=…) are not exfiltration.
-const BADGE_HOSTS = /^(?:img\.shields\.io|badge\.fury\.io|codecov\.io|coveralls\.io|github\.com|raw\.githubusercontent\.com|github-readme-stats\.vercel\.app|api\.netlify\.com|sonarcloud\.io|app\.deepsource\.com|readme-typing-svg\.demolab\.com|circleci\.com|travis-ci\.(?:com|org))$/i;
+const BADGE_HOSTS =
+  /^(?:img\.shields\.io|badge\.fury\.io|codecov\.io|coveralls\.io|github\.com|raw\.githubusercontent\.com|github-readme-stats\.vercel\.app|api\.netlify\.com|sonarcloud\.io|app\.deepsource\.com|readme-typing-svg\.demolab\.com|circleci\.com|travis-ci\.(?:com|org))$/i;
 
 function urlRisk(url: string, image: boolean): "none" | "low" | "high" {
   const q = url.indexOf("?");
@@ -153,7 +275,9 @@ function urlRisk(url: string, image: boolean): "none" | "low" | "high" {
 
 function markdownFindings(text: string): InjectionFinding[] {
   const out: InjectionFinding[] = [];
-  const add = (match: string, risk: "none" | "low" | "high") => { if (risk !== "none") out.push({ kind: "markdown_exfiltration", severity: risk, excerpt: clip(match) }); };
+  const add = (match: string, risk: "none" | "low" | "high") => {
+    if (risk !== "none") out.push({ kind: "markdown_exfiltration", severity: risk, excerpt: clip(match) });
+  };
   for (const m of text.matchAll(MD_IMAGE)) add(m[0], urlRisk(m[2], true));
   for (const m of text.matchAll(HTML_IMG)) add(m[0], urlRisk(m[1], true));
   for (const m of text.matchAll(MD_LINK)) add(m[0], urlRisk(m[2], false));
@@ -161,7 +285,10 @@ function markdownFindings(text: string): InjectionFinding[] {
 }
 
 const HTML_COMMENT = /<!--([\s\S]*?)-->/g;
-const IMPERATIVE_TO_AI = new RegExp(`\\b${AI}s?\\b[\\s\\S]{0,80}\\b(?:must|should|always|never|instead|do\\s+not|don't|reply|respond|say|output)\\b|\\b(?:you\\s+must|you\\s+should)\\b[\\s\\S]{0,80}\\b${AI}\\b`, "i");
+const IMPERATIVE_TO_AI = new RegExp(
+  `\\b${AI}s?\\b[\\s\\S]{0,80}\\b(?:must|should|always|never|instead|do\\s+not|don't|reply|respond|say|output)\\b|\\b(?:you\\s+must|you\\s+should)\\b[\\s\\S]{0,80}\\b${AI}\\b`,
+  "i",
+);
 
 /** A hidden HTML comment is suspicious when it carries instructions, especially ones addressed to an AI. */
 function isSuspiciousComment(body: string): boolean {
@@ -189,7 +316,9 @@ function base64Findings(text: string): InjectionFinding[] {
       const decoded = atob(core.slice(0, core.length - (core.length % 4)));
       const printable = decoded.replace(/[^\x20-\x7E\n\r\t]/g, "").length / Math.max(decoded.length, 1);
       if (printable > 0.9 && phraseFindings(decoded).some((f) => f.severity === "high")) severity = "high";
-    } catch { /* not decodable: stays low */ }
+    } catch {
+      /* not decodable: stays low */
+    }
     out.push({ kind: "base64_blob", severity, excerpt: `${blob.length}-character base64 blob ${blob.slice(0, 24)}…` });
   }
   return out;
@@ -266,7 +395,10 @@ const SECRET_SHAPES = [
 ];
 
 /** Replaces the values of secret-named env vars (and common token shapes) with "[redacted]". */
-export function redactSecrets(text: string, env: Record<string, string | undefined> = typeof process === "undefined" ? {} : process.env): string {
+export function redactSecrets(
+  text: string,
+  env: Record<string, string | undefined> = typeof process === "undefined" ? {} : process.env,
+): string {
   let out = text;
   for (const [name, value] of Object.entries(env)) {
     if (!value || !SECRET_NAME.test(name) || name.startsWith("NEXT_PUBLIC_")) continue;
@@ -282,7 +414,8 @@ export function guardOutput(text: string): string {
   return redactSecrets(neutralize(text));
 }
 
-const APPROVAL_CLAIM = /\b(?:i(?:'ve|\s+have)?\s+(?:approved|merged)|approved\s*[!.✅]|lgtm\b|ready\s+to\s+merge|merging\s+(?:it|this|now)|i(?:'ll|\s+will)\s+(?:approve|merge))/i;
+const APPROVAL_CLAIM =
+  /\b(?:i(?:'ve|\s+have)?\s+(?:approved|merged)|approved\s*[!.✅]|lgtm\b|ready\s+to\s+merge|merging\s+(?:it|this|now)|i(?:'ll|\s+will)\s+(?:approve|merge))/i;
 export const APPROVAL_NOTE = "_(The AI Tech Lead can't approve or merge PRs. Your pod reviewer decides.)_";
 
 /** For a flagged PR: lines where the model claims to approve or merge are replaced by one note. */

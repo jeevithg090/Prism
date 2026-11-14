@@ -15,23 +15,38 @@ vi.mock("sonner", () => ({ toast: Object.assign(vi.fn(), { success: toastSuccess
 
 beforeAll(() => {
   // Recharts' ResponsiveContainer needs ResizeObserver, which jsdom lacks.
-  globalThis.ResizeObserver ??= class { observe() {} unobserve() {} disconnect() {} } as unknown as typeof ResizeObserver;
+  globalThis.ResizeObserver ??= class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  } as unknown as typeof ResizeObserver;
 });
 beforeEach(() => vi.clearAllMocks());
 afterEach(cleanup);
 
 function renderView() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
-  return render(<QueryClientProvider client={qc}><LecturerInsightsView programmeId="uom-bsc-cs" /></QueryClientProvider>);
+  return render(
+    <QueryClientProvider client={qc}>
+      <LecturerInsightsView programmeId="uom-bsc-cs" />
+    </QueryClientProvider>,
+  );
 }
-const routes = (overrides: Record<string, unknown> = {}) => async (url: string) => {
-  const table: Record<string, unknown> = { "/api/lecturer/cohort": DEMO_COHORT, "/api/lecturer/insights": DEMO_INSIGHTS, "/api/pods/insights": DEMO_POD_INSIGHTS, ...overrides };
-  const hit = Object.keys(table).find((k) => url.startsWith(`${k}?programmeId=uom-bsc-cs`));
-  if (!hit) throw new Error(`No mock for ${url}`);
-  const v = table[hit];
-  if (v instanceof Error) throw v;
-  return v;
-};
+const routes =
+  (overrides: Record<string, unknown> = {}) =>
+  async (url: string) => {
+    const table: Record<string, unknown> = {
+      "/api/lecturer/cohort": DEMO_COHORT,
+      "/api/lecturer/insights": DEMO_INSIGHTS,
+      "/api/pods/insights": DEMO_POD_INSIGHTS,
+      ...overrides,
+    };
+    const hit = Object.keys(table).find((k) => url.startsWith(`${k}?programmeId=uom-bsc-cs`));
+    if (!hit) throw new Error(`No mock for ${url}`);
+    const v = table[hit];
+    if (v instanceof Error) throw v;
+    return v;
+  };
 
 describe("LecturerStats", () => {
   it("renders the 3 stat cards: cohort size, % targeting ML engineer, top uncovered gap", () => {
@@ -55,7 +70,9 @@ describe("GapsChart", () => {
     expect(summary).toHaveTextContent(
       "Docker is the biggest gap: 41% of ML engineer job ads ask for it, 8 students in this cohort need it, and no module covers it.",
     );
-    expect(summary).toHaveTextContent("Also missing from the syllabus: PyTorch (38%), SQL (35%), AWS (33%), MLOps (28%) and LLM apps (26%).");
+    expect(summary).toHaveTextContent(
+      "Also missing from the syllabus: PyTorch (38%), SQL (35%), AWS (33%), MLOps (28%) and LLM apps (26%).",
+    );
     expect(screen.getByRole("figure")).toHaveAccessibleDescription(summary.textContent!);
     const table = screen.getByRole("table");
     expect(within(table).getAllByRole("row")).toHaveLength(7); // header + 6 gaps
@@ -76,7 +93,10 @@ describe("LabIdeas", () => {
     expect(buttons).toHaveLength(3);
     await user.click(buttons[0]);
     expect(writeText).toHaveBeenCalledWith(DEMO_INSIGHTS.labIdeas[0]);
-    expect(toastSuccess).toHaveBeenCalledWith("Lab idea copied", expect.objectContaining({ description: "Paste it into your module plan." }));
+    expect(toastSuccess).toHaveBeenCalledWith(
+      "Lab idea copied",
+      expect.objectContaining({ description: "Paste it into your module plan." }),
+    );
     expect(await screen.findByRole("button", { name: "Copied" })).toBeInTheDocument();
     expect(screen.getByText("COMP2xxx3")).toBeInTheDocument();
   });
@@ -121,7 +141,9 @@ describe("LecturerInsightsView", () => {
   });
 
   it("hides everything for a cohort under 10 students", async () => {
-    apiGet.mockImplementation(routes({ "/api/lecturer/cohort": { ...DEMO_COHORT, cohortSize: 7, suppressed: true, roles: [], demandRole: null } }));
+    apiGet.mockImplementation(
+      routes({ "/api/lecturer/cohort": { ...DEMO_COHORT, cohortSize: 7, suppressed: true, roles: [], demandRole: null } }),
+    );
     renderView();
     expect(await screen.findByText("Not enough students to show insights yet")).toBeInTheDocument();
     expect(screen.queryByTestId("gaps-summary")).not.toBeInTheDocument();

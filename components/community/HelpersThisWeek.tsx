@@ -10,7 +10,11 @@ import { CARD, Region } from "./Region";
 
 /** Opt-in: hidden until the viewer chooses to see it, so nobody gets a leaderboard pushed at them. */
 export function HelpersThisWeek({
-  requests, profiles, isLoading, isError, onRetry,
+  requests,
+  profiles,
+  isLoading,
+  isError,
+  onRetry,
 }: {
   requests: HelpRequest[];
   profiles: ProfilesById;
@@ -27,7 +31,11 @@ export function HelpersThisWeek({
       id="helpers-title"
       title="Helpers this week"
       // The opt-in line lives in the head, so the closed state adds no box of its own.
-      description={<><span>Celebrating helpers, not ranking students.</span> This list is opt-in.</>}
+      description={
+        <>
+          <span>Celebrating helpers, not ranking students.</span> This list is opt-in.
+        </>
+      }
       actions={
         <Button variant="outline" aria-expanded={show} aria-controls="helpers-this-week" onClick={() => setShow((s) => !s)}>
           {show ? "Hide" : "Show helpers"}
@@ -40,7 +48,11 @@ export function HelpersThisWeek({
         ) : isError ? (
           <ErrorState title="We couldn't load this week's helpers" onRetry={onRetry} />
         ) : top.length === 0 ? (
-          <EmptyState icon={HeartHandshake} title="Nobody has helped yet this week" body="Be the first: pick a request from the feed and say you can help." />
+          <EmptyState
+            icon={HeartHandshake}
+            title="Nobody has helped yet this week"
+            body="Be the first: pick a request from the feed and say you can help."
+          />
         ) : (
           <ol aria-label="Helpers this week" className={`divide-y px-6 ${CARD}`}>
             {top.map((h) => {
@@ -52,7 +64,9 @@ export function HelpersThisWeek({
                     <p className="max-w-full truncate font-semibold text-foreground">{displayName(h.userId, p)}</p>
                     <BadgePill badge="helper" />
                   </div>
-                  <span className="shrink-0 text-sm font-medium text-foreground tabular-nums">{h.count} {h.count === 1 ? "help" : "helps"}</span>
+                  <span className="shrink-0 text-sm font-medium text-foreground tabular-nums">
+                    {h.count} {h.count === 1 ? "help" : "helps"}
+                  </span>
                 </li>
               );
             })}

@@ -14,7 +14,11 @@ vi.mock("@/lib/store", () => ({
   getStore: () => ({
     get: async (c: string, id: string) => structuredClone(h.docs.get(`${c}/${id}`) ?? null),
     list: async (c: string) => [...h.docs.entries()].filter(([k]) => k.startsWith(`${c}/`)).map(([, d]) => structuredClone(d)),
-    upsert: async (c: string, id: string, doc: unknown, userId?: string) => { h.upsert(c, id, doc, userId); h.docs.set(`${c}/${id}`, structuredClone(doc)); return doc; },
+    upsert: async (c: string, id: string, doc: unknown, userId?: string) => {
+      h.upsert(c, id, doc, userId);
+      h.docs.set(`${c}/${id}`, structuredClone(doc));
+      return doc;
+    },
     remove: async () => {},
   }),
 }));
@@ -24,9 +28,13 @@ import { GET } from "../progress/route";
 
 const dna = { targetRoles: ["ml-engineer"] } as Profile["dna"];
 const post = (body: unknown) =>
-  POST(new Request("http://localhost/api/projects/merge", {
-    method: "POST", headers: { "content-type": "application/json" }, body: typeof body === "string" ? body : JSON.stringify(body),
-  }));
+  POST(
+    new Request("http://localhost/api/projects/merge", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: typeof body === "string" ? body : JSON.stringify(body),
+    }),
+  );
 const progress = (q: string) => GET(new Request(`http://localhost/api/projects/progress${q}`));
 
 beforeEach(() => {
@@ -45,8 +53,16 @@ describe("POST /api/projects/merge", () => {
     expect(json.ok).toBe(true);
     expect(ProofResultZ.safeParse(json.data).success).toBe(true);
     expect(json.data).toMatchObject({
-      podId: "pod_demo01", issueIndex: 0, userId: "aisha", skillId: "docker", skillName: "Docker", reviewerUserId: "priya",
-      readinessBefore: 0.38, badgesEarned: ["shipped"], momentumPoints: 5, runId: "run_merge",
+      podId: "pod_demo01",
+      issueIndex: 0,
+      userId: "aisha",
+      skillId: "docker",
+      skillName: "Docker",
+      reviewerUserId: "priya",
+      readinessBefore: 0.38,
+      badgesEarned: ["shipped"],
+      momentumPoints: 5,
+      runId: "run_merge",
     });
     expect(json.data.readinessAfter).toBeGreaterThan(0.38);
     expect(json.data.evidenceIds).toHaveLength(2);
@@ -81,7 +97,12 @@ describe("GET /api/projects/progress", () => {
     const json = await (await progress("?podId=pod_demo01")).json();
     expect(ProjectProgressZ.safeParse(json.data).success).toBe(true);
     expect(json.data.merged).toEqual([
-      expect.objectContaining({ issueIndex: 0, userId: "aisha", skillId: "docker", prUrl: "https://github.com/keystone-demo/pod-vision-demo/pull/8" }),
+      expect.objectContaining({
+        issueIndex: 0,
+        userId: "aisha",
+        skillId: "docker",
+        prUrl: "https://github.com/keystone-demo/pod-vision-demo/pull/8",
+      }),
     ]);
     expect(json.data.id).toBeUndefined();
   });

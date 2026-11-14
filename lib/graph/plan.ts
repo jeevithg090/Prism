@@ -10,7 +10,11 @@ export const PREREQ_NOT_READY = 0.6;
 /** Cooling skills wait: half priority for a declining trend. */
 export const DECLINING_FACTOR = 0.5;
 
-export interface ModuleRef { code: string; title?: string; term: TermRef | null }
+export interface ModuleRef {
+  code: string;
+  title?: string;
+  term: TermRef | null;
+}
 
 export interface RankedSkill {
   node: BridgeNode;
@@ -30,7 +34,13 @@ export interface PlannedSkip {
   message: string;
 }
 
-export interface PlanWeek { week: number; start: Date; isExamWeek: boolean; focus: RankedSkill; repeat: boolean }
+export interface PlanWeek {
+  week: number;
+  start: Date;
+  isExamWeek: boolean;
+  focus: RankedSkill;
+  repeat: boolean;
+}
 
 export interface Plan {
   candidates: number;
@@ -60,7 +70,8 @@ function modulesFor(node: BridgeNode, programme?: Programme | null): ModuleRef[]
   const fromProgramme = (programme?.modules ?? []).filter(
     (m: Module) => node.moduleCodes.includes(m.code) || m.skills.some((s) => s.skillId === node.skillId),
   );
-  if (fromProgramme.length) return fromProgramme.map((m) => ({ code: m.code, title: m.title, term: { year: m.year, semester: m.semester } }));
+  if (fromProgramme.length)
+    return fromProgramme.map((m) => ({ code: m.code, title: m.title, term: { year: m.year, semester: m.semester } }));
   const term = parseUpcomingLabel(node.upcomingLabel);
   return node.moduleCodes.map((code) => ({ code, term }));
 }
@@ -116,7 +127,10 @@ export function planRoadmap(i: PlanInput): Plan {
         const label = node.upcomingLabel ?? (mod.term ? upcomingLabel(mod.term) : "a later semester");
         upcomingByTarget.push(node.skillId);
         skipped.push({
-          skillId: node.skillId, name: node.name, module: mod, label,
+          skillId: node.skillId,
+          name: node.name,
+          module: mod,
+          label,
           termStart: mod.term ? termStart(mod.term, i.startedAt) : null,
           message: skipMessage(node.name, mod, label),
         });
@@ -139,8 +153,11 @@ export function planRoadmap(i: PlanInput): Plan {
   const score = (q: (typeof queue)[number]): RankedSkill => {
     const prereqReady = isReady(q.node.skillId);
     const priority =
-      q.node.demand * (1 + Math.max(q.growth, 0)) * (prereqReady ? 1 : PREREQ_NOT_READY) *
-      (q.coveredLater ? COVERED_LATER_FACTOR : 1) * (q.node.trend === "declining" ? DECLINING_FACTOR : 1);
+      q.node.demand *
+      (1 + Math.max(q.growth, 0)) *
+      (prereqReady ? 1 : PREREQ_NOT_READY) *
+      (q.coveredLater ? COVERED_LATER_FACTOR : 1) *
+      (q.node.trend === "declining" ? DECLINING_FACTOR : 1);
     return { ...q, prereqReady, priority };
   };
   const better = (a: RankedSkill, b: RankedSkill) =>
@@ -154,7 +171,10 @@ export function planRoadmap(i: PlanInput): Plan {
     const top = scored[0];
     ranked.push(top);
     scheduled.add(top.node.skillId);
-    remaining.splice(remaining.findIndex((q) => q.node.skillId === top.node.skillId), 1);
+    remaining.splice(
+      remaining.findIndex((q) => q.node.skillId === top.node.skillId),
+      1,
+    );
   }
 
   const start0 = nextMonday(i.now);

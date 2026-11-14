@@ -64,21 +64,11 @@ describe("PRReviewPanel", () => {
     let resolve!: (r: PRReview) => void;
     apiPost.mockReturnValue(new Promise<PRReview>((r) => (resolve = r)));
     const onReviewed = vi.fn();
-    renderWithQuery(
-      <PRReviewPanel podId="pod_demo01" onReviewed={onReviewed} />,
-    );
+    renderWithQuery(<PRReviewPanel podId="pod_demo01" onReviewed={onReviewed} />);
 
-    expect(
-      screen.getByRole("heading", { name: "AI Tech Lead" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        "Socratic review: hints and questions, never the answer.",
-      ),
-    ).toBeInTheDocument();
-    await userEvent.click(
-      screen.getByRole("button", { name: /Review my PR now/ }),
-    );
+    expect(screen.getByRole("heading", { name: "AI Tech Lead" })).toBeInTheDocument();
+    expect(screen.getByText("Socratic review: hints and questions, never the answer.")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: /Review my PR now/ }));
 
     expect(apiPost).toHaveBeenCalledWith("/api/projects/review", {
       podId: "pod_demo01",
@@ -93,13 +83,9 @@ describe("PRReviewPanel", () => {
       name: "Hints from the Tech Lead",
     });
     expect(within(list).getAllByRole("listitem")).toHaveLength(3);
-    expect(
-      within(list).getByText(/image size if you copy the whole repo/),
-    ).toBeInTheDocument();
+    expect(within(list).getByText(/image size if you copy the whole repo/)).toBeInTheDocument();
     expect(within(list).getByText("docker compose").tagName).toBe("CODE");
-    expect(
-      screen.getByRole("link", { name: /Containerise the captioning API/ }),
-    ).toHaveAttribute("href", review.prUrl);
+    expect(screen.getByRole("link", { name: /Containerise the captioning API/ })).toHaveAttribute("href", review.prUrl);
     expect(screen.getByText("Hints, not answers")).toBeInTheDocument();
     expect(screen.getByText("Posted on GitHub")).toBeInTheDocument();
     expect(start).toHaveBeenCalledWith("run_review1");
@@ -115,30 +101,22 @@ describe("PRReviewPanel", () => {
       runId: undefined,
     });
     renderWithQuery(<PRReviewPanel podId="pod_demo01" />);
-    await userEvent.click(
-      screen.getByRole("button", { name: /Review my PR now/ }),
-    );
+    await userEvent.click(screen.getByRole("button", { name: /Review my PR now/ }));
     expect(await screen.findByText("Preview: demo mode")).toBeInTheDocument();
     expect(screen.queryByText("Posted on GitHub")).not.toBeInTheDocument();
     expect(start).not.toHaveBeenCalled();
   });
 
   it("shows an error with Retry that calls the API again", async () => {
-    apiPost
-      .mockRejectedValueOnce(new Error("No open pull request in this repo yet"))
-      .mockResolvedValueOnce(review);
+    apiPost.mockRejectedValueOnce(new Error("No open pull request in this repo yet")).mockResolvedValueOnce(review);
     renderWithQuery(<PRReviewPanel podId="pod_demo01" />);
-    await userEvent.click(
-      screen.getByRole("button", { name: /Review my PR now/ }),
-    );
+    await userEvent.click(screen.getByRole("button", { name: /Review my PR now/ }));
 
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent("No open pull request in this repo yet");
     expect(toast.error).toHaveBeenCalled();
     await userEvent.click(within(alert).getByRole("button", { name: /Retry/ }));
     expect(apiPost).toHaveBeenCalledTimes(2);
-    expect(
-      await screen.findByRole("list", { name: "Hints from the Tech Lead" }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole("list", { name: "Hints from the Tech Lead" })).toBeInTheDocument();
   });
 });

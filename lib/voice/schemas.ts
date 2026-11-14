@@ -66,9 +66,22 @@ export const BriefingZ = z.object({
   marketMoves: z.array(z.string()),
 });
 
-export const TtsReqZ = z.object({ text: z.string().trim().min(1).max(2500), voiceId: z.string().regex(/^[A-Za-z0-9]{8,40}$/).optional() });
+export const TtsReqZ = z.object({
+  text: z.string().trim().min(1).max(2500),
+  voiceId: z
+    .string()
+    .regex(/^[A-Za-z0-9]{8,40}$/)
+    .optional(),
+});
 
-export const WORKFLOWS = ["market-refresh", "monday-briefing", "pod-kickoff", "pod-nudge", "opportunity-watcher", "newcomer-welcome"] as const;
+export const WORKFLOWS = [
+  "market-refresh",
+  "monday-briefing",
+  "pod-kickoff",
+  "pod-nudge",
+  "opportunity-watcher",
+  "newcomer-welcome",
+] as const;
 export const WorkflowNameZ = z.enum(WORKFLOWS);
 
 export const TriggerReqZ = z.object({ payload: z.record(z.string(), z.unknown()).default({}) });

@@ -5,15 +5,7 @@ import { useEffect, useState } from "react";
 import { CheckCircle2, Clock, Edit, Minus, Plus, RefreshCw, Send, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -75,7 +67,10 @@ const STATUS_LABELS: Record<Status, string> = {
 };
 
 function skillName(id: string) {
-  return id.split("-").map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w)).join(" ");
+  return id
+    .split("-")
+    .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w))
+    .join(" ");
 }
 
 function appliedAtLabel(iso: string) {
@@ -158,7 +153,9 @@ export default function ApplicationTracker({ userId }: { userId: string }) {
         setError("That's on us, not you. Try again, or add an application manually.");
         setLoading(false);
       });
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [userId]);
 
   const load = () => {
@@ -216,7 +213,10 @@ export default function ApplicationTracker({ userId }: { userId: string }) {
   const handleDelete = (id: string) => {
     if (!window.confirm("Remove this application?")) return;
     deleteApplication(id, userId)
-      .then(() => { toast("Application removed."); load(); })
+      .then(() => {
+        toast("Application removed.");
+        load();
+      })
       .catch(() => toast("Couldn't remove the application."));
   };
 
@@ -227,7 +227,9 @@ export default function ApplicationTracker({ userId }: { userId: string }) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <h2 className="text-xl font-semibold text-foreground">Application tracker</h2>
-          <p className="text-sm text-muted-foreground">Save the jobs you&apos;re applying to and see which of your proven skills each one asks for.</p>
+          <p className="text-sm text-muted-foreground">
+            Save the jobs you&apos;re applying to and see which of your proven skills each one asks for.
+          </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger>
@@ -238,9 +240,7 @@ export default function ApplicationTracker({ userId }: { userId: string }) {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>{editing ? "Edit application" : "Add application"}</DialogTitle>
-              <DialogDescription>
-                Fill in the job details. Matched skills are worked out from your proven skills.
-              </DialogDescription>
+              <DialogDescription>Fill in the job details. Matched skills are worked out from your proven skills.</DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="mt-4 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -255,7 +255,13 @@ export default function ApplicationTracker({ userId }: { userId: string }) {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="roleUrl">Role URL (job ad)</Label>
-                <Input id="roleUrl" type="url" placeholder="https://..." value={form.roleUrl} onChange={(e) => setForm({ ...form, roleUrl: e.target.value })} />
+                <Input
+                  id="roleUrl"
+                  type="url"
+                  placeholder="https://..."
+                  value={form.roleUrl}
+                  onChange={(e) => setForm({ ...form, roleUrl: e.target.value })}
+                />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -266,22 +272,42 @@ export default function ApplicationTracker({ userId }: { userId: string }) {
                     </SelectTrigger>
                     <SelectContent>
                       {Object.entries(STATUS_LABELS).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>{label}</SelectItem>
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="source">Source</Label>
-                  <Input id="source" placeholder="e.g. Adzuna, Reed" value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })} />
+                  <Input
+                    id="source"
+                    placeholder="e.g. Adzuna, Reed"
+                    value={form.source}
+                    onChange={(e) => setForm({ ...form, source: e.target.value })}
+                  />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="notes">Notes</Label>
-                <Textarea id="notes" placeholder="Interview prep, contacts, next steps…" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+                <Textarea
+                  id="notes"
+                  placeholder="Interview prep, contacts, next steps…"
+                  value={form.notes}
+                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                />
               </div>
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => { setOpen(false); resetForm(); }} disabled={submitting}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setOpen(false);
+                    resetForm();
+                  }}
+                  disabled={submitting}
+                >
                   Cancel
                 </Button>
                 <Button type="submit" disabled={submitting} aria-busy={submitting}>
@@ -315,13 +341,27 @@ export default function ApplicationTracker({ userId }: { userId: string }) {
             <table className="w-full text-sm text-foreground">
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
-                  <th className="h-12 text-left font-medium text-muted-foreground" scope="col">Company</th>
-                  <th className="h-12 text-left font-medium text-muted-foreground" scope="col">Role</th>
-                  <th className="h-12 text-left font-medium text-muted-foreground" scope="col">Status</th>
-                  <th className="h-12 text-left font-medium text-muted-foreground" scope="col">Applied</th>
-                  <th className="h-12 text-left font-medium text-muted-foreground" scope="col">Matched skills</th>
-                  <th className="h-12 text-right font-medium text-muted-foreground" scope="col">Match</th>
-                  <th className="h-12 text-right" scope="col">Actions</th>
+                  <th className="h-12 text-left font-medium text-muted-foreground" scope="col">
+                    Company
+                  </th>
+                  <th className="h-12 text-left font-medium text-muted-foreground" scope="col">
+                    Role
+                  </th>
+                  <th className="h-12 text-left font-medium text-muted-foreground" scope="col">
+                    Status
+                  </th>
+                  <th className="h-12 text-left font-medium text-muted-foreground" scope="col">
+                    Applied
+                  </th>
+                  <th className="h-12 text-left font-medium text-muted-foreground" scope="col">
+                    Matched skills
+                  </th>
+                  <th className="h-12 text-right font-medium text-muted-foreground" scope="col">
+                    Match
+                  </th>
+                  <th className="h-12 text-right" scope="col">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -334,7 +374,15 @@ export default function ApplicationTracker({ userId }: { userId: string }) {
                       <td className="h-10 px-4">{app.company}</td>
                       <td className="h-10 px-4">
                         {app.roleUrl ? (
-                          <a href={app.roleUrl} target="_blank" rel="noopener" className={cn("text-primary underline decoration-1 underline-offset-4 hover:decoration-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring", "group-hover:underline-offset-2")}>
+                          <a
+                            href={app.roleUrl}
+                            target="_blank"
+                            rel="noopener"
+                            className={cn(
+                              "text-primary underline decoration-1 underline-offset-4 hover:decoration-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                              "group-hover:underline-offset-2",
+                            )}
+                          >
                             {app.roleTitle}
                           </a>
                         ) : (
@@ -342,7 +390,12 @@ export default function ApplicationTracker({ userId }: { userId: string }) {
                         )}
                       </td>
                       <td className="h-10 px-4">
-                        <span className={cn("inline-flex h-6 items-center gap-1.5 rounded-md border px-2 text-xs font-medium whitespace-nowrap text-foreground", s.cls)}>
+                        <span
+                          className={cn(
+                            "inline-flex h-6 items-center gap-1.5 rounded-md border px-2 text-xs font-medium whitespace-nowrap text-foreground",
+                            s.cls,
+                          )}
+                        >
                           <Icon className={cn("size-3.5 shrink-0", s.iconCls)} aria-hidden /> {s.label}
                         </span>
                       </td>
@@ -367,7 +420,12 @@ export default function ApplicationTracker({ userId }: { userId: string }) {
                         <Button size="icon-sm" variant="outline" onClick={() => handleEdit(app)} aria-label={`Edit ${app.company}`}>
                           <Edit className="size-3.5" aria-hidden />
                         </Button>
-                        <Button size="icon-sm" variant="destructive" onClick={() => handleDelete(app.id)} aria-label={`Remove ${app.company}`}>
+                        <Button
+                          size="icon-sm"
+                          variant="destructive"
+                          onClick={() => handleDelete(app.id)}
+                          aria-label={`Remove ${app.company}`}
+                        >
                           <Trash2 className="size-3.5" aria-hidden />
                         </Button>
                       </td>

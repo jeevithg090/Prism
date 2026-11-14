@@ -29,7 +29,11 @@ export function MomentumWidget({ userId }: { userId: string }) {
   const weeks = demo ?? data;
 
   if (!demo && status === "loading") {
-    return <div role="status" aria-label="Loading your momentum"><LoadingSkeleton variant="card" /></div>;
+    return (
+      <div role="status" aria-label="Loading your momentum">
+        <LoadingSkeleton variant="card" />
+      </div>
+    );
   }
   if (!demo && status === "error") {
     return (
@@ -37,7 +41,10 @@ export function MomentumWidget({ userId }: { userId: string }) {
         title="We couldn’t load your momentum"
         body="Your steps are safe. Try again in a moment."
         onRetry={retry}
-        onUseDemo={() => { setDemo(demoWeeks()); toast("Showing demo momentum data"); }}
+        onUseDemo={() => {
+          setDemo(demoWeeks());
+          toast("Showing demo momentum data");
+        }}
       />
     );
   }
@@ -66,11 +73,15 @@ function MomentumCard({ weeks, isDemo }: { weeks: MomentumWeek[]; isDemo: boolea
   return (
     <section aria-labelledby={titleId} className="rounded-2xl border bg-card p-6 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-        <h2 id={titleId} className="text-xl font-semibold text-foreground">Momentum</h2>
+        <h2 id={titleId} className="text-xl font-semibold text-foreground">
+          Momentum
+        </h2>
         <div className="flex items-center gap-2">
           {isDemo && <DemoDataNote />}
           <Popover>
-            <PopoverTrigger className={cn(buttonVariants({ variant: "ghost" }), "-me-2 active:bg-accent disabled:cursor-not-allowed disabled:opacity-55")}>
+            <PopoverTrigger
+              className={cn(buttonVariants({ variant: "ghost" }), "-me-2 active:bg-accent disabled:cursor-not-allowed disabled:opacity-55")}
+            >
               <Info aria-hidden />
               Breakdown
             </PopoverTrigger>
@@ -88,8 +99,9 @@ function MomentumCard({ weeks, isDemo }: { weeks: MomentumWeek[]; isDemo: boolea
                 </ul>
               )}
               <p className="text-sm text-muted-foreground">
-                Points: merged PR {POINTS["pr-merged"]}, milestone {POINTS["roadmap-milestone"]}, helping a newcomer {POINTS["helped-newcomer"]}, mock
-                interview {POINTS["mock-interview"]}, problem solved {POINTS["problem-solved"]} (up to {PROBLEM_SOLVED_WEEKLY_CAP} a week).
+                Points: merged PR {POINTS["pr-merged"]}, milestone {POINTS["roadmap-milestone"]}, helping a newcomer{" "}
+                {POINTS["helped-newcomer"]}, mock interview {POINTS["mock-interview"]}, problem solved {POINTS["problem-solved"]} (up to{" "}
+                {PROBLEM_SOLVED_WEEKLY_CAP} a week).
               </p>
             </PopoverContent>
           </Popover>
@@ -97,7 +109,9 @@ function MomentumCard({ weeks, isDemo }: { weeks: MomentumWeek[]; isDemo: boolea
       </div>
 
       <div aria-hidden="true">
-        <p className={cn("mt-4 font-mono text-4xl leading-none font-semibold tracking-tight tabular-nums", tone)}>{formatChange(latest.changePct)}</p>
+        <p className={cn("mt-4 font-mono text-4xl leading-none font-semibold tracking-tight tabular-nums", tone)}>
+          {formatChange(latest.changePct)}
+        </p>
         <p className="mt-2 text-sm text-muted-foreground">vs your usual week</p>
         <div className="mt-5 h-16 w-full">
           <Sparkline values={weeks.map((w) => w.score)} height={64} />

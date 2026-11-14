@@ -65,12 +65,14 @@ export type PodInsights = z.infer<typeof PodInsightsZ>;
 /** GET /api/projects/progress?podId=: which pod issues are merged (stored in collection `pod_progress`, id = podId). */
 export const ProjectProgressZ = z.object({
   podId: z.string(),
-  merged: z.array(z.object({
-    issueIndex: z.number(),
-    userId: z.string(),
-    skillId: SkillIdZ,
-    mergedAt: z.string(),
-    prUrl: z.string().optional(),
-  })),
+  merged: z.array(
+    z.object({
+      issueIndex: z.number(),
+      userId: z.string(),
+      skillId: SkillIdZ,
+      mergedAt: z.string(),
+      prUrl: z.string().optional(),
+    }),
+  ),
 });
 export type ProjectProgress = z.infer<typeof ProjectProgressZ>;

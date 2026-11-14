@@ -7,23 +7,61 @@ import { vi } from "vitest";
 import type { BadgeId, BridgeMap, BridgeNode, Profile, SkillStatus } from "@/lib/types";
 
 function profile(
-  id: string, name: string, year: 1 | 2 | 3 | 4, badges: BadgeId[], interests: string[], availability: string[], role: string,
+  id: string,
+  name: string,
+  year: 1 | 2 | 3 | 4,
+  badges: BadgeId[],
+  interests: string[],
+  availability: string[],
+  role: string,
 ): Profile {
   return {
-    id, name, programmeId: "uom-bsc-cs", year, startedAt: year === 1 ? "2026-09-21" : "2024-09-23", badges, interests, availability, isDemo: true,
+    id,
+    name,
+    programmeId: "uom-bsc-cs",
+    year,
+    startedAt: year === 1 ? "2026-09-21" : "2024-09-23",
+    badges,
+    interests,
+    availability,
+    isDemo: true,
     dna: {
-      targetRoles: [role], timelineLabel: "Placement 2027/28", targetDate: "2027-09-01", hoursPerWeek: 8, theoryPractice: 60,
-      formats: ["projects"], budget: "free", constraints: [], accessibility: [], language: "en",
+      targetRoles: [role],
+      timelineLabel: "Placement 2027/28",
+      targetDate: "2027-09-01",
+      hoursPerWeek: 8,
+      theoryPractice: 60,
+      formats: ["projects"],
+      budget: "free",
+      constraints: [],
+      accessibility: [],
+      language: "en",
     },
   };
 }
 
 export const PROFILES: Profile[] = [
-  profile("aisha", "Aisha Rahman", 1, ["new-to-uni", "international"], ["computer vision", "healthcare AI", "open source"], ["tue-eve", "thu-eve", "sat-am"], "ml-engineer"),
+  profile(
+    "aisha",
+    "Aisha Rahman",
+    1,
+    ["new-to-uni", "international"],
+    ["computer vision", "healthcare AI", "open source"],
+    ["tue-eve", "thu-eve", "sat-am"],
+    "ml-engineer",
+  ),
   profile("priya", "Priya Shah", 2, ["first-gen"], ["computer vision", "open source"], ["tue-eve", "sat-am"], "ml-engineer"),
   profile("tom", "Tom Okafor", 3, [], ["healthcare AI", "fintech"], ["tue-eve", "thu-eve"], "data-analyst"),
   profile("mei", "Mei Lin", 2, ["international"], ["open source", "game dev"], ["tue-eve", "sat-am"], "software-engineer"),
-  profile("sara", "Sara Haddad", 1, ["new-to-uni"], ["computer vision", "healthcare AI", "open source"], ["tue-eve", "thu-eve", "sat-am"], "ml-engineer"),
+  profile(
+    "sara",
+    "Sara Haddad",
+    1,
+    ["new-to-uni"],
+    ["computer vision", "healthcare AI", "open source"],
+    ["tue-eve", "thu-eve", "sat-am"],
+    "ml-engineer",
+  ),
 ];
 
 /** data/seed/student-skills.json shape (Aisha is not in it: her skills come from her Bridge Map). */
@@ -35,17 +73,41 @@ export const STUDENT_SKILLS: Record<string, { proven: string[]; gaps: string[] }
 };
 
 const node = (skillId: string, status: SkillStatus, demand: number): BridgeNode => ({
-  skillId, name: skillId, category: "language", status, demand, level: status === "proven" ? 2 : 0, evidenceIds: [], moduleCodes: [],
+  skillId,
+  name: skillId,
+  category: "language",
+  status,
+  demand,
+  level: status === "proven" ? 2 : 0,
+  evidenceIds: [],
+  moduleCodes: [],
 });
 
 export const AISHA_MAP: BridgeMap = {
-  userId: "aisha", roleId: "ml-engineer", edges: [], readinessNow: 0.31, readinessProjected: 0.58, generatedAt: "2026-11-07T10:00:00Z",
+  userId: "aisha",
+  roleId: "ml-engineer",
+  edges: [],
+  readinessNow: 0.31,
+  readinessProjected: 0.58,
+  generatedAt: "2026-11-07T10:00:00Z",
   nodes: [
-    node("python", "proven", 0.62), node("git", "proven", 0.3), node("html-css", "proven", 0.05), node("javascript", "proven", 0.1),
-    node("machine-learning", "degree-upcoming", 0.55), node("data-structures", "degree-done", 0.22),
-    node("docker", "gap", 0.41), node("pytorch", "gap", 0.38), node("sql", "gap", 0.35), node("aws", "gap", 0.33),
-    node("mlops", "gap", 0.28), node("llm-apps", "gap", 0.26), node("kubernetes", "gap", 0.18), node("ci-cd", "gap", 0.2),
-    node("tensorflow", "gap", 0.16), node("communication", "gap", 0.15), node("not-in-role", "gap", 0),
+    node("python", "proven", 0.62),
+    node("git", "proven", 0.3),
+    node("html-css", "proven", 0.05),
+    node("javascript", "proven", 0.1),
+    node("machine-learning", "degree-upcoming", 0.55),
+    node("data-structures", "degree-done", 0.22),
+    node("docker", "gap", 0.41),
+    node("pytorch", "gap", 0.38),
+    node("sql", "gap", 0.35),
+    node("aws", "gap", 0.33),
+    node("mlops", "gap", 0.28),
+    node("llm-apps", "gap", 0.26),
+    node("kubernetes", "gap", 0.18),
+    node("ci-cd", "gap", 0.2),
+    node("tensorflow", "gap", 0.16),
+    node("communication", "gap", 0.15),
+    node("not-in-role", "gap", 0),
   ],
 };
 

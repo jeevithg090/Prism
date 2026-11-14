@@ -13,7 +13,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { draftChatRequest } from "./actions";
 
 export function AskChatDialog({
-  trajectory, viewerId, open, onOpenChange,
+  trajectory,
+  viewerId,
+  open,
+  onOpenChange,
 }: {
   trajectory: Trajectory | null;
   viewerId: string;
@@ -36,18 +39,31 @@ export function AskChatDialog({
     if (!open || !trajectory || hasDraft) return;
     let cancelled = false;
     draftChatRequest({ viewerId, trajectory })
-      .then((r) => { if (!cancelled) setDraft({ key, message: r.draft }); })
+      .then((r) => {
+        if (!cancelled) setDraft({ key, message: r.draft });
+      })
       .catch(() => {
-        if (!cancelled) setDraft({ key, message: `Hi ${first}, could I ask you a few questions about your journey in a 15-minute chat? Totally fine if you're busy. Thank you!` });
+        if (!cancelled)
+          setDraft({
+            key,
+            message: `Hi ${first}, could I ask you a few questions about your journey in a 15-minute chat? Totally fine if you're busy. Thank you!`,
+          });
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [open, trajectory, viewerId, key, hasDraft, first]);
 
   async function send() {
     if (!trajectory || !message.trim()) return;
     setSending(true);
     try {
-      await apiPost<HelpRequest>("/api/help", { fromUserId: viewerId, toUserId: trajectory.userId, kind: "chat-15", message: message.trim() });
+      await apiPost<HelpRequest>("/api/help", {
+        fromUserId: viewerId,
+        toUserId: trajectory.userId,
+        kind: "chat-15",
+        message: message.trim(),
+      });
       toast.success("Request sent: they'll see it in Community.");
       setDraft(null);
       onOpenChange(false);
@@ -69,7 +85,9 @@ export function AskChatDialog({
         </DialogHeader>
 
         <div className="space-y-2">
-          <Label htmlFor={textareaId} className="text-sm font-medium">Your message to {first}</Label>
+          <Label htmlFor={textareaId} className="text-sm font-medium">
+            Your message to {first}
+          </Label>
           {drafting ? (
             <div aria-busy="true" aria-live="polite" className="space-y-2">
               <span className="sr-only">Drafting your message…</span>
@@ -95,7 +113,9 @@ export function AskChatDialog({
         </div>
 
         <DialogFooter className="-mx-6 -mb-6 rounded-b-2xl px-6">
-          <Button variant="outline" size="lg" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="outline" size="lg" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
           <Button size="lg" onClick={send} disabled={drafting || sending || !message.trim()}>
             {sending ? <Loader2 className="motion-safe:animate-spin" aria-hidden /> : <Send aria-hidden />}
             Send request

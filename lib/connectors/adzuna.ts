@@ -5,12 +5,22 @@ import "server-only";
 import { replayOrRecord } from "@/lib/replay";
 
 export type JobAd = {
-  title: string; company: string; description: string; url: string;
-  salaryMin?: number; salaryMax?: number; created?: string;
+  title: string;
+  company: string;
+  description: string;
+  url: string;
+  salaryMin?: number;
+  salaryMax?: number;
+  created?: string;
 };
 
 export class AdzunaError extends Error {
-  constructor(message: string, public status?: number) { super(message); }
+  constructor(
+    message: string,
+    public status?: number,
+  ) {
+    super(message);
+  }
 }
 
 const TIMEOUT_MS = 15_000;
@@ -20,16 +30,30 @@ export function hasAdzunaKey(): boolean {
 }
 
 type AdzunaResult = {
-  title?: string; description?: string; redirect_url?: string; created?: string;
-  company?: { display_name?: string }; salary_min?: number; salary_max?: number;
+  title?: string;
+  description?: string;
+  redirect_url?: string;
+  created?: string;
+  company?: { display_name?: string };
+  salary_min?: number;
+  salary_max?: number;
 };
 
-const clean = (s?: string) => (s ?? "").replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+const clean = (s?: string) =>
+  (s ?? "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 
 export function mapAdzunaResult(r: AdzunaResult): JobAd {
   return {
-    title: clean(r.title), company: clean(r.company?.display_name) || "Unknown employer", description: clean(r.description),
-    url: r.redirect_url ?? "", salaryMin: r.salary_min ?? undefined, salaryMax: r.salary_max ?? undefined, created: r.created,
+    title: clean(r.title),
+    company: clean(r.company?.display_name) || "Unknown employer",
+    description: clean(r.description),
+    url: r.redirect_url ?? "",
+    salaryMin: r.salary_min ?? undefined,
+    salaryMax: r.salary_max ?? undefined,
+    created: r.created,
   };
 }
 
@@ -41,8 +65,12 @@ export function searchAdzuna(what: string, opts: { where?: string; pages?: numbe
     { op: "adzuna", what, where: opts.where ?? null, pages: opts.pages ?? 2, perPage: opts.perPage ?? 50 },
     () => fetchAdzuna(what, opts),
     {
-      requires: ["ADZUNA_APP_ID", "ADZUNA_APP_KEY"], missError: () => new AdzunaError("no_key"), loose: false,
-      meta: { kind: "job-ads", label: `adzuna: ${what}` }, validate: (v) => Array.isArray(v), shouldRecord: (v) => v.length > 0,
+      requires: ["ADZUNA_APP_ID", "ADZUNA_APP_KEY"],
+      missError: () => new AdzunaError("no_key"),
+      loose: false,
+      meta: { kind: "job-ads", label: `adzuna: ${what}` },
+      validate: (v) => Array.isArray(v),
+      shouldRecord: (v) => v.length > 0,
     },
   );
 }
@@ -53,8 +81,11 @@ async function fetchAdzuna(what: string, opts: { where?: string; pages?: number;
   const out: JobAd[] = [];
   for (let page = 1; page <= pages; page++) {
     const q = new URLSearchParams({
-      app_id: process.env.ADZUNA_APP_ID!, app_key: process.env.ADZUNA_APP_KEY!,
-      what, results_per_page: String(opts.perPage ?? 50), "content-type": "application/json",
+      app_id: process.env.ADZUNA_APP_ID!,
+      app_key: process.env.ADZUNA_APP_KEY!,
+      what,
+      results_per_page: String(opts.perPage ?? 50),
+      "content-type": "application/json",
     });
     if (opts.where && opts.where.toLowerCase() !== "uk") q.set("where", opts.where);
     const res = await fetch(`https://api.adzuna.com/v1/api/jobs/gb/search/${page}?${q}`, { signal: AbortSignal.timeout(TIMEOUT_MS) });

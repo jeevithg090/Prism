@@ -10,13 +10,25 @@ vi.mock("@/lib/agents/events", () => ({ emit: vi.fn(), newRunId: () => "run_test
 import { GET } from "./route";
 
 const t = (id: string, programmeId: string): Trajectory => ({
-  id, userId: id, name: id, programmeId, outcomeRole: "PhD in ML", advice: "Ask early.", isDemo: true, openToChat: true,
+  id,
+  userId: id,
+  name: id,
+  programmeId,
+  outcomeRole: "PhD in ML",
+  advice: "Ask early.",
+  isDemo: true,
+  openToChat: true,
   steps: [{ year: 1, kind: "society", label: "Joined the AI society" }],
 });
 
 describe("GET /api/trajectories", () => {
-  beforeEach(() => { listMock.mockReset(); });
-  afterEach(() => { vi.restoreAllMocks(); delete process.env.DEMO_MODE; });
+  beforeEach(() => {
+    listMock.mockReset();
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+    delete process.env.DEMO_MODE;
+  });
 
   it("returns store trajectories filtered by programmeId", async () => {
     listMock.mockResolvedValue([t("a", "uom-bsc-cs"), t("b", "uom-bsc-maths")]);
@@ -57,7 +69,9 @@ describe("GET /api/trajectories", () => {
   });
 
   it("returns 500 with the envelope when the store throws", async () => {
-    listMock.mockImplementation(async () => { throw new Error("db down"); });
+    listMock.mockImplementation(async () => {
+      throw new Error("db down");
+    });
     const res = await GET(new Request("http://x/api/trajectories"));
     expect(res.status).toBe(500);
     expect((await res.json()).error.code).toBe("internal");

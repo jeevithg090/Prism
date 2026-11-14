@@ -5,7 +5,10 @@ vi.mock("@/lib/store", () => ({
   getStore: () => ({
     get: async (c: string, id: string) => h.docs.get(`${c}/${id}`) ?? null,
     list: async (c: string) => [...h.docs.entries()].filter(([k]) => k.startsWith(`${c}/`)).map(([, d]) => d),
-    upsert: async (c: string, id: string, doc: unknown) => { h.docs.set(`${c}/${id}`, doc); return doc; },
+    upsert: async (c: string, id: string, doc: unknown) => {
+      h.docs.set(`${c}/${id}`, doc);
+      return doc;
+    },
     remove: async () => {},
   }),
 }));
@@ -14,9 +17,14 @@ vi.mock("@/lib/agents/events", () => ({ emit: vi.fn(), newRunId: () => "run_cb",
 import { POST } from "./route";
 
 const env = { ...process.env };
-const post = (body: unknown, secret?: string) => POST(new Request("http://localhost/api/n8n/callback", {
-  method: "POST", headers: { "content-type": "application/json", ...(secret ? { "x-keystone-secret": secret } : {}) }, body: JSON.stringify(body),
-}));
+const post = (body: unknown, secret?: string) =>
+  POST(
+    new Request("http://localhost/api/n8n/callback", {
+      method: "POST",
+      headers: { "content-type": "application/json", ...(secret ? { "x-keystone-secret": secret } : {}) },
+      body: JSON.stringify(body),
+    }),
+  );
 beforeEach(() => {
   h.docs.clear();
   vi.restoreAllMocks();
@@ -25,7 +33,9 @@ beforeEach(() => {
   h.docs.set("profiles/aisha", { id: "aisha", dna: { targetRoles: ["ml-engineer"] } });
   h.docs.set("profiles/tom", { id: "tom", dna: { targetRoles: ["data-analyst"] } });
 });
-afterEach(() => { process.env = { ...env }; });
+afterEach(() => {
+  process.env = { ...env };
+});
 
 describe("POST /api/n8n/callback", () => {
   it("401s without the secret or with a wrong one", async () => {
@@ -54,7 +64,10 @@ describe("POST /api/n8n/callback", () => {
 
   it("stores the Discord channel from pod-kickoff", async () => {
     h.docs.set("pods/pod_demo01", { id: "pod_demo01", name: "Pod Orbit", members: [{ userId: "aisha" }] });
-    const res = await post({ workflow: "pod-kickoff", result: { podId: "pod_demo01", discordChannelUrl: "https://discord.com/channels/1/2" } }, "s3cret");
+    const res = await post(
+      { workflow: "pod-kickoff", result: { podId: "pod_demo01", discordChannelUrl: "https://discord.com/channels/1/2" } },
+      "s3cret",
+    );
     expect((await res.json()).data.updated).toBe(true);
     expect((h.docs.get("pods/pod_demo01") as { discordChannelUrl: string }).discordChannelUrl).toBe("https://discord.com/channels/1/2");
   });

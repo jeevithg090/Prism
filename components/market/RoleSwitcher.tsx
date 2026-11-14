@@ -5,7 +5,17 @@ import { Flag } from "lucide-react";
 import type { Role } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-export function RoleSwitcher({ roles, value, onChange, primaryRole }: { roles: Role[]; value: string; onChange: (roleId: string) => void; primaryRole?: string }) {
+export function RoleSwitcher({
+  roles,
+  value,
+  onChange,
+  primaryRole,
+}: {
+  roles: Role[];
+  value: string;
+  onChange: (roleId: string) => void;
+  primaryRole?: string;
+}) {
   return (
     <div role="group" aria-label="Choose a role" className="-mx-1 overflow-x-auto px-1 pb-1">
       <div className="flex w-full flex-wrap gap-1 rounded-xl bg-muted p-1 sm:inline-flex sm:w-max sm:flex-nowrap">
@@ -25,7 +35,12 @@ export function RoleSwitcher({ roles, value, onChange, primaryRole }: { roles: R
               )}
             >
               {r.name}
-              {r.id === primaryRole && <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground"><Flag className="size-3.5" aria-hidden />Your goal</span>}
+              {r.id === primaryRole && (
+                <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                  <Flag className="size-3.5" aria-hidden />
+                  Your goal
+                </span>
+              )}
             </button>
           );
         })}

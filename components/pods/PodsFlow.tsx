@@ -171,9 +171,7 @@ export function PodsFlow({ startFresh = false }: { startFresh?: boolean }) {
 
   return (
     <AnimatePresence mode="wait" initial={false}>
-      <Step key={view.key}>
-        {view.node}
-      </Step>
+      <Step key={view.key}>{view.node}</Step>
     </AnimatePresence>
   );
 }

@@ -10,20 +10,33 @@ const h = vi.hoisted(() => ({
 vi.mock("@/lib/graph/build", () => ({ loadGraph: h.loadGraph }));
 vi.mock("@/lib/agents/ladder", () => ({ getProofLadder: h.getProofLadder }));
 vi.mock("@/lib/agents/events", () => ({
-  emit: (e: { agent: string; status: string; message: string; runId: string; data?: unknown }) => { h.events.push(e); },
+  emit: (e: { agent: string; status: string; message: string; runId: string; data?: unknown }) => {
+    h.events.push(e);
+  },
   newRunId: () => "run_test",
 }));
 
 import { buildInterviewPrep } from "@/lib/agents/interview-prep";
 
 const node = (skillId: SkillId, status: BridgeNode["status"], demand: number): BridgeNode => ({
-  skillId, name: skillId.charAt(0).toUpperCase() + skillId.slice(1), category: "practice", status, demand,
-  level: 0, evidenceIds: [], moduleCodes: [],
+  skillId,
+  name: skillId.charAt(0).toUpperCase() + skillId.slice(1),
+  category: "practice",
+  status,
+  demand,
+  level: 0,
+  evidenceIds: [],
+  moduleCodes: [],
 });
 
 const mapWith = (gaps: BridgeNode[]): BridgeMap => ({
-  userId: "aisha", roleId: "ml-engineer", nodes: gaps, edges: [],
-  readinessNow: 0.4, readinessProjected: 0.6, generatedAt: "2026-11-07T12:00:00Z",
+  userId: "aisha",
+  roleId: "ml-engineer",
+  nodes: gaps,
+  edges: [],
+  readinessNow: 0.4,
+  readinessProjected: 0.6,
+  generatedAt: "2026-11-07T12:00:00Z",
 });
 
 beforeEach(() => {
@@ -35,14 +48,16 @@ beforeEach(() => {
 
 describe("buildInterviewPrep", () => {
   it("picks the top 3 gap skills sorted by demand descending", async () => {
-    h.loadGraph.mockResolvedValue(mapWith([
-      node("aws", "gap", 0.33),
-      node("docker", "gap", 0.41),
-      node("sql", "gap", 0.35),
-      node("pytorch", "gap", 0.38),
-      node("git", "proven", 0.9),
-      node("linux", "degree-done", 0.5),
-    ]));
+    h.loadGraph.mockResolvedValue(
+      mapWith([
+        node("aws", "gap", 0.33),
+        node("docker", "gap", 0.41),
+        node("sql", "gap", 0.35),
+        node("pytorch", "gap", 0.38),
+        node("git", "proven", 0.9),
+        node("linux", "degree-done", 0.5),
+      ]),
+    );
     const prep = await buildInterviewPrep({ userId: "aisha", roleId: "ml-engineer" });
     expect(prep.map((p) => p.skillId)).toEqual(["docker", "pytorch", "sql"]);
     expect(prep).toHaveLength(3);

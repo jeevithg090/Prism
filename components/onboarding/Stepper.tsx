@@ -9,7 +9,8 @@ export function Stepper({ current, onJump }: { current: number; onJump: (step: n
   return (
     <nav aria-label="Onboarding progress" className="space-y-4">
       <p className="text-sm text-muted-foreground" data-testid="step-count">
-        Step <span className="font-mono font-semibold tabular-nums text-foreground">{current + 1}</span> of <span className="font-mono font-semibold tabular-nums text-foreground">{STEPS.length}</span>
+        Step <span className="font-mono font-semibold tabular-nums text-foreground">{current + 1}</span> of{" "}
+        <span className="font-mono font-semibold tabular-nums text-foreground">{STEPS.length}</span>
       </p>
       <ol className="grid grid-cols-4 gap-2 sm:gap-3">
         {STEPS.map((s, i) => {
@@ -18,10 +19,17 @@ export function Stepper({ current, onJump }: { current: number; onJump: (step: n
           const body = (
             <>
               <span aria-hidden className={cn("block h-1 w-full rounded-sm", here ? "bg-primary" : done ? "bg-foreground" : "bg-border")} />
-              <span className={cn("flex min-w-0 items-start gap-1.5 text-sm leading-snug", here ? "font-semibold text-foreground" : done ? "font-medium" : "text-muted-foreground")}>
+              <span
+                className={cn(
+                  "flex min-w-0 items-start gap-1.5 text-sm leading-snug",
+                  here ? "font-semibold text-foreground" : done ? "font-medium" : "text-muted-foreground",
+                )}
+              >
                 {done && <Check className="mt-0.5 size-3.5 shrink-0" aria-hidden />}
                 <span className="min-w-0">
-                  <span className="sr-only">Step {i + 1}: </span>{s.label}{here && <span className="sr-only"> (current)</span>}
+                  <span className="sr-only">Step {i + 1}: </span>
+                  {s.label}
+                  {here && <span className="sr-only"> (current)</span>}
                 </span>
               </span>
             </>

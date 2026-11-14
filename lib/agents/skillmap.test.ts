@@ -3,7 +3,15 @@ const { llmJSON, emit } = vi.hoisted(() => ({ llmJSON: vi.fn(), emit: vi.fn() })
 vi.mock("@/lib/llm", () => ({ llmJSON, LLMError: class extends Error {} }));
 vi.mock("@/lib/agents/events", () => ({ emit, newRunId: () => "run_test" }));
 
-import { canonicalize, emergingCandidates, getSkills, mapTextToSkills, matchSkills, resetUnknownTerms, trackUnknownTerms } from "./skillmap";
+import {
+  canonicalize,
+  emergingCandidates,
+  getSkills,
+  mapTextToSkills,
+  matchSkills,
+  resetUnknownTerms,
+  trackUnknownTerms,
+} from "./skillmap";
 
 const ids = async (text: string) => (await mapTextToSkills(text, { useLLM: false })).skills.map((s) => s.skillId).sort();
 
@@ -54,14 +62,22 @@ describe("mapTextToSkills (alias matching)", () => {
 
   it("emits a progress event with the count when runId is set", async () => {
     await mapTextToSkills("Python and SQL", { runId: "run_1", useLLM: false });
-    expect(emit).toHaveBeenCalledWith(expect.objectContaining({ runId: "run_1", agent: "skillmap", status: "progress", message: "Skill Mapper: mapped 2 skills" }));
+    expect(emit).toHaveBeenCalledWith(
+      expect.objectContaining({ runId: "run_1", agent: "skillmap", status: "progress", message: "Skill Mapper: mapped 2 skills" }),
+    );
   });
 });
 
 describe("optional LLM pass", () => {
   it("drops ids outside the taxonomy, keeps real ones and returns unknown terms", async () => {
     process.env.OPENAI_API_KEY = "test";
-    llmJSON.mockResolvedValue({ skills: [{ skillId: "fake", level: 2 }, { skillId: "python", level: 2 }], unknownTerms: ["mojo"] });
+    llmJSON.mockResolvedValue({
+      skills: [
+        { skillId: "fake", level: 2 },
+        { skillId: "python", level: 2 },
+      ],
+      unknownTerms: ["mojo"],
+    });
     const out = await mapTextToSkills("Some text about programming");
     expect(out.skills).toEqual([{ skillId: "python", level: 2 }]);
     expect(out.unknownTerms).toEqual(["mojo"]);

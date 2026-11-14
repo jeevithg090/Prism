@@ -27,9 +27,7 @@ export function useStartProject(pod: Pod) {
       const repoUrl = brief.repoUrl;
       toast.success("Repo is live", {
         description: brief.title,
-        action: repoUrl
-          ? { label: "Open repo", onClick: () => window.open(repoUrl, "_blank", "noopener,noreferrer") }
-          : undefined,
+        action: repoUrl ? { label: "Open repo", onClick: () => window.open(repoUrl, "_blank", "noopener,noreferrer") } : undefined,
       });
     },
     onError: (err: Error) => {
@@ -45,13 +43,7 @@ export function StartProjectButton({ pod, className, label = "Start our project"
   const start = useStartProject(pod);
   const busy = start.isPending || start.isSuccess;
   return (
-    <Button
-      size="lg"
-      onClick={() => start.mutate()}
-      disabled={busy}
-      aria-busy={busy || undefined}
-      className={cn(className)}
-    >
+    <Button size="lg" onClick={() => start.mutate()} disabled={busy} aria-busy={busy || undefined} className={cn(className)}>
       {busy ? (
         <>
           <LoaderCircle className="animate-spin motion-reduce:animate-none" aria-hidden />

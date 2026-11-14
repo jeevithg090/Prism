@@ -9,7 +9,9 @@ describe("fetcher", () => {
     await expect(apiGet<{ a: number }>("/x")).resolves.toEqual({ a: 1 });
   });
   it("throws the error message for ok:false", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ ok: false, error: { code: "bad_request", message: "nope" } }), { status: 400 }));
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ ok: false, error: { code: "bad_request", message: "nope" } }), { status: 400 }),
+    );
     await expect(apiPost("/x", {})).rejects.toThrow("nope");
   });
 });

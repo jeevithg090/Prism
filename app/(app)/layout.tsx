@@ -16,7 +16,11 @@ async function ReadinessPillSlot() {
   await connection();
   const { userId, roleId } = await getViewer();
   let initial = null;
-  try { initial = await loadGraph(userId, roleId); } catch { initial = null; }
+  try {
+    initial = await loadGraph(userId, roleId);
+  } catch {
+    initial = null;
+  }
   return <ReadinessPill userId={userId} roleId={roleId} initial={initial} />;
 }
 

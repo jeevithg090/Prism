@@ -12,7 +12,10 @@ import type { EvidenceItem, SkillId } from "@/lib/types";
 export const TAG_CONFIDENCE = 0.55;
 
 export type SeUser = {
-  user_id: number; display_name: string; reputation: number; link: string;
+  user_id: number;
+  display_name: string;
+  reputation: number;
+  link: string;
   badge_counts?: { bronze?: number; silver?: number; gold?: number };
 };
 export type SeTag = { tag_name: string; answer_count?: number; answer_score?: number };
@@ -20,15 +23,45 @@ type SeItems<T> = { items?: T[] };
 
 /** Stack Overflow top tags that name a taxonomy skill (verified against the Stack Exchange API's tag names). */
 export const TAG_TO_SKILL: Record<string, SkillId> = {
-  python: "python", java: "java", javascript: "javascript", typescript: "typescript",
-  c: "c", "c++": "cpp", sql: "sql", mysql: "sql", "sql-server": "sql",
-  postgresql: "postgresql", html: "html-css", css: "html-css", react: "react", reactjs: "react",
-  nodejs: "nodejs", "node.js": "nodejs", express: "nodejs", docker: "docker", kubernetes: "kubernetes",
-  git: "git", github: "git", linux: "linux", bash: "linux", "amazon-web-services": "aws",
-  rest: "rest-apis", testing: "testing", "unit-testing": "testing", security: "security-basics",
-  algorithm: "algorithms", algorithms: "algorithms", "machine-learning": "machine-learning",
-  "deep-learning": "deep-learning", tensorflow: "tensorflow", pytorch: "pytorch",
-  "scikit-learn": "scikit-learn", pandas: "pandas", numpy: "numpy", statistics: "statistics", probability: "statistics",
+  python: "python",
+  java: "java",
+  javascript: "javascript",
+  typescript: "typescript",
+  c: "c",
+  "c++": "cpp",
+  sql: "sql",
+  mysql: "sql",
+  "sql-server": "sql",
+  postgresql: "postgresql",
+  html: "html-css",
+  css: "html-css",
+  react: "react",
+  reactjs: "react",
+  nodejs: "nodejs",
+  "node.js": "nodejs",
+  express: "nodejs",
+  docker: "docker",
+  kubernetes: "kubernetes",
+  git: "git",
+  github: "git",
+  linux: "linux",
+  bash: "linux",
+  "amazon-web-services": "aws",
+  rest: "rest-apis",
+  testing: "testing",
+  "unit-testing": "testing",
+  security: "security-basics",
+  algorithm: "algorithms",
+  algorithms: "algorithms",
+  "machine-learning": "machine-learning",
+  "deep-learning": "deep-learning",
+  tensorflow: "tensorflow",
+  pytorch: "pytorch",
+  "scikit-learn": "scikit-learn",
+  pandas: "pandas",
+  numpy: "numpy",
+  statistics: "statistics",
+  probability: "statistics",
 };
 
 const API = "https://api.stackexchange.com/2.3";
@@ -68,8 +101,13 @@ export function tagsToEvidence(userId: string, user: SeUser, tags: SeTag[], now 
     if (!skillId || seen.has(skillId)) continue;
     seen.add(skillId);
     items.push({
-      id: `ev_${userId}_${skillId}_stackoverflow`, userId, skillId, level: 1, confidence: TAG_CONFIDENCE,
-      source: "stackoverflow" as const, url,
+      id: `ev_${userId}_${skillId}_stackoverflow`,
+      userId,
+      skillId,
+      level: 1,
+      confidence: TAG_CONFIDENCE,
+      source: "stackoverflow" as const,
+      url,
       quote: `Stack Overflow reputation ${user.reputation ?? 0} · top tag ${tag_name}`,
       createdAt: now.toISOString(),
     });
@@ -97,7 +135,9 @@ export async function syncStackOverflowEvidence(input: { userId: string; handle:
     const user = users[0];
     if (!user) throw new Error(`No Stack Overflow user "${handle}"`);
     say("progress", `reputation ${user.reputation ?? 0} · ${tags.length} top tags`, {
-      reputation: user.reputation ?? null, badges: user.badge_counts ?? null, tags: tags.length,
+      reputation: user.reputation ?? null,
+      badges: user.badge_counts ?? null,
+      tags: tags.length,
     });
     const items = tagsToEvidence(userId, user, tags);
     const store = getStore();
@@ -105,7 +145,9 @@ export async function syncStackOverflowEvidence(input: { userId: string; handle:
     say("done", `found ${items.length} skills from your answers and top tags`, { skills: items.length, reputation: user.reputation ?? 0 });
     return listEvidence(userId);
   } catch (err) {
-    say("error", "Stack Overflow wasn't available just now: keeping the evidence we already have", { reason: err instanceof Error ? err.message : "unknown" });
+    say("error", "Stack Overflow wasn't available just now: keeping the evidence we already have", {
+      reason: err instanceof Error ? err.message : "unknown",
+    });
     return listEvidence(userId);
   }
 }

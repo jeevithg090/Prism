@@ -10,7 +10,11 @@ const SAFE_ID = /^[a-z0-9][a-z0-9_-]{0,63}$/i;
 export function safeUserId(raw: string | null | undefined): string | null {
   if (!raw) return null;
   let v = raw;
-  try { v = decodeURIComponent(raw); } catch { return null; }
+  try {
+    v = decodeURIComponent(raw);
+  } catch {
+    return null;
+  }
   return SAFE_ID.test(v) ? v : null;
 }
 

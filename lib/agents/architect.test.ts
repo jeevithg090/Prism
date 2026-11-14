@@ -27,14 +27,20 @@ vi.mock("@/lib/store", () => ({
 vi.mock("octokit", () => ({
   Octokit: class {
     request = h.request;
-    constructor(opts: unknown) { h.octokitCtor(opts); }
+    constructor(opts: unknown) {
+      h.octokitCtor(opts);
+    }
   },
 }));
 
 import { createRepoAndIssues, currentWeek, designProject, githubIssueBody, repairBrief, DEMO_REPO_URL } from "./architect";
 
 const pod: Pod = {
-  id: "pod_t1", name: "Pod Aurora", score: 0.8, createdAt: "2026-11-07T12:00:00Z", explanations: [],
+  id: "pod_t1",
+  name: "Pod Aurora",
+  score: 0.8,
+  createdAt: "2026-11-07T12:00:00Z",
+  explanations: [],
   members: [
     { userId: "aisha", learns: ["docker", "pytorch"], teaches: ["python", "git"], role: "ML" },
     { userId: "priya", learns: ["sql", "aws"], teaches: ["python", "pytorch", "docker"], role: "Model lead" },
@@ -70,7 +76,8 @@ function brief(n = 3): ProjectBrief {
     pitch: "Captions for everyone.",
     milestones: MILESTONES,
     issues: Array.from({ length: n }, (_, i) =>
-      issue(pod.members[i % 4].userId, pod.members[(i + 1) % 4].userId, ["docker", "sql", "pytorch", "python"][i % 4], MILESTONES[i % 3])),
+      issue(pod.members[i % 4].userId, pod.members[(i + 1) % 4].userId, ["docker", "sql", "pytorch", "python"][i % 4], MILESTONES[i % 3]),
+    ),
   };
 }
 
@@ -80,7 +87,10 @@ function liveRequestMock(opts: { labelStatus?: number; failIssues?: boolean } = 
   let issueN = 0;
   let msN = 0;
   h.request.mockImplementation(async (route: string, params: Record<string, unknown>) => {
-    if (route === "POST /orgs/{org}/repos") return { data: { name: params.name, html_url: `https://github.com/keystone-demo/${params.name}`, owner: { login: "keystone-demo" } } };
+    if (route === "POST /orgs/{org}/repos")
+      return {
+        data: { name: params.name, html_url: `https://github.com/keystone-demo/${params.name}`, owner: { login: "keystone-demo" } },
+      };
     if (route.startsWith("GET /repos/{owner}/{repo}/contents")) return { data: { sha: "abc123" } };
     if (route.startsWith("PUT /repos/{owner}/{repo}/contents")) return { data: {} };
     if (route === "POST /repos/{owner}/{repo}/labels") {
@@ -155,7 +165,10 @@ describe("designProject", () => {
   });
 
   it("falls back to the other member who teaches most when nobody teaches the skill", () => {
-    const out = repairBrief({ title: "T", pitch: "P", milestones: MILESTONES, issues: [issue("aisha", "aisha", "kubernetes")] }, pod.members);
+    const out = repairBrief(
+      { title: "T", pitch: "P", milestones: MILESTONES, issues: [issue("aisha", "aisha", "kubernetes")] },
+      pod.members,
+    );
     // priya, tom and mei all teach 3; the first (priya) wins
     expect(out.issues[0].reviewerUserId).toBe("priya");
   });
@@ -175,8 +188,13 @@ describe("designProject", () => {
   it("reuses the seeded VisionAid brief (minus URLs) when the LLM fails for the seeded members", async () => {
     h.llmJSON.mockRejectedValueOnce(new Error("no_key"));
     const fixture = {
-      ...pod, id: "pod_demo01",
-      project: { ...brief(7), repoUrl: DEMO_REPO_URL, issues: brief(7).issues.map((i, n) => ({ ...i, githubIssueUrl: `${DEMO_REPO_URL}/issues/${n + 1}` })) },
+      ...pod,
+      id: "pod_demo01",
+      project: {
+        ...brief(7),
+        repoUrl: DEMO_REPO_URL,
+        issues: brief(7).issues.map((i, n) => ({ ...i, githubIssueUrl: `${DEMO_REPO_URL}/issues/${n + 1}` })),
+      },
     };
     const spy = vi.spyOn(fs, "readFileSync").mockReturnValueOnce(JSON.stringify(fixture));
     const out = await designProject(pod);
@@ -271,18 +289,26 @@ describe("createRepoAndIssues", () => {
     const out = await createRepoAndIssues(pod, brief(5));
     expect(out.repoUrl).toBe(DEMO_REPO_URL);
     expect(out.issues[4].githubIssueUrl).toBe(`${DEMO_REPO_URL}/issues/5`);
-    expect(h.emit).toHaveBeenCalledWith(expect.objectContaining({ agent: "architect", status: "error", message: "GitHub failed: using demo repo" }));
+    expect(h.emit).toHaveBeenCalledWith(
+      expect.objectContaining({ agent: "architect", status: "error", message: "GitHub failed: using demo repo" }),
+    );
   });
 
   it("calls triggerWorkflow once with the repoUrl", async () => {
     process.env.DEMO_MODE = "true";
     await createRepoAndIssues(pod, brief(3));
     expect(h.triggerWorkflow).toHaveBeenCalledTimes(1);
-    expect(h.triggerWorkflow).toHaveBeenCalledWith("pod-kickoff", expect.objectContaining({
-      podId: "pod_t1", podName: "Pod Aurora", repoUrl: DEMO_REPO_URL,
-      members: ["Aisha Rahman", "Priya Shah", "Tom Okafor", "Mei Lin"],
-      title: "VisionAid: accessible image captioning API", pitch: "Captions for everyone.",
-    }));
+    expect(h.triggerWorkflow).toHaveBeenCalledWith(
+      "pod-kickoff",
+      expect.objectContaining({
+        podId: "pod_t1",
+        podName: "Pod Aurora",
+        repoUrl: DEMO_REPO_URL,
+        members: ["Aisha Rahman", "Priya Shah", "Tom Okafor", "Mei Lin"],
+        title: "VisionAid: accessible image captioning API",
+        pitch: "Captions for everyone.",
+      }),
+    );
   });
 
   it("assigns members with a real GitHub login", async () => {
@@ -299,7 +325,11 @@ describe("createRepoAndIssues", () => {
 describe("Architect ← Roadmap Agent handoff", () => {
   const messages = () => h.emit.mock.calls.map((c) => `${c[0].agent}: ${c[0].message}`);
   const week = (n: number, focusSkillId: string, done: boolean[], proof = `Week ${n} proof text`) => ({
-    week: n, startDate: "2026-11-02", focusSkillId, isExamWeek: false, proof,
+    week: n,
+    startDate: "2026-11-02",
+    focusSkillId,
+    isExamWeek: false,
+    proof,
     tasks: done.map((d, i) => ({ id: `t${n}-${i}`, type: "learn", title: "Task", free: true, hours: 2, done: d })),
     receipt: { demandPct: 41, coveredByDegree: "no", reason: "r" },
   });
@@ -321,12 +351,18 @@ describe("Architect ← Roadmap Agent handoff", () => {
     expect(msgs).toContain("architect: asked Roadmap Agent for 4 members' current week");
     expect(msgs).toContain("roadmap: Aisha · Week 1 focus: Docker");
     expect(msgs).toContain("roadmap: Mei · Week 1 focus: Python");
-    expect(msgs.indexOf("architect: asked Roadmap Agent for 4 members' current week")).toBeLessThan(msgs.indexOf("roadmap: Aisha · Week 1 focus: Docker"));
+    expect(msgs.indexOf("architect: asked Roadmap Agent for 4 members' current week")).toBeLessThan(
+      msgs.indexOf("roadmap: Aisha · Week 1 focus: Docker"),
+    );
     expect(ProjectBriefZ.safeParse(out).success).toBe(true);
   });
 
   it("uses the stored roadmap's first unfinished week and adds a focus issue the LLM missed", async () => {
-    h.roadmaps.set("aisha", { userId: "aisha", roleId: "ml-engineer", weeks: [week(1, "docker", [true, true]), week(2, "pytorch", [true, false], "Train a tiny CNN and push it")] });
+    h.roadmaps.set("aisha", {
+      userId: "aisha",
+      roleId: "ml-engineer",
+      weeks: [week(1, "docker", [true, true]), week(2, "pytorch", [true, false], "Train a tiny CNN and push it")],
+    });
     h.llmJSON.mockResolvedValueOnce(llmDraft()); // only a docker issue for aisha
     const out = await designProject(pod, "run_rm2");
     const prompt = h.llmJSON.mock.calls[0][0].user as string;
@@ -357,7 +393,10 @@ describe("Architect ← Roadmap Agent handoff", () => {
   });
 
   it("currentWeek skips finished weeks and ignores unusable docs", () => {
-    expect(currentWeek({ weeks: [week(1, "docker", [true]), week(2, "sql", [false])] }, "roadmap")).toMatchObject({ week: 2, skillId: "sql" });
+    expect(currentWeek({ weeks: [week(1, "docker", [true]), week(2, "sql", [false])] }, "roadmap")).toMatchObject({
+      week: 2,
+      skillId: "sql",
+    });
     expect(currentWeek({ weeks: [week(1, "docker", [true])] }, "roadmap")).toBeNull();
     expect(currentWeek({ id: "aisha", name: "Aisha" }, "roadmap")).toBeNull();
     expect(currentWeek(null, "fixture")).toBeNull();

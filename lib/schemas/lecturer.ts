@@ -6,16 +6,22 @@ import { SkillIdZ } from "@/lib/schemas/community";
 export const LecturerQueryZ = z.object({ programmeId: z.string().trim().min(1, "programmeId is required") });
 
 /** Contract §6: `{ gaps: {skillId; demandPct; studentsTargeting}[]; labIdeas: string[] }`. Never per-student data. */
-export const LecturerInsightsZ = z.object({
-  gaps: z.array(z.object({
-    skillId: SkillIdZ,
-    /** 41 = 41% of job ads for the cohort's most-targeted role (see LecturerCohort.demandRole). */
-    demandPct: z.number(),
-    /** Students whose first-choice role asks for this skill (≥ 10% of its ads), or who list it as a gap. */
-    studentsTargeting: z.number(),
-  }).strict()),
-  labIdeas: z.array(z.string()),
-}).strict();
+export const LecturerInsightsZ = z
+  .object({
+    gaps: z.array(
+      z
+        .object({
+          skillId: SkillIdZ,
+          /** 41 = 41% of job ads for the cohort's most-targeted role (see LecturerCohort.demandRole). */
+          demandPct: z.number(),
+          /** Students whose first-choice role asks for this skill (≥ 10% of its ads), or who list it as a gap. */
+          studentsTargeting: z.number(),
+        })
+        .strict(),
+    ),
+    labIdeas: z.array(z.string()),
+  })
+  .strict();
 export type LecturerInsights = z.infer<typeof LecturerInsightsZ>;
 
 /** What the LLM is asked for when writing lab ideas. */
@@ -38,5 +44,11 @@ const ROLE_NAMES: Record<string, string> = {
   "data-analyst": "Data analyst",
 };
 export function roleName(id: string): string {
-  return ROLE_NAMES[id] ?? id.split("-").map((w, i) => (i === 0 ? w[0]?.toUpperCase() + w.slice(1) : w)).join(" ");
+  return (
+    ROLE_NAMES[id] ??
+    id
+      .split("-")
+      .map((w, i) => (i === 0 ? w[0]?.toUpperCase() + w.slice(1) : w))
+      .join(" ")
+  );
 }

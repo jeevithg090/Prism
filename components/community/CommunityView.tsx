@@ -22,7 +22,10 @@ export function CommunityView() {
 
   const all = React.useMemo(() => help.data ?? [], [help.data]);
   const profiles = useProfiles([viewerId, ...all.map((r) => r.fromUserId), ...all.flatMap((r) => (r.toUserId ? [r.toUserId] : []))]);
-  const feed = sortHelpFeed(all.filter((r) => r.status === "open"), profiles);
+  const feed = sortHelpFeed(
+    all.filter((r) => r.status === "open"),
+    profiles,
+  );
   const retry = () => void help.refetch();
 
   return (

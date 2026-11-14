@@ -3,14 +3,28 @@ import skills from "@/data/skills.json";
 import { PodZ, skillName } from "@/lib/schemas/community";
 import type { Pod } from "@/lib/types";
 import {
-  buildCandidate, greedyPod, learnsTeaches, MATCH_PURPOSE, matchPod, NotFoundError, podName, roleLabel, scoreParts, scoreTeam,
-  templateExplanations, type CandidateSkills,
+  buildCandidate,
+  greedyPod,
+  learnsTeaches,
+  MATCH_PURPOSE,
+  matchPod,
+  NotFoundError,
+  podName,
+  roleLabel,
+  scoreParts,
+  scoreTeam,
+  templateExplanations,
+  type CandidateSkills,
 } from "./matchmaker";
 import { AISHA_MAP, fakeStore, PROFILES, serveDataFiles, STUDENT_SKILLS } from "./matchmaker.testdata";
 
 const mocks = vi.hoisted(() => ({ embed: vi.fn(), llmJSON: vi.fn(), emit: vi.fn(), loadGraph: vi.fn() }));
 vi.mock("@/lib/llm", () => ({
-  embed: mocks.embed, llmJSON: mocks.llmJSON, llmText: vi.fn(), cosine: () => 0, LLMError: class LLMError extends Error {},
+  embed: mocks.embed,
+  llmJSON: mocks.llmJSON,
+  llmText: vi.fn(),
+  cosine: () => 0,
+  LLMError: class LLMError extends Error {},
 }));
 vi.mock("@/lib/agents/events", () => ({ emit: mocks.emit, newRunId: () => "run_auto", subscribe: () => () => {} }));
 vi.mock("@/lib/graph/build", () => ({ loadGraph: mocks.loadGraph }));
@@ -20,7 +34,15 @@ vi.mock("@/lib/store", async () => {
 });
 
 const cand = (userId: string, o: Partial<CandidateSkills> = {}): CandidateSkills => ({
-  userId, proven: [], gaps: [], interests: ["computer vision"], availability: ["tue-eve"], badges: [], year: 1, targetRole: "ml-engineer", ...o,
+  userId,
+  proven: [],
+  gaps: [],
+  interests: ["computer vision"],
+  availability: ["tue-eve"],
+  badges: [],
+  year: 1,
+  targetRole: "ml-engineer",
+  ...o,
 });
 const ids = (p: Pod) => p.members.map((m) => m.userId).sort();
 const SKILL_NAMES = (skills as { id: string; name: string }[]).map((s) => s.name);
@@ -73,7 +95,10 @@ describe("scoreTeam", () => {
   });
 
   it("is clamped to [0,1], rounded to 2 decimals, and uses opts.interestSim", () => {
-    const lonely = [cand("a", { proven: ["python"], availability: ["mon-am"], targetRole: "x" }), cand("b", { proven: ["python"], availability: ["fri-pm"], interests: [], targetRole: "y" })];
+    const lonely = [
+      cand("a", { proven: ["python"], availability: ["mon-am"], targetRole: "x" }),
+      cand("b", { proven: ["python"], availability: ["fri-pm"], interests: [], targetRole: "y" }),
+    ];
     expect(scoreTeam(lonely)).toBe(0);
     expect(scoreTeam([])).toBe(0);
     const t = [cand("a", { gaps: ["sql"] }), cand("b", { proven: ["sql"] }), cand("c")];
@@ -91,7 +116,12 @@ describe("pure building blocks", () => {
   it("buildCandidate takes proven nodes and the top-8 role gaps by demand", () => {
     expect(aisha.proven.sort()).toEqual(["git", "html-css", "javascript", "python"]);
     expect(aisha.gaps).toEqual(["docker", "pytorch", "sql", "aws", "mlops", "llm-apps", "ci-cd", "kubernetes"]);
-    expect(aisha).toMatchObject({ year: 1, targetRole: "ml-engineer", badges: ["new-to-uni", "international"], availability: ["tue-eve", "thu-eve", "sat-am"] });
+    expect(aisha).toMatchObject({
+      year: 1,
+      targetRole: "ml-engineer",
+      badges: ["new-to-uni", "international"],
+      availability: ["tue-eve", "thu-eve", "sat-am"],
+    });
   });
 
   it("greedyPod breaks ties alphabetically and stops at 3 when nothing raises the score", () => {
@@ -103,7 +133,10 @@ describe("pure building blocks", () => {
   });
 
   it("learnsTeaches keeps the top 3 and roleLabel reads 'Learns X · Teaches Y'", () => {
-    const [m] = learnsTeaches([cand("a", { proven: ["python"], gaps: ["docker", "sql", "aws", "react"] }), cand("b", { proven: ["docker", "sql", "aws", "react"], gaps: ["python"] })]);
+    const [m] = learnsTeaches([
+      cand("a", { proven: ["python"], gaps: ["docker", "sql", "aws", "react"] }),
+      cand("b", { proven: ["docker", "sql", "aws", "react"], gaps: ["python"] }),
+    ]);
     expect(m.learns).toEqual(["docker", "sql", "aws"]);
     expect(m.teaches).toEqual(["python"]);
     expect(roleLabel(m.learns, m.teaches)).toBe("Learns Docker · Teaches Python");
@@ -160,7 +193,9 @@ describe("matchPod", () => {
 
   it("emits started (purpose) / progress ×3 / done with real numbers", async () => {
     const pod = await matchPod({ userId: "aisha", runId: "run_ev" });
-    const evs = mocks.emit.mock.calls.map(([e]) => e as { runId: string; agent: string; status: string; message: string; data?: Record<string, unknown> });
+    const evs = mocks.emit.mock.calls.map(
+      ([e]) => e as { runId: string; agent: string; status: string; message: string; data?: Record<string, unknown> },
+    );
     expect(evs.every((e) => e.runId === "run_ev" && e.agent === "matchmaker")).toBe(true);
     expect(evs.map((e) => e.status)).toEqual(["started", "progress", "progress", "progress", "done"]);
     expect(evs[0].message).toBe(MATCH_PURPOSE);
@@ -196,7 +231,9 @@ describe("matchPod", () => {
     // every teammate is explained
     const explained = new Set(pod.explanations.flatMap((e) => [e.fromUserId, e.toUserId]));
     for (const m of pod.members) expect(explained.has(m.userId)).toBe(true);
-    expect(pod.explanations.find((e) => e.toUserId === "priya")?.text).toBe("Priya reviews your Docker and PyTorch work, so you learn from someone a step ahead.");
+    expect(pod.explanations.find((e) => e.toUserId === "priya")?.text).toBe(
+      "Priya reviews your Docker and PyTorch work, so you learn from someone a step ahead.",
+    );
   });
 
   it("uses the template explanations when the LLM polish throws", async () => {
@@ -210,7 +247,10 @@ describe("matchPod", () => {
     mocks.llmJSON.mockImplementation(async ({ user }: { user: string }) => {
       const { lines } = JSON.parse(user) as { lines: { fromUserId: string; toUserId: string; text: string }[] };
       return {
-        lines: lines.map((l) => ({ ...l, text: l.toUserId === "priya" ? "Priya will happily check your Docker and PyTorch work." : "You two will get on great!" })),
+        lines: lines.map((l) => ({
+          ...l,
+          text: l.toUserId === "priya" ? "Priya will happily check your Docker and PyTorch work." : "You two will get on great!",
+        })),
       };
     });
     const pod = await matchPod({ userId: "aisha" });
@@ -232,7 +272,10 @@ describe("matchPod", () => {
 
   it("a match equal to the seeded demo pod keeps its id, and the model writes its explanations outside DEMO_MODE", async () => {
     const fixture: Pod = {
-      id: "pod_demo01", name: "Pod Orbit", score: 0.73, createdAt: "2026-11-07T14:40:00.000Z",
+      id: "pod_demo01",
+      name: "Pod Orbit",
+      score: 0.73,
+      createdAt: "2026-11-07T14:40:00.000Z",
       explanations: [{ fromUserId: "aisha", toUserId: "priya", text: "Fixture text." }],
       members: [
         { userId: "aisha", learns: ["docker"], teaches: ["python"], role: "Learns Docker · Teaches Python" },
@@ -243,7 +286,10 @@ describe("matchPod", () => {
     };
     serveDataFiles({ "data/seed/student-skills.json": STUDENT_SKILLS, "data/fixtures/pod.aisha.json": fixture });
     mocks.llmJSON.mockImplementation(async ({ user }: { user: string }) => ({
-      lines: (JSON.parse(user) as { lines: { fromUserId: string; toUserId: string; text: string }[] }).lines.map((l) => ({ ...l, text: `Polished: ${l.text}` })),
+      lines: (JSON.parse(user) as { lines: { fromUserId: string; toUserId: string; text: string }[] }).lines.map((l) => ({
+        ...l,
+        text: `Polished: ${l.text}`,
+      })),
     }));
     const pod = await matchPod({ userId: "aisha" });
     expect(pod.id).toBe("pod_demo01");
@@ -261,7 +307,11 @@ describe("matchPod", () => {
   it("DEMO_MODE falls back to data/fixtures/pod.aisha.json when anything throws", async () => {
     process.env.DEMO_MODE = "true";
     const fixture: Pod = {
-      id: "pod_demo01", name: "Pod Aurora", score: 0.82, createdAt: "2026-11-07T12:00:00Z", explanations: [],
+      id: "pod_demo01",
+      name: "Pod Aurora",
+      score: 0.82,
+      createdAt: "2026-11-07T12:00:00Z",
+      explanations: [],
       members: [{ userId: "aisha", learns: ["docker"], teaches: ["python"], role: "Learns Docker · Teaches Python" }],
     };
     serveDataFiles({ "data/fixtures/pod.aisha.json": fixture }); // no student-skills.json → no candidates → throws

@@ -9,7 +9,7 @@ async function handlePOST(req: Request) {
   try {
     body = await req.json();
   } catch {
-    return badRequest("Body must be JSON like {\"podId\":\"pod_demo01\"}");
+    return badRequest('Body must be JSON like {"podId":"pod_demo01"}');
   }
   const parsed = ProjectCreateReqZ.safeParse(body);
   if (!parsed.success) return badRequest(parsed.error);

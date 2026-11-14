@@ -20,11 +20,19 @@ vi.mock("@/lib/store", () => ({
   getStore: () => ({
     get: async (c: string, id: string) => structuredClone(h.docs.get(`${c}/${id}`) ?? null),
     list: async (c: string) => [...h.docs.entries()].filter(([k]) => k.startsWith(`${c}/`)).map(([, d]) => structuredClone(d)),
-    upsert: async (c: string, id: string, doc: unknown, userId?: string) => { h.upsert(c, id, doc, userId); h.docs.set(`${c}/${id}`, structuredClone(doc)); return doc; },
+    upsert: async (c: string, id: string, doc: unknown, userId?: string) => {
+      h.upsert(c, id, doc, userId);
+      h.docs.set(`${c}/${id}`, structuredClone(doc));
+      return doc;
+    },
     remove: async () => {},
   }),
 }));
-vi.mock("octokit", () => ({ Octokit: class { request = vi.fn(); } }));
+vi.mock("octokit", () => ({
+  Octokit: class {
+    request = vi.fn();
+  },
+}));
 
 import { POST } from "./route";
 
@@ -47,7 +55,9 @@ beforeEach(() => {
   h.docs.set("profiles/priya", { id: "priya", name: "Priya Shah", badges: [], githubLogin: "priya-demo" });
   process.env.GITHUB_WEBHOOK_SECRET = SECRET;
 });
-afterEach(() => { delete process.env.GITHUB_WEBHOOK_SECRET; });
+afterEach(() => {
+  delete process.env.GITHUB_WEBHOOK_SECRET;
+});
 
 describe("POST /api/webhooks/github", () => {
   it("returns 401 for a bad signature", async () => {
@@ -77,11 +87,26 @@ describe("POST /api/webhooks/github", () => {
 });
 
 describe("POST /api/webhooks/github · merged PR → proof", () => {
-  const merged = (pr: Record<string, unknown>, repo = "https://github.com/keystone-demo/pod-vision-demo") => JSON.stringify({
-    action: "closed",
-    pull_request: { number: 8, title: "Add Dockerfile", body: "", html_url: `${repo}/pull/8`, merged: true, merged_at: "2026-11-07T16:00:00Z", user: { login: "aisha-gh" }, ...pr },
-    repository: { name: repo.split("/").pop(), full_name: repo.replace("https://github.com/", ""), html_url: repo, owner: { login: repo.split("/")[3] } },
-  });
+  const merged = (pr: Record<string, unknown>, repo = "https://github.com/keystone-demo/pod-vision-demo") =>
+    JSON.stringify({
+      action: "closed",
+      pull_request: {
+        number: 8,
+        title: "Add Dockerfile",
+        body: "",
+        html_url: `${repo}/pull/8`,
+        merged: true,
+        merged_at: "2026-11-07T16:00:00Z",
+        user: { login: "aisha-gh" },
+        ...pr,
+      },
+      repository: {
+        name: repo.split("/").pop(),
+        full_name: repo.replace("https://github.com/", ""),
+        html_url: repo,
+        owner: { login: repo.split("/")[3] },
+      },
+    });
   const momentum = () => h.upsert.mock.calls.filter((c) => c[0] === "momentum_events" && (c[2] as { kind: string }).kind === "pr-merged");
 
   it("records proof for the pod issue named by 'Closes #1' and writes one pr-merged event", async () => {
@@ -90,7 +115,13 @@ describe("POST /api/webhooks/github · merged PR → proof", () => {
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json.data.reviewed).toBe(false);
-    expect(json.data.proof).toMatchObject({ podId: "pod_demo01", issueIndex: 0, userId: "aisha", skillId: "docker", reviewerUserId: "priya" });
+    expect(json.data.proof).toMatchObject({
+      podId: "pod_demo01",
+      issueIndex: 0,
+      userId: "aisha",
+      skillId: "docker",
+      reviewerUserId: "priya",
+    });
     expect(h.reviewPullRequest).not.toHaveBeenCalled();
     expect(momentum()).toHaveLength(1);
     expect(h.upsert.mock.calls.filter((c) => c[0] === "evidence")).toHaveLength(2);

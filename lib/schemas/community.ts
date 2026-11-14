@@ -2,15 +2,23 @@
 // Mirrors lib/types.ts exactly; the `satisfies`-style checks at the bottom keep them in sync.
 import { z } from "zod";
 import type {
-  BadgeId, GuideSuggestion, HelpRequest, MatchExplanation, MomentumWeek, Pod, PodMember,
-  Profile, ProjectBrief, ProjectIssue, Trajectory, TrajectoryStep,
+  BadgeId,
+  GuideSuggestion,
+  HelpRequest,
+  MatchExplanation,
+  MomentumWeek,
+  Pod,
+  PodMember,
+  Profile,
+  ProjectBrief,
+  ProjectIssue,
+  Trajectory,
+  TrajectoryStep,
 } from "@/lib/types";
 
 export const SkillIdZ = z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "kebab-case skill id");
 
-export const BadgeIdZ = z.enum([
-  "new-to-uni", "international", "first-gen", "career-changer", "helper", "shipped", "interview-ready",
-]);
+export const BadgeIdZ = z.enum(["new-to-uni", "international", "first-gen", "career-changer", "helper", "shipped", "interview-ready"]);
 
 export const LearningDNAZ = z.object({
   targetRoles: z.array(z.string()).min(1).max(2),
@@ -141,10 +149,7 @@ export const GuideSuggestionZ = z.object({
 });
 
 /** data/seed/student-skills.json */
-export const StudentSkillsZ = z.record(
-  z.string(),
-  z.object({ proven: z.array(SkillIdZ), gaps: z.array(SkillIdZ) }),
-);
+export const StudentSkillsZ = z.record(z.string(), z.object({ proven: z.array(SkillIdZ), gaps: z.array(SkillIdZ) }));
 
 export const MomentumEventZ = z.object({
   id: z.string().optional(),
@@ -202,11 +207,49 @@ export type StudentSkills = z.infer<typeof StudentSkillsZ>;
 
 /** Contract §5 core skill ids: fixtures may only use these. */
 export const CORE_SKILL_IDS = [
-  "python", "java", "javascript", "typescript", "c", "cpp", "sql", "html-css", "react", "nodejs", "rest-apis", "git", "linux",
-  "docker", "kubernetes", "aws", "cloud-computing", "ci-cd", "testing", "data-structures", "algorithms", "databases",
-  "postgresql", "system-design", "security-basics", "statistics", "linear-algebra", "machine-learning", "deep-learning",
-  "pytorch", "tensorflow", "scikit-learn", "pandas", "numpy", "data-visualisation", "llm-apps", "llm-evaluation",
-  "vector-databases", "mlops", "code-review", "communication", "teamwork", "agile",
+  "python",
+  "java",
+  "javascript",
+  "typescript",
+  "c",
+  "cpp",
+  "sql",
+  "html-css",
+  "react",
+  "nodejs",
+  "rest-apis",
+  "git",
+  "linux",
+  "docker",
+  "kubernetes",
+  "aws",
+  "cloud-computing",
+  "ci-cd",
+  "testing",
+  "data-structures",
+  "algorithms",
+  "databases",
+  "postgresql",
+  "system-design",
+  "security-basics",
+  "statistics",
+  "linear-algebra",
+  "machine-learning",
+  "deep-learning",
+  "pytorch",
+  "tensorflow",
+  "scikit-learn",
+  "pandas",
+  "numpy",
+  "data-visualisation",
+  "llm-apps",
+  "llm-evaluation",
+  "vector-databases",
+  "mlops",
+  "code-review",
+  "communication",
+  "teamwork",
+  "agile",
 ] as const;
 
 // ---------- envelope helpers for P5 routes (contract §6) ----------
@@ -217,7 +260,11 @@ export function fail(status: number, code: string, message: string): Response {
   return Response.json({ ok: false, error: { code, message } }, { status });
 }
 export function badRequest(err: z.ZodError | string): Response {
-  return fail(400, "bad_request", typeof err === "string" ? err : err.issues.map((i) => `${i.path.join(".") || "input"}: ${i.message}`).join("; "));
+  return fail(
+    400,
+    "bad_request",
+    typeof err === "string" ? err : err.issues.map((i) => `${i.path.join(".") || "input"}: ${i.message}`).join("; "),
+  );
 }
 export function internal(): Response {
   return fail(500, "internal", "Something went wrong on our side.");
@@ -228,5 +275,11 @@ import skillsJson from "@/data/skills.json";
 const SKILL_NAME = new Map((skillsJson as { id: string; name: string }[]).map((s) => [s.id, s.name]));
 /** "docker" → "Docker". Unknown ids are title-cased. */
 export function skillName(id: string): string {
-  return SKILL_NAME.get(id) ?? id.split("-").map((w) => w[0]?.toUpperCase() + w.slice(1)).join(" ");
+  return (
+    SKILL_NAME.get(id) ??
+    id
+      .split("-")
+      .map((w) => w[0]?.toUpperCase() + w.slice(1))
+      .join(" ")
+  );
 }

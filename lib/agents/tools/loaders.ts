@@ -31,7 +31,9 @@ function readJSON(rel: string): unknown {
 // ---------- profile ----------
 
 export async function requireProfile(userId: string): Promise<Profile> {
-  const p = await getStore().get<Profile>("profiles", userId).catch(() => null);
+  const p = await getStore()
+    .get<Profile>("profiles", userId)
+    .catch(() => null);
   if (!p) {
     throw new ToolError(
       `No Keystone profile for "${userId}". Check the userId, or ask the student to finish onboarding in Keystone first.`,
@@ -50,7 +52,9 @@ const hasNodes = (m: BridgeMap | null | undefined): m is BridgeMap => Array.isAr
 
 /** The user's map for a role: store `maps` (updated by the proof engine) → P2's loadGraph → the fixture file. */
 export async function loadBridgeMap(userId: string, roleId: string): Promise<BridgeMap | null> {
-  const stored = await getStore().get<BridgeMap>("maps", `${userId}:${roleId}`).catch(() => null);
+  const stored = await getStore()
+    .get<BridgeMap>("maps", `${userId}:${roleId}`)
+    .catch(() => null);
   if (hasNodes(stored)) return stored;
   const built = await loadGraph(userId, roleId).catch(() => null);
   if (hasNodes(built)) return built;
@@ -151,8 +155,13 @@ function fromRoadmapWeek(w: RoadmapWeek, source: WeekPlan["source"], total: numb
     focusSkillName: skillName(focus),
     isExamWeek: !!w.isExamWeek,
     tasks: (Array.isArray(w.tasks) ? w.tasks : []).map((t) => ({
-      id: t.id, type: t.type, title: t.title, hours: t.hours, free: t.free,
-      ...(t.done ? { done: true } : {}), ...(t.resourceUrl ? { resourceUrl: t.resourceUrl } : {}),
+      id: t.id,
+      type: t.type,
+      title: t.title,
+      hours: t.hours,
+      free: t.free,
+      ...(t.done ? { done: true } : {}),
+      ...(t.resourceUrl ? { resourceUrl: t.resourceUrl } : {}),
     })),
     proof: w.proof?.trim() || `Merge a PR that adds ${skillName(focus)} to your pod repo`,
     ...(w.degreeLink ? { degreeLink: w.degreeLink } : {}),
@@ -173,15 +182,33 @@ function fallbackWeek(node: BridgeNode, roleId: string, hoursPerWeek: number, po
     focusSkillName: s,
     isExamWeek: false,
     tasks: [
-      { id: `w1-learn-${node.skillId}`, type: "learn", title: `Work through an official ${s} getting-started guide`, hours: h(2), free: true },
-      { id: `w1-practice-${node.skillId}`, type: "practice", title: `Practise ${s} on a tiny example of your own`, hours: h(2), free: true },
       {
-        id: `w1-build-${node.skillId}`, type: "build",
-        title: podIssue ? `Open a PR for pod issue #${podIssue.number}: ${podIssue.title}` : `Use ${s} in one small part of your pod project`,
-        hours: h(3), free: true,
+        id: `w1-learn-${node.skillId}`,
+        type: "learn",
+        title: `Work through an official ${s} getting-started guide`,
+        hours: h(2),
+        free: true,
+      },
+      {
+        id: `w1-practice-${node.skillId}`,
+        type: "practice",
+        title: `Practise ${s} on a tiny example of your own`,
+        hours: h(2),
+        free: true,
+      },
+      {
+        id: `w1-build-${node.skillId}`,
+        type: "build",
+        title: podIssue
+          ? `Open a PR for pod issue #${podIssue.number}: ${podIssue.title}`
+          : `Use ${s} in one small part of your pod project`,
+        hours: h(3),
+        free: true,
       },
     ],
-    proof: podIssue ? `Merge "${podIssue.title}" (pod issue #${podIssue.number}), reviewed by a teammate` : `Merge a PR that adds ${s} to your pod repo`,
+    proof: podIssue
+      ? `Merge "${podIssue.title}" (pod issue #${podIssue.number}), reviewed by a teammate`
+      : `Merge a PR that adds ${s} to your pod repo`,
     receipt: receiptFor(node, roleId),
     source: "fallback",
   };
@@ -240,7 +267,11 @@ export async function requirePod(userId: string, podId?: string): Promise<Pod> {
 }
 
 export async function loadProgress(podId: string): Promise<ProjectProgress> {
-  const stored = ProjectProgressZ.safeParse(await getStore().get<unknown>("pod_progress", podId).catch(() => null));
+  const stored = ProjectProgressZ.safeParse(
+    await getStore()
+      .get<unknown>("pod_progress", podId)
+      .catch(() => null),
+  );
   return stored.success
     ? { ...stored.data, merged: [...stored.data.merged].sort((a, b) => a.issueIndex - b.issueIndex) }
     : { podId, merged: [] };
@@ -279,7 +310,15 @@ export interface CompactPod {
   createdAt: string;
   members: { userId: string; name: string; role: string; learns: SkillId[]; teaches: SkillId[] }[];
   explanations: string[];
-  project: { title: string; pitch: string; repoUrl?: string; milestones: string[]; issues: CompactIssue[]; merged: number; total: number } | null;
+  project: {
+    title: string;
+    pitch: string;
+    repoUrl?: string;
+    milestones: string[];
+    issues: CompactIssue[];
+    merged: number;
+    total: number;
+  } | null;
 }
 
 export async function compactPod(pod: Pod): Promise<CompactPod> {
@@ -287,10 +326,17 @@ export async function compactPod(pod: Pod): Promise<CompactPod> {
   const nameOf = (id: string) => names[id] ?? capitalise(id);
   const merged = new Set(progress.merged.map((m) => m.issueIndex));
   const issues: CompactIssue[] = (pod.project?.issues ?? []).map((i, index) => ({
-    index, number: index + 1, title: i.title, skillId: i.skillId,
-    assigneeUserId: i.assigneeUserId, assignee: nameOf(i.assigneeUserId),
-    reviewerUserId: i.reviewerUserId, reviewer: nameOf(i.reviewerUserId),
-    milestone: i.milestone, merged: merged.has(index), ...(i.githubIssueUrl ? { url: i.githubIssueUrl } : {}),
+    index,
+    number: index + 1,
+    title: i.title,
+    skillId: i.skillId,
+    assigneeUserId: i.assigneeUserId,
+    assignee: nameOf(i.assigneeUserId),
+    reviewerUserId: i.reviewerUserId,
+    reviewer: nameOf(i.reviewerUserId),
+    milestone: i.milestone,
+    merged: merged.has(index),
+    ...(i.githubIssueUrl ? { url: i.githubIssueUrl } : {}),
   }));
   return {
     id: pod.id,
@@ -301,8 +347,13 @@ export async function compactPod(pod: Pod): Promise<CompactPod> {
     explanations: pod.explanations.map((e) => e.text),
     project: pod.project
       ? {
-          title: pod.project.title, pitch: pod.project.pitch, ...(pod.project.repoUrl ? { repoUrl: pod.project.repoUrl } : {}),
-          milestones: pod.project.milestones, issues, merged: issues.filter((i) => i.merged).length, total: issues.length,
+          title: pod.project.title,
+          pitch: pod.project.pitch,
+          ...(pod.project.repoUrl ? { repoUrl: pod.project.repoUrl } : {}),
+          milestones: pod.project.milestones,
+          issues,
+          merged: issues.filter((i) => i.merged).length,
+          total: issues.length,
         }
       : null,
   };
@@ -316,7 +367,9 @@ export const nextIssueFor = (pod: CompactPod, userId: string): CompactIssue | un
 
 /** The user's newest evidence item (a merged pod PR, a certificate, …), or null. */
 export async function latestEvidence(userId: string): Promise<EvidenceItem | null> {
-  const rows = await getStore().list<EvidenceItem>("evidence", { userId }).catch(() => [] as EvidenceItem[]);
+  const rows = await getStore()
+    .list<EvidenceItem>("evidence", { userId })
+    .catch(() => [] as EvidenceItem[]);
   const mine = rows.filter((e) => e?.userId === userId && typeof e.createdAt === "string");
   mine.sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0));
   return mine[0] ?? null;

@@ -14,18 +14,32 @@ export function MarketStats({ demand }: { demand: RoleDemand }) {
   return (
     <div className="grid divide-y rounded-2xl border bg-card shadow-sm sm:grid-cols-3 sm:divide-x sm:divide-y-0">
       <div>
-        <StatCard className={FLAT} label="Ads analysed" value={<span>{demand.adsAnalysed}</span>} hint={`${demand.roleName} ads in the ${demand.location}${when ? `, ${demand.source === "cache" ? "snapshot from" : "read on"} ${when}` : ""}`} />
+        <StatCard
+          className={FLAT}
+          label="Ads analysed"
+          value={<span>{demand.adsAnalysed}</span>}
+          hint={`${demand.roleName} ads in the ${demand.location}${when ? `, ${demand.source === "cache" ? "snapshot from" : "read on"} ${when}` : ""}`}
+        />
       </div>
       <div>
         <StatCard
           className={FLAT}
           label="Median salary"
           value={demand.salary ? <span>{fmtSalary(demand.salary.median)}</span> : <span className="font-sans">None yet</span>}
-          hint={demand.salary ? `Middle half of ${role} ads pay ${fmtSalary(demand.salary.p25)} to ${fmtSalary(demand.salary.p75)}` : "Too few ads list a salary to give a fair figure"}
+          hint={
+            demand.salary
+              ? `Middle half of ${role} ads pay ${fmtSalary(demand.salary.p25)} to ${fmtSalary(demand.salary.p75)}`
+              : "Too few ads list a salary to give a fair figure"
+          }
         />
       </div>
       <div>
-        <StatCard className={FLAT} label="Top hirer" value={<span className="font-sans">{top ? top.name : "None yet"}</span>} hint={top ? `${top.count} of ${demand.adsAnalysed} ads` : "No employer stands out yet"} />
+        <StatCard
+          className={FLAT}
+          label="Top hirer"
+          value={<span className="font-sans">{top ? top.name : "None yet"}</span>}
+          hint={top ? `${top.count} of ${demand.adsAnalysed} ads` : "No employer stands out yet"}
+        />
       </div>
     </div>
   );

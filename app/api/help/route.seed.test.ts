@@ -7,7 +7,10 @@ vi.mock("@/lib/store", () => {
     getStore: () => ({
       get: async (_c: string, id: string) => rows.get(id) ?? null,
       list: async () => [...rows.values()],
-      upsert: async (_c: string, id: string, doc: unknown) => { rows.set(id, doc); return doc; },
+      upsert: async (_c: string, id: string, doc: unknown) => {
+        rows.set(id, doc);
+        return doc;
+      },
       remove: async () => {},
     }),
   };
@@ -16,7 +19,13 @@ vi.mock("@/lib/store", () => {
 import { GET, POST } from "./route";
 
 const post = (body: unknown) =>
-  POST(new Request("http://localhost/api/help", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }));
+  POST(
+    new Request("http://localhost/api/help", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    }),
+  );
 
 describe("/api/help (stub)", () => {
   it("rejects an empty message with 400 bad_request", async () => {

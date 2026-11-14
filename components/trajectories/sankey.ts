@@ -9,7 +9,12 @@ export const Y23_LABELS = ["Placement", "Internship", "Open source", "Research",
 
 /** Phrases used in the summary sentence. */
 const GROUP_PHRASE: Record<OutcomeGroup, string> = {
-  ML: "ML roles", SWE: "software roles", Data: "data roles", PhD: "a PhD", Startup: "founding a startup", Other: "other paths",
+  ML: "ML roles",
+  SWE: "software roles",
+  Data: "data roles",
+  PhD: "a PhD",
+  Startup: "founding a startup",
+  Other: "other paths",
 };
 
 export type SankeyNodeDatum = {
@@ -39,10 +44,15 @@ export function outcomeGroup(outcomeRole: string): OutcomeGroup {
 }
 
 const Y1_KIND: Partial<Record<Trajectory["steps"][number]["kind"], (typeof Y1_LABELS)[number]>> = {
-  society: "Society", hackathon: "Hackathon", project: "Side project",
+  society: "Society",
+  hackathon: "Hackathon",
+  project: "Side project",
 };
 const Y23_KIND: Partial<Record<Trajectory["steps"][number]["kind"], (typeof Y23_LABELS)[number]>> = {
-  placement: "Placement", internship: "Internship", project: "Open source", "module-choice": "Research",
+  placement: "Placement",
+  internship: "Internship",
+  project: "Open source",
+  "module-choice": "Research",
 };
 
 const Y23_PRIORITY: Trajectory["steps"][number]["kind"][] = ["placement", "internship", "project", "module-choice"];
@@ -132,9 +142,10 @@ export function toChartLinks(data: SankeyBuild): ChartLink[] {
     for (const g of OUTCOME_GROUPS) {
       const count = l.byOutcome[g];
       if (!count) continue;
-      const label = data.nodes[l.target]?.column === 2
-        ? `${from} → ${to}: ${count} ${count === 1 ? "journey" : "journeys"}`
-        : `${from} → ${to}, then ${g}: ${count} ${count === 1 ? "journey" : "journeys"}`;
+      const label =
+        data.nodes[l.target]?.column === 2
+          ? `${from} → ${to}: ${count} ${count === 1 ? "journey" : "journeys"}`
+          : `${from} → ${to}, then ${g}: ${count} ${count === 1 ? "journey" : "journeys"}`;
       out.push({ source: l.source, target: l.target, value: count + out.length * 1e-6, count, outcome: g, label });
     }
   }

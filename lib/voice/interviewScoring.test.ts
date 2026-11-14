@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const h = vi.hoisted(() => ({ upsert: vi.fn(async (...a: unknown[]) => a[2]), llm: vi.fn() }));
-vi.mock("@/lib/store", () => ({ getStore: () => ({ upsert: h.upsert, get: async () => null, list: async () => [], remove: async () => {} }) }));
+vi.mock("@/lib/store", () => ({
+  getStore: () => ({ upsert: h.upsert, get: async () => null, list: async () => [], remove: async () => {} }),
+}));
 vi.mock("@/lib/llm", () => ({ llmJSON: h.llm, llmText: vi.fn(), LLMError: class extends Error {} }));
 vi.mock("@/lib/agents/events", () => ({ emit: vi.fn(), newRunId: () => "run_iv", subscribe: vi.fn() }));
 
@@ -9,7 +11,11 @@ import { fillerWordsPerMin, scoreInterview, scoreTranscript, userText } from "./
 import { formatTranscript, practiceQuestions, sampleAnswers } from "./questions";
 import { InterviewResultZ } from "./schemas";
 
-beforeEach(() => { h.upsert.mockClear(); h.llm.mockReset(); delete process.env.DEMO_MODE; });
+beforeEach(() => {
+  h.upsert.mockClear();
+  h.llm.mockReset();
+  delete process.env.DEMO_MODE;
+});
 
 describe("fillerWordsPerMin", () => {
   it("counts um, comma-wrapped like and basically: 3 over 60 s = 3.0", () => {
@@ -31,10 +37,25 @@ describe("fillerWordsPerMin", () => {
 });
 
 describe("scoreTranscript (rules)", () => {
-  const vars = { name: "Aisha", pr_title: "Containerise the captioning API with Docker", pr_skill: "Docker", pr_skill_id: "docker", reviewer: "Priya", week_focus: "PyTorch", pod_name: "Pod Orbit", project_title: "VisionAid", pr_status: "merged" };
+  const vars = {
+    name: "Aisha",
+    pr_title: "Containerise the captioning API with Docker",
+    pr_skill: "Docker",
+    pr_skill_id: "docker",
+    reviewer: "Priya",
+    week_focus: "PyTorch",
+    pod_name: "Pod Orbit",
+    project_title: "VisionAid",
+    pr_status: "merged",
+  };
   const qs = practiceQuestions(vars);
   const ans = sampleAnswers(vars);
-  const transcript = formatTranscript(qs.flatMap((q, i) => [{ speaker: "ai" as const, text: q }, { speaker: "user" as const, text: ans[i] }]));
+  const transcript = formatTranscript(
+    qs.flatMap((q, i) => [
+      { speaker: "ai" as const, text: q },
+      { speaker: "user" as const, text: ans[i] },
+    ]),
+  );
 
   it("scores a strong STAR answer with Docker detail highly", () => {
     const r = scoreTranscript({ transcript, durationSec: 180, skillId: "docker" });
@@ -46,7 +67,11 @@ describe("scoreTranscript (rules)", () => {
     expect(r.improvements).toHaveLength(2);
   });
   it("scores a vague, hesitant answer low on content, structure and confidence", () => {
-    const r = scoreTranscript({ transcript: "user: um I basically, like, did some stuff, you know, um it was kind of fine I guess", durationSec: 30, skillId: "docker" });
+    const r = scoreTranscript({
+      transcript: "user: um I basically, like, did some stuff, you know, um it was kind of fine I guess",
+      durationSec: 30,
+      skillId: "docker",
+    });
     expect(r.scores.content).toBeLessThanOrEqual(2);
     expect(r.scores.structure).toBeLessThanOrEqual(2);
     expect(r.scores.confidence).toBe(1);
@@ -60,7 +85,16 @@ describe("scoreTranscript (rules)", () => {
 });
 
 describe("scoreInterview", () => {
-  const input = { userId: "aisha", roleId: "ml-engineer", roleName: "ML engineer", transcript: "ai: Q\nuser: In our pod my issue was to containerise the API. I wrote the Dockerfile from a slim base image and moved pip install above COPY so the layer cache works, because builds were slow. As a result builds went from 4 minutes to 20 seconds and Priya approved it.", durationSec: 60, skillId: "docker", prTitle: "Containerise the captioning API with Docker" };
+  const input = {
+    userId: "aisha",
+    roleId: "ml-engineer",
+    roleName: "ML engineer",
+    transcript:
+      "ai: Q\nuser: In our pod my issue was to containerise the API. I wrote the Dockerfile from a slim base image and moved pip install above COPY so the layer cache works, because builds were slow. As a result builds went from 4 minutes to 20 seconds and Priya approved it.",
+    durationSec: 60,
+    skillId: "docker",
+    prTitle: "Containerise the captioning API with Docker",
+  };
 
   it("falls back to rule scores when the LLM throws, and saves interview, momentum and evidence", async () => {
     h.llm.mockRejectedValue(new Error("no_key"));
@@ -74,7 +108,9 @@ describe("scoreInterview", () => {
     expect(iv[2]).toMatchObject({ userId: "aisha", roleId: "ml-engineer", scores: r.scores });
     const mom = h.upsert.mock.calls.find((c) => c[0] === "momentum_events")![2] as { kind: string };
     expect(mom.kind).toBe("mock-interview");
-    const ev = h.upsert.mock.calls.filter((c) => c[0] === "evidence").map((c) => c[2] as { skillId: string; source: string; level: number });
+    const ev = h.upsert.mock.calls
+      .filter((c) => c[0] === "evidence")
+      .map((c) => c[2] as { skillId: string; source: string; level: number });
     expect(ev.map((e) => e.skillId)).toEqual(["communication", "docker"]);
     expect(ev.every((e) => e.source === "keystone-interview")).toBe(true);
     expect(ev[1].level).toBe(3);
@@ -84,7 +120,11 @@ describe("scoreInterview", () => {
   });
 
   it("blends in the LLM's scores and uses its strengths when it answers", async () => {
-    h.llm.mockResolvedValue({ scores: { content: 3, structure: 3, clarity: 3, confidence: 3 }, strengths: ["A", "B"], improvements: ["C", "D"] });
+    h.llm.mockResolvedValue({
+      scores: { content: 3, structure: 3, clarity: 3, confidence: 3 },
+      strengths: ["A", "B"],
+      improvements: ["C", "D"],
+    });
     const r = await scoreInterview(input);
     expect(r.scoredBy).toBe("rules+llm");
     expect(r.strengths).toEqual(["A", "B"]);

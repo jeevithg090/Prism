@@ -38,7 +38,9 @@ function CompatibilityBar({ value }: { value: number }) {
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
         />
       </div>
-      <p className="mt-2 text-sm text-pretty text-muted-foreground">From skills you can teach each other, shared interests and free time.</p>
+      <p className="mt-2 text-sm text-pretty text-muted-foreground">
+        From skills you can teach each other, shared interests and free time.
+      </p>
     </div>
   );
 }

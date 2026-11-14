@@ -61,10 +61,15 @@ describe("computeMomentum", () => {
   it("baseline: previous weeks [4, 6, 8, 10] and this week 12 give baseline 7 and changePct 71", () => {
     const events = [
       ev("roadmap-milestone", "2026-10-06T10:00:00Z"), // W41: 4
-      ev("mock-interview", "2026-10-13T10:00:00Z"), ev("mock-interview", "2026-10-14T10:00:00Z"), // W42: 6
-      ev("roadmap-milestone", "2026-10-20T10:00:00Z"), ev("roadmap-milestone", "2026-10-21T10:00:00Z"), // W43: 8
-      ev("pr-merged", "2026-10-27T10:00:00Z"), ev("pr-merged", "2026-10-28T10:00:00Z"), // W44: 10
-      ev("roadmap-milestone", "2026-11-02T10:00:00Z"), ev("roadmap-milestone", "2026-11-03T10:00:00Z"), ev("roadmap-milestone", "2026-11-04T10:00:00Z"), // W45: 12
+      ev("mock-interview", "2026-10-13T10:00:00Z"),
+      ev("mock-interview", "2026-10-14T10:00:00Z"), // W42: 6
+      ev("roadmap-milestone", "2026-10-20T10:00:00Z"),
+      ev("roadmap-milestone", "2026-10-21T10:00:00Z"), // W43: 8
+      ev("pr-merged", "2026-10-27T10:00:00Z"),
+      ev("pr-merged", "2026-10-28T10:00:00Z"), // W44: 10
+      ev("roadmap-milestone", "2026-11-02T10:00:00Z"),
+      ev("roadmap-milestone", "2026-11-03T10:00:00Z"),
+      ev("roadmap-milestone", "2026-11-04T10:00:00Z"), // W45: 12
     ];
     const weeks = computeMomentum(events, "u1", NOW);
     expect(weeks.map((w) => w.score)).toEqual([0, 4, 6, 8, 10, 12]);
@@ -86,7 +91,12 @@ describe("computeMomentum", () => {
 
   it("ignores other users, unknown kinds and bad dates", () => {
     const last = computeMomentum(
-      [ev("pr-merged", "2026-11-03T10:00:00Z", "someone-else"), ev("bogus", "2026-11-03T10:00:00Z"), ev("pr-merged", "not a date"), ev("helped-newcomer", "2026-11-03T10:00:00Z")],
+      [
+        ev("pr-merged", "2026-11-03T10:00:00Z", "someone-else"),
+        ev("bogus", "2026-11-03T10:00:00Z"),
+        ev("pr-merged", "not a date"),
+        ev("helped-newcomer", "2026-11-03T10:00:00Z"),
+      ],
       "u1",
       NOW,
     ).at(-1)!;
@@ -110,14 +120,20 @@ describe("computeMomentum", () => {
 
 describe("helpers", () => {
   it("scoreWeek orders the breakdown by kind", () => {
-    expect(scoreWeek(["problem-solved", "helped-newcomer", "pr-merged"]).breakdown.map((b) => b.kind)).toEqual(["pr-merged", "helped-newcomer", "problem-solved"]);
+    expect(scoreWeek(["problem-solved", "helped-newcomer", "pr-merged"]).breakdown.map((b) => b.kind)).toEqual([
+      "pr-merged",
+      "helped-newcomer",
+      "problem-solved",
+    ]);
   });
   it("describeBreakdown reads like a sentence", () => {
-    expect(describeBreakdown([
-      { kind: "pr-merged", points: 10, count: 2 },
-      { kind: "roadmap-milestone", points: 4, count: 1 },
-      { kind: "helped-newcomer", points: 3, count: 1 },
-    ])).toBe("2 merged PRs · 1 milestone · helped 1 newcomer");
+    expect(
+      describeBreakdown([
+        { kind: "pr-merged", points: 10, count: 2 },
+        { kind: "roadmap-milestone", points: 4, count: 1 },
+        { kind: "helped-newcomer", points: 3, count: 1 },
+      ]),
+    ).toBe("2 merged PRs · 1 milestone · helped 1 newcomer");
     expect(describeBreakdown([])).toBe("");
   });
   it("formatChange signs the number", () => {

@@ -100,7 +100,10 @@ describe("problemCounts", () => {
 describe("beatsPercentile", () => {
   it("prefers Medium and falls back to the first valid row", () => {
     expect(beatsPercentile(OK.matchedUser)).toEqual({ difficulty: "Medium", pct: 57.42 });
-    expect(beatsPercentile({ problemsSolvedBeatsStats: [{ difficulty: "Hard", percentage: 12.4 }] })).toEqual({ difficulty: "Hard", pct: 12.4 });
+    expect(beatsPercentile({ problemsSolvedBeatsStats: [{ difficulty: "Hard", percentage: 12.4 }] })).toEqual({
+      difficulty: "Hard",
+      pct: 12.4,
+    });
   });
   it("skips invalid percentages", () => {
     expect(beatsPercentile({ problemsSolvedBeatsStats: [{ difficulty: "Medium", percentage: 200 }, { percentage: 10 }] })).toBeNull();
@@ -111,7 +114,10 @@ describe("beatsPercentile", () => {
 describe("newestRecentAc", () => {
   it("takes the newest usable row regardless of the given order", () => {
     expect(newestRecentAc(OK.recentAcSubmissionList)).toEqual({ title: "Tallest Billboard", titleSlug: "tallest-billboard" });
-    expect(newestRecentAc([...OK.recentAcSubmissionList].reverse())).toEqual({ title: "Tallest Billboard", titleSlug: "tallest-billboard" });
+    expect(newestRecentAc([...OK.recentAcSubmissionList].reverse())).toEqual({
+      title: "Tallest Billboard",
+      titleSlug: "tallest-billboard",
+    });
   });
   it("skips garbage rows and returns null when nothing is usable", () => {
     expect(newestRecentAc([{ title: "x", titleSlug: "" }, { title: 5 }, {}])).toBeNull();
@@ -145,7 +151,9 @@ describe("leetCodeToEvidence (pure mapper)", () => {
     const few = JSON.parse(JSON.stringify(OK)) as typeof OK;
     for (const row of few.matchedUser.submitStatsGlobal?.acSubmissionNum ?? []) row.count = Math.min(row.count, 24);
     expect(leetCodeToEvidence("u1", few.matchedUser, OK.recentAcSubmissionList, NOW)).toEqual([]);
-    expect(leetCodeToEvidence("u1", { submitStatsGlobal: { acSubmissionNum: [{ difficulty: "Medium", count: 99 }] } }, [], NOW)).toEqual([]);
+    expect(leetCodeToEvidence("u1", { submitStatsGlobal: { acSubmissionNum: [{ difficulty: "Medium", count: 99 }] } }, [], NOW)).toEqual(
+      [],
+    );
     expect(leetCodeToEvidence("u1", null, OK.recentAcSubmissionList, NOW)).toEqual([]);
   });
 
@@ -219,7 +227,14 @@ describe("syncLeetCodeEvidence", () => {
   });
 
   it("empty or garbage profile data: done, no error, no bogus items", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({ data: { matchedUser: { submitStatsGlobal: { acSubmissionNum: [{ difficulty: "All", count: 5 }] } }, recentAcSubmissionList: [{ title: "", titleSlug: "" }] } }));
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      Response.json({
+        data: {
+          matchedUser: { submitStatsGlobal: { acSubmissionNum: [{ difficulty: "All", count: 5 }] } },
+          recentAcSubmissionList: [{ title: "", titleSlug: "" }],
+        },
+      }),
+    );
     const items = await syncLeetCodeEvidence({ userId: "lc-empty", handle: "LeetCode", runId: "run_empty" });
     expect(items).toEqual([]);
     expect(emit.mock.calls.map((c) => c[0].status)).toEqual(["started", "progress", "done"]);

@@ -42,7 +42,11 @@ describe("qrMatrix", () => {
   it("builds a version-sized symbol with the three finder patterns", () => {
     const m = qrMatrix("http://localhost:3000/");
     expect(m.length).toBe(25); // version 2
-    for (const [x, y] of [[0, 0], [18, 0], [0, 18]]) {
+    for (const [x, y] of [
+      [0, 0],
+      [18, 0],
+      [0, 18],
+    ]) {
       expect(m[y][x] && m[y][x + 6] && m[y + 6][x] && m[y + 3][x + 3]).toBe(true);
       expect(m[y + 1][x + 1]).toBe(false);
     }

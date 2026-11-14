@@ -35,26 +35,41 @@ export function emit(e: Omit<AgentEvent, "ts">): AgentEvent {
   log.push(ev);
   if (log.length > MAX_PER_RUN) log.shift();
   for (const cb of [...(subs.get(e.runId) ?? [])]) {
-    try { cb(ev); } catch { /* one broken listener never stops the others */ }
+    try {
+      cb(ev);
+    } catch {
+      /* one broken listener never stops the others */
+    }
   }
   return ev;
 }
 
 /** Emit only when there is a run to report to (agents called outside a run pass `runId: undefined`). */
-export function emitIf(runId: string | undefined, agent: AgentName, status: AgentEvent["status"], message: string, data?: Record<string, unknown>): void {
+export function emitIf(
+  runId: string | undefined,
+  agent: AgentName,
+  status: AgentEvent["status"],
+  message: string,
+  data?: Record<string, unknown>,
+): void {
   if (runId) emit({ runId, agent, status, message, ...(data ? { data } : {}) });
 }
 
 /** Replays the run's past events to `cb`, then streams new ones. Returns the unsubscribe function. */
 export function subscribe(runId: string, cb: Listener): () => void {
   let active = true;
-  const listener: Listener = (e) => { if (active) cb(e); };
+  const listener: Listener = (e) => {
+    if (active) cb(e);
+  };
   for (const e of [...(logs.get(runId) ?? [])]) {
     if (!active) break;
     cb(e);
   }
   let set = subs.get(runId);
-  if (!set) { set = new Set(); subs.set(runId, set); }
+  if (!set) {
+    set = new Set();
+    subs.set(runId, set);
+  }
   set.add(listener);
   return () => {
     active = false;

@@ -2,9 +2,22 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "./route";
 
 const env = { ...process.env };
-const post = (body: unknown) => POST(new Request("http://localhost/api/tts", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }));
-beforeEach(() => { vi.restoreAllMocks(); delete process.env.ELEVENLABS_API_KEY; delete process.env.ELEVENLABS_VOICE_ID; });
-afterEach(() => { process.env = { ...env }; });
+const post = (body: unknown) =>
+  POST(
+    new Request("http://localhost/api/tts", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    }),
+  );
+beforeEach(() => {
+  vi.restoreAllMocks();
+  delete process.env.ELEVENLABS_API_KEY;
+  delete process.env.ELEVENLABS_VOICE_ID;
+});
+afterEach(() => {
+  process.env = { ...env };
+});
 
 describe("POST /api/tts", () => {
   it("400s on empty text", async () => {
@@ -18,7 +31,9 @@ describe("POST /api/tts", () => {
   it("returns audio/mpeg from ElevenLabs when the key is set", async () => {
     process.env.ELEVENLABS_API_KEY = "xi_test";
     process.env.ELEVENLABS_VOICE_ID = "voiceABC123";
-    const f = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(new Uint8Array([0xff, 0xfb, 0x90]), { status: 200, headers: { "content-type": "audio/mpeg" } }));
+    const f = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(new Response(new Uint8Array([0xff, 0xfb, 0x90]), { status: 200, headers: { "content-type": "audio/mpeg" } }));
     const res = await post({ text: "Hello Aisha" });
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toBe("audio/mpeg");

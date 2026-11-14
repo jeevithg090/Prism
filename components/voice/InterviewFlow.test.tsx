@@ -5,10 +5,19 @@ import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { DEMO_VARS } from "./InterviewFlow";
 
-const h = vi.hoisted(() => ({ apiGet: vi.fn(), apiPost: vi.fn(), speak: vi.fn(async (text: string) => void text), startConversation: vi.fn() }));
+const h = vi.hoisted(() => ({
+  apiGet: vi.fn(),
+  apiPost: vi.fn(),
+  speak: vi.fn(async (text: string) => void text),
+  startConversation: vi.fn(),
+}));
 vi.mock("@/lib/fetcher", () => ({ apiGet: h.apiGet, apiPost: h.apiPost }));
 vi.mock("./speech", () => ({
-  speak: h.speak, stopSpeaking: vi.fn(), canSpeak: () => true, speechRecognitionCtor: () => null, listen: () => null,
+  speak: h.speak,
+  stopSpeaking: vi.fn(),
+  canSpeak: () => true,
+  speechRecognitionCtor: () => null,
+  listen: () => null,
 }));
 vi.mock("./elevenlabsConversation", () => ({ startConversation: h.startConversation }));
 vi.mock("sonner", () => ({ toast: Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn() }) }));
@@ -16,15 +25,31 @@ vi.mock("sonner", () => ({ toast: Object.assign(vi.fn(), { success: vi.fn(), err
 import { InterviewFlow } from "./InterviewFlow";
 
 const result = {
-  userId: "aisha", roleId: "ml-engineer", scores: { content: 5, structure: 5, clarity: 5, confidence: 4 }, fillerWordsPerMin: 2.1,
-  strengths: ["S1", "S2"], improvements: ["I1", "I2"], createdAt: "2026-11-07T15:00:00Z", id: "iv_1", durationSec: 150,
-  skillId: "docker", skillName: "Docker", scoredBy: "rules",
-  evidence: [{ id: "e1", skillId: "communication", label: "Communication", level: 2 }, { id: "e2", skillId: "docker", label: "Docker (explained)", level: 3 }],
+  userId: "aisha",
+  roleId: "ml-engineer",
+  scores: { content: 5, structure: 5, clarity: 5, confidence: 4 },
+  fillerWordsPerMin: 2.1,
+  strengths: ["S1", "S2"],
+  improvements: ["I1", "I2"],
+  createdAt: "2026-11-07T15:00:00Z",
+  id: "iv_1",
+  durationSec: 150,
+  skillId: "docker",
+  skillName: "Docker",
+  scoredBy: "rules",
+  evidence: [
+    { id: "e1", skillId: "communication", label: "Communication", level: 2 },
+    { id: "e2", skillId: "docker", label: "Docker (explained)", level: 3 },
+  ],
 };
 
 function renderFlow() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(<QueryClientProvider client={qc}><InterviewFlow /></QueryClientProvider>);
+  return render(
+    <QueryClientProvider client={qc}>
+      <InterviewFlow />
+    </QueryClientProvider>,
+  );
 }
 
 beforeEach(() => {

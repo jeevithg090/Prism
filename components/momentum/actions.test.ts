@@ -12,7 +12,10 @@ import fixture from "./__fixtures__/cv-events.json";
 
 const EVENTS = fixture as MomentumEvent[];
 
-beforeEach(() => { mocks.llmText.mockReset(); mocks.loadBuildLog.mockReset(); });
+beforeEach(() => {
+  mocks.llmText.mockReset();
+  mocks.loadBuildLog.mockReset();
+});
 
 describe("turnIntoCvBullets", () => {
   it("returns 3 LLM bullets when available", async () => {

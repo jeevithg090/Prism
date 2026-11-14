@@ -4,25 +4,62 @@ import type { HelpRequest } from "@/lib/types";
 
 type Row = { doc: unknown; userId?: string };
 const db = new Map<string, Map<string, Row>>();
-const col = (c: string) => { let m = db.get(c); if (!m) { m = new Map(); db.set(c, m); } return m; };
+const col = (c: string) => {
+  let m = db.get(c);
+  if (!m) {
+    m = new Map();
+    db.set(c, m);
+  }
+  return m;
+};
 const store = {
-  get: vi.fn(async (c: string, id: string) => (col(c).get(id)?.doc ?? null)),
+  get: vi.fn(async (c: string, id: string) => col(c).get(id)?.doc ?? null),
   list: vi.fn(async (c: string, f?: { userId?: string }) =>
-    [...col(c).values()].filter((r) => !f?.userId || r.userId === f.userId).map((r) => r.doc)),
-  upsert: vi.fn(async (c: string, id: string, doc: unknown, userId?: string) => { col(c).set(id, { doc, userId }); return doc; }),
-  remove: vi.fn(async (c: string, id: string) => { col(c).delete(id); }),
+    [...col(c).values()].filter((r) => !f?.userId || r.userId === f.userId).map((r) => r.doc),
+  ),
+  upsert: vi.fn(async (c: string, id: string, doc: unknown, userId?: string) => {
+    col(c).set(id, { doc, userId });
+    return doc;
+  }),
+  remove: vi.fn(async (c: string, id: string) => {
+    col(c).delete(id);
+  }),
 };
 vi.mock("@/lib/store", () => ({ getStore: () => store }));
 
 import { GET, POST } from "./route";
 
 const post = (body: unknown) =>
-  POST(new Request("http://test/api/help", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }));
+  POST(
+    new Request("http://test/api/help", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }),
+  );
 
 const seed: HelpRequest[] = [
-  { id: "help_01", fromUserId: "aisha", kind: "question", message: "How do I set up a Python venv?", status: "open", createdAt: "2026-11-06T10:00:00.000Z" },
-  { id: "help_02", fromUserId: "tom", kind: "chat-15", message: "Chat about SQL joins?", status: "accepted", toUserId: "priya", createdAt: "2026-11-07T09:00:00.000Z" },
-  { id: "help_03", fromUserId: "mei", kind: "code-review", message: "Review my React hook?", status: "open", createdAt: "2026-11-07T11:00:00.000Z" },
+  {
+    id: "help_01",
+    fromUserId: "aisha",
+    kind: "question",
+    message: "How do I set up a Python venv?",
+    status: "open",
+    createdAt: "2026-11-06T10:00:00.000Z",
+  },
+  {
+    id: "help_02",
+    fromUserId: "tom",
+    kind: "chat-15",
+    message: "Chat about SQL joins?",
+    status: "accepted",
+    toUserId: "priya",
+    createdAt: "2026-11-07T09:00:00.000Z",
+  },
+  {
+    id: "help_03",
+    fromUserId: "mei",
+    kind: "code-review",
+    message: "Review my React hook?",
+    status: "open",
+    createdAt: "2026-11-07T11:00:00.000Z",
+  },
 ];
 
 beforeEach(() => {
@@ -76,7 +113,12 @@ describe("POST /api/help (create)", () => {
     expect(json.ok).toBe(true);
     const created = HelpRequestZ.parse(json.data);
     expect(created.id).toMatch(/^help_[A-Za-z0-9_-]{6}$/);
-    expect(created).toMatchObject({ fromUserId: "aisha", kind: "code-review", status: "open", message: "Could someone look at my first PR?" });
+    expect(created).toMatchObject({
+      fromUserId: "aisha",
+      kind: "code-review",
+      status: "open",
+      message: "Could someone look at my first PR?",
+    });
     expect(Number.isNaN(Date.parse(created.createdAt))).toBe(false);
     expect(store.upsert).toHaveBeenCalledWith("help", created.id, created, "aisha");
   });

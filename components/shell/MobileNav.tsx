@@ -59,9 +59,14 @@ export function MobileNavView({ pathname, viewerId }: { pathname: string | null;
   const moreActive = [...rest, ...STAFF_NAV].some((i) => isActive(pathname, i));
 
   return (
-    <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-(--z-sticky-nav) border-t bg-card pb-[env(safe-area-inset-bottom)] md:hidden">
+    <nav
+      aria-label="Main"
+      className="fixed inset-x-0 bottom-0 z-(--z-sticky-nav) border-t bg-card pb-[env(safe-area-inset-bottom)] md:hidden"
+    >
       <div ref={bar} className="grid h-16 grid-cols-5 gap-1 px-2 py-2">
-        {tabs.map((item) => <Tab key={item.id} item={item} active={isActive(pathname, item)} />)}
+        {tabs.map((item) => (
+          <Tab key={item.id} item={item} active={isActive(pathname, item)} />
+        ))}
         <button
           type="button"
           onClick={() => setMoreOpen(true)}
@@ -78,17 +83,24 @@ export function MobileNavView({ pathname, viewerId }: { pathname: string | null;
         </button>
       </div>
       <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
-        <SheetContent side="bottom" className="max-h-[85dvh] overflow-y-auto rounded-t-2xl bg-sidebar pb-[calc(1rem+env(safe-area-inset-bottom))]">
+        <SheetContent
+          side="bottom"
+          className="max-h-[85dvh] overflow-y-auto rounded-t-2xl bg-sidebar pb-[calc(1rem+env(safe-area-inset-bottom))]"
+        >
           <SheetHeader>
             <SheetTitle>More pages</SheetTitle>
             <SheetDescription>Everything else in Keystone.</SheetDescription>
           </SheetHeader>
           <ul className="grid grid-cols-2 gap-2 px-4">
-            {rest.map((item) => <MoreLink key={item.id} item={item} active={isActive(pathname, item)} onClick={() => setMoreOpen(false)} />)}
+            {rest.map((item) => (
+              <MoreLink key={item.id} item={item} active={isActive(pathname, item)} onClick={() => setMoreOpen(false)} />
+            ))}
           </ul>
           <p className="px-4 pt-2 text-sm font-medium text-muted-foreground">For staff &amp; judges</p>
           <ul className="grid grid-cols-2 gap-2 px-4">
-            {STAFF_NAV.map((item) => <MoreLink key={item.id} item={item} active={isActive(pathname, item)} onClick={() => setMoreOpen(false)} />)}
+            {STAFF_NAV.map((item) => (
+              <MoreLink key={item.id} item={item} active={isActive(pathname, item)} onClick={() => setMoreOpen(false)} />
+            ))}
           </ul>
           <ul className="grid grid-cols-2 gap-2 px-4">
             <MoreLink item={LAUNCH_NAV} active={isActive(pathname, LAUNCH_NAV)} onClick={() => setMoreOpen(false)} />

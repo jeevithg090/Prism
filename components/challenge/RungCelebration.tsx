@@ -11,7 +11,9 @@ import type { GradeResult } from "./model";
 export function RungCelebration({ result, passportHref }: { result: GradeResult; passportHref: string }) {
   const reduce = useReducedMotion();
   const ref = React.useRef<HTMLHeadingElement>(null);
-  React.useEffect(() => { ref.current?.focus(); }, []);
+  React.useEffect(() => {
+    ref.current?.focus();
+  }, []);
   return (
     <motion.section
       aria-labelledby="rung-celebration-title"
@@ -23,7 +25,12 @@ export function RungCelebration({ result, passportHref }: { result: GradeResult;
       <div className="flex flex-col gap-6 md:flex-row md:items-center md:gap-10">
         <LadderStep skillName={result.skillName} level={1} from={0} className="md:shrink-0" />
         <div className="min-w-0 space-y-3 md:border-s md:ps-10">
-          <h2 id="rung-celebration-title" ref={ref} tabIndex={-1} className="text-2xl font-semibold text-pretty text-foreground outline-none md:text-3xl">
+          <h2
+            id="rung-celebration-title"
+            ref={ref}
+            tabIndex={-1}
+            className="text-2xl font-semibold text-pretty text-foreground outline-none md:text-3xl"
+          >
             You&apos;ve tried {result.skillName} for real
           </h2>
           <p className="max-w-[60ch] text-pretty text-muted-foreground">

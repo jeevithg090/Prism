@@ -5,7 +5,15 @@ import { createHmac } from "node:crypto";
 import { test, expect, type APIRequestContext, type APIResponse } from "@playwright/test";
 import { z } from "zod";
 import {
-  BadgeIdZ, GuideSuggestionZ, HelpRequestZ, MomentumEventZ, MomentumWeekZ, PodZ, ProfileZ, ProjectBriefZ, TrajectoryZ,
+  BadgeIdZ,
+  GuideSuggestionZ,
+  HelpRequestZ,
+  MomentumEventZ,
+  MomentumWeekZ,
+  PodZ,
+  ProfileZ,
+  ProjectBriefZ,
+  TrajectoryZ,
 } from "@/lib/schemas/community";
 import { LecturerCohortZ, LecturerInsightsZ } from "@/lib/schemas/lecturer";
 import { PodInsightsZ, PRReviewZ, ProjectProgressZ, ProofResultZ } from "@/lib/schemas/studio";
@@ -198,13 +206,20 @@ test.describe("API smoke: every route", () => {
     await expectErr(await post(request, "/api/help", {}), 400, "bad_request");
     await expectErr(await post(request, "/api/help", { fromUserId: "sara", kind: "question", message: "   " }), 400, "bad_request");
     await expectErr(await post(request, "/api/help", { fromUserId: "sara", kind: "favour", message: "hi" }), 400, "bad_request");
-    await expectErr(await post(request, "/api/help", { fromUserId: "sara", kind: "question", message: "x".repeat(1001) }), 400, "bad_request");
+    await expectErr(
+      await post(request, "/api/help", { fromUserId: "sara", kind: "question", message: "x".repeat(1001) }),
+      400,
+      "bad_request",
+    );
     await expectErr(await postRaw(request, "/api/help", "{oops"), 400, "bad_request");
     await expectErr(await post(request, "/api/help", { id: "help_nope", status: "accepted", toUserId: "jakub" }), 404, "not_found");
     await expectErr(await post(request, "/api/help", { id: created.id, status: "bogus" }), 400, "bad_request");
     await expectErr(await post(request, "/api/help", { id: created.id, status: "accepted", toUserId: "sara" }), 400, "bad_request");
 
-    const accepted = await okData(await post(request, "/api/help", { id: created.id, status: "accepted", toUserId: "jakub" }), HelpRequestZ);
+    const accepted = await okData(
+      await post(request, "/api/help", { id: created.id, status: "accepted", toUserId: "jakub" }),
+      HelpRequestZ,
+    );
     expect(accepted).toMatchObject({ id: created.id, status: "accepted", toUserId: "jakub" });
     const events = await okData(await request.get("/api/momentum/jakub?view=events"), z.array(MomentumEventZ));
     const ev = events.find((e) => e.id === `mev_help_${created.id}_jakub`);
@@ -267,7 +282,11 @@ test.describe("API smoke: every route", () => {
     const hook = (raw: string, event: string, signature: string | null = sign(raw)) =>
       request.post("/api/webhooks/github", {
         data: Buffer.from(raw, "utf8"),
-        headers: { "content-type": "application/json", "x-github-event": event, ...(signature ? { "x-hub-signature-256": signature } : {}) },
+        headers: {
+          "content-type": "application/json",
+          "x-github-event": event,
+          ...(signature ? { "x-hub-signature-256": signature } : {}),
+        },
       });
 
     await expectErr(await hook("{}", "ping", null), 401, "unauthorized");
@@ -290,10 +309,20 @@ test.describe("API smoke: every route", () => {
     const merged = JSON.stringify({
       action: "closed",
       pull_request: {
-        number: 42, title: "Postgres schema", body: "Closes #2", merged: true, merged_at: new Date().toISOString(),
-        html_url: "https://github.com/keystone-demo/pod-vision-demo/pull/42", user: { login: "someone" },
+        number: 42,
+        title: "Postgres schema",
+        body: "Closes #2",
+        merged: true,
+        merged_at: new Date().toISOString(),
+        html_url: "https://github.com/keystone-demo/pod-vision-demo/pull/42",
+        user: { login: "someone" },
       },
-      repository: { name: "pod-vision-demo", full_name: "keystone-demo/pod-vision-demo", html_url: pod.project!.repoUrl, owner: { login: "keystone-demo" } },
+      repository: {
+        name: "pod-vision-demo",
+        full_name: "keystone-demo/pod-vision-demo",
+        html_url: pod.project!.repoUrl,
+        owner: { login: "keystone-demo" },
+      },
     });
     const res = await okData(await hook(merged, "pull_request"), z.object({ reviewed: z.literal(false), proof: ProofResultZ }));
     const issue = res.proof.issueIndex;
@@ -329,7 +358,13 @@ test.describe("Proof loop chain", () => {
     // 4. Merge issue 0 → proof for the learner and the reviewer.
     const issue = brief.issues[0]!;
     const proof = await okData(await post(request, "/api/projects/merge", { podId: pod.id, issueIndex: 0 }), ProofResultZ);
-    expect(proof).toMatchObject({ podId: pod.id, issueIndex: 0, userId: issue.assigneeUserId, skillId: issue.skillId, reviewerUserId: issue.reviewerUserId });
+    expect(proof).toMatchObject({
+      podId: pod.id,
+      issueIndex: 0,
+      userId: issue.assigneeUserId,
+      skillId: issue.skillId,
+      reviewerUserId: issue.reviewerUserId,
+    });
     expect(proof.readinessAfter).toBeGreaterThanOrEqual(proof.readinessBefore);
     expect(proof.momentumPoints).toBeGreaterThan(0);
     expect(proof.badgesEarned.every((b) => b === "shipped")).toBe(true);
@@ -343,7 +378,9 @@ test.describe("Proof loop chain", () => {
 
     // 5. Progress shows it (exactly once, even after a second merge call).
     const progress = await okData(await request.get(`/api/projects/progress?podId=${pod.id}`), ProjectProgressZ);
-    expect(progress.merged.filter((m) => m.issueIndex === 0)).toEqual([expect.objectContaining({ userId: issue.assigneeUserId, skillId: issue.skillId })]);
+    expect(progress.merged.filter((m) => m.issueIndex === 0)).toEqual([
+      expect.objectContaining({ userId: issue.assigneeUserId, skillId: issue.skillId }),
+    ]);
     const twice = await okData(await post(request, "/api/projects/merge", { podId: pod.id, issueIndex: 0 }), ProofResultZ);
     expect(twice.evidenceIds).toEqual(proof.evidenceIds);
     const progress2 = await okData(await request.get(`/api/projects/progress?podId=${pod.id}`), ProjectProgressZ);
@@ -359,7 +396,10 @@ test.describe("Proof loop chain", () => {
       const weeks = await okData(await request.get("/api/momentum/aisha"), z.array(MomentumWeekZ).length(6));
       expect(weeks.at(-1)).toMatchObject({ week: "2026-W45", changePct: 18 });
     } else {
-      expect(learnerEvents.find((e) => e.id === `pr-merged-${pod.id}-0`)).toMatchObject({ kind: "pr-merged", userId: issue.assigneeUserId });
+      expect(learnerEvents.find((e) => e.id === `pr-merged-${pod.id}-0`)).toMatchObject({
+        kind: "pr-merged",
+        userId: issue.assigneeUserId,
+      });
     }
     const learner = await okData(await request.get(`/api/profile/${issue.assigneeUserId}`), ProfileZ);
     if (learner.badges.includes("new-to-uni") && issue.reviewerUserId !== issue.assigneeUserId) {

@@ -2,8 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { withCache } from "./cache";
 
 let prev: string | undefined;
-beforeEach(() => { prev = process.env.DEMO_MODE; });
-afterEach(() => { if (prev === undefined) delete process.env.DEMO_MODE; else process.env.DEMO_MODE = prev; });
+beforeEach(() => {
+  prev = process.env.DEMO_MODE;
+});
+afterEach(() => {
+  if (prev === undefined) delete process.env.DEMO_MODE;
+  else process.env.DEMO_MODE = prev;
+});
 
 describe("withCache", () => {
   it("calls the live function outside DEMO_MODE", async () => {

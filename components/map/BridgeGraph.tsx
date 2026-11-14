@@ -19,10 +19,20 @@ const ForceGraphCanvas = dynamic(() => import("./ForceGraphCanvas"), {
 const toGraph = (n: BridgeNode): GraphNode => ({ id: n.skillId, name: n.name, status: n.status, demand: n.demand, trend: n.trend });
 
 export function BridgeGraph({
-  nodes, edges, selectedId, focusId, onSelect, summary, allNodes,
+  nodes,
+  edges,
+  selectedId,
+  focusId,
+  onSelect,
+  summary,
+  allNodes,
 }: {
-  nodes: BridgeNode[]; edges: BridgeEdge[]; selectedId?: string | null; focusId?: string | null;
-  onSelect: (id: string) => void; summary: string;
+  nodes: BridgeNode[];
+  edges: BridgeEdge[];
+  selectedId?: string | null;
+  focusId?: string | null;
+  onSelect: (id: string) => void;
+  summary: string;
   /** Every skill before filtering: sizes the map once, so a filter never makes the page jump. */
   allNodes?: BridgeNode[];
 }) {
@@ -70,9 +80,18 @@ export function BridgeGraph({
       >
         {size.w > 0 && size.h > 0 && (
           <ForceGraphCanvas
-            nodes={gNodes} links={gLinks} width={size.w} height={size.h} counts={counts}
-            layoutNodes={layoutNodes} onLayoutHeight={onLayoutHeight}
-            selectedId={selectedId} focusId={focusId} fitSignal={fit} reduceMotion={reduce} onSelect={onSelect}
+            nodes={gNodes}
+            links={gLinks}
+            width={size.w}
+            height={size.h}
+            counts={counts}
+            layoutNodes={layoutNodes}
+            onLayoutHeight={onLayoutHeight}
+            selectedId={selectedId}
+            focusId={focusId}
+            fitSignal={fit}
+            reduceMotion={reduce}
+            onSelect={onSelect}
           />
         )}
       </div>
@@ -81,13 +100,18 @@ export function BridgeGraph({
         onClick={() => setFit((f) => f + 1)}
         aria-label="Zoom to fit the whole map"
         title="Zoom to fit the whole map"
-        className={cn(buttonVariants({ variant: "outline", size: "icon" }), "absolute top-2 right-2 after:absolute after:-inset-1 active:translate-y-px")}
+        className={cn(
+          buttonVariants({ variant: "outline", size: "icon" }),
+          "absolute top-2 right-2 after:absolute after:-inset-1 active:translate-y-px",
+        )}
       >
         <Maximize2 aria-hidden />
       </button>
       {/* The graph's text alternative: read out, and re-announced on every filter change, but not printed,
           since the readiness lead, the chips and the band heads already show these numbers. */}
-      <figcaption className="sr-only" aria-live="polite">{summary}</figcaption>
+      <figcaption className="sr-only" aria-live="polite">
+        {summary}
+      </figcaption>
     </figure>
   );
 }

@@ -21,7 +21,17 @@ export function MemberAvatar({ member, size = "md", className }: { member: Membe
 }
 
 /** Overlapping avatars for a pod, labelled with everyone's names. */
-export function AvatarStack({ members, size = "md", className, label }: { members: MemberInfo[]; size?: AvatarSize; className?: string; label?: string }) {
+export function AvatarStack({
+  members,
+  size = "md",
+  className,
+  label,
+}: {
+  members: MemberInfo[];
+  size?: AvatarSize;
+  className?: string;
+  label?: string;
+}) {
   const names = members.map((m) => m.firstName).join(", ");
   return (
     <div role="group" aria-label={label ?? `Pod members: ${names}`} className={cn("flex -space-x-2", className)}>

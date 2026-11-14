@@ -4,10 +4,23 @@ vi.mock("@/lib/connectors/firecrawl", () => ({ fcSearch: vi.fn().mockResolvedVal
 import { POST } from "./route";
 import { ProgrammeZ } from "@/lib/schemas/data";
 
-const post = (body: unknown) => POST(new Request("http://localhost/api/syllabus/extract", { method: "POST", headers: { "content-type": "application/json" }, body: typeof body === "string" ? body : JSON.stringify(body) }));
+const post = (body: unknown) =>
+  POST(
+    new Request("http://localhost/api/syllabus/extract", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: typeof body === "string" ? body : JSON.stringify(body),
+    }),
+  );
 
-beforeEach(() => { delete process.env.FIRECRAWL_API_KEY; delete process.env.DEMO_MODE; });
-afterEach(() => { vi.restoreAllMocks(); delete process.env.FIRECRAWL_API_KEY; });
+beforeEach(() => {
+  delete process.env.FIRECRAWL_API_KEY;
+  delete process.env.DEMO_MODE;
+});
+afterEach(() => {
+  vi.restoreAllMocks();
+  delete process.env.FIRECRAWL_API_KEY;
+});
 
 describe("POST /api/syllabus/extract", () => {
   it("400s an empty body, bad JSON and a bad url", async () => {
@@ -38,6 +51,9 @@ describe("POST /api/syllabus/extract", () => {
     const res = await post({ url: "https://uni.example/bsc", programmeId: "other-uni-cs" });
     expect(res.status).toBe(502);
     const json = await res.json();
-    expect(json).toEqual({ ok: false, error: { code: "firecrawl_failed", message: "Couldn't read that page. Paste the course text instead." } });
+    expect(json).toEqual({
+      ok: false,
+      error: { code: "firecrawl_failed", message: "Couldn't read that page. Paste the course text instead." },
+    });
   });
 });

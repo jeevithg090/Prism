@@ -39,11 +39,7 @@ async function main() {
   for (const t of trajectories) await store.upsert("trajectories", t.id, t, t.userId);
   for (const h of help) await store.upsert("help", h.id, h, h.fromUserId);
 
-  const [profiles, trajs, helps] = await Promise.all([
-    store.list("profiles"),
-    store.list("trajectories"),
-    store.list("help"),
-  ]);
+  const [profiles, trajs, helps] = await Promise.all([store.list("profiles"), store.list("trajectories"), store.list("help")]);
   console.log(`seed: upserted ${students.length} students, ${trajectories.length} trajectories, ${help.length} help requests`);
   console.log(`seed: store now has profiles=${profiles.length} trajectories=${trajs.length} help=${helps.length}`);
 }

@@ -16,7 +16,9 @@ export function RegistryCard({ entry }: { entry: AgentRegistryEntry }) {
       <header className="flex items-start gap-3">
         <AgentAvatar agent={entry.agent} size={40} />
         <div className="min-w-0 flex-1">
-          <h3 id={titleId} className="text-lg font-semibold text-foreground">{entry.name}</h3>
+          <h3 id={titleId} className="text-lg font-semibold text-foreground">
+            {entry.name}
+          </h3>
           <span className="sr-only">{`Owned by ${entry.owner}`}</span>
           <p className="mt-1 text-sm text-pretty text-muted-foreground">{entry.role}</p>
         </div>
@@ -34,7 +36,11 @@ export function RegistryCard({ entry }: { entry: AgentRegistryEntry }) {
           <dt className="text-sm font-medium text-muted-foreground @4xl:sr-only">Guardrails</dt>
           <dd className="mt-1.5 @4xl:mt-0">
             <ul className="flex flex-wrap gap-1.5" aria-label={`${entry.name} guardrails`}>
-              {entry.guardrails.map((g) => <li key={g}><GuardrailChip name={g} /></li>)}
+              {entry.guardrails.map((g) => (
+                <li key={g}>
+                  <GuardrailChip name={g} />
+                </li>
+              ))}
             </ul>
           </dd>
         </div>
@@ -51,7 +57,9 @@ export function RegistryCard({ entry }: { entry: AgentRegistryEntry }) {
         )}
         <p className="flex items-start gap-2 text-sm text-muted-foreground">
           <LifeBuoy className="mt-0.5 size-4 shrink-0" aria-hidden />
-          <span><span className="font-medium text-foreground">If it fails:</span> {entry.fallback}</span>
+          <span>
+            <span className="font-medium text-foreground">If it fails:</span> {entry.fallback}
+          </span>
         </p>
       </div>
     </article>

@@ -12,11 +12,7 @@ vi.mock("@/lib/fetcher", () => ({
   apiPatch: vi.fn(),
 }));
 
-import {
-  isMerged,
-  useProjectProgress,
-  withMerged,
-} from "@/components/pods/useProjectProgress";
+import { isMerged, useProjectProgress, withMerged } from "@/components/pods/useProjectProgress";
 
 const progress: ProjectProgress = {
   podId: "pod_demo01",
@@ -83,9 +79,7 @@ describe("useProjectProgress", () => {
       wrapper,
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(apiGet).toHaveBeenCalledWith(
-      "/api/projects/progress?podId=pod_demo01",
-    );
+    expect(apiGet).toHaveBeenCalledWith("/api/projects/progress?podId=pod_demo01");
     expect(isMerged(result.current.data, 0)).toBe(true);
   });
 

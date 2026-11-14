@@ -8,9 +8,21 @@ import type { EvidenceItem, Level, SkillId } from "@/lib/types";
 import { listEvidence, skillMeta } from "./data";
 
 export const LANGUAGE_SKILL: Record<string, SkillId> = {
-  Python: "python", "Jupyter Notebook": "python", TypeScript: "typescript", JavaScript: "javascript",
-  HTML: "html-css", CSS: "html-css", SCSS: "html-css", Java: "java", C: "c", "C++": "cpp",
-  Dockerfile: "docker", Shell: "linux", SQL: "sql", PLpgSQL: "postgresql", TSQL: "sql",
+  Python: "python",
+  "Jupyter Notebook": "python",
+  TypeScript: "typescript",
+  JavaScript: "javascript",
+  HTML: "html-css",
+  CSS: "html-css",
+  SCSS: "html-css",
+  Java: "java",
+  C: "c",
+  "C++": "cpp",
+  Dockerfile: "docker",
+  Shell: "linux",
+  SQL: "sql",
+  PLpgSQL: "postgresql",
+  TSQL: "sql",
 };
 export const LEVEL_2_BYTES = 50_000;
 export const LANGUAGE_CONFIDENCE = 0.5;
@@ -52,7 +64,9 @@ export function languagesToEvidence(
       const a = acc.get(skillId) ?? { bytes: 0, repos: new Set<string>(), top: { url: repo.html_url, name: repo.name, bytes: 0 } };
       a.bytes += bytes;
       a.repos.add(repo.name);
-      const inRepo = Object.entries(languages).filter(([l]) => LANGUAGE_SKILL[l] === skillId).reduce((s, [, b]) => s + b, 0);
+      const inRepo = Object.entries(languages)
+        .filter(([l]) => LANGUAGE_SKILL[l] === skillId)
+        .reduce((s, [, b]) => s + b, 0);
       if (inRepo > a.top.bytes) a.top = { url: repo.html_url, name: repo.name, bytes: inRepo };
       acc.set(skillId, a);
     }
@@ -60,8 +74,12 @@ export function languagesToEvidence(
   return [...acc.entries()].map(([skillId, a]) => {
     const kb = Math.max(1, Math.round(a.bytes / 1000));
     return {
-      id: `ev_${userId}_${skillId}_github`, userId, skillId,
-      level: (a.bytes > LEVEL_2_BYTES ? 2 : 1) as Level, confidence: LANGUAGE_CONFIDENCE, source: "github" as const,
+      id: `ev_${userId}_${skillId}_github`,
+      userId,
+      skillId,
+      level: (a.bytes > LEVEL_2_BYTES ? 2 : 1) as Level,
+      confidence: LANGUAGE_CONFIDENCE,
+      source: "github" as const,
       url: a.top.url,
       quote: `${kb} KB of ${skillMeta(skillId).name} across ${a.repos.size} ${a.repos.size === 1 ? "repo" : "repos"} (most in ${a.top.name})`,
       createdAt: now.toISOString(),
@@ -84,7 +102,9 @@ export async function syncGithubEvidence(i: { userId: string; githubLogin: strin
       .filter((r) => !r.fork)
       .sort((a, b) => (b.pushed_at ?? "").localeCompare(a.pushed_at ?? ""))
       .slice(0, MAX_REPOS);
-    const perRepo = await Promise.all(repos.map(async (repo) => ({ repo, languages: await getJSON<Record<string, number>>(repo.languages_url).catch(() => ({})) })));
+    const perRepo = await Promise.all(
+      repos.map(async (repo) => ({ repo, languages: await getJSON<Record<string, number>>(repo.languages_url).catch(() => ({})) })),
+    );
     const langs = new Set(perRepo.flatMap((r) => Object.keys(r.languages)));
     say("progress", `read ${repos.length} repos · ${langs.size} languages`, { repos: repos.length, languages: langs.size });
     const items = languagesToEvidence(userId, perRepo);

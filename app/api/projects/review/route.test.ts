@@ -5,15 +5,30 @@ const h = vi.hoisted(() => ({ llmText: vi.fn(), request: vi.fn(), emit: vi.fn() 
 
 vi.mock("@/lib/llm", () => ({ llmText: h.llmText, llmJSON: vi.fn(), LLMError: class extends Error {} }));
 vi.mock("@/lib/agents/events", () => ({ emit: h.emit, newRunId: () => "run_review", subscribe: vi.fn() }));
-vi.mock("octokit", () => ({ Octokit: class { request = h.request; } }));
-vi.mock("@/lib/store", () => ({ getStore: () => ({ get: async () => null, list: async () => [], upsert: async (_c: string, _i: string, d: unknown) => d, remove: async () => {} }) }));
+vi.mock("octokit", () => ({
+  Octokit: class {
+    request = h.request;
+  },
+}));
+vi.mock("@/lib/store", () => ({
+  getStore: () => ({
+    get: async () => null,
+    list: async () => [],
+    upsert: async (_c: string, _i: string, d: unknown) => d,
+    remove: async () => {},
+  }),
+}));
 
 import { POST } from "./route";
 
 const post = (body: unknown) =>
-  POST(new Request("http://localhost/api/projects/review", {
-    method: "POST", headers: { "content-type": "application/json" }, body: typeof body === "string" ? body : JSON.stringify(body),
-  }));
+  POST(
+    new Request("http://localhost/api/projects/review", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: typeof body === "string" ? body : JSON.stringify(body),
+    }),
+  );
 
 const longestFencedBlock = (s: string) => {
   let max = 0;
@@ -26,7 +41,10 @@ beforeEach(() => {
   process.env.DEMO_MODE = "true";
   process.env.GITHUB_TOKEN = "t";
 });
-afterEach(() => { delete process.env.DEMO_MODE; delete process.env.GITHUB_TOKEN; });
+afterEach(() => {
+  delete process.env.DEMO_MODE;
+  delete process.env.GITHUB_TOKEN;
+});
 
 describe("POST /api/projects/review", () => {
   it("DEMO_MODE: reviews the sample Dockerfile PR with 5 Socratic hints and no long code", async () => {
@@ -36,7 +54,10 @@ describe("POST /api/projects/review", () => {
     expect(PRReviewZ.safeParse(data).success).toBe(true);
     expect(data).toMatchObject({
       prUrl: "https://github.com/keystone-demo/pod-vision-demo/pull/1",
-      prTitle: "Add a Dockerfile for the captioning API", posted: false, source: "demo", runId: "run_review",
+      prTitle: "Add a Dockerfile for the captioning API",
+      posted: false,
+      source: "demo",
+      runId: "run_review",
     });
     expect(data.hints).toHaveLength(5);
     expect(data.hints.every((x: string) => x.includes("?") && x.includes("https://docs.docker.com/"))).toBe(true);

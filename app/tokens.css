@@ -123,8 +123,12 @@
   --shadow-sm: 0 1px 2px oklch(var(--shade) / 0.08);
   --shadow-md: 0 1px 0 oklch(var(--shade) / 0.1), 4px 4px 10px -6px oklch(var(--shade) / 0.28);
   --shadow-lg: 0 0 0 0.5px oklch(var(--shade) / 0.18), 10px 10px 18px -10px oklch(var(--shade) / 0.32);
-  --shadow-stock: inset 0 1px 0 oklch(var(--lit) / 0.9), 0 0 0 0.5px oklch(var(--shade) / 0.24), 0 1px 0 oklch(var(--shade) / 0.12), 5px 4px 9px -6px oklch(var(--shade) / 0.32);
-  --shadow-stock-lift: inset 0 1px 0 oklch(var(--lit) / 0.9), 0 0 0 0.5px oklch(var(--shade) / 0.24), 0 1px 0 oklch(var(--shade) / 0.12), 9px 8px 14px -8px oklch(var(--shade) / 0.32);
+  --shadow-stock:
+    inset 0 1px 0 oklch(var(--lit) / 0.9), 0 0 0 0.5px oklch(var(--shade) / 0.24), 0 1px 0 oklch(var(--shade) / 0.12),
+    5px 4px 9px -6px oklch(var(--shade) / 0.32);
+  --shadow-stock-lift:
+    inset 0 1px 0 oklch(var(--lit) / 0.9), 0 0 0 0.5px oklch(var(--shade) / 0.24), 0 1px 0 oklch(var(--shade) / 0.12),
+    9px 8px 14px -8px oklch(var(--shade) / 0.32);
 }
 
 :root {
@@ -282,4 +286,9 @@
   --chart-5: oklch(74% 0.1 145);
 }
 
-@media (max-width: 48rem) { :root { --gutter: 16px; --gap-columns: 16px; } }
+@media (max-width: 48rem) {
+  :root {
+    --gutter: 16px;
+    --gap-columns: 16px;
+  }
+}

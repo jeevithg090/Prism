@@ -36,7 +36,9 @@ describe("agent event bus", () => {
     expect(a).toMatch(/^run_[\w-]{10}$/);
     expect(a).not.toBe(b);
     const good = vi.fn();
-    subscribe(a, () => { throw new Error("boom"); });
+    subscribe(a, () => {
+      throw new Error("boom");
+    });
     subscribe(a, good);
     const other = vi.fn();
     subscribe(b, other);

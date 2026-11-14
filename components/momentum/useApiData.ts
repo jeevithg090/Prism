@@ -13,10 +13,16 @@ export function useApiData<T>(url: string) {
   React.useEffect(() => {
     let alive = true;
     apiGet<T>(url).then(
-      (data) => { if (alive) setResult({ key, data }); },
-      (e: unknown) => { if (alive) setResult({ key, error: e instanceof Error ? e.message : "Request failed" }); },
+      (data) => {
+        if (alive) setResult({ key, data });
+      },
+      (e: unknown) => {
+        if (alive) setResult({ key, error: e instanceof Error ? e.message : "Request failed" });
+      },
     );
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [url, key]);
 
   const current = result?.key === key ? result : null;

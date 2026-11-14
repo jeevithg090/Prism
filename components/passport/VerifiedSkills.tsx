@@ -34,8 +34,14 @@ function ProofLine({ rung, skillName, moduleTitles }: { rung: LadderRung; skillN
     <div className="min-w-0 space-y-1.5">
       <p className="text-base text-pretty break-words text-foreground">{quote}</p>
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
-        <span className="inline-flex h-6 items-center rounded-md border bg-card px-1.5 text-xs font-medium text-foreground">{SOURCE_LABEL[ev.source]}</span>
-        {date && <time dateTime={ev.createdAt} className="tabular-nums">{date}</time>}
+        <span className="inline-flex h-6 items-center rounded-md border bg-card px-1.5 text-xs font-medium text-foreground">
+          {SOURCE_LABEL[ev.source]}
+        </span>
+        {date && (
+          <time dateTime={ev.createdAt} className="tabular-nums">
+            {date}
+          </time>
+        )}
         <EvidenceLink evidence={ev} skillName={skillName} />
       </div>
     </div>
@@ -69,7 +75,15 @@ function RungCount({ n }: { n: number }) {
   );
 }
 
-export function VerifiedSkills({ skills, isOwner, moduleTitles }: { skills: SkillLadder[]; isOwner: boolean; moduleTitles?: Record<string, string> }) {
+export function VerifiedSkills({
+  skills,
+  isOwner,
+  moduleTitles,
+}: {
+  skills: SkillLadder[];
+  isOwner: boolean;
+  moduleTitles?: Record<string, string>;
+}) {
   const verified = skills.filter((s) => s.level > 0);
   const count = (l: number) => verified.filter((s) => s.level === l).length;
   const filled = ([3, 2, 1] as const).filter((l) => count(l) > 0);
@@ -78,12 +92,20 @@ export function VerifiedSkills({ skills, isOwner, moduleTitles }: { skills: Skil
   if (!verified.length) {
     return (
       <section aria-labelledby="verified-title" className="space-y-4">
-        <h2 id="verified-title" className="text-xl font-semibold text-foreground">Verified skills</h2>
+        <h2 id="verified-title" className="text-xl font-semibold text-foreground">
+          Verified skills
+        </h2>
         <EmptyState
           icon={FlaskConical}
           title={isOwner ? "Your first proof is 20 minutes away" : "No verified skills yet"}
           body="Skills appear here once evidence proves them: a micro-challenge, a merged pod PR or a review of a peer's work."
-          action={isOwner ? <Link href="/challenge" className={buttonVariants({ size: "lg" })}>Try a micro-challenge</Link> : undefined}
+          action={
+            isOwner ? (
+              <Link href="/challenge" className={buttonVariants({ size: "lg" })}>
+                Try a micro-challenge
+              </Link>
+            ) : undefined
+          }
         />
       </section>
     );
@@ -92,7 +114,9 @@ export function VerifiedSkills({ skills, isOwner, moduleTitles }: { skills: Skil
   return (
     <section aria-labelledby="verified-title" className="rounded-2xl border bg-card p-6 shadow-sm">
       <div className="mb-6 space-y-1">
-        <h2 id="verified-title" className="text-xl font-semibold text-foreground">Verified skills</h2>
+        <h2 id="verified-title" className="text-xl font-semibold text-foreground">
+          Verified skills
+        </h2>
         <p className="max-w-[65ch] text-sm text-pretty text-muted-foreground">
           <span className="tabular-nums">{verified.length}</span> {verified.length === 1 ? "skill" : "skills"} verified:{" "}
           <span className="tabular-nums">{count(3)}</span> can teach it, <span className="tabular-nums">{count(2)}</span> built it,{" "}
@@ -116,7 +140,9 @@ export function VerifiedSkills({ skills, isOwner, moduleTitles }: { skills: Skil
                 </div>
               </div>
               <ul className="md:grid md:grid-cols-[10rem_auto_minmax(0,1fr)] md:gap-x-6">
-                {group.map((s, i) => <SkillRow key={s.skillId} skill={s} showLabels={i === 0} moduleTitles={moduleTitles} />)}
+                {group.map((s, i) => (
+                  <SkillRow key={s.skillId} skill={s} showLabels={i === 0} moduleTitles={moduleTitles} />
+                ))}
               </ul>
             </section>
           );
@@ -132,9 +158,7 @@ export function VerifiedSkills({ skills, isOwner, moduleTitles }: { skills: Skil
                     <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
                     {RUNG_LABEL[level]}
                   </h3>
-                  <p className="mt-1.5 text-sm text-pretty text-muted-foreground">
-                    {isOwner ? NUDGE[level] : "Nothing at this rung yet."}
-                  </p>
+                  <p className="mt-1.5 text-sm text-pretty text-muted-foreground">{isOwner ? NUDGE[level] : "Nothing at this rung yet."}</p>
                 </section>
               );
             })}

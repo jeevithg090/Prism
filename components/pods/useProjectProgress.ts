@@ -4,24 +4,17 @@ import { useQuery } from "@tanstack/react-query";
 import { apiGet } from "@/lib/fetcher";
 import type { ProjectProgress } from "@/lib/schemas/studio";
 
-export const projectProgressKey = (podId: string) =>
-  ["project-progress", podId] as const;
+export const projectProgressKey = (podId: string) => ["project-progress", podId] as const;
 
 export function useProjectProgress(podId: string | undefined | null) {
   return useQuery({
     queryKey: projectProgressKey(podId ?? ""),
-    queryFn: () =>
-      apiGet<ProjectProgress>(
-        `/api/projects/progress?podId=${encodeURIComponent(podId ?? "")}`,
-      ),
+    queryFn: () => apiGet<ProjectProgress>(`/api/projects/progress?podId=${encodeURIComponent(podId ?? "")}`),
     enabled: !!podId,
   });
 }
 
-export function isMerged(
-  progress: ProjectProgress | null | undefined,
-  issueIndex: number,
-): boolean {
+export function isMerged(progress: ProjectProgress | null | undefined, issueIndex: number): boolean {
   return !!progress?.merged.some((m) => m.issueIndex === issueIndex);
 }
 

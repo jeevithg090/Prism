@@ -17,7 +17,9 @@ export function readJSON<T>(rel: string): T | undefined {
 
 /** A student's Bridge Map: the store's cached map first (it reflects merged pod PRs), then the fixture. */
 export async function loadMap(userId: string, roleId: string): Promise<BridgeMap | undefined> {
-  const cached = await getStore().get<BridgeMap>("maps", `${userId}:${roleId}`).catch(() => null);
+  const cached = await getStore()
+    .get<BridgeMap>("maps", `${userId}:${roleId}`)
+    .catch(() => null);
   return cached ?? readJSON<BridgeMap>(`data/fixtures/bridgemap.${userId}.${roleId}.json`);
 }
 

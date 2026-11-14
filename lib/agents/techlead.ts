@@ -14,8 +14,7 @@ import { runAgent, type Checkpoint } from "@/lib/agents/harness";
 import { canReplay, hasRecording, replayOrRecord } from "@/lib/replay";
 import type { Profile } from "@/lib/types";
 
-export const SOCRATIC_SYSTEM =
-  `You are a kind senior engineer mentoring students. Give a Socratic review: max 6 bullets, ask guiding questions and point to concepts/docs; NEVER write the full solution or large code blocks. ${UNTRUSTED_RULE}`;
+export const SOCRATIC_SYSTEM = `You are a kind senior engineer mentoring students. Give a Socratic review: max 6 bullets, ask guiding questions and point to concepts/docs; NEVER write the full solution or large code blocks. ${UNTRUSTED_RULE}`;
 export const MAX_DIFF_CHARS = 8000;
 // The code-block stripper now lives in the shared guardrails (noFullSolutions); re-exported for callers.
 export { MAX_CODE_LINES, stripLongCodeBlocks };
@@ -71,7 +70,12 @@ export function extractHints(review: string, max = 6): string[] {
     if (m) bullets.push(m[1].trim());
     else if (bullets.length && /^\s{2,}\S/.test(line)) bullets[bullets.length - 1] += ` ${line.trim()}`;
   }
-  const hints = bullets.length ? bullets : review.split(/\n\s*\n/).map((p) => p.trim()).filter((p) => p && !p.startsWith("```") && !p.startsWith("_("));
+  const hints = bullets.length
+    ? bullets
+    : review
+        .split(/\n\s*\n/)
+        .map((p) => p.trim())
+        .filter((p) => p && !p.startsWith("```") && !p.startsWith("_("));
   return hints.slice(0, max);
 }
 
@@ -102,7 +106,14 @@ async function recordMerge(e: z.infer<typeof PullRequestEventZ>): Promise<void> 
   await store.upsert(
     "momentum_events",
     id,
-    { id, userId: member.id, kind: "pr-merged", ts: e.pull_request.merged_at ?? new Date().toISOString(), label: `Merged PR in ${repo}`, url: e.pull_request.html_url },
+    {
+      id,
+      userId: member.id,
+      kind: "pr-merged",
+      ts: e.pull_request.merged_at ?? new Date().toISOString(),
+      label: `Merged PR in ${repo}`,
+      url: e.pull_request.html_url,
+    },
     member.id,
   );
 }
@@ -114,7 +125,11 @@ export async function reviewPullRequest(event: unknown): Promise<{ reviewed: boo
   const e = parsed.data;
 
   if (e.action === "closed" && e.pull_request.merged === true) {
-    try { await recordMerge(e); } catch { /* momentum is best-effort */ }
+    try {
+      await recordMerge(e);
+    } catch {
+      /* momentum is best-effort */
+    }
     return { reviewed: false };
   }
   if (e.action !== "opened" && e.action !== "synchronize") return { reviewed: false };
@@ -137,7 +152,10 @@ export async function reviewPullRequest(event: unknown): Promise<{ reviewed: boo
         "read diff",
         async () => {
           const diffRes = await octokit.request("GET /repos/{owner}/{repo}/pulls/{pull_number}", {
-            owner, repo, pull_number: n, mediaType: { format: "diff" },
+            owner,
+            repo,
+            pull_number: n,
+            mediaType: { format: "diff" },
           });
           return typeof diffRes.data === "string" ? diffRes.data : String(diffRes.data ?? "");
         },
@@ -149,9 +167,20 @@ export async function reviewPullRequest(event: unknown): Promise<{ reviewed: boo
       const prompt = prPrompt(n, e.pull_request.title ?? "", e.pull_request.body, diff);
       let review: string;
       try {
-        review = withInjectionHint(await ctx.step("draft review", () => llmText({
-          agent: "techlead", runId: ctx.runId, system: SOCRATIC_SYSTEM, user: prompt.user,
-        }), () => "Drafted guiding questions"), prompt.flagged);
+        review = withInjectionHint(
+          await ctx.step(
+            "draft review",
+            () =>
+              llmText({
+                agent: "techlead",
+                runId: ctx.runId,
+                system: SOCRATIC_SYSTEM,
+                user: prompt.user,
+              }),
+            () => "Drafted guiding questions",
+          ),
+          prompt.flagged,
+        );
       } catch (err) {
         throw new ReviewModelUnavailable(err);
       }
@@ -163,7 +192,11 @@ export async function reviewPullRequest(event: unknown): Promise<{ reviewed: boo
       return { reviewed: true };
     },
     fallback: (err, ctx) => {
-      ctx.done(err instanceof ReviewModelUnavailable ? "The review model is unavailable, so no comment was posted" : `Couldn't review PR #${n} on GitHub`);
+      ctx.done(
+        err instanceof ReviewModelUnavailable
+          ? "The review model is unavailable, so no comment was posted"
+          : `Couldn't review PR #${n} on GitHub`,
+      );
       return { reviewed: false };
     },
   });
@@ -194,7 +227,7 @@ export const SAMPLE_PR = {
     "+ENV MODEL_DIR=/app/models/blip-captioning",
     "+",
     "+EXPOSE 8000",
-    "+CMD [\"uvicorn\", \"api.main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\"]",
+    '+CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]',
     "diff --git a/README.md b/README.md",
     "--- a/README.md",
     "+++ b/README.md",
@@ -207,7 +240,7 @@ export const SAMPLE_PR = {
 
 /** Deterministic Socratic review of SAMPLE_PR: guiding questions + docs, never the finished Dockerfile. */
 export const DEMO_HINTS: readonly string[] = [
-  "**Layer caching:** `COPY . .` runs before `pip install`, so what happens to the install step every time you change one line in `api/main.py`? Which order of `COPY` steps would let Docker reuse the dependency layer? See \"Optimize cache usage in builds\": https://docs.docker.com/build/cache/optimize/",
+  '**Layer caching:** `COPY . .` runs before `pip install`, so what happens to the install step every time you change one line in `api/main.py`? Which order of `COPY` steps would let Docker reuse the dependency layer? See "Optimize cache usage in builds": https://docs.docker.com/build/cache/optimize/',
   "**Image size:** `python:3.12` is the full Debian image. How big is your image right now (`docker images`)? What would a slim variant leave out, and does the API need any of it? And since `COPY . .` sends your whole folder (`.git`, any local venv), which file tells Docker what to skip? See https://docs.docker.com/build/building/best-practices/ and https://docs.docker.com/build/concepts/context/",
   "**Who runs the app?** There's no `USER` line, so uvicorn runs as root inside the container. If someone found a bug in the upload endpoint, what could they do as root? What would you add so the process runs as an unprivileged user? See the `USER` section of https://docs.docker.com/build/building/best-practices/",
   "**Model weights:** the 1.9 GB weights are baked into the image. What happens to build time, pushes and every teammate's pull when Week 2's fine-tuned model replaces them? Compare that with mounting them as a volume or downloading them at start-up: which fits your pod's workflow? See https://docs.docker.com/engine/storage/volumes/",
@@ -242,19 +275,30 @@ function fetchOpenPR(octokit: Octokit | null, gh: { owner: string; repo: string 
     async () => {
       if (!octokit) throw new Error("no GitHub token");
       const list = await octokit.request("GET /repos/{owner}/{repo}/pulls", {
-        owner: gh.owner, repo: gh.repo, state: "open", sort: "created", direction: "desc", per_page: 20,
+        owner: gh.owner,
+        repo: gh.repo,
+        state: "open",
+        sort: "created",
+        direction: "desc",
+        per_page: 20,
       });
       const prs = (Array.isArray(list.data) ? list.data : []) as OpenPR[];
       const found = prNumber ? prs.find((p) => p.number === prNumber) : [...prs].sort((a, b) => b.number - a.number)[0];
       if (!found) throw new Error("no open PR");
       const diffRes = await octokit.request("GET /repos/{owner}/{repo}/pulls/{pull_number}", {
-        owner: gh.owner, repo: gh.repo, pull_number: found.number, mediaType: { format: "diff" },
+        owner: gh.owner,
+        repo: gh.repo,
+        pull_number: found.number,
+        mediaType: { format: "diff" },
       });
       const pr: OpenPR = { number: found.number, title: found.title, body: found.body ?? null, html_url: found.html_url };
       return { pr, fullDiff: typeof diffRes.data === "string" ? diffRes.data : String(diffRes.data ?? "") };
     },
     {
-      requires: ["GITHUB_TOKEN"], loose: false, quietErrors: true, meta: { kind: "github-pr", label: `${gh.owner}/${gh.repo}` },
+      requires: ["GITHUB_TOKEN"],
+      loose: false,
+      quietErrors: true,
+      meta: { kind: "github-pr", label: `${gh.owner}/${gh.repo}` },
       validate: (v) => !!(v as FetchedPR | null)?.pr?.number && typeof (v as FetchedPR).fullDiff === "string",
     },
   );
@@ -284,7 +328,9 @@ export async function reviewNow(opts: { podId: string; prNumber?: number }, runI
       const { pr, fullDiff } = await fetchOpenPR(octokit, gh, opts.prNumber);
       const diff = fullDiff.slice(0, MAX_DIFF_CHARS);
       emit({
-        runId: rid, agent: "techlead", status: "started",
+        runId: rid,
+        agent: "techlead",
+        status: "started",
         message: `reading PR #${pr.number} diff (${plural(lineCount(diff), "line")}${fullDiff.length > MAX_DIFF_CHARS ? ", truncated" : ""})`,
         data: { prNumber: pr.number, chars: diff.length },
       });
@@ -295,14 +341,26 @@ export async function reviewNow(opts: { podId: string; prNumber?: number }, runI
       const hints = prompt.flagged ? [...extractHints(dropApprovalClaims(raw), 5), INJECTION_HINT] : extractHints(review);
       const post = !demoToggle && !!octokit;
       if (post) {
-        await octokit!.request("POST /repos/{owner}/{repo}/issues/{issue_number}/comments", { owner: gh.owner, repo: gh.repo, issue_number: pr.number, body: comment });
+        await octokit!.request("POST /repos/{owner}/{repo}/issues/{issue_number}/comments", {
+          owner: gh.owner,
+          repo: gh.repo,
+          issue_number: pr.number,
+          body: comment,
+        });
       }
       emit({
-        runId: rid, agent: "techlead", status: "done",
+        runId: rid,
+        agent: "techlead",
+        status: "done",
         message: `${post ? "posted" : "wrote"} ${plural(hints.length, "Socratic hint")}: no solutions given${post ? "" : " (Demo: nothing posted to GitHub)"}`,
         data: { prNumber: pr.number, posted: post },
       });
-      emit({ runId: rid, agent: "orchestrator", status: "done", message: post ? `Tech Lead review posted on PR #${pr.number}` : `Tech Lead review ready for PR #${pr.number}` });
+      emit({
+        runId: rid,
+        agent: "orchestrator",
+        status: "done",
+        message: post ? `Tech Lead review posted on PR #${pr.number}` : `Tech Lead review ready for PR #${pr.number}`,
+      });
       return { prUrl: pr.html_url, prTitle: pr.title, comment, hints, posted: post, source: "live", runId: rid };
     } catch {
       // fall through to the sample PR so the demo never dead-ends
@@ -311,7 +369,9 @@ export async function reviewNow(opts: { podId: string; prNumber?: number }, runI
 
   const n = opts.prNumber ?? SAMPLE_PR.number;
   emit({
-    runId: rid, agent: "techlead", status: "started",
+    runId: rid,
+    agent: "techlead",
+    status: "started",
     message: `reading PR #${n} diff (${plural(lineCount(SAMPLE_PR.diff), "line")})`,
     data: { prNumber: n, sample: true },
   });
@@ -319,7 +379,9 @@ export async function reviewNow(opts: { podId: string; prNumber?: number }, runI
   if (!demo) {
     try {
       const out = await llmText({
-        agent: "techlead", runId: rid, system: SOCRATIC_SYSTEM,
+        agent: "techlead",
+        runId: rid,
+        system: SOCRATIC_SYSTEM,
         user: prPrompt(n, SAMPLE_PR.title, SAMPLE_PR.body, SAMPLE_PR.diff).user,
       });
       review = out?.trim() ? out : null;
@@ -330,7 +392,13 @@ export async function reviewNow(opts: { podId: string; prNumber?: number }, runI
   const markdown = review ?? demoReviewMarkdown();
   const hints = review ? extractHints(review) : [...DEMO_HINTS];
   const comment = formatReviewComment(markdown);
-  emit({ runId: rid, agent: "techlead", status: "done", message: `posted ${plural(hints.length, "Socratic hint")}: no solutions given`, data: { prNumber: n, posted: false } });
+  emit({
+    runId: rid,
+    agent: "techlead",
+    status: "done",
+    message: `posted ${plural(hints.length, "Socratic hint")}: no solutions given`,
+    data: { prNumber: n, posted: false },
+  });
   emit({ runId: rid, agent: "orchestrator", status: "done", message: `Tech Lead review ready for PR #${n}` });
   return { prUrl: `${repoUrl}/pull/${n}`, prTitle: SAMPLE_PR.title, comment, hints, posted: false, source: "demo", runId: rid };
 }

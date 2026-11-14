@@ -7,8 +7,17 @@ import { expectNoA11yViolations, watchPage } from "./utils";
 
 const BUILT = ["/", "/pods", "/trajectories", "/community", "/lecturer", "/pods/pod_demo01"];
 const COMING = [
-  "/dashboard", "/onboard", "/map", "/roadmap", "/market", "/interview", "/launch", "/challenge",
-  "/profile/aisha", "/coach", "/governance",
+  "/dashboard",
+  "/onboard",
+  "/map",
+  "/roadmap",
+  "/market",
+  "/interview",
+  "/launch",
+  "/challenge",
+  "/profile/aisha",
+  "/coach",
+  "/governance",
 ];
 
 for (const route of [...BUILT, ...COMING]) {
@@ -22,7 +31,9 @@ for (const route of [...BUILT, ...COMING]) {
     await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible({ timeout: 15_000 });
     // Settle: wait for loading skeletons to resolve (not "networkidle": an agent event stream may stay open).
     await page.waitForLoadState("load");
-    await expect(page.locator('[aria-busy="true"]')).toHaveCount(0, { timeout: 15_000 }).catch(() => {});
+    await expect(page.locator('[aria-busy="true"]'))
+      .toHaveCount(0, { timeout: 15_000 })
+      .catch(() => {});
     await expectNoA11yViolations(page);
     watch.assertClean(testInfo);
   });

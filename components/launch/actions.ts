@@ -42,7 +42,8 @@ export async function joinWaitlist(_prev: WaitlistState, form: FormData): Promis
     const campusCount = (await store.list<{ campus?: string }>("waitlist")).filter((w) => w.campus === campus).length;
     const c = CAMPUSES.find((x) => x.id === campus);
     return {
-      status: "ok", campusCount,
+      status: "ok",
+      campusCount,
       message: `You're on the ${c?.city ?? "Bridge Week"} list${ambassador ? " as a Trajectory ambassador" : ""}. We'll show you here when your campus opens; we won't email you from this demo.`,
     };
   } catch {

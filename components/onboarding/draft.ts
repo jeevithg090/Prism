@@ -16,13 +16,34 @@ export const ROLES: { id: RoleId; name: string; blurb: string }[] = [
 ];
 
 export const TIMELINES: { id: TimelineId; name: string; label: string; date: string; when: string }[] = [
-  { id: "internship-2027", name: "Summer internship 2027", label: "Summer internship, June 2027", date: "2027-06-01", when: "Ready by June 2027" },
-  { id: "placement-2027", name: "Placement year 2027/28", label: "Placement applications Sept 2027", date: "2027-09-01", when: "Ready by September 2027" },
-  { id: "graduate-2029", name: "Graduate job 2029", label: "Graduate job applications Sept 2029", date: "2029-09-01", when: "Ready by September 2029" },
+  {
+    id: "internship-2027",
+    name: "Summer internship 2027",
+    label: "Summer internship, June 2027",
+    date: "2027-06-01",
+    when: "Ready by June 2027",
+  },
+  {
+    id: "placement-2027",
+    name: "Placement year 2027/28",
+    label: "Placement applications Sept 2027",
+    date: "2027-09-01",
+    when: "Ready by September 2027",
+  },
+  {
+    id: "graduate-2029",
+    name: "Graduate job 2029",
+    label: "Graduate job applications Sept 2029",
+    date: "2029-09-01",
+    when: "Ready by September 2029",
+  },
 ];
 
 export const FORMATS: { id: LearningDNA["formats"][number]; name: string }[] = [
-  { id: "projects", name: "Projects" }, { id: "video", name: "Video" }, { id: "docs", name: "Docs" }, { id: "pair", name: "Pair work" },
+  { id: "projects", name: "Projects" },
+  { id: "video", name: "Video" },
+  { id: "docs", name: "Docs" },
+  { id: "pair", name: "Pair work" },
 ];
 export const CONSTRAINTS = ["Part-time job", "Caring responsibilities", "Commuting"] as const;
 export const ACCESSIBILITY: { id: LearningDNA["accessibility"][number]; name: string }[] = [
@@ -32,10 +53,30 @@ export const ACCESSIBILITY: { id: LearningDNA["accessibility"][number]; name: st
   { id: "reduced-motion", name: "Reduced motion" },
 ];
 export const OPT_IN_BADGES: { id: OptInBadge; emoji: string; name: string; help: string }[] = [
-  { id: "new-to-uni", emoji: "🌱", name: "New to UoM", help: "Helpers explain things in more detail, and your questions go to the top of the help feed." },
-  { id: "international", emoji: "🌍", name: "International", help: "Helpers know you may be new to how UK universities and job applications work." },
-  { id: "first-gen", emoji: "🧭", name: "First-gen", help: "You're the first in your family at university. Helpers explain the unwritten rules." },
-  { id: "career-changer", emoji: "🔁", name: "Career changer", help: "Helpers link what you already know from work to what you're learning now." },
+  {
+    id: "new-to-uni",
+    emoji: "🌱",
+    name: "New to UoM",
+    help: "Helpers explain things in more detail, and your questions go to the top of the help feed.",
+  },
+  {
+    id: "international",
+    emoji: "🌍",
+    name: "International",
+    help: "Helpers know you may be new to how UK universities and job applications work.",
+  },
+  {
+    id: "first-gen",
+    emoji: "🧭",
+    name: "First-gen",
+    help: "You're the first in your family at university. Helpers explain the unwritten rules.",
+  },
+  {
+    id: "career-changer",
+    emoji: "🔁",
+    name: "Career changer",
+    help: "Helpers link what you already know from work to what you're learning now.",
+  },
 ];
 
 export interface OnboardDraft {
@@ -56,10 +97,20 @@ export interface OnboardDraft {
 }
 
 export const DEFAULT_DRAFT: OnboardDraft = {
-  name: "", university: "University of Manchester", programmeUrl: UOM_CS_URL, year: 1,
-  roleId: "", timeline: "", hoursPerWeek: 6,
-  theoryPractice: 50, formats: ["projects"], budget: "free", constraints: [], accessibility: [],
-  badges: [], githubLogin: "",
+  name: "",
+  university: "University of Manchester",
+  programmeUrl: UOM_CS_URL,
+  year: 1,
+  roleId: "",
+  timeline: "",
+  hoursPerWeek: 6,
+  theoryPractice: 50,
+  formats: ["projects"],
+  budget: "free",
+  constraints: [],
+  accessibility: [],
+  badges: [],
+  githubLogin: "",
 };
 
 export const STEPS = [
@@ -73,9 +124,16 @@ const GITHUB_LOGIN = /^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i;
 
 const stepSchemas = [
   z.object({
-    name: z.string().trim().min(2, "Add your name (at least 2 letters) so your pod knows who you are.").max(60, "Keep your name under 60 characters."),
+    name: z
+      .string()
+      .trim()
+      .min(2, "Add your name (at least 2 letters) so your pod knows who you are.")
+      .max(60, "Keep your name under 60 characters."),
     university: z.string().trim().min(2, "Add your university."),
-    programmeUrl: z.string().trim().regex(/^https?:\/\/\S+\.\S+/, "Paste the link to your programme page. It starts with https://"),
+    programmeUrl: z
+      .string()
+      .trim()
+      .regex(/^https?:\/\/\S+\.\S+/, "Paste the link to your programme page. It starts with https://"),
     year: z.number().int().min(1).max(4),
   }),
   z.object({
@@ -89,7 +147,13 @@ const stepSchemas = [
     budget: z.enum(["free", "paid-ok"]),
   }),
   z.object({
-    githubLogin: z.string().trim().refine((v) => v === "" || GITHUB_LOGIN.test(v), "That doesn't look like a GitHub username: letters, numbers and single hyphens only."),
+    githubLogin: z
+      .string()
+      .trim()
+      .refine(
+        (v) => v === "" || GITHUB_LOGIN.test(v),
+        "That doesn't look like a GitHub username: letters, numbers and single hyphens only.",
+      ),
   }),
 ] as const;
 
@@ -125,7 +189,12 @@ export function programmeIdFromUrl(url: string): string {
     const { hostname, pathname } = new URL(u);
     const host = hostname.replace(/^www\./, "").split(".")[0];
     const last = pathname.split("/").filter(Boolean).pop() ?? "programme";
-    return `${host}-${last}`.replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48) || "custom-programme";
+    return (
+      `${host}-${last}`
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "")
+        .slice(0, 48) || "custom-programme"
+    );
   } catch {
     return "custom-programme";
   }

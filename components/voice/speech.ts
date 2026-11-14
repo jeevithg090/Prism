@@ -5,11 +5,15 @@
 type SRResult = { isFinal: boolean; 0: { transcript: string } };
 type SREvent = { resultIndex: number; results: ArrayLike<SRResult> };
 export interface SpeechRecognitionLike {
-  lang: string; continuous: boolean; interimResults: boolean;
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
   onresult: ((e: SREvent) => void) | null;
   onerror: ((e: { error: string }) => void) | null;
   onend: (() => void) | null;
-  start(): void; stop(): void; abort(): void;
+  start(): void;
+  stop(): void;
+  abort(): void;
 }
 type SRCtor = new () => SpeechRecognitionLike;
 
@@ -49,7 +53,11 @@ export function stopSpeaking() {
  * Starts listening. `onText(final, interim)` gets the running transcript. Returns a stop function.
  * `onError("not-allowed")` means the microphone was blocked.
  */
-export function listen(onText: (finalText: string, interim: string) => void, onError: (code: string) => void, onEnd: () => void): (() => void) | null {
+export function listen(
+  onText: (finalText: string, interim: string) => void,
+  onError: (code: string) => void,
+  onEnd: () => void,
+): (() => void) | null {
   const Ctor = speechRecognitionCtor();
   if (!Ctor) return null;
   const rec = new Ctor();
@@ -75,6 +83,10 @@ export function listen(onText: (finalText: string, interim: string) => void, onE
     return null;
   }
   return () => {
-    try { rec.stop(); } catch { /* already stopped */ }
+    try {
+      rec.stop();
+    } catch {
+      /* already stopped */
+    }
   };
 }

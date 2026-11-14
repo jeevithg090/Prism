@@ -3,15 +3,7 @@
 import * as React from "react";
 import { useMutation } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "motion/react";
-import {
-  AlertTriangle,
-  CheckCircle2,
-  Eye,
-  GitPullRequest,
-  Lightbulb,
-  Loader2,
-  RotateCcw,
-} from "lucide-react";
+import { AlertTriangle, CheckCircle2, Eye, GitPullRequest, Lightbulb, Loader2, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { apiPost } from "@/lib/fetcher";
 import type { PRReview } from "@/lib/schemas/studio";
@@ -28,10 +20,7 @@ function HintText({ text }: { text: string }) {
     <>
       {parts.map((part, i) =>
         part.startsWith("`") && part.endsWith("`") && part.length > 2 ? (
-          <code
-            key={i}
-            className="rounded-md bg-muted px-1 py-0.5 font-mono text-sm"
-          >
+          <code key={i} className="rounded-md bg-muted px-1 py-0.5 font-mono text-sm">
             {part.slice(1, -1)}
           </code>
         ) : (
@@ -57,14 +46,9 @@ export function PRReviewPanel({
     mutationFn: () => apiPost<PRReview>("/api/projects/review", { podId }),
     onSuccess: (review) => {
       if (review.runId) activity.start(review.runId);
-      toast.success(
-        review.posted
-          ? "The Tech Lead left hints on your pull request"
-          : "Here are the Tech Lead's hints",
-        {
-          description: `${review.hints.length} ${review.hints.length === 1 ? "question" : "questions"} to think through.`,
-        },
-      );
+      toast.success(review.posted ? "The Tech Lead left hints on your pull request" : "Here are the Tech Lead's hints", {
+        description: `${review.hints.length} ${review.hints.length === 1 ? "question" : "questions"} to think through.`,
+      });
       onReviewed?.(review);
     },
     onError: (err) => {
@@ -88,9 +72,7 @@ export function PRReviewPanel({
           <h2 id={`techlead-${podId}`} className="text-xl font-semibold text-foreground">
             AI Tech Lead
           </h2>
-          <p className="text-sm text-pretty text-muted-foreground">
-            Socratic review: hints and questions, never the answer.
-          </p>
+          <p className="text-sm text-pretty text-muted-foreground">Socratic review: hints and questions, never the answer.</p>
         </div>
         <Button
           size="lg"
@@ -132,20 +114,13 @@ export function PRReviewPanel({
         )}
 
         {!pending && mutation.isError && (
-          <div
-            role="alert"
-            className="flex flex-col gap-3 rounded-xl bg-muted p-4 sm:flex-row sm:items-center sm:justify-between"
-          >
+          <div role="alert" className="flex flex-col gap-3 rounded-xl bg-muted p-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex min-w-0 items-start gap-3">
               <AlertTriangle className="mt-0.5 size-5 shrink-0 text-status-gap" aria-hidden />
               <div className="space-y-0.5">
-                <p className="text-sm font-medium text-foreground">
-                  The Tech Lead couldn&apos;t read your pull request.
-                </p>
+                <p className="text-sm font-medium text-foreground">The Tech Lead couldn&apos;t read your pull request.</p>
                 <p className="text-sm text-muted-foreground">
-                  {mutation.error instanceof Error && mutation.error.message
-                    ? mutation.error.message
-                    : "Please try again in a moment."}
+                  {mutation.error instanceof Error && mutation.error.message ? mutation.error.message : "Please try again in a moment."}
                 </p>
               </div>
             </div>
@@ -190,8 +165,7 @@ export function PRReviewPanel({
 
             {review.hints.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                No hints this time: your pull request already answers the
-                questions the Tech Lead would ask.
+                No hints this time: your pull request already answers the questions the Tech Lead would ask.
               </p>
             ) : (
               <motion.ol
@@ -218,9 +192,8 @@ export function PRReviewPanel({
 
         {!pending && !mutation.isError && !review && (
           <p className="max-w-[62ch] text-pretty text-muted-foreground">
-            Open a pull request on your pod repo, then ask for a review. The
-            Tech Lead reads the diff and replies with guiding questions, so you
-            still write the fix yourself.
+            Open a pull request on your pod repo, then ask for a review. The Tech Lead reads the diff and replies with guiding questions, so
+            you still write the fix yourself.
           </p>
         )}
       </div>

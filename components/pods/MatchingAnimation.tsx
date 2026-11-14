@@ -99,12 +99,14 @@ export function MatchingAnimation({ user, picks, candidates = SEEDED_STUDENT_IDS
                       : { x, y, opacity: 1, scale: 1 }
                 }
                 transition={
-                  settling
-                    ? { duration: SETTLE_MS / 1000, ease: [0.22, 1, 0.36, 1] }
-                    : { duration: 0.36, ease: "easeOut", delay: i * 0.03 }
+                  settling ? { duration: SETTLE_MS / 1000, ease: [0.22, 1, 0.36, 1] } : { duration: 0.36, ease: "easeOut", delay: i * 0.03 }
                 }
               >
-                <MemberAvatar member={fallbackMember(id)} size="lg" className={cn("shadow-sm ring-2 ring-card", isPick && "ring-primary/45")} />
+                <MemberAvatar
+                  member={fallbackMember(id)}
+                  size="lg"
+                  className={cn("shadow-sm ring-2 ring-card", isPick && "ring-primary/45")}
+                />
               </motion.div>
             );
           })}
@@ -118,7 +120,11 @@ export function MatchingAnimation({ user, picks, candidates = SEEDED_STUDENT_IDS
           </motion.div>
         </div>
       </div>
-      <p role="status" aria-live="polite" className="flex items-center justify-center gap-3 border-t px-6 py-4 text-center text-lg font-medium text-pretty">
+      <p
+        role="status"
+        aria-live="polite"
+        className="flex items-center justify-center gap-3 border-t px-6 py-4 text-center text-lg font-medium text-pretty"
+      >
         {!settling && <Loader2 className="size-5 shrink-0 text-muted-foreground motion-safe:animate-spin" aria-hidden />}
         {settling ? `Found ${pickOrder.length} students who fill your gaps` : caption(count)}
       </p>

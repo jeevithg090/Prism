@@ -55,14 +55,15 @@ export function computeShares(adSkills: Iterable<SkillId>[], limit = 40): RoleSk
 export function percentile(sorted: number[], p: number): number {
   if (!sorted.length) return NaN;
   const i = (sorted.length - 1) * p;
-  const lo = Math.floor(i), hi = Math.ceil(i);
+  const lo = Math.floor(i),
+    hi = Math.ceil(i);
   return sorted[lo] + (sorted[hi] - sorted[lo]) * (i - lo);
 }
 
 /** p25 / median / p75 of salary midpoints; undefined with fewer than 5 salaries. */
 export function salaryStats(ads: Pick<JobAd, "salaryMin" | "salaryMax">[]): RoleDemand["salary"] {
   const mids = ads
-    .map((a) => (a.salaryMin && a.salaryMax ? (a.salaryMin + a.salaryMax) / 2 : a.salaryMin ?? a.salaryMax))
+    .map((a) => (a.salaryMin && a.salaryMax ? (a.salaryMin + a.salaryMax) / 2 : (a.salaryMin ?? a.salaryMax)))
     .filter((v): v is number => typeof v === "number" && v >= 10_000 && v <= 400_000)
     .sort((a, b) => a - b);
   if (mids.length < 5) return undefined;
@@ -73,7 +74,10 @@ export function salaryStats(ads: Pick<JobAd, "salaryMin" | "salaryMax">[]): Role
 export function topCompaniesOf(ads: JobAd[], n = 5): RoleDemand["topCompanies"] {
   const counts = new Map<string, number>();
   for (const a of ads) if (a.company && a.company !== "Unknown employer") counts.set(a.company, (counts.get(a.company) ?? 0) + 1);
-  return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, n).map(([name, count]) => ({ name, count }));
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, n)
+    .map(([name, count]) => ({ name, count }));
 }
 
 /** Turn a batch of ads into RoleDemand (deterministic skill matching; trend labels joined by skill id). */
@@ -89,10 +93,19 @@ export function analyseAds(
     return trend ? { ...s, trend } : s;
   });
   return {
-    roleId: role.id, roleName: role.name, location: opts.location, adsAnalysed: unique.length, skills,
-    salary: salaryStats(unique), topCompanies: topCompaniesOf(unique),
-    sampleAds: unique.filter((a) => a.url).slice(0, 5).map((a) => ({ title: a.title, company: a.company, url: a.url })),
-    snapshotAt: (opts.now ?? new Date()).toISOString(), source: opts.source,
+    roleId: role.id,
+    roleName: role.name,
+    location: opts.location,
+    adsAnalysed: unique.length,
+    skills,
+    salary: salaryStats(unique),
+    topCompanies: topCompaniesOf(unique),
+    sampleAds: unique
+      .filter((a) => a.url)
+      .slice(0, 5)
+      .map((a) => ({ title: a.title, company: a.company, url: a.url })),
+    snapshotAt: (opts.now ?? new Date()).toISOString(),
+    source: opts.source,
   };
 }
 
@@ -103,7 +116,9 @@ export function readMarketFixture(roleId: string): RoleDemand | null {
     try {
       const d = JSON.parse(fs.readFileSync(path.join(process.cwd(), rel), "utf8")) as RoleDemand;
       if (d && Array.isArray(d.skills)) return d;
-    } catch { /* next */ }
+    } catch {
+      /* next */
+    }
   }
   return null;
 }

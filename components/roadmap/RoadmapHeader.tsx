@@ -33,7 +33,10 @@ function PlanRing({ now, projected }: { now: number; projected: number }) {
         {showEnd && (
           <span
             aria-hidden
-            className={cn("absolute font-mono text-sm leading-none font-semibold whitespace-nowrap text-foreground tabular-nums", LABEL_AT[side])}
+            className={cn(
+              "absolute font-mono text-sm leading-none font-semibold whitespace-nowrap text-foreground tabular-nums",
+              LABEL_AT[side],
+            )}
             style={{ left: `${50 + 50 * x}%`, top: `${50 + 50 * y}%` }}
           >
             {pct}%
@@ -70,9 +73,15 @@ function PlanStrip({ roadmap, currentSkillName, roleLabel }: { roadmap: Roadmap;
     `${weeks.length} weeks, each as tall as its skill's share of ${roleLabel} ads, from ${Math.max(...pcts)}% down to ${Math.min(...pcts)}%.`,
     current ? `You're on week ${current.week}, ${name}, at ${current.receipt.demandPct}%.` : "",
     done ? `${done} ${done === 1 ? "week" : "weeks"} done.` : "",
-    starts.length ? `${starts.length === 1 ? "Week" : "Weeks"} ${starts.map((w) => w.week).join(" and ")} ${starts.length === 1 ? "is a head start" : "are head starts"} on a later module.` : "",
-    exams.length ? `Exam ${exams.length === 1 ? "week" : "weeks"} ${exams.map((w) => w.week).join(" and ")} ${exams.length === 1 ? "is" : "are"} lighter.` : "",
-  ].filter(Boolean).join(" ");
+    starts.length
+      ? `${starts.length === 1 ? "Week" : "Weeks"} ${starts.map((w) => w.week).join(" and ")} ${starts.length === 1 ? "is a head start" : "are head starts"} on a later module.`
+      : "",
+    exams.length
+      ? `Exam ${exams.length === 1 ? "week" : "weeks"} ${exams.map((w) => w.week).join(" and ")} ${exams.length === 1 ? "is" : "are"} lighter.`
+      : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
   return (
     <div className="shrink-0 pt-6">
       <div role="img" data-kind="chart" aria-label={summary} className="flex h-16 items-end gap-1.5 sm:gap-2">
@@ -88,7 +97,10 @@ function PlanStrip({ roadmap, currentSkillName, roleLabel }: { roadmap: Roadmap;
             {i === cur && name && (
               <span
                 aria-hidden
-                className={cn("absolute mb-1 text-sm leading-none font-semibold whitespace-nowrap text-foreground", toLeft ? "right-0" : "left-0")}
+                className={cn(
+                  "absolute mb-1 text-sm leading-none font-semibold whitespace-nowrap text-foreground",
+                  toLeft ? "right-0" : "left-0",
+                )}
                 style={{ bottom: `${labelAt}%` }}
               >
                 {name}
@@ -97,7 +109,15 @@ function PlanStrip({ roadmap, currentSkillName, roleLabel }: { roadmap: Roadmap;
             <span
               className={cn(
                 "block w-full rounded-t-sm",
-                i === cur ? "bg-primary" : isWeekDone(w) ? "bg-status-proven" : w.isExamWeek ? "border border-b-0 border-dashed border-input" : headStart(w) ? "bg-status-degree/40" : "bg-rule-2",
+                i === cur
+                  ? "bg-primary"
+                  : isWeekDone(w)
+                    ? "bg-status-proven"
+                    : w.isExamWeek
+                      ? "border border-b-0 border-dashed border-input"
+                      : headStart(w)
+                        ? "bg-status-degree/40"
+                        : "bg-rule-2",
               )}
               style={{ height: `${height(w.receipt.demandPct)}%` }}
             />
@@ -106,7 +126,13 @@ function PlanStrip({ roadmap, currentSkillName, roleLabel }: { roadmap: Roadmap;
       </div>
       <div aria-hidden className="mt-1.5 flex gap-1.5 border-t border-rule-2 pt-1.5 sm:gap-2">
         {weeks.map((w, i) => (
-          <span key={w.week} className={cn("w-4 text-center text-xs tabular-nums sm:w-6", i === cur ? "font-semibold text-foreground" : "text-muted-foreground")}>
+          <span
+            key={w.week}
+            className={cn(
+              "w-4 text-center text-xs tabular-nums sm:w-6",
+              i === cur ? "font-semibold text-foreground" : "text-muted-foreground",
+            )}
+          >
             {w.week}
           </span>
         ))}
@@ -116,10 +142,23 @@ function PlanStrip({ roadmap, currentSkillName, roleLabel }: { roadmap: Roadmap;
 }
 
 export function RoadmapHeader({
-  roadmap, targetDate, hoursPerWeek, demo, replanning, onReplan, currentSkillName, roleLabel = "job",
+  roadmap,
+  targetDate,
+  hoursPerWeek,
+  demo,
+  replanning,
+  onReplan,
+  currentSkillName,
+  roleLabel = "job",
 }: {
-  roadmap: Roadmap; targetDate?: string; hoursPerWeek?: number; demo?: boolean; replanning?: boolean; onReplan: () => void;
-  currentSkillName?: string; roleLabel?: string;
+  roadmap: Roadmap;
+  targetDate?: string;
+  hoursPerWeek?: number;
+  demo?: boolean;
+  replanning?: boolean;
+  onReplan: () => void;
+  currentSkillName?: string;
+  roleLabel?: string;
 }) {
   const exams = roadmap.weeks.filter((w) => w.isExamWeek).length;
   const anyDone = roadmap.weeks.some(isWeekDone);
@@ -130,12 +169,16 @@ export function RoadmapHeader({
     `${roadmap.weeks.length} weeks from ${roadmap.weeks[0] ? dayMonth(roadmap.weeks[0].startDate) : "next Monday"}`,
     hoursPerWeek ? `${hoursPerWeek} hours a week` : "",
     exams ? `${exams} lighter exam ${exams === 1 ? "week" : "weeks"}` : "",
-  ].filter(Boolean).join(", ");
+  ]
+    .filter(Boolean)
+    .join(", ");
   const key = [
     anyStart ? "blue weeks start early on a module you take later" : "",
     anyDone ? "green weeks are done" : "",
     exams ? "dashed weeks are exams" : "",
-  ].filter(Boolean).join("; ");
+  ]
+    .filter(Boolean)
+    .join("; ");
   const caption = `Each bar is a week, as tall as its skill's share of ${roleLabel} ads.${key ? ` ${key[0].toUpperCase()}${key.slice(1)}.` : ""}`;
   return (
     <section aria-labelledby="roadmap-readiness-h" className="rounded-2xl border bg-card p-6 shadow-sm md:p-8">
@@ -161,7 +204,9 @@ export function RoadmapHeader({
                 <RefreshCw className={cn("size-4", replanning && "motion-safe:animate-spin")} aria-hidden />
                 {replanning ? "Re-planning…" : "Re-plan"}
               </Button>
-              <p className="text-sm text-muted-foreground">Version {roadmap.version}, planned {dayMonth(roadmap.generatedAt)}</p>
+              <p className="text-sm text-muted-foreground">
+                Version {roadmap.version}, planned {dayMonth(roadmap.generatedAt)}
+              </p>
             </div>
           </div>
           <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-8">

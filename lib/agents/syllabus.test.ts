@@ -30,7 +30,8 @@ beforeEach(() => {
 });
 afterEach(() => {
   vi.restoreAllMocks();
-  if (prev === undefined) delete process.env.FIRECRAWL_API_KEY; else process.env.FIRECRAWL_API_KEY = prev;
+  if (prev === undefined) delete process.env.FIRECRAWL_API_KEY;
+  else process.env.FIRECRAWL_API_KEY = prev;
 });
 
 describe("normalisation", () => {
@@ -45,7 +46,14 @@ describe("normalisation", () => {
   });
 
   it("dedupes units by code, then title", () => {
-    expect(dedupeUnits([{ code: "COMP23111", title: "Databases" }, { code: "COMP23111", title: "Database Systems" }, { title: "Ethics" }, { title: "ethics" }])).toHaveLength(2);
+    expect(
+      dedupeUnits([
+        { code: "COMP23111", title: "Databases" },
+        { code: "COMP23111", title: "Database Systems" },
+        { title: "Ethics" },
+        { title: "ethics" },
+      ]),
+    ).toHaveLength(2);
   });
 
   it("parses units, topics and outcomes from pasted text", () => {
@@ -65,7 +73,10 @@ describe("extractProgramme", () => {
     expect(fcSearch).not.toHaveBeenCalled();
     expect(ProgrammeZ.parse(p)).toBeTruthy();
     expect(p.source).toBe("manual");
-    expect(p.modules.map((m) => [m.code, m.year, m.semester])).toEqual([["COMP23111", 2, "1"], ["COMP24112", 2, "2"]]);
+    expect(p.modules.map((m) => [m.code, m.year, m.semester])).toEqual([
+      ["COMP23111", 2, "1"],
+      ["COMP24112", 2, "2"],
+    ]);
     expect(p.modules[0].skills.map((s) => s.skillId)).toEqual(expect.arrayContaining(["sql", "databases"]));
     expect(p.modules[1].skills.find((s) => s.skillId === "python")?.level).toBe(3);
     expect(p.modules[1].industryNote).toBeTruthy();
@@ -83,10 +94,17 @@ describe("extractProgramme", () => {
 
   it("with a key, scrapes the page and searches for more unit pages when it finds fewer than 3 units", async () => {
     process.env.FIRECRAWL_API_KEY = "fc";
-    fcSearch.mockResolvedValue([{ url: "https://uni.ac.uk/unit-1", title: "u1" }, { url: "https://uni.ac.uk/unit-2", title: "u2" }]);
+    fcSearch.mockResolvedValue([
+      { url: "https://uni.ac.uk/unit-1", title: "u1" },
+      { url: "https://uni.ac.uk/unit-2", title: "u2" },
+    ]);
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (_u, init) => {
       const { url } = JSON.parse(String(init?.body));
-      const md = url.endsWith("unit-1") ? "COMP11120 Mathematical Techniques\n- Linear algebra and statistics" : url.endsWith("unit-2") ? "COMP16321 Programming 1\n- Write Python programs" : "# BSc Computer Science\nA great course.";
+      const md = url.endsWith("unit-1")
+        ? "COMP11120 Mathematical Techniques\n- Linear algebra and statistics"
+        : url.endsWith("unit-2")
+          ? "COMP16321 Programming 1\n- Write Python programs"
+          : "# BSc Computer Science\nA great course.";
       return Response.json({ success: true, data: { markdown: md } });
     });
     const p = await extractProgramme({ url: "https://uni.ac.uk/bsc-cs", programmeId: "test-prog" });
@@ -125,14 +143,17 @@ describe("the UoM fixture", () => {
   });
 
   it("covers none of the demo gaps (Docker, AWS, MLOps, LLM apps…)", () => {
-    for (const gap of ["docker", "aws", "mlops", "llm-apps", "llm-evaluation", "kubernetes", "ci-cd", "vector-databases", "pytorch", "sql"]) expect(all).not.toContain(gap);
+    for (const gap of ["docker", "aws", "mlops", "llm-apps", "llm-evaluation", "kubernetes", "ci-cd", "vector-databases", "pytorch", "sql"])
+      expect(all).not.toContain(gap);
   });
 });
 
 describe("parseUnitsFromText: markdown table rows", () => {
   it("takes the title from the name cell and credits/compulsory from their own cells", async () => {
     const { parseUnitsFromText } = await import("./syllabus");
-    const units = parseUnitsFromText("| Unit code | Unit title | Unit lead | Credits | Status |\n| COMP10120 | First Year Team Project |  | 20 | Mandatory |\n| COMP13212 | Data Science | Dr X | 10 | Optional |");
+    const units = parseUnitsFromText(
+      "| Unit code | Unit title | Unit lead | Credits | Status |\n| COMP10120 | First Year Team Project |  | 20 | Mandatory |\n| COMP13212 | Data Science | Dr X | 10 | Optional |",
+    );
     expect(units.map((u) => u.title)).toEqual(["First Year Team Project", "Data Science"]);
     expect(units[0]).toMatchObject({ code: "COMP10120", credits: 20, compulsory: true });
     expect(units[1]).toMatchObject({ credits: 10, compulsory: false });

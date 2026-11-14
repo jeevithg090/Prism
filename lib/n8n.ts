@@ -42,9 +42,11 @@ export async function triggerWorkflow(name: WorkflowName, payload: Record<string
     ok = false;
   }
   if (runId) {
-    emit(ok
-      ? { runId, agent: "n8n", status: "done", message: `triggered ${name}` }
-      : { runId, agent: "n8n", status: "progress", message: `${name} didn't answer within 5 s; the app carries on without it` });
+    emit(
+      ok
+        ? { runId, agent: "n8n", status: "done", message: `triggered ${name}` }
+        : { runId, agent: "n8n", status: "progress", message: `${name} didn't answer within 5 s; the app carries on without it` },
+    );
   }
   return ok;
 }

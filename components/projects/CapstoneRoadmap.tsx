@@ -8,24 +8,10 @@ import { toast } from "sonner";
 import { Plus, Link } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PageHeader, EmptyState, ErrorState, LoadingSkeleton } from "@/components/keystone";
 import { cn } from "@/lib/utils";
 import type { CapstoneProject } from "@/lib/schemas/capstone";
@@ -74,16 +60,17 @@ export function CapstoneRoadmap({ userId, roleId }: { userId: string; roleId?: s
   const queryError = query.error;
 
   if (isPending) return <LoadingSkeleton variant="list" />;
-  if (queryError) return (
-    <ErrorState
-      title="We could not load your capstone projects"
-      body="Try again in a moment."
-      onRetry={() => void query.refetch()}
-      onUseDemo={() => {
-        toast("Showing an empty roadmap — create your first project below.");
-      }}
-    />
-  );
+  if (queryError)
+    return (
+      <ErrorState
+        title="We could not load your capstone projects"
+        body="Try again in a moment."
+        onRetry={() => void query.refetch()}
+        onUseDemo={() => {
+          toast("Showing an empty roadmap — create your first project below.");
+        }}
+      />
+    );
   const list = projects ?? [];
   if (list.length === 0) {
     return (
@@ -99,12 +86,15 @@ export function CapstoneRoadmap({ userId, roleId }: { userId: string; roleId?: s
     );
   }
 
-  const handleUpdate = async (project: CapstoneProject, patches: Partial<{
-    title: string;
-    pitch: string;
-    status: CapstoneProject["status"];
-    showcaseUrl: string;
-  }>) => {
+  const handleUpdate = async (
+    project: CapstoneProject,
+    patches: Partial<{
+      title: string;
+      pitch: string;
+      status: CapstoneProject["status"];
+      showcaseUrl: string;
+    }>,
+  ) => {
     setSaving(true);
     try {
       const res = await fetch("/api/projects/portfolio", {
@@ -139,9 +129,7 @@ export function CapstoneRoadmap({ userId, roleId }: { userId: string; roleId?: s
           if (p.id !== projectId) return p;
           return {
             ...p,
-            milestones: p.milestones.map((m) =>
-              m.id === milestoneId ? { ...m, done } : m,
-            ),
+            milestones: p.milestones.map((m) => (m.id === milestoneId ? { ...m, done } : m)),
             updatedAt: new Date().toISOString(),
           };
         }),
@@ -169,7 +157,7 @@ export function CapstoneRoadmap({ userId, roleId }: { userId: string; roleId?: s
       const json = await res.json();
       if (!res.ok || !json.ok) throw new Error(json?.error?.message ?? "Create failed.");
       queryClient.setQueryData<CapstoneProject[]>(["capstones", userId], (cur: CapstoneProject[] | undefined) => [
-        (json.data as CapstoneProject),
+        json.data as CapstoneProject,
         ...(cur ?? []),
       ]);
       setNewTitle("");
@@ -193,7 +181,11 @@ export function CapstoneRoadmap({ userId, roleId }: { userId: string; roleId?: s
       return;
     }
     await handleUpdate(project, { showcaseUrl: url });
-    setShowcaseEdits((cur) => { const n = { ...cur }; delete n[project.id]; return n; });
+    setShowcaseEdits((cur) => {
+      const n = { ...cur };
+      delete n[project.id];
+      return n;
+    });
   };
 
   return (
@@ -226,7 +218,11 @@ export function CapstoneRoadmap({ userId, roleId }: { userId: string; roleId?: s
               <CardContent className="space-y-3">
                 <div className="flex flex-wrap gap-2">
                   {project.targetSkills.map((skillId) => (
-                    <span key={skillId} data-skill={skillId} className="inline-flex items-center gap-1.5 rounded-lg border border-input bg-card px-2.5 py-1 text-sm text-foreground">
+                    <span
+                      key={skillId}
+                      data-skill={skillId}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-input bg-card px-2.5 py-1 text-sm text-foreground"
+                    >
                       <span className="sr-only">Skill: {skillId}</span>
                       {skillId.charAt(0).toUpperCase() + skillId.slice(1)}
                     </span>
@@ -234,13 +230,15 @@ export function CapstoneRoadmap({ userId, roleId }: { userId: string; roleId?: s
                 </div>
                 <div className="space-y-2">
                   {project.milestones.map((m) => {
-                    const mpct = m.tasks.length === 0 ? 0 : (m.done ? 100 : 0);
+                    const mpct = m.tasks.length === 0 ? 0 : m.done ? 100 : 0;
                     return (
                       <Card key={m.id} className="border bg-muted/50 p-3">
                         <CardHeader className="pb-1">
                           <div className="flex items-center justify-between gap-2">
                             <CardTitle className="text-sm font-semibold">{m.title}</CardTitle>
-                            <Badge variant="outline" className="text-xs">{mpct}%</Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {mpct}%
+                            </Badge>
                           </div>
                         </CardHeader>
                         <CardContent className="py-2">
@@ -277,7 +275,9 @@ export function CapstoneRoadmap({ userId, roleId }: { userId: string; roleId?: s
               <CardFooter className="pt-4 space-y-3">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-sm font-mono text-foreground tabular-nums">{pct}%</span>
-                  <span className="text-xs text-muted-foreground">{done} of {total} milestones</span>
+                  <span className="text-xs text-muted-foreground">
+                    {done} of {total} milestones
+                  </span>
                 </div>
                 <div className="flex flex-col sm:flex-row items-center gap-2">
                   <Input
@@ -320,8 +320,8 @@ export function CapstoneRoadmap({ userId, roleId }: { userId: string; roleId?: s
           <DialogHeader>
             <DialogTitle>New capstone project</DialogTitle>
             <DialogDescription>
-              Give your project a title and a one-sentence pitch. We will pick your biggest skill gaps
-              from your Bridge Map and build the milestone roadmap for you.
+              Give your project a title and a one-sentence pitch. We will pick your biggest skill gaps from your Bridge Map and build the
+              milestone roadmap for you.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCreate} className="space-y-4">

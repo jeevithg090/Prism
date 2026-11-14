@@ -10,7 +10,11 @@ vi.mock("@/lib/store", async () => {
 });
 
 const pod = (id: string, createdAt: string, memberIds: string[]): Pod => ({
-  id, name: "Pod Nova", score: 0.6, createdAt, explanations: [],
+  id,
+  name: "Pod Nova",
+  score: 0.6,
+  createdAt,
+  explanations: [],
   members: memberIds.map((userId) => ({ userId, learns: ["docker"], teaches: ["python"], role: "Learns Docker · Teaches Python" })),
 });
 

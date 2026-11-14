@@ -6,8 +6,14 @@ import { ExternalLink, FlaskConical, GraduationCap, Hammer, type LucideIcon } fr
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import {
-  describeLadder, RUNG_LABEL, RUNG_MEANING, SOURCE_LABEL,
-  type LadderEvidence, type LadderRung, type RungNumber, type SkillLadder,
+  describeLadder,
+  RUNG_LABEL,
+  RUNG_MEANING,
+  SOURCE_LABEL,
+  type LadderEvidence,
+  type LadderRung,
+  type RungNumber,
+  type SkillLadder,
 } from "./model";
 
 export const RUNG_ICON: Record<RungNumber, LucideIcon> = { 1: FlaskConical, 2: Hammer, 3: GraduationCap };
@@ -28,7 +34,17 @@ export function rungSummary(r: LadderRung): string {
 const isExternal = (url: string) => /^https?:\/\//.test(url);
 
 /** A rung's circle. Done = filled proven green; implied = dashed green ring; open = muted outline; next = the coral "you are here" ring on a coral wash. */
-export function RungDot({ rung, size = "md", next = false, className }: { rung: Pick<LadderRung, "rung" | "status" | "impliedBy">; size?: "sm" | "md" | "lg"; next?: boolean; className?: string }) {
+export function RungDot({
+  rung,
+  size = "md",
+  next = false,
+  className,
+}: {
+  rung: Pick<LadderRung, "rung" | "status" | "impliedBy">;
+  size?: "sm" | "md" | "lg";
+  next?: boolean;
+  className?: string;
+}) {
   const Icon = RUNG_ICON[rung.rung];
   const done = rung.status === "done";
   return (
@@ -55,8 +71,16 @@ export function RungDot({ rung, size = "md", next = false, className }: { rung: 
  * The horizontal strip: three rung dots joined by a rail, each with a tooltip saying what proved it.
  * `showLabels` prints "Tried it", "Built it" and "Can teach it" under the dots.
  */
-export function RungStrip({ ladder, showLabels = false, size = "sm", className }: {
-  ladder: Pick<SkillLadder, "skillName" | "rungs">; showLabels?: boolean; size?: "sm" | "md"; className?: string;
+export function RungStrip({
+  ladder,
+  showLabels = false,
+  size = "sm",
+  className,
+}: {
+  ladder: Pick<SkillLadder, "skillName" | "rungs">;
+  showLabels?: boolean;
+  size?: "sm" | "md";
+  className?: string;
 }) {
   return (
     <ol aria-label={describeLadder(ladder)} className={cn("flex items-start", className)}>
@@ -88,7 +112,10 @@ export function RungStrip({ ladder, showLabels = false, size = "sm", className }
               <TooltipContent className="max-w-64 text-sm">{rungSummary(r)}</TooltipContent>
             </Tooltip>
             {showLabels && (
-              <span aria-hidden className={cn("text-xs whitespace-nowrap", r.status === "done" ? "font-medium text-foreground" : "text-muted-foreground")}>
+              <span
+                aria-hidden
+                className={cn("text-xs whitespace-nowrap", r.status === "done" ? "font-medium text-foreground" : "text-muted-foreground")}
+              >
                 {r.label}
               </span>
             )}
@@ -108,7 +135,10 @@ export function EvidenceLink({ evidence, skillName }: { evidence: LadderEvidence
       {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
       className="inline-flex items-center gap-1 rounded-sm text-sm font-medium text-primary underline decoration-1 underline-offset-4 transition-[color] duration-(--dur-short) hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:translate-y-px"
     >
-      View proof<span className="sr-only">: {skillName}, {SOURCE_LABEL[evidence.source]}</span>
+      View proof
+      <span className="sr-only">
+        : {skillName}, {SOURCE_LABEL[evidence.source]}
+      </span>
       {external && (
         <>
           <ExternalLink className="size-3.5" aria-hidden />
@@ -123,16 +153,20 @@ export function EvidenceLink({ evidence, skillName }: { evidence: LadderEvidence
 export function EvidenceLine({ rung, skillName }: { rung: LadderRung; skillName: string }) {
   const ev = rung.evidence;
   if (!ev) {
-    return rung.impliedBy ? (
-      <p className="text-sm text-muted-foreground">Counted because {RUNG_LABEL[rung.impliedBy]} is proven.</p>
-    ) : null;
+    return rung.impliedBy ? <p className="text-sm text-muted-foreground">Counted because {RUNG_LABEL[rung.impliedBy]} is proven.</p> : null;
   }
   const date = formatProofDate(ev.createdAt);
   return (
     <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-      <span className="inline-flex h-6 items-center rounded-md border bg-card px-1.5 text-xs font-medium text-foreground">{SOURCE_LABEL[ev.source]}</span>
+      <span className="inline-flex h-6 items-center rounded-md border bg-card px-1.5 text-xs font-medium text-foreground">
+        {SOURCE_LABEL[ev.source]}
+      </span>
       <span className="min-w-0 break-words text-foreground">{ev.quote}</span>
-      {date && <time dateTime={ev.createdAt} className="text-muted-foreground tabular-nums">{date}</time>}
+      {date && (
+        <time dateTime={ev.createdAt} className="text-muted-foreground tabular-nums">
+          {date}
+        </time>
+      )}
       <EvidenceLink evidence={ev} skillName={skillName} />
     </div>
   );
@@ -192,12 +226,19 @@ export function RungLadder({ ladder }: { ladder: SkillLadder }) {
                   </span>
                 </p>
                 <p className="max-w-[44ch] text-sm text-pretty text-muted-foreground @2xl:sr-only">{RUNG_MEANING[r.rung]}</p>
-                {r.status === "done" && <div className="pt-1"><EvidenceLine rung={r} skillName={ladder.skillName} /></div>}
+                {r.status === "done" && (
+                  <div className="pt-1">
+                    <EvidenceLine rung={r} skillName={ladder.skillName} />
+                  </div>
+                )}
               </div>
               {above && (
                 <span
                   aria-hidden
-                  className={cn("mt-[17px] hidden h-0.5 min-w-4 flex-1 @2xl:block", above.status === "done" ? "bg-status-proven" : "bg-rule-2")}
+                  className={cn(
+                    "mt-[17px] hidden h-0.5 min-w-4 flex-1 @2xl:block",
+                    above.status === "done" ? "bg-status-proven" : "bg-rule-2",
+                  )}
                 />
               )}
             </li>

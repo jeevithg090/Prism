@@ -1,7 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const h = vi.hoisted(() => ({ run: vi.fn() }));
-vi.mock("next/server", () => ({ after: (fn: () => unknown) => { void fn; } }));
+vi.mock("next/server", () => ({
+  after: (fn: () => unknown) => {
+    void fn;
+  },
+}));
 vi.mock("@/lib/agents/orchestrator", async () => {
   class ProfileNotFoundError extends Error {}
   return { ProfileNotFoundError, runOnboarding: h.run };
@@ -10,7 +14,14 @@ vi.mock("@/lib/agents/orchestrator", async () => {
 import { POST } from "./route";
 import { ProfileNotFoundError } from "@/lib/agents/orchestrator";
 
-const post = (body: unknown) => POST(new Request("http://x/api/onboard/run", { method: "POST", headers: { "content-type": "application/json" }, body: typeof body === "string" ? body : JSON.stringify(body) }));
+const post = (body: unknown) =>
+  POST(
+    new Request("http://x/api/onboard/run", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: typeof body === "string" ? body : JSON.stringify(body),
+    }),
+  );
 
 beforeEach(() => h.run.mockReset());
 

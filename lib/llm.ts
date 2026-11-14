@@ -47,7 +47,8 @@ function progress(runId: string | undefined, agent: AgentName, message: string, 
 function replayed(runId: string | undefined, agent: AgentName) {
   return (rec: ReplayRecord, match: ReplayMatch = "exact") =>
     progress(
-      runId, agent,
+      runId,
+      agent,
       `replayed from a ${match === "exact" ? "" : "similar "}real run (${rec.meta.model ?? "AI model"}, recorded ${formatRecordedAt(rec.recordedAt)})`,
       { replay: true, match, recordedAt: rec.recordedAt, model: rec.meta.model ?? null },
     );
@@ -57,7 +58,9 @@ function replayed(runId: string | undefined, agent: AgentName) {
 function missed(runId: string | undefined, agent: AgentName) {
   return (live: boolean) =>
     progress(runId, agent, live ? "not recorded yet: asking the AI model live" : "not recorded: used Keystone's template", {
-      replay: false, missed: true, live,
+      replay: false,
+      missed: true,
+      live,
     });
 }
 
@@ -74,8 +77,15 @@ function jsonSchemaFor(schema: z.ZodType): Record<string, unknown> {
 }
 
 type JSONCall<T> = {
-  agent: AgentName; runId?: string; system: string; user: string;
-  schema: z.ZodType<T>; schemaName: string; model?: string; temperature?: number; cacheKey?: string;
+  agent: AgentName;
+  runId?: string;
+  system: string;
+  user: string;
+  schema: z.ZodType<T>;
+  schemaName: string;
+  model?: string;
+  temperature?: number;
+  cacheKey?: string;
   /**
    * Demo toggle: coarser key parts for a last-resort replay when the app's state differs from the recorded
    * run (e.g. the coach step without its student-context system prompt). See ReplayOptions.alt.
@@ -98,7 +108,10 @@ async function liveJSON<T>(o: JSONCall<T>, modelName: string): Promise<T> {
     const res = await c.chat.completions.create({
       ...base,
       messages,
-      response_format: { type: "json_schema", json_schema: { name: o.schemaName.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 64), schema: jsonSchemaFor(o.schema), strict: false } },
+      response_format: {
+        type: "json_schema",
+        json_schema: { name: o.schemaName.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 64), schema: jsonSchemaFor(o.schema), strict: false },
+      },
     });
     const parsed = o.schema.safeParse(JSON.parse(res.choices[0]?.message?.content ?? "null"));
     if (parsed.success) result = parsed.data;
@@ -117,7 +130,10 @@ async function liveJSON<T>(o: JSONCall<T>, modelName: string): Promise<T> {
           response_format: { type: "json_object" },
           messages: [
             { role: "system", content: o.system + suffix },
-            { role: "user", content: attempt === 0 ? o.user : `${o.user}\n\nYour previous JSON failed validation: ${lastErr.slice(0, 800)}. Fix it.` },
+            {
+              role: "user",
+              content: attempt === 0 ? o.user : `${o.user}\n\nYour previous JSON failed validation: ${lastErr.slice(0, 800)}. Fix it.`,
+            },
           ],
         });
         const parsed = o.schema.safeParse(JSON.parse(res.choices[0]?.message?.content ?? "null"));
@@ -147,14 +163,23 @@ export async function llmJSON<T>(o: JSONCall<T>): Promise<T> {
       validate: (v) => o.schema.safeParse(v).success,
       onReplay: replayed(o.runId, o.agent),
       onMiss: missed(o.runId, o.agent),
-      ...(o.replayAlt === undefined ? {} : { alt: { fn: "llmJSON", agent: o.agent, schemaName: o.schemaName, model: m, alt: o.replayAlt } }),
+      ...(o.replayAlt === undefined
+        ? {}
+        : { alt: { fn: "llmJSON", agent: o.agent, schemaName: o.schemaName, model: m, alt: o.replayAlt } }),
     },
   );
   if (o.cacheKey) cache.set(o.cacheKey, result);
   return result;
 }
 
-export async function llmText(o: { agent: AgentName; runId?: string; system: string; user: string; model?: string; replayAlt?: unknown }): Promise<string> {
+export async function llmText(o: {
+  agent: AgentName;
+  runId?: string;
+  system: string;
+  user: string;
+  model?: string;
+  replayAlt?: unknown;
+}): Promise<string> {
   if (isDemo()) throw new LLMError("demo_mode");
   const m = model(o.model);
   return replayOrRecord<string>(
@@ -238,7 +263,9 @@ export async function embed(texts: string[]): Promise<number[][]> {
 }
 
 export function cosine(a: number[], b: number[]) {
-  let d = 0, na = 0, nb = 0;
+  let d = 0,
+    na = 0,
+    nb = 0;
   for (let i = 0; i < Math.min(a.length, b.length); i++) {
     d += a[i] * b[i];
     na += a[i] ** 2;

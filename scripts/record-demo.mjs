@@ -18,7 +18,13 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { PRACTICE_QUESTION_COUNT, estimateDurationSec, formatTranscript, practiceQuestions, sampleAnswers } from "../lib/voice/questions.ts";
+import {
+  PRACTICE_QUESTION_COUNT,
+  estimateDurationSec,
+  formatTranscript,
+  practiceQuestions,
+  sampleAnswers,
+} from "../lib/voice/questions.ts";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -28,10 +34,18 @@ function parseArgs(argv) {
     const a = argv[i];
     if (a === "--base") out.base = argv[++i];
     else if (a === "--user") out.user = argv[++i];
-    else if (a === "--only") out.only = new Set(String(argv[++i] ?? "").split(",").map((s) => s.trim()).filter(Boolean));
+    else if (a === "--only")
+      out.only = new Set(
+        String(argv[++i] ?? "")
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+      );
     else if (a === "--no-github") out.github = false;
-    else if (a === "--verify") { out.record = false; out.verify = true; }
-    else if (a === "--no-verify") out.verify = false;
+    else if (a === "--verify") {
+      out.record = false;
+      out.verify = true;
+    } else if (a === "--no-verify") out.verify = false;
     else if (a === "--help" || a === "-h") out.help = true;
   }
   return out;
@@ -39,7 +53,9 @@ function parseArgs(argv) {
 
 const args = parseArgs(process.argv.slice(2));
 if (args.help) {
-  console.log("Usage: npm run record-demo -- [--base http://localhost:3002] [--user aisha] [--verify | --no-verify] [--no-github] [--only coach,pods,…]");
+  console.log(
+    "Usage: npm run record-demo -- [--base http://localhost:3002] [--user aisha] [--verify | --no-verify] [--no-github] [--only coach,pods,…]",
+  );
   process.exit(0);
 }
 const BASE = String(args.base ?? process.env.KEYSTONE_BASE ?? "http://localhost:3002").replace(/\/$/, "");
@@ -52,8 +68,15 @@ const UOM_CS_URL = "https://www.manchester.ac.uk/study/undergraduate/courses/202
 // coach suggests (lib/agents/coach/planner.ts suggestionsFor), in the order the stage demo clicks them.
 const STARTERS = ["What should I do this week?", "Why Docker?", "Find me a pod", "Who's been where I want to go?"];
 const COACH_STORY = [
-  "What should I do this week?", "Why Docker?", "Find me a pod", "Start our project", "Review my PR",
-  "I merged my issue", "How's my momentum?", "Who's been where I want to go?", "Find professionals to learn from",
+  "What should I do this week?",
+  "Why Docker?",
+  "Find me a pod",
+  "Start our project",
+  "Review my PR",
+  "I merged my issue",
+  "How's my momentum?",
+  "Who's been where I want to go?",
+  "Find professionals to learn from",
 ];
 const STANDALONE = [...STARTERS, "Start our project", "Review my PR", "How's my momentum?", "Find professionals to learn from"];
 
@@ -72,7 +95,11 @@ async function call(method, route, body, { timeoutMs = 240_000, binary = false }
   try {
     const res = await fetch(`${BASE}${route}`, {
       method,
-      headers: { cookie: cookie(), accept: binary ? "audio/mpeg" : "application/json", ...(body === undefined ? {} : { "content-type": "application/json" }) },
+      headers: {
+        cookie: cookie(),
+        accept: binary ? "audio/mpeg" : "application/json",
+        ...(body === undefined ? {} : { "content-type": "application/json" }),
+      },
       body: body === undefined ? undefined : JSON.stringify(body),
       signal: AbortSignal.timeout(timeoutMs),
     });
@@ -83,7 +110,15 @@ async function call(method, route, body, { timeoutMs = 240_000, binary = false }
     else bytes = (await res.arrayBuffer()).byteLength;
     return { status: res.status, ok: res.ok, json, bytes, headers: res.headers, ms: Date.now() - t0 };
   } catch (e) {
-    return { status: 0, ok: false, json: null, bytes: 0, headers: new Headers(), ms: Date.now() - t0, error: e instanceof Error ? e.message : String(e) };
+    return {
+      status: 0,
+      ok: false,
+      json: null,
+      bytes: 0,
+      headers: new Headers(),
+      ms: Date.now() - t0,
+      error: e instanceof Error ? e.message : String(e),
+    };
   }
 }
 
@@ -112,9 +147,12 @@ const selected = (group, name) => !args.only || args.only.has(group) || args.onl
 /** Where a response's AI values came from: the envelope's `replay`, else the x-keystone-replay header. */
 function provenance(r) {
   const info = r?.json?.replay;
-  if (info && typeof info === "object") return { source: info.source, missed: info.missed ?? 0, replayed: info.replayed ?? 0, similar: !!info.similar };
+  if (info && typeof info === "object")
+    return { source: info.source, missed: info.missed ?? 0, replayed: info.replayed ?? 0, similar: !!info.similar };
   const h = r?.headers?.get?.("x-keystone-replay");
-  return h ? { source: h === "off" ? "n/a" : h, missed: h === "template" ? 1 : 0, replayed: h === "replayed" ? 1 : 0 } : { source: "n/a", missed: 0, replayed: 0 };
+  return h
+    ? { source: h === "off" ? "n/a" : h, missed: h === "template" ? 1 : 0, replayed: h === "replayed" ? 1 : 0 }
+    : { source: "n/a", missed: 0, replayed: 0 };
 }
 
 async function step(group, name, fn) {
@@ -133,14 +171,16 @@ async function step(group, name, fn) {
     return r;
   }
   const p = r.provenance ?? provenance(r);
-  const note = r.error ?? (r.ok ? r.note ?? "" : r.json?.error?.message ?? "");
+  const note = r.error ?? (r.ok ? (r.note ?? "") : (r.json?.error?.message ?? ""));
   if (MODE === "live") {
     const recorded = delta(before, await modeState());
     const n = Object.values(recorded).reduce((a, b) => a + b, 0);
     console.log(`${r.status || "ERR"} in ${(r.ms / 1000).toFixed(1)}s, ${n} new recording${n === 1 ? "" : "s"}${note ? ` (${note})` : ""}`);
     rows.push({ mode: MODE, group, name, status: r.status || "ERR", ms: r.ms, recorded, note, source: p.source });
   } else {
-    console.log(`${r.status || "ERR"} in ${(r.ms / 1000).toFixed(1)}s, ${p.source}${p.similar ? " (similar run)" : ""}${note ? ` (${note})` : ""}`);
+    console.log(
+      `${r.status || "ERR"} in ${(r.ms / 1000).toFixed(1)}s, ${p.source}${p.similar ? " (similar run)" : ""}${note ? ` (${note})` : ""}`,
+    );
     rows.push({ mode: MODE, group, name, status: r.status || "ERR", ms: r.ms, recorded: {}, note, source: p.source, missed: p.missed });
   }
   return r;
@@ -152,7 +192,9 @@ async function reset(label) {
   const r = await call("POST", "/api/mode", { mode: MODE, reset: true }, { timeoutMs: 20_000 });
   if (!r.ok || !r.json?.data?.reset) {
     canReset = false;
-    console.log(`  (this server can't reset its state: ${r.json?.error?.message ?? r.status}; recording ${label} on top of the earlier phases)`);
+    console.log(
+      `  (this server can't reset its state: ${r.json?.error?.message ?? r.status}; recording ${label} on top of the earlier phases)`,
+    );
   }
 }
 
@@ -210,7 +252,9 @@ async function waitForRun(id, limitMs = 6 * 60_000) {
       const replays = events.filter((e) => e.data?.replay === true).length;
       const source = MODE === "demo" ? (misses ? (replays ? "mixed" : "template") : replays ? "replayed" : "n/a") : "live";
       return {
-        status: end.status === "done" ? 200 : 500, ok: end.status === "done", ms: Date.now() - t0,
+        status: end.status === "done" ? 200 : 500,
+        ok: end.status === "done",
+        ms: Date.now() - t0,
         note: `${events.length} agent events, ${end.status}${misses ? `, ${misses} not recorded` : ""}`,
         provenance: { source, missed: misses, replayed: replays },
       };
@@ -260,7 +304,10 @@ async function interview(label) {
       if (samples[i]?.trim()) turns.push({ speaker: "user", text: samples[i].trim() });
     }
     const r = await call("POST", "/api/interview/feedback", {
-      userId: USER, roleId: ROLE, transcript: formatTranscript(turns), durationSec: estimateDurationSec(turns),
+      userId: USER,
+      roleId: ROLE,
+      transcript: formatTranscript(turns),
+      durationSec: estimateDurationSec(turns),
       ...(vars.pr_skill_id ? { skillId: vars.pr_skill_id } : {}),
     });
     const d = r.json?.data;
@@ -365,12 +412,19 @@ function report(mode) {
   const mine = rows.filter((r) => r.mode === mode);
   const pad = (s, n) => String(s).padEnd(n);
   const w = Math.max(...mine.map((r) => r.name.length), 10);
-  console.log(`\n${mode === "live" ? "Recorded (Live AI)" : "Verified (Demo, strict)"}\n${pad("Step", w)}  HTTP  Time    ${mode === "live" ? "Recorded" : "Source"}`);
+  console.log(
+    `\n${mode === "live" ? "Recorded (Live AI)" : "Verified (Demo, strict)"}\n${pad("Step", w)}  HTTP  Time    ${mode === "live" ? "Recorded" : "Source"}`,
+  );
   console.log(`${"-".repeat(w)}  ----  ------  ${"-".repeat(30)}`);
   for (const r of mine) {
-    const col = r.status === "skip" ? `skipped: ${r.note}` : mode === "live"
-      ? Object.entries(r.recorded).map(([ns, n]) => `${ns} +${n}`).join(", ") || "nothing new"
-      : r.source;
+    const col =
+      r.status === "skip"
+        ? `skipped: ${r.note}`
+        : mode === "live"
+          ? Object.entries(r.recorded)
+              .map(([ns, n]) => `${ns} +${n}`)
+              .join(", ") || "nothing new"
+          : r.source;
     console.log(`${pad(r.name, w)}  ${pad(r.status, 4)}  ${pad(`${(r.ms / 1000).toFixed(1)}s`, 6)}  ${col}`);
   }
 }
@@ -378,12 +432,16 @@ function report(mode) {
 async function main() {
   const start = await modeState();
   if (!start) {
-    console.error(`No Keystone with the Demo toggle at ${BASE} (GET /api/mode failed). Start one from this checkout, e.g.\n  DEMO_MODE=false TRENDS_LIVE=true GITHUB_TOKEN= npx next dev -p 3002`);
+    console.error(
+      `No Keystone with the Demo toggle at ${BASE} (GET /api/mode failed). Start one from this checkout, e.g.\n  DEMO_MODE=false TRENDS_LIVE=true GITHUB_TOKEN= npx next dev -p 3002`,
+    );
     process.exit(1);
   }
   server = start;
   if (start.demoModeEnv) {
-    console.error(`${BASE} runs with DEMO_MODE=true, so it never calls the AI services and nothing would be recorded. Use a server with DEMO_MODE=false.`);
+    console.error(
+      `${BASE} runs with DEMO_MODE=true, so it never calls the AI services and nothing would be recorded. Use a server with DEMO_MODE=false.`,
+    );
     process.exit(1);
   }
   let failed = 0;
@@ -392,20 +450,39 @@ async function main() {
     MODE = "live";
     const s = await modeState();
     if (!s?.fill) {
-      console.error(`${BASE} didn't take the ks_replay=fill cookie (a production server, or code without the recording mode). Record against a dev server from this checkout.`);
+      console.error(
+        `${BASE} didn't take the ks_replay=fill cookie (a production server, or code without the recording mode). Record against a dev server from this checkout.`,
+      );
       process.exit(1);
     }
-    const services = Object.entries(start.services ?? {}).map(([k, v]) => `${k} ${v ? "on" : "off"}`).join(", ");
-    console.log(`Recording the demo story from ${BASE} as ${USER} (live calls for everything not yet recorded). ${start.total ?? 0} recordings before. Services: ${services || "?"}.`);
-    if (start.githubWrites) console.log(args.github ? "Heads-up: this server has GITHUB_TOKEN + GITHUB_ORG, so approvals create a real repo and post a real PR comment." : "This server writes to GitHub, so approvals are skipped (--no-github).");
+    const services = Object.entries(start.services ?? {})
+      .map(([k, v]) => `${k} ${v ? "on" : "off"}`)
+      .join(", ");
+    console.log(
+      `Recording the demo story from ${BASE} as ${USER} (live calls for everything not yet recorded). ${start.total ?? 0} recordings before. Services: ${services || "?"}.`,
+    );
+    if (start.githubWrites)
+      console.log(
+        args.github
+          ? "Heads-up: this server has GITHUB_TOKEN + GITHUB_ORG, so approvals create a real repo and post a real PR comment."
+          : "This server writes to GitHub, so approvals are skipped (--no-github).",
+      );
     console.log("");
     await story();
     const end = await modeState();
     report("live");
     const total = delta(start, end);
     const sum = Object.values(total).reduce((a, b) => a + b, 0);
-    console.log(`\nNew recordings: ${sum} (${Object.entries(total).map(([ns, n]) => `${ns} ${n}`).join(", ") || "none"}). Total on the server: ${end?.total ?? "?"}.`);
-    console.log("They are in the server's data/replay (or KEYSTONE_REPLAY_DIR, or /tmp/keystone-replay when that is read-only). Commit data/replay so Demo mode on Vercel replays them.");
+    console.log(
+      `\nNew recordings: ${sum} (${
+        Object.entries(total)
+          .map(([ns, n]) => `${ns} ${n}`)
+          .join(", ") || "none"
+      }). Total on the server: ${end?.total ?? "?"}.`,
+    );
+    console.log(
+      "They are in the server's data/replay (or KEYSTONE_REPLAY_DIR, or /tmp/keystone-replay when that is read-only). Commit data/replay so Demo mode on Vercel replays them.",
+    );
     failed += rows.filter((r) => r.mode === "live" && (r.status === "ERR" || (typeof r.status === "number" && r.status >= 500))).length;
   }
 
@@ -414,15 +491,28 @@ async function main() {
     canReset = true;
     const s = await modeState();
     if (!s?.strict) {
-      console.error(`\n${BASE} didn't take the ks_replay=strict cookie (production server?). Verify against a dev server, or one with KEYSTONE_REPLAY_STRICT=true.`);
+      console.error(
+        `\n${BASE} didn't take the ks_replay=strict cookie (production server?). Verify against a dev server, or one with KEYSTONE_REPLAY_STRICT=true.`,
+      );
       process.exit(1);
     }
     console.log(`\nVerifying Demo (strict: nothing is called live) against ${s.total ?? 0} recordings…\n`);
     await story();
     report("demo");
-    const bad = rows.filter((r) => r.mode === "demo" && r.status !== "skip" && (r.source === "template" || r.source === "mixed" || r.source === "live" || r.status === "ERR" || (typeof r.status === "number" && r.status >= 500)));
+    const bad = rows.filter(
+      (r) =>
+        r.mode === "demo" &&
+        r.status !== "skip" &&
+        (r.source === "template" ||
+          r.source === "mixed" ||
+          r.source === "live" ||
+          r.status === "ERR" ||
+          (typeof r.status === "number" && r.status >= 500)),
+    );
     if (bad.length) {
-      console.log(`\n${bad.length} step${bad.length === 1 ? "" : "s"} would not replay in Demo: ${bad.map((r) => `${r.name} (${r.source})`).join("; ")}`);
+      console.log(
+        `\n${bad.length} step${bad.length === 1 ? "" : "s"} would not replay in Demo: ${bad.map((r) => `${r.name} (${r.source})`).join("; ")}`,
+      );
       failed += bad.length;
     } else {
       console.log("\nEvery step replays from a recorded real run in Demo.");

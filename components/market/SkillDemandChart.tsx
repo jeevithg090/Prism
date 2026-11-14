@@ -50,9 +50,18 @@ export function SkillDemandChart({
         {demandSummary(demand, statusBySkill)} <span className="text-muted-foreground">Select a skill to add it to the trend chart.</span>
       </figcaption>
       <ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground" aria-label="What the tags mean">
-        <li className="inline-flex items-center gap-1.5"><Target className="size-4 text-status-gap" aria-hidden /><span className="font-mono font-semibold text-foreground tabular-nums">{counts.gap}</span> {counts.gap === 1 ? "gap" : "gaps"}</li>
-        <li className="inline-flex items-center gap-1.5"><CheckCircle2 className="size-4 text-status-proven" aria-hidden /><span className="font-mono font-semibold text-foreground tabular-nums">{counts.proven}</span> proven by you</li>
-        <li className="inline-flex items-center gap-1.5"><GraduationCap className="size-4 text-status-degree" aria-hidden /><span className="font-mono font-semibold text-foreground tabular-nums">{counts.degree}</span> covered by your degree</li>
+        <li className="inline-flex items-center gap-1.5">
+          <Target className="size-4 text-status-gap" aria-hidden />
+          <span className="font-mono font-semibold text-foreground tabular-nums">{counts.gap}</span> {counts.gap === 1 ? "gap" : "gaps"}
+        </li>
+        <li className="inline-flex items-center gap-1.5">
+          <CheckCircle2 className="size-4 text-status-proven" aria-hidden />
+          <span className="font-mono font-semibold text-foreground tabular-nums">{counts.proven}</span> proven by you
+        </li>
+        <li className="inline-flex items-center gap-1.5">
+          <GraduationCap className="size-4 text-status-degree" aria-hidden />
+          <span className="font-mono font-semibold text-foreground tabular-nums">{counts.degree}</span> covered by your degree
+        </li>
       </ul>
       <ol className="-mx-2" data-testid="demand-rows">
         {rows.map((s, i) => {
@@ -86,10 +95,22 @@ export function SkillDemandChart({
                     style={{ width: `${(s.share / max) * 100}%`, transformOrigin: "left" }}
                   />
                 </span>
-                <span className="col-start-3 row-start-1 text-right font-mono font-semibold text-foreground tabular-nums">{pctAds(s.share)}<span className="sr-only"> of {role} ads,</span></span>
+                <span className="col-start-3 row-start-1 text-right font-mono font-semibold text-foreground tabular-nums">
+                  {pctAds(s.share)}
+                  <span className="sr-only"> of {role} ads,</span>
+                </span>
                 <span className="col-span-3 col-start-1 row-start-2 flex flex-wrap items-center gap-1.5 sm:col-span-1 sm:col-start-2 sm:row-start-1 sm:justify-end">
-                  {status ? <StatusTag status={status} /> : <span className="text-sm whitespace-nowrap text-muted-foreground">Not on your map</span>}
-                  {s.trend && s.trend !== "stable" && <><span className="sr-only">,</span><StatusTag status={s.trend} /></>}
+                  {status ? (
+                    <StatusTag status={status} />
+                  ) : (
+                    <span className="text-sm whitespace-nowrap text-muted-foreground">Not on your map</span>
+                  )}
+                  {s.trend && s.trend !== "stable" && (
+                    <>
+                      <span className="sr-only">,</span>
+                      <StatusTag status={s.trend} />
+                    </>
+                  )}
                 </span>
               </button>
             </li>

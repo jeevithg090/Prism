@@ -3,16 +3,43 @@ import type { HelpRequest, Profile } from "@/lib/types";
 import { displayName, helpersThisWeek, sortHelpFeed } from "./help";
 
 const profile = (id: string, badges: Profile["badges"]): Profile => ({
-  id, name: id.toUpperCase(), programmeId: "uom-bsc-cs", year: 1, startedAt: "2026-09-21", badges,
-  interests: [], availability: [],
-  dna: { targetRoles: ["ml-engineer"], timelineLabel: "", targetDate: "2027-09-01", hoursPerWeek: 5, theoryPractice: 50, formats: [], budget: "free", constraints: [], accessibility: [], language: "en" },
+  id,
+  name: id.toUpperCase(),
+  programmeId: "uom-bsc-cs",
+  year: 1,
+  startedAt: "2026-09-21",
+  badges,
+  interests: [],
+  availability: [],
+  dna: {
+    targetRoles: ["ml-engineer"],
+    timelineLabel: "",
+    targetDate: "2027-09-01",
+    hoursPerWeek: 5,
+    theoryPractice: 50,
+    formats: [],
+    budget: "free",
+    constraints: [],
+    accessibility: [],
+    language: "en",
+  },
 });
 const req = (id: string, fromUserId: string, createdAt: string, extra: Partial<HelpRequest> = {}): HelpRequest => ({
-  id, fromUserId, kind: "question", message: `msg ${id}`, status: "open", createdAt, ...extra,
+  id,
+  fromUserId,
+  kind: "question",
+  message: `msg ${id}`,
+  status: "open",
+  createdAt,
+  ...extra,
 });
 
 describe("sortHelpFeed", () => {
-  const profiles = { aisha: profile("aisha", ["new-to-uni", "international"]), leo: profile("leo", ["new-to-uni"]), tom: profile("tom", []) };
+  const profiles = {
+    aisha: profile("aisha", ["new-to-uni", "international"]),
+    leo: profile("leo", ["new-to-uni"]),
+    tom: profile("tom", []),
+  };
 
   it("puts requests from 🌱 new-to-uni students first, then newest first", () => {
     const input = [

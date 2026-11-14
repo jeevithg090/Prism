@@ -33,7 +33,8 @@ export async function POST(req: Request) {
     const { runId } = await runOnboarding(userId, { demo, programmeUrl, schedule });
     return ok({ runId }, 202);
   } catch (e) {
-    if (e instanceof ProfileNotFoundError) return fail(404, "not_found", `We couldn't find a profile for "${userId}". Finish onboarding first.`);
+    if (e instanceof ProfileNotFoundError)
+      return fail(404, "not_found", `We couldn't find a profile for "${userId}". Finish onboarding first.`);
     return internal();
   }
 }

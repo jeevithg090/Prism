@@ -9,7 +9,14 @@ function Figure({ label, value, hint, mono = true }: { label: string; value: Rea
   return (
     <div className="flex min-w-0 flex-col border-t py-5 first:border-t-0 first:pt-0 md:border-t-0 md:border-l md:py-0 md:pl-6 md:first:border-l-0 md:first:pl-0">
       <p className="text-sm font-medium text-muted-foreground">{label}</p>
-      <p className={cn("mt-2 text-4xl leading-none font-semibold text-foreground md:text-5xl", mono ? "font-mono tabular-nums" : "font-sans")}>{value}</p>
+      <p
+        className={cn(
+          "mt-2 text-4xl leading-none font-semibold text-foreground md:text-5xl",
+          mono ? "font-mono tabular-nums" : "font-sans",
+        )}
+      >
+        {value}
+      </p>
       <p className="mt-3 text-sm text-pretty text-muted-foreground">{hint}</p>
     </div>
   );
@@ -32,7 +39,13 @@ export function LecturerStats({ cohort, insights }: { cohort: LecturerCohort; in
         label="Top gap no module covers"
         value={top ? skillName(top.skillId) : insights ? "None" : "Checking"}
         mono={false}
-        hint={top ? `${top.demandPct}% of ${demandRole} ads, ${top.studentsTargeting} students need it` : insights ? "Your modules cover every high-demand skill" : "Checking the syllabus"}
+        hint={
+          top
+            ? `${top.demandPct}% of ${demandRole} ads, ${top.studentsTargeting} students need it`
+            : insights
+              ? "Your modules cover every high-demand skill"
+              : "Checking the syllabus"
+        }
       />
     </div>
   );

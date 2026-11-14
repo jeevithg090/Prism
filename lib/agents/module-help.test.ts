@@ -83,7 +83,10 @@ describe("suggestHelpersForModule", () => {
 
   it("returns [] when no node matches the module code or concept", async () => {
     loadGraph.mockResolvedValue(map([node("sql", "SQL", 0, "gap")]));
-    storeList.mockResolvedValue([{ id: "aisha", name: "Aisha" }, { id: "tom", name: "Tom" }]);
+    storeList.mockResolvedValue([
+      { id: "aisha", name: "Aisha" },
+      { id: "tom", name: "Tom" },
+    ]);
 
     const out = await suggestHelpersForModule("aisha", "se", "ZZZ999");
     expect(out).toEqual([]);
@@ -95,7 +98,10 @@ describe("suggestHelpersForModule", () => {
       if (uid === "tom") return map([node("sql-joins", "SQL joins", 3, "proven")]);
       return null;
     });
-    storeList.mockResolvedValue([{ id: "aisha", name: "Aisha" }, { id: "tom", name: "Tom" }]);
+    storeList.mockResolvedValue([
+      { id: "aisha", name: "Aisha" },
+      { id: "tom", name: "Tom" },
+    ]);
 
     const out = await suggestHelpersForModule("aisha", "se", "joins");
     expect(out[0]?.skillId).toBe("sql-joins");

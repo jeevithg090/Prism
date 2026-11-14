@@ -23,7 +23,12 @@ const SKILLS = new Map((skillsJson as Skill[]).map((s) => [s.id, s]));
 export function skillMeta(id: string): { name: string; category: SkillCategory; prereqs: string[] } {
   const s = SKILLS.get(id);
   return {
-    name: s?.name ?? id.split("-").map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w)).join(" "),
+    name:
+      s?.name ??
+      id
+        .split("-")
+        .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w))
+        .join(" "),
     category: s?.category ?? "practice",
     prereqs: s?.prereqs ?? [],
   };
@@ -88,7 +93,9 @@ export async function listEvidence(userId: string): Promise<EvidenceItem[]> {
   let stored: EvidenceItem[] = [];
   try {
     stored = (await getStore().list<EvidenceItem>("evidence", { userId })).filter((e) => e && typeof e.skillId === "string");
-  } catch { /* store down: fixtures only */ }
+  } catch {
+    /* store down: fixtures only */
+  }
   const ids = new Set(stored.map((e) => e.id));
   return [...stored, ...evidenceFixture(userId).filter((e) => !ids.has(e.id))];
 }
@@ -97,7 +104,9 @@ export async function getProfile(userId: string): Promise<Profile | null> {
   try {
     const p = await getStore().get<Profile>("profiles", userId);
     if (p) return p;
-  } catch { /* fall through */ }
+  } catch {
+    /* fall through */
+  }
   if (!SAFE_ID.test(userId)) return null;
   return readData<Profile>(`data/fixtures/profile.${userId}.json`);
 }
@@ -109,7 +118,9 @@ export async function podFor(userId: string): Promise<Pod | null> {
     const mine = pods.filter((p) => p?.members?.some((m) => m.userId === userId));
     const withProject = mine.find((p) => p.project);
     if (withProject ?? mine[0]) return withProject ?? mine[0];
-  } catch { /* fall through */ }
+  } catch {
+    /* fall through */
+  }
   const fx = readData<Pod>("data/fixtures/pod.aisha.json");
   return fx?.members?.some((m) => m.userId === userId) ? fx : null;
 }

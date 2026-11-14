@@ -26,8 +26,21 @@ describe("WeekCard", () => {
   it("shows the proof line linking to the pod, the degree link and ticks tasks", async () => {
     const user = userEvent.setup();
     const onToggle = vi.fn();
-    render(<WeekCard week={RM.weeks[0]} skillName="Docker" current defaultExpanded roleLabel="ML engineer" podHref="/pods/pod_demo01" onToggleTask={onToggle} />);
-    expect(screen.getByRole("link", { name: "Merge a PR that adds a Dockerfile to your pod repo (VisionAid)" })).toHaveAttribute("href", "/pods/pod_demo01");
+    render(
+      <WeekCard
+        week={RM.weeks[0]}
+        skillName="Docker"
+        current
+        defaultExpanded
+        roleLabel="ML engineer"
+        podHref="/pods/pod_demo01"
+        onToggleTask={onToggle}
+      />,
+    );
+    expect(screen.getByRole("link", { name: "Merge a PR that adds a Dockerfile to your pod repo (VisionAid)" })).toHaveAttribute(
+      "href",
+      "/pods/pod_demo01",
+    );
     expect(screen.getByText(/Builds on what you learned about Linux/)).toBeInTheDocument();
     await user.click(screen.getByRole("checkbox", { name: /Docker's Get Started guide/ }));
     expect(onToggle).toHaveBeenCalledWith("t_1_1", true);

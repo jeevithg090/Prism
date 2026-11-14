@@ -2,9 +2,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/store", async () => (await import("@/tests/seededStore")).seededStoreModule());
 vi.mock("@/lib/llm", () => ({
-  llmJSON: vi.fn(async () => { throw new Error("no_key"); }),
-  llmText: vi.fn(async () => { throw new Error("no_key"); }),
-  embed: vi.fn(async () => { throw new Error("no_key"); }),
+  llmJSON: vi.fn(async () => {
+    throw new Error("no_key");
+  }),
+  llmText: vi.fn(async () => {
+    throw new Error("no_key");
+  }),
+  embed: vi.fn(async () => {
+    throw new Error("no_key");
+  }),
   cosine: vi.fn(() => 0),
   LLMError: class extends Error {},
 }));
@@ -21,7 +27,9 @@ beforeEach(() => {
   testStore().reset();
   process.env.DEMO_MODE = "true";
 });
-afterEach(() => { delete process.env.DEMO_MODE; });
+afterEach(() => {
+  delete process.env.DEMO_MODE;
+});
 
 describe("tool registry", () => {
   it("getTool finds every tool by name and nothing else", () => {

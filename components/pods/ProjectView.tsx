@@ -21,12 +21,7 @@ import { ProofCelebration } from "./ProofCelebration";
 import { StartProjectButton } from "./StartProjectButton";
 import { useProjectProgress } from "./useProjectProgress";
 
-const HOW_PODS_WORK = [
-  "Pick your issue.",
-  "Open a PR.",
-  "Your reviewer gives feedback.",
-  "Merged PRs become proof on your passport.",
-];
+const HOW_PODS_WORK = ["Pick your issue.", "Open a PR.", "Your reviewer gives feedback.", "Merged PRs become proof on your passport."];
 
 export function ProjectViewSkeleton() {
   return (
@@ -67,10 +62,7 @@ function MilestoneStepper({ milestones, current = 0 }: { milestones: string[]; c
         const done = i < current;
         return (
           <li key={m} aria-current={active ? "step" : undefined} className="min-w-0">
-            <span
-              aria-hidden
-              className={cn("block h-1.5 rounded-full", active ? "bg-primary" : done ? "bg-foreground" : "bg-rule-2")}
-            />
+            <span aria-hidden className={cn("block h-1.5 rounded-full", active ? "bg-primary" : done ? "bg-foreground" : "bg-rule-2")} />
             <p className="mt-3 text-base leading-snug font-semibold text-pretty">{m}</p>
             {active && <p className="mt-1 text-sm font-medium text-primary">Now</p>}
           </li>
@@ -212,11 +204,7 @@ export function ProjectView({ podId }: { podId: string }) {
           subtitle={project.pitch}
           actions={
             <>
-              <AvatarStack
-                members={pod.members.map((m) => people[m.userId] ?? fallbackMember(m.userId))}
-                size="md"
-                className="mr-2"
-              />
+              <AvatarStack members={pod.members.map((m) => people[m.userId] ?? fallbackMember(m.userId))} size="md" className="mr-2" />
               <ProjectActions repoUrl={project.repoUrl} discordUrl={pod.discordChannelUrl} />
             </>
           }
@@ -271,10 +259,7 @@ export function ProjectView({ podId }: { podId: string }) {
           </SectionCard>
         </div>
 
-        <aside
-          className={cn("space-y-6 lg:col-start-2", myIssue ? "lg:row-start-2" : "lg:row-start-1")}
-          aria-label="About this pod"
-        >
+        <aside className={cn("space-y-6 lg:col-start-2", myIssue ? "lg:row-start-2" : "lg:row-start-1")} aria-label="About this pod">
           <SectionCard title="How pods work">
             <ol className="divide-y border-t">
               {HOW_PODS_WORK.map((step, i) => (

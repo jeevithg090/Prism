@@ -58,18 +58,36 @@ export function PageHeader({ title, subtitle, actions }: { title: string; subtit
 // Status is colour + icon + label, always. The colour sits on the icon, tint and edge; the label stays ink so it keeps 4.5:1.
 const STATUS: Record<string, { icon: LucideIcon; label: string; cls: string; iconCls: string }> = {
   proven: { icon: CheckCircle2, label: "Proven", cls: "bg-status-proven/10 border-status-proven/35", iconCls: "text-status-proven" },
-  "degree-done": { icon: GraduationCap, label: "In your degree", cls: "bg-status-degree/10 border-status-degree/35", iconCls: "text-status-degree" },
-  "degree-upcoming": { icon: GraduationCap, label: "Later in your degree", cls: "bg-card border-status-degree/60 border-dashed", iconCls: "text-status-degree" },
+  "degree-done": {
+    icon: GraduationCap,
+    label: "In your degree",
+    cls: "bg-status-degree/10 border-status-degree/35",
+    iconCls: "text-status-degree",
+  },
+  "degree-upcoming": {
+    icon: GraduationCap,
+    label: "Later in your degree",
+    cls: "bg-card border-status-degree/60 border-dashed",
+    iconCls: "text-status-degree",
+  },
   gap: { icon: Target, label: "Gap", cls: "bg-status-gap/10 border-status-gap/35", iconCls: "text-status-gap" },
   rising: { icon: TrendingUp, label: "Rising", cls: "bg-status-rising/12 border-status-rising/45", iconCls: "text-status-rising" },
   stable: { icon: Minus, label: "Stable", cls: "bg-muted border-border", iconCls: "text-muted-foreground" },
   declining: { icon: TrendingDown, label: "Cooling", cls: "bg-muted border-border", iconCls: "text-muted-foreground" },
 };
 export function StatusBadge({ status, size = "md" }: { status: SkillStatus | TrendLabel; size?: "sm" | "md" }) {
-  const s = STATUS[status] ?? STATUS.stable; const Icon = s.icon;
+  const s = STATUS[status] ?? STATUS.stable;
+  const Icon = s.icon;
   return (
-    <span className={cn("inline-flex h-6 items-center gap-1.5 rounded-md border px-2 text-xs font-medium whitespace-nowrap text-foreground", s.cls, size === "sm" && "h-[1.375rem] gap-1 px-1.5")}>
-      <Icon className={cn("size-3.5 shrink-0", s.iconCls)} aria-hidden />{s.label}
+    <span
+      className={cn(
+        "inline-flex h-6 items-center gap-1.5 rounded-md border px-2 text-xs font-medium whitespace-nowrap text-foreground",
+        s.cls,
+        size === "sm" && "h-[1.375rem] gap-1 px-1.5",
+      )}
+    >
+      <Icon className={cn("size-3.5 shrink-0", s.iconCls)} aria-hidden />
+      {s.label}
     </span>
   );
 }
@@ -82,7 +100,19 @@ const CHIP_ICON: Record<string, { icon: LucideIcon; cls: string }> = {
   "degree-upcoming": { icon: GraduationCap, cls: "text-status-degree" },
   gap: { icon: Target, cls: "text-status-gap" },
 };
-export function SkillChip({ skillId, name, status, level, onClick }: { skillId: string; name: string; status?: SkillStatus; level?: number; onClick?: () => void }) {
+export function SkillChip({
+  skillId,
+  name,
+  status,
+  level,
+  onClick,
+}: {
+  skillId: string;
+  name: string;
+  status?: SkillStatus;
+  level?: number;
+  onClick?: () => void;
+}) {
   const detail = `${status ? `, ${status}` : ""}${level !== undefined ? `, level ${level} of 3` : ""}`;
   const mark = status ? CHIP_ICON[status] : undefined;
   const MarkIcon = mark?.icon;
@@ -92,7 +122,12 @@ export function SkillChip({ skillId, name, status, level, onClick }: { skillId: 
       <span>{name}</span>
       {level !== undefined && (
         <span className="flex items-end gap-0.5" aria-hidden>
-          {[1, 2, 3].map((i) => <span key={i} className={cn("w-1 rounded-xs", i === 1 ? "h-1.5" : i === 2 ? "h-2" : "h-2.5", i <= level ? "bg-foreground" : "bg-rule-2")} />)}
+          {[1, 2, 3].map((i) => (
+            <span
+              key={i}
+              className={cn("w-1 rounded-xs", i === 1 ? "h-1.5" : i === 2 ? "h-2" : "h-2.5", i <= level ? "bg-foreground" : "bg-rule-2")}
+            />
+          ))}
         </span>
       )}
     </>
@@ -100,7 +135,16 @@ export function SkillChip({ skillId, name, status, level, onClick }: { skillId: 
   const cls = "inline-flex min-h-8 items-center gap-1.5 rounded-lg border bg-card px-2.5 py-1 text-sm text-foreground";
   if (onClick) {
     return (
-      <button type="button" data-skill={skillId} aria-label={`${name}${detail}`} onClick={onClick} className={cn(cls, "cursor-pointer transition-[background-color,border-color] duration-(--dur-short) hover:border-rule-2 hover:bg-muted active:translate-y-px")}>
+      <button
+        type="button"
+        data-skill={skillId}
+        aria-label={`${name}${detail}`}
+        onClick={onClick}
+        className={cn(
+          cls,
+          "cursor-pointer transition-[background-color,border-color] duration-(--dur-short) hover:border-rule-2 hover:bg-muted active:translate-y-px",
+        )}
+      >
         {visual}
       </button>
     );
@@ -117,7 +161,19 @@ export function SkillChip({ skillId, name, status, level, onClick }: { skillId: 
 // ---------- SectionCard ----------
 
 /** One containment layer: a card holds wells and rows, never another card. */
-export function SectionCard({ title, description, actions, children, className }: { title?: string; description?: string; actions?: React.ReactNode; children: React.ReactNode; className?: string }) {
+export function SectionCard({
+  title,
+  description,
+  actions,
+  children,
+  className,
+}: {
+  title?: string;
+  description?: string;
+  actions?: React.ReactNode;
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
     <section className={cn("rounded-2xl border bg-card p-6 shadow-sm", className)}>
       {(title || actions) && (
@@ -137,7 +193,21 @@ export function SectionCard({ title, description, actions, children, className }
 // ---------- StatCard ----------
 
 /** A figure and what it counts. The icon, when given, sits inline with the label: never in a coloured coin. */
-export function StatCard({ label, value, delta, hint, icon: Icon, className }: { label: string; value: React.ReactNode; delta?: number; hint?: string; icon?: LucideIcon; className?: string }) {
+export function StatCard({
+  label,
+  value,
+  delta,
+  hint,
+  icon: Icon,
+  className,
+}: {
+  label: string;
+  value: React.ReactNode;
+  delta?: number;
+  hint?: string;
+  icon?: LucideIcon;
+  className?: string;
+}) {
   const up = (delta ?? 0) >= 0;
   return (
     <div className={cn("flex h-full flex-col rounded-2xl border bg-card p-6 shadow-sm", className)}>
@@ -148,9 +218,19 @@ export function StatCard({ label, value, delta, hint, icon: Icon, className }: {
       <div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <p className="font-mono text-4xl leading-none font-semibold tracking-tight text-foreground tabular-nums">{value}</p>
         {delta !== undefined && (
-          <span className={cn("inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-xs font-medium text-foreground tabular-nums", up ? "border-status-proven/35 bg-status-proven/10" : "border-status-gap/35 bg-status-gap/10")}>
-            {up ? <TrendingUp className="size-3.5 text-status-proven" aria-hidden /> : <TrendingDown className="size-3.5 text-status-gap" aria-hidden />}
-            {up ? "+" : "−"}{Math.abs(delta)}%
+          <span
+            className={cn(
+              "inline-flex h-6 items-center gap-1 rounded-md border px-1.5 text-xs font-medium text-foreground tabular-nums",
+              up ? "border-status-proven/35 bg-status-proven/10" : "border-status-gap/35 bg-status-gap/10",
+            )}
+          >
+            {up ? (
+              <TrendingUp className="size-3.5 text-status-proven" aria-hidden />
+            ) : (
+              <TrendingDown className="size-3.5 text-status-gap" aria-hidden />
+            )}
+            {up ? "+" : "−"}
+            {Math.abs(delta)}%
           </span>
         )}
       </div>
@@ -162,7 +242,17 @@ export function StatCard({ label, value, delta, hint, icon: Icon, className }: {
 // ---------- EmptyState / ErrorState ----------
 
 /** What is empty, why it matters, and the one action that fills it. */
-export function EmptyState({ icon: Icon, title, body, action }: { icon?: LucideIcon; title: string; body?: string; action?: React.ReactNode }) {
+export function EmptyState({
+  icon: Icon,
+  title,
+  body,
+  action,
+}: {
+  icon?: LucideIcon;
+  title: string;
+  body?: string;
+  action?: React.ReactNode;
+}) {
   return (
     <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-rule-2 bg-card px-6 py-10 text-center md:py-12">
       {Icon && <Icon className="mb-1 size-7 text-muted-foreground" aria-hidden />}
@@ -174,16 +264,38 @@ export function EmptyState({ icon: Icon, title, body, action }: { icon?: LucideI
 }
 
 /** What broke and what to do next, in Keystone's voice: "That's on us, not you." */
-export function ErrorState({ title = "Something went wrong", body, onRetry, onUseDemo }: { title?: string; body?: string; onRetry?: () => void; onUseDemo?: () => void }) {
+export function ErrorState({
+  title = "Something went wrong",
+  body,
+  onRetry,
+  onUseDemo,
+}: {
+  title?: string;
+  body?: string;
+  onRetry?: () => void;
+  onUseDemo?: () => void;
+}) {
   return (
-    <div role="alert" className="flex flex-col items-center gap-2 rounded-2xl border border-status-gap/35 bg-card px-6 py-10 text-center md:py-12">
+    <div
+      role="alert"
+      className="flex flex-col items-center gap-2 rounded-2xl border border-status-gap/35 bg-card px-6 py-10 text-center md:py-12"
+    >
       <AlertTriangle className="mb-1 size-7 text-status-gap" aria-hidden />
       <h3 className="text-lg font-semibold text-balance text-foreground">{title}</h3>
       {body && <p className="max-w-[48ch] text-pretty text-muted-foreground">{body}</p>}
       {(onRetry || onUseDemo) && (
         <div className="mt-3 flex w-full flex-col-reverse gap-2 sm:w-auto sm:flex-row">
-          {onUseDemo && <Button variant="outline" className="h-10 px-4" onClick={onUseDemo}>Use demo data</Button>}
-          {onRetry && <Button className="h-10 px-4" onClick={onRetry}><RotateCw aria-hidden />Retry</Button>}
+          {onUseDemo && (
+            <Button variant="outline" className="h-10 px-4" onClick={onUseDemo}>
+              Use demo data
+            </Button>
+          )}
+          {onRetry && (
+            <Button className="h-10 px-4" onClick={onRetry}>
+              <RotateCw aria-hidden />
+              Retry
+            </Button>
+          )}
         </div>
       )}
     </div>
@@ -201,7 +313,10 @@ export function LoadingSkeleton({ variant = "card" }: { variant?: "card" | "list
         {[0, 1, 2, 3].map((i) => (
           <div key={i} className="flex items-center gap-4 py-4">
             <Skeleton className="size-10 shrink-0 rounded-full" />
-            <div className="flex-1 space-y-2"><Skeleton className="h-4 w-1/3" /><Skeleton className="h-3.5 w-2/3" /></div>
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-4 w-1/3" />
+              <Skeleton className="h-3.5 w-2/3" />
+            </div>
             <Skeleton className="hidden h-9 w-24 rounded-xl sm:block" />
           </div>
         ))}
@@ -216,17 +331,32 @@ export function LoadingSkeleton({ variant = "card" }: { variant?: "card" | "list
         <Skeleton className="h-5 w-40" />
         <Skeleton className="mt-2 h-4 w-64 max-w-full" />
         <div className="mt-6 flex h-48 items-end gap-3">
-          {bars.map((h, i) => <Skeleton key={i} className="flex-1 rounded-t-sm rounded-b-none" style={{ height: `${h}%` }} />)}
+          {bars.map((h, i) => (
+            <Skeleton key={i} className="flex-1 rounded-t-sm rounded-b-none" style={{ height: `${h}%` }} />
+          ))}
         </div>
       </div>
     );
   }
   if (variant === "graph") {
-    const nodes = [[18, 30, 10], [42, 55, 14], [68, 28, 9], [80, 66, 12], [30, 76, 8], [56, 82, 7]];
+    const nodes = [
+      [18, 30, 10],
+      [42, 55, 14],
+      [68, 28, 9],
+      [80, 66, 12],
+      [30, 76, 8],
+      [56, 82, 7],
+    ];
     return (
       <div className="relative h-72 overflow-hidden rounded-2xl border bg-card shadow-sm md:h-[28rem]" aria-busy="true">
         {sr}
-        {nodes.map(([x, y, s], i) => <Skeleton key={i} className="absolute rounded-full" style={{ left: `${x}%`, top: `${y}%`, width: `${s * 4}px`, height: `${s * 4}px` }} />)}
+        {nodes.map(([x, y, s], i) => (
+          <Skeleton
+            key={i}
+            className="absolute rounded-full"
+            style={{ left: `${x}%`, top: `${y}%`, width: `${s * 4}px`, height: `${s * 4}px` }}
+          />
+        ))}
       </div>
     );
   }
@@ -235,7 +365,10 @@ export function LoadingSkeleton({ variant = "card" }: { variant?: "card" | "list
       {sr}
       <Skeleton className="h-5 w-1/3" />
       <Skeleton className="h-9 w-1/4" />
-      <div className="space-y-2"><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-4/5" /></div>
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-4/5" />
+      </div>
       <Skeleton className="h-10 w-36 rounded-xl" />
     </div>
   );
@@ -258,8 +391,12 @@ export function BadgePill({ badge }: { badge: BadgeId }) {
   if (!b) return null;
   const Icon = b.icon;
   return (
-    <span title={b.tip} className="inline-flex h-6 items-center gap-1 rounded-md border bg-card px-1.5 text-xs font-medium whitespace-nowrap text-foreground">
-      <Icon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />{b.label}
+    <span
+      title={b.tip}
+      className="inline-flex h-6 items-center gap-1 rounded-md border bg-card px-1.5 text-xs font-medium whitespace-nowrap text-foreground"
+    >
+      <Icon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+      {b.label}
     </span>
   );
 }
@@ -299,7 +436,13 @@ export function AgentAvatar({ agent, size = 32 }: { agent: AgentName; size?: num
   const Icon = a.icon;
   const icon = Math.max(14, Math.round(size * 0.5));
   return (
-    <span role="img" aria-label={a.name} title={a.name} className={cn("inline-flex shrink-0 items-center justify-center rounded-lg", a.cls)} style={{ width: size, height: size }}>
+    <span
+      role="img"
+      aria-label={a.name}
+      title={a.name}
+      className={cn("inline-flex shrink-0 items-center justify-center rounded-lg", a.cls)}
+      style={{ width: size, height: size }}
+    >
       <Icon className="shrink-0" style={{ width: icon, height: icon }} aria-hidden />
     </span>
   );
@@ -309,8 +452,12 @@ export function AgentAvatar({ agent, size = 32 }: { agent: AgentName; size?: num
 
 export function DemoDataNote() {
   return (
-    <span title="Seeded for the demo, not live data" className="inline-flex h-6 shrink-0 items-center gap-1 rounded-md border border-dashed border-rule-2 bg-card px-1.5 text-xs font-medium whitespace-nowrap text-muted-foreground">
-      <Database className="size-3.5" aria-hidden />Demo data
+    <span
+      title="Seeded for the demo, not live data"
+      className="inline-flex h-6 shrink-0 items-center gap-1 rounded-md border border-dashed border-rule-2 bg-card px-1.5 text-xs font-medium whitespace-nowrap text-muted-foreground"
+    >
+      <Database className="size-3.5" aria-hidden />
+      Demo data
     </span>
   );
 }
@@ -318,7 +465,17 @@ export function DemoDataNote() {
 // ---------- ReadinessRing ----------
 
 /** Readiness today as a solid arc, the projected value as a ghost arc behind it. Counts up once. */
-export function ReadinessRing({ value, projected, label, className }: { value: number; projected?: number; label: string; className?: string }) {
+export function ReadinessRing({
+  value,
+  projected,
+  label,
+  className,
+}: {
+  value: number;
+  projected?: number;
+  label: string;
+  className?: string;
+}) {
   const reduce = useReducedMotion();
   const now = Math.round(Math.min(1, Math.max(0, value)) * 100);
   const ahead = projected !== undefined ? Math.round(Math.min(1, Math.max(0, projected)) * 100) : undefined;
@@ -354,12 +511,35 @@ export function ReadinessRing({ value, projected, label, className }: { value: n
         <style>{"@keyframes ks-ring-fill{from{stroke-dashoffset:100}}"}</style>
         <circle cx="80" cy="80" r="74" fill="none" strokeWidth="12" className="stroke-paper-3" />
         {ahead !== undefined && (
-          <circle cx="80" cy="80" r="74" fill="none" strokeWidth="12" strokeLinecap="round" pathLength={100} className="stroke-primary/30 motion-safe:animate-[ks-ring-fill_1100ms_var(--ease-out)_both]" style={arc(ahead)} />
+          <circle
+            cx="80"
+            cy="80"
+            r="74"
+            fill="none"
+            strokeWidth="12"
+            strokeLinecap="round"
+            pathLength={100}
+            className="stroke-primary/30 motion-safe:animate-[ks-ring-fill_1100ms_var(--ease-out)_both]"
+            style={arc(ahead)}
+          />
         )}
-        <circle cx="80" cy="80" r="74" fill="none" strokeWidth="12" strokeLinecap="round" pathLength={100} className="stroke-primary motion-safe:animate-[ks-ring-fill_800ms_var(--ease-out)_both]" style={arc(now)} />
+        <circle
+          cx="80"
+          cy="80"
+          r="74"
+          fill="none"
+          strokeWidth="12"
+          strokeLinecap="round"
+          pathLength={100}
+          className="stroke-primary motion-safe:animate-[ks-ring-fill_800ms_var(--ease-out)_both]"
+          style={arc(now)}
+        />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center px-5 text-center">
-        <span ref={number} className="font-mono text-3xl leading-none font-semibold tracking-tight text-foreground tabular-nums md:text-4xl">{`${now}%`}</span>
+        <span
+          ref={number}
+          className="font-mono text-3xl leading-none font-semibold tracking-tight text-foreground tabular-nums md:text-4xl"
+        >{`${now}%`}</span>
         {label && <span className="mt-1.5 text-xs leading-tight text-muted-foreground">{label}</span>}
       </div>
     </div>

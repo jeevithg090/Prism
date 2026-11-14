@@ -25,32 +25,116 @@ import { DashboardView } from "./DashboardView";
 import { currentWeek, fetchOptional, monthYear } from "./data";
 
 const node = (skillId: string, name: string, status: BridgeNode["status"], demand: number, trend?: BridgeNode["trend"]): BridgeNode => ({
-  skillId, name, status, demand, trend, category: "cloud-devops", level: status === "proven" ? 2 : 0, evidenceIds: [], moduleCodes: [],
+  skillId,
+  name,
+  status,
+  demand,
+  trend,
+  category: "cloud-devops",
+  level: status === "proven" ? 2 : 0,
+  evidenceIds: [],
+  moduleCodes: [],
 });
 const MAP: BridgeMap = {
-  userId: "aisha", roleId: "ml-engineer", readinessNow: 0.38, readinessProjected: 0.84, generatedAt: "2026-11-07T10:00:00Z", edges: [],
+  userId: "aisha",
+  roleId: "ml-engineer",
+  readinessNow: 0.38,
+  readinessProjected: 0.84,
+  generatedAt: "2026-11-07T10:00:00Z",
+  edges: [],
   nodes: [
-    node("python", "Python", "proven", 0.62), node("git", "Git", "proven", 0.3), node("statistics", "Statistics", "degree-upcoming", 0.3),
-    node("docker", "Docker", "gap", 0.41, "rising"), node("pytorch", "PyTorch", "gap", 0.38, "rising"), node("sql", "SQL", "gap", 0.35, "stable"),
+    node("python", "Python", "proven", 0.62),
+    node("git", "Git", "proven", 0.3),
+    node("statistics", "Statistics", "degree-upcoming", 0.3),
+    node("docker", "Docker", "gap", 0.41, "rising"),
+    node("pytorch", "PyTorch", "gap", 0.38, "rising"),
+    node("sql", "SQL", "gap", 0.35, "stable"),
     node("aws", "AWS", "gap", 0.33),
   ],
 };
-const MARKET = { roleId: "ml-engineer", roleName: "ML engineer", location: "uk", adsAnalysed: 214, skills: [{ skillId: "python", share: 0.62 }, { skillId: "docker", share: 0.41 }], topCompanies: [], sampleAds: [], snapshotAt: "2026-11-06", source: "cache" } as RoleDemand;
+const MARKET = {
+  roleId: "ml-engineer",
+  roleName: "ML engineer",
+  location: "uk",
+  adsAnalysed: 214,
+  skills: [
+    { skillId: "python", share: 0.62 },
+    { skillId: "docker", share: 0.41 },
+  ],
+  topCompanies: [],
+  sampleAds: [],
+  snapshotAt: "2026-11-06",
+  source: "cache",
+} as RoleDemand;
 const AISHA: Profile = {
-  id: "aisha", name: "Aisha Rahman", programmeId: "uom-bsc-cs", year: 1, startedAt: "2026-09-21", badges: ["new-to-uni", "international"], interests: [], availability: [], isDemo: true,
-  dna: { targetRoles: ["ml-engineer"], timelineLabel: "Placement applications Sept 2027", targetDate: "2027-09-01", hoursPerWeek: 8, theoryPractice: 70, formats: [], budget: "free", constraints: [], accessibility: [], language: "en" },
+  id: "aisha",
+  name: "Aisha Rahman",
+  programmeId: "uom-bsc-cs",
+  year: 1,
+  startedAt: "2026-09-21",
+  badges: ["new-to-uni", "international"],
+  interests: [],
+  availability: [],
+  isDemo: true,
+  dna: {
+    targetRoles: ["ml-engineer"],
+    timelineLabel: "Placement applications Sept 2027",
+    targetDate: "2027-09-01",
+    hoursPerWeek: 8,
+    theoryPractice: 70,
+    formats: [],
+    budget: "free",
+    constraints: [],
+    accessibility: [],
+    language: "en",
+  },
 };
 const ROADMAP: Roadmap = {
-  userId: "aisha", roleId: "ml-engineer", version: 2, readinessNow: 0.38, readinessProjected: 0.84, generatedAt: "2026-11-07T10:00:00Z", skipped: [],
+  userId: "aisha",
+  roleId: "ml-engineer",
+  version: 2,
+  readinessNow: 0.38,
+  readinessProjected: 0.84,
+  generatedAt: "2026-11-07T10:00:00Z",
+  skipped: [],
   weeks: [
-    { week: 1, startDate: "2026-11-09", focusSkillId: "docker", isExamWeek: false, proof: "Dockerfile merged", receipt: { demandPct: 41, coveredByDegree: "no", reason: "" }, tasks: [{ id: "t1", type: "learn", title: "Docker basics", free: true, hours: 2, done: true }] },
-    { week: 2, startDate: "2026-11-16", focusSkillId: "pytorch", isExamWeek: false, proof: "Merge a PR that adds batch inference", receipt: { demandPct: 38, coveredByDegree: "no", trend: "rising", reason: "PyTorch is in 38% of ML engineer ads and it powers your pod's captioning model." },
-      tasks: [{ id: "t2", type: "learn", title: "PyTorch in 60 minutes", free: true, hours: 2 }, { id: "t3", type: "build", title: "Batch inference endpoint", free: true, hours: 4 }] },
+    {
+      week: 1,
+      startDate: "2026-11-09",
+      focusSkillId: "docker",
+      isExamWeek: false,
+      proof: "Dockerfile merged",
+      receipt: { demandPct: 41, coveredByDegree: "no", reason: "" },
+      tasks: [{ id: "t1", type: "learn", title: "Docker basics", free: true, hours: 2, done: true }],
+    },
+    {
+      week: 2,
+      startDate: "2026-11-16",
+      focusSkillId: "pytorch",
+      isExamWeek: false,
+      proof: "Merge a PR that adds batch inference",
+      receipt: {
+        demandPct: 38,
+        coveredByDegree: "no",
+        trend: "rising",
+        reason: "PyTorch is in 38% of ML engineer ads and it powers your pod's captioning model.",
+      },
+      tasks: [
+        { id: "t2", type: "learn", title: "PyTorch in 60 minutes", free: true, hours: 2 },
+        { id: "t3", type: "build", title: "Batch inference endpoint", free: true, hours: 4 },
+      ],
+    },
   ],
 };
 
 type Routes = Record<string, () => Response>;
-const json = (data: unknown, status = 200) => () => new Response(JSON.stringify(status < 400 ? { ok: true, data } : { ok: false, error: { code: "internal", message: "boom" } }), { status, headers: { "content-type": "application/json" } });
+const json =
+  (data: unknown, status = 200) =>
+  () =>
+    new Response(JSON.stringify(status < 400 ? { ok: true, data } : { ok: false, error: { code: "internal", message: "boom" } }), {
+      status,
+      headers: { "content-type": "application/json" },
+    });
 const notFound = () => new Response("<html>404</html>", { status: 404 });
 
 function mockApi(overrides: Routes = {}) {
@@ -78,8 +162,13 @@ function renderDashboard(props: Partial<React.ComponentProps<typeof DashboardVie
   );
 }
 
-beforeEach(() => { podThrows.value = false; });
-afterEach(() => { cleanup(); vi.restoreAllMocks(); });
+beforeEach(() => {
+  podThrows.value = false;
+});
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 
 describe("DashboardView", () => {
   it("renders this week, readiness, market pulse and the coach with mocked fetches", async () => {
@@ -102,7 +191,11 @@ describe("DashboardView", () => {
     expect(screen.getByText(/Welcome to UoM/)).toBeInTheDocument();
     expect(screen.getByText("Demo data")).toBeInTheDocument();
     const gaps = screen.getByRole("heading", { name: "Top gaps by demand" }).nextElementSibling as HTMLElement;
-    expect(within(gaps).getAllByRole("link").map((a) => a.getAttribute("href"))).toEqual(["/map?skill=docker", "/map?skill=pytorch", "/map?skill=sql"]);
+    expect(
+      within(gaps)
+        .getAllByRole("link")
+        .map((a) => a.getAttribute("href")),
+    ).toEqual(["/map?skill=docker", "/map?skill=pytorch", "/map?skill=sql"]);
     expect(fetchSpy).toHaveBeenCalledWith("/api/graph/aisha?roleId=ml-engineer", expect.anything());
     expect(fetchSpy).toHaveBeenCalledWith("/api/roadmap/aisha", expect.anything());
   });

@@ -16,7 +16,7 @@ async function readBody(req: Request): Promise<{ body: unknown; error?: Response
   try {
     return { body: await req.json() };
   } catch {
-    return { body: undefined, error: badRequest("Body must be JSON like {\"userId\":\"aisha\",\"roleId\":\"ml-engineer\",\"runId\":\"run_abc\"}") };
+    return { body: undefined, error: badRequest('Body must be JSON like {"userId":"aisha","roleId":"ml-engineer","runId":"run_abc"}') };
   }
 }
 
@@ -24,7 +24,10 @@ async function handle(req: Request): Promise<Response> {
   const url = new URL(req.url);
   let parsed: ReturnType<typeof PrepReqZ.safeParse>;
   if (req.method === "GET") {
-    parsed = PrepReqZ.safeParse({ userId: url.searchParams.get("userId") ?? undefined, roleId: url.searchParams.get("roleId") ?? undefined });
+    parsed = PrepReqZ.safeParse({
+      userId: url.searchParams.get("userId") ?? undefined,
+      roleId: url.searchParams.get("roleId") ?? undefined,
+    });
   } else {
     const { body, error } = await readBody(req);
     if (error) return error; // already a Response (e.g. bad JSON body)

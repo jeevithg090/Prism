@@ -24,23 +24,36 @@ export type HackerRankProfile = { badges: HackerRankBadge[]; certificates: Hacke
  */
 export const TRACK_SKILL: Record<string, SkillId | SkillId[]> = {
   "problem solving": ["data-structures", "algorithms"],
-  python: "python", java: "java", javascript: "javascript", typescript: "typescript",
-  c: "c", "c++": "cpp", sql: "sql", css: "html-css", html: "html-css",
-  react: "react", node: "nodejs", "node.js": "nodejs",
+  python: "python",
+  java: "java",
+  javascript: "javascript",
+  typescript: "typescript",
+  c: "c",
+  "c++": "cpp",
+  sql: "sql",
+  css: "html-css",
+  html: "html-css",
+  react: "react",
+  node: "nodejs",
+  "node.js": "nodejs",
   // "Days of JS" is the JavaScript practice track's profile badge.
   "days of js": "javascript",
 };
 /** 1–2 stars → level 1 at 0.6; 3+ stars → level 2 at 0.7. Certificates are graded tests, so a touch stronger. */
 const CERT_TIER: Record<string, { level: Level; confidence: number; rank: number }> = {
-  "basic": { level: 1, confidence: 0.75, rank: 1 },
-  "intermediate": { level: 2, confidence: 0.75, rank: 2 },
-  "advanced": { level: 2, confidence: 0.8, rank: 3 },
+  basic: { level: 1, confidence: 0.75, rank: 1 },
+  intermediate: { level: 2, confidence: 0.75, rank: 2 },
+  advanced: { level: 2, confidence: 0.8, rank: 3 },
 };
 
 const starsLevel = (stars: number): Level => (stars >= 3 ? 2 : 1);
 const starsConfidence = (stars: number): number => (stars >= 3 ? 0.7 : 0.6);
 const certTier = (name: string) => CERT_TIER[/\((basic|intermediate|advanced)\)/i.exec(name)?.[1]?.toLowerCase() ?? ""] ?? null;
-const certSubject = (name: string) => name.replace(/\((?:basic|intermediate|advanced)\)/i, "").replace(/\s+/g, " ").trim();
+const certSubject = (name: string) =>
+  name
+    .replace(/\((?:basic|intermediate|advanced)\)/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
 const normalise = (name: string) => name.toLowerCase().replace(/\s+/g, " ").trim();
 const skillsFor = (name: string): SkillId[] => {
   const v = TRACK_SKILL[normalise(name)];
@@ -63,7 +76,9 @@ export function parseProfileHtml(html: string): HackerRankProfile {
     if (stars > 0) badges.set(normalise(name), { name, stars: Math.min(6, stars) });
   }
   const certificates = new Map<string, HackerRankCertificate>();
-  for (const m of html.matchAll(/certificate-link[^>]*href="\/certificates\/([a-f0-9]{8,16})"[\s\S]{0,2500}?sr-only">Certificate:\s*<\/span>([^<]+)<\/h2>/g)) {
+  for (const m of html.matchAll(
+    /certificate-link[^>]*href="\/certificates\/([a-f0-9]{8,16})"[\s\S]{0,2500}?sr-only">Certificate:\s*<\/span>([^<]+)<\/h2>/g,
+  )) {
     const name = m[2].replace(/\s+/g, " ").trim();
     if (name) certificates.set(normalise(name), { name });
   }
@@ -79,7 +94,14 @@ export function looksLikePublicProfile(html: string): boolean {
 export function pageToEvidence(userId: string, page: HackerRankProfile, url: string, now = new Date()): EvidenceItem[] {
   type Acc = { badgeFact?: string; certFact?: string; certRank: number; level: Level; confidence: number };
   const acc = new Map<SkillId, Acc>();
-  const merge = (skillId: SkillId, badgeFact: string | undefined, certFact: string | undefined, certRank: number, level: Level, confidence: number) => {
+  const merge = (
+    skillId: SkillId,
+    badgeFact: string | undefined,
+    certFact: string | undefined,
+    certRank: number,
+    level: Level,
+    confidence: number,
+  ) => {
     const a = acc.get(skillId) ?? { certRank: 0, level: 1, confidence: 0 };
     if (badgeFact && !a.badgeFact) a.badgeFact = badgeFact; // one badge fact per skill; the strongest certificate later
     if (certFact && certRank >= a.certRank) {
@@ -99,13 +121,21 @@ export function pageToEvidence(userId: string, page: HackerRankProfile, url: str
   for (const c of page.certificates) {
     const tier = certTier(c.name);
     if (!tier) continue; // role certificates and non-graded names aren't skill evidence
-    for (const skillId of skillsFor(certSubject(c.name))) merge(skillId, undefined, `verified ${c.name} certificate`, tier.rank, tier.level, tier.confidence);
+    for (const skillId of skillsFor(certSubject(c.name)))
+      merge(skillId, undefined, `verified ${c.name} certificate`, tier.rank, tier.level, tier.confidence);
   }
   return [...acc.entries()].map(([skillId, a]) => {
     const facts = [a.badgeFact, a.certFact].filter((f): f is string => !!f);
     return {
-      id: `ev_${userId}_${skillId}_hackerrank`, userId, skillId, level: a.level, confidence: a.confidence,
-      source: "hackerrank" as const, url, quote: `HackerRank ${facts.join(" and a ")}`, createdAt: now.toISOString(),
+      id: `ev_${userId}_${skillId}_hackerrank`,
+      userId,
+      skillId,
+      level: a.level,
+      confidence: a.confidence,
+      source: "hackerrank" as const,
+      url,
+      quote: `HackerRank ${facts.join(" and a ")}`,
+      createdAt: now.toISOString(),
     };
   });
 }
@@ -127,7 +157,12 @@ function getProfileHtml(handle: string): Promise<string> {
       if (BLOCKED.test(html)) throw new Error("HackerRank blocked the request");
       return html;
     },
-    { loose: false, meta: { kind: "profile", label: `hackerrank profile @${handle}` }, validate: (v) => typeof v === "string" && v.length > 500, shouldRecord: looksLikePublicProfile },
+    {
+      loose: false,
+      meta: { kind: "profile", label: `hackerrank profile @${handle}` },
+      validate: (v) => typeof v === "string" && v.length > 500,
+      shouldRecord: looksLikePublicProfile,
+    },
   );
 }
 
@@ -151,7 +186,13 @@ function scrapeProfileHtml(handle: string): Promise<string> {
       if (BLOCKED.test(html)) throw new Error("HackerRank blocked the scrape");
       return html;
     },
-    { loose: false, requires: ["FIRECRAWL_API_KEY"], meta: { kind: "scrape", label: `hackerrank profile @${handle}` }, validate: (v) => typeof v === "string" && v.length > 500, shouldRecord: looksLikePublicProfile },
+    {
+      loose: false,
+      requires: ["FIRECRAWL_API_KEY"],
+      meta: { kind: "scrape", label: `hackerrank profile @${handle}` },
+      validate: (v) => typeof v === "string" && v.length > 500,
+      shouldRecord: looksLikePublicProfile,
+    },
   );
 }
 
@@ -180,11 +221,16 @@ export async function syncHackerRankEvidence(i: { userId: string; handle: string
       // The direct call read something that isn't a public profile (error or challenge page): one scrape attempt.
       try {
         page = parseProfileHtml(await scrapeProfileHtml(handle));
-      } catch { /* keep what the direct page gave us (an empty profile) */ }
+      } catch {
+        /* keep what the direct page gave us (an empty profile) */
+      }
     }
     const items = pageToEvidence(userId, page, profileUrl(handle));
     if (page.badges.length + page.certificates.length) {
-      say("progress", `read ${page.badges.length} badges · ${page.certificates.length} certificates`, { badges: page.badges.length, certificates: page.certificates.length });
+      say("progress", `read ${page.badges.length} badges · ${page.certificates.length} certificates`, {
+        badges: page.badges.length,
+        certificates: page.certificates.length,
+      });
     }
     const store = getStore();
     await Promise.all(items.map((e) => store.upsert("evidence", e.id, e, userId)));
@@ -193,7 +239,9 @@ export async function syncHackerRankEvidence(i: { userId: string; handle: string
     else say("done", `no public HackerRank badges or certificates found for @${handle} — nothing new yet`, { badges: 0, certificates: 0 });
     return listEvidence(userId);
   } catch (err) {
-    say("error", "HackerRank wasn't available just now: keeping the evidence we already have", { reason: err instanceof Error ? err.message : "unknown" });
+    say("error", "HackerRank wasn't available just now: keeping the evidence we already have", {
+      reason: err instanceof Error ? err.message : "unknown",
+    });
     return listEvidence(userId);
   }
 }

@@ -4,11 +4,21 @@ vi.mock("@/lib/agents/events", () => ({ emit, newRunId: () => "run_test" }));
 import { GET } from "./route";
 import { RoleDemandZ } from "@/lib/schemas/data";
 
-const call = (roleId: string, qs = "") => GET(new Request(`http://localhost/api/market/${roleId}${qs}`), { params: Promise.resolve({ roleId }) });
+const call = (roleId: string, qs = "") =>
+  GET(new Request(`http://localhost/api/market/${roleId}${qs}`), { params: Promise.resolve({ roleId }) });
 
 let prev: string | undefined;
-beforeEach(() => { vi.clearAllMocks(); prev = process.env.DEMO_MODE; delete process.env.ADZUNA_APP_ID; delete process.env.REED_API_KEY; });
-afterEach(() => { vi.restoreAllMocks(); if (prev === undefined) delete process.env.DEMO_MODE; else process.env.DEMO_MODE = prev; });
+beforeEach(() => {
+  vi.clearAllMocks();
+  prev = process.env.DEMO_MODE;
+  delete process.env.ADZUNA_APP_ID;
+  delete process.env.REED_API_KEY;
+});
+afterEach(() => {
+  vi.restoreAllMocks();
+  if (prev === undefined) delete process.env.DEMO_MODE;
+  else process.env.DEMO_MODE = prev;
+});
 
 describe("GET /api/market/[roleId]", () => {
   it("returns a zod-valid RoleDemand for a known role", async () => {
@@ -33,6 +43,13 @@ describe("GET /api/market/[roleId]", () => {
     const json = await (await call("data-analyst", "?runId=run_abc")).json();
     expect(fetchSpy).not.toHaveBeenCalled();
     expect(json.data.adsAnalysed).toBe(188);
-    expect(emit).toHaveBeenCalledWith(expect.objectContaining({ runId: "run_abc", agent: "market", status: "done", message: expect.stringContaining("188 Data analyst ads analysed") }));
+    expect(emit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        runId: "run_abc",
+        agent: "market",
+        status: "done",
+        message: expect.stringContaining("188 Data analyst ads analysed"),
+      }),
+    );
   });
 });

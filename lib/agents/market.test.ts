@@ -2,11 +2,27 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const { emit } = vi.hoisted(() => ({ emit: vi.fn() }));
 vi.mock("@/lib/agents/events", () => ({ emit, newRunId: () => "run_test" }));
 
-import { analyseAds, computeShares, dedupeAds, fetchAds, getRoleDemand, getRoles, percentile, salaryStats, UnknownRoleError } from "./market";
+import {
+  analyseAds,
+  computeShares,
+  dedupeAds,
+  fetchAds,
+  getRoleDemand,
+  getRoles,
+  percentile,
+  salaryStats,
+  UnknownRoleError,
+} from "./market";
 import { RoleDemandZ } from "@/lib/schemas/data";
 import type { JobAd } from "@/lib/connectors/adzuna";
 
-const ad = (title: string, company: string, description = "", extra: Partial<JobAd> = {}): JobAd => ({ title, company, description, url: `https://example.com/${encodeURIComponent(title)}`, ...extra });
+const ad = (title: string, company: string, description = "", extra: Partial<JobAd> = {}): JobAd => ({
+  title,
+  company,
+  description,
+  url: `https://example.com/${encodeURIComponent(title)}`,
+  ...extra,
+});
 
 const ENV = ["ADZUNA_APP_ID", "ADZUNA_APP_KEY", "REED_API_KEY", "DEMO_MODE"] as const;
 let saved: Record<string, string | undefined> = {};
@@ -17,7 +33,9 @@ beforeEach(() => {
 });
 afterEach(() => {
   vi.restoreAllMocks();
-  for (const k of ENV) if (saved[k] === undefined) delete process.env[k]; else process.env[k] = saved[k];
+  for (const k of ENV)
+    if (saved[k] === undefined) delete process.env[k];
+    else process.env[k] = saved[k];
 });
 
 describe("pure helpers", () => {
@@ -46,10 +64,18 @@ describe("pure helpers", () => {
       ad("Graduate ML Engineer", "Ocado", "Python; experience with Docker", { salaryMin: 38000, salaryMax: 42000 }),
       ad("machine learning engineer", "ARM", "duplicate"),
     ];
-    const d = analyseAds({ id: "ml-engineer", name: "ML engineer" }, ads, { location: "UK", source: "adzuna", trends: new Map([["docker", "rising"]]), now: new Date("2026-11-07T10:00:00Z") });
+    const d = analyseAds({ id: "ml-engineer", name: "ML engineer" }, ads, {
+      location: "UK",
+      source: "adzuna",
+      trends: new Map([["docker", "rising"]]),
+      now: new Date("2026-11-07T10:00:00Z"),
+    });
     expect(RoleDemandZ.parse(d)).toBeTruthy();
     expect(d.adsAnalysed).toBe(3);
-    expect(d.skills.slice(0, 2)).toEqual([{ skillId: "machine-learning", share: 1 }, { skillId: "python", share: 1 }]); // ties → alphabetical
+    expect(d.skills.slice(0, 2)).toEqual([
+      { skillId: "machine-learning", share: 1 },
+      { skillId: "python", share: 1 },
+    ]); // ties → alphabetical
     expect(d.skills.find((s) => s.skillId === "docker")).toEqual({ skillId: "docker", share: 0.67, trend: "rising" });
     expect(d.topCompanies[0]).toEqual({ name: "Arm", count: 2 });
     expect(d.salary).toBeUndefined();
@@ -58,11 +84,17 @@ describe("pure helpers", () => {
 
 describe("connectors", () => {
   it("falls back to Reed when Adzuna returns 500", async () => {
-    process.env.ADZUNA_APP_ID = "id"; process.env.ADZUNA_APP_KEY = "key"; process.env.REED_API_KEY = "reed";
+    process.env.ADZUNA_APP_ID = "id";
+    process.env.ADZUNA_APP_KEY = "key";
+    process.env.REED_API_KEY = "reed";
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
       const url = String(input);
       if (url.includes("adzuna")) return new Response("boom", { status: 500 });
-      return Response.json({ results: [{ jobTitle: "Data Analyst", employerName: "Co-op", jobDescription: "SQL and Tableau", jobUrl: "https://www.reed.co.uk/jobs/1" }] });
+      return Response.json({
+        results: [
+          { jobTitle: "Data Analyst", employerName: "Co-op", jobDescription: "SQL and Tableau", jobUrl: "https://www.reed.co.uk/jobs/1" },
+        ],
+      });
     });
     const { ads, source } = await fetchAds("data analyst", "UK");
     expect(source).toBe("reed");
@@ -71,10 +103,22 @@ describe("connectors", () => {
   });
 
   it("maps Adzuna results and pages until a short page", async () => {
-    process.env.ADZUNA_APP_ID = "id"; process.env.ADZUNA_APP_KEY = "key";
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({
-      results: [{ title: "<strong>ML</strong> Engineer", company: { display_name: "Arm" }, description: "Python", redirect_url: "https://adzuna.co.uk/x", salary_min: 50000, salary_max: 60000 }],
-    }));
+    process.env.ADZUNA_APP_ID = "id";
+    process.env.ADZUNA_APP_KEY = "key";
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      Response.json({
+        results: [
+          {
+            title: "<strong>ML</strong> Engineer",
+            company: { display_name: "Arm" },
+            description: "Python",
+            redirect_url: "https://adzuna.co.uk/x",
+            salary_min: 50000,
+            salary_max: 60000,
+          },
+        ],
+      }),
+    );
     const { ads, source } = await fetchAds("machine learning engineer", "UK");
     expect(source).toBe("adzuna");
     expect(ads[0]).toMatchObject({ title: "ML Engineer", company: "Arm", url: "https://adzuna.co.uk/x", salaryMin: 50000 });
@@ -93,18 +137,39 @@ describe("getRoleDemand", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
     expect(d.source).toBe("cache");
     expect(d.adsAnalysed).toBe(214);
-    expect(emit).toHaveBeenLastCalledWith(expect.objectContaining({ agent: "market", status: "done", message: "Market Agent: 214 ML engineer ads analysed · top skill python 62% (cached snapshot)" }));
+    expect(emit).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        agent: "market",
+        status: "done",
+        message: "Market Agent: 214 ML engineer ads analysed · top skill python 62% (cached snapshot)",
+      }),
+    );
   });
 
   it("goes live with a key, and falls back to the snapshot when the board fails", async () => {
-    process.env.ADZUNA_APP_ID = "id"; process.env.ADZUNA_APP_KEY = "key";
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({
-      results: Array.from({ length: 6 }, (_, i) => ({ title: `Data Analyst ${i}`, company: { display_name: i < 4 ? "Co-op" : "NHS" }, description: "SQL and Python", redirect_url: `https://adzuna.co.uk/${i}`, salary_min: 28000 + i * 1000, salary_max: 32000 + i * 1000 })),
-    }));
+    process.env.ADZUNA_APP_ID = "id";
+    process.env.ADZUNA_APP_KEY = "key";
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      Response.json({
+        results: Array.from({ length: 6 }, (_, i) => ({
+          title: `Data Analyst ${i}`,
+          company: { display_name: i < 4 ? "Co-op" : "NHS" },
+          description: "SQL and Python",
+          redirect_url: `https://adzuna.co.uk/${i}`,
+          salary_min: 28000 + i * 1000,
+          salary_max: 32000 + i * 1000,
+        })),
+      }),
+    );
     const live = await getRoleDemand("data-analyst", { refresh: true });
     expect(live.source).toBe("adzuna");
     expect(live.adsAnalysed).toBe(6);
-    expect(live.skills.slice(0, 2).map((s) => s.skillId).sort()).toEqual(["python", "sql"]);
+    expect(
+      live.skills
+        .slice(0, 2)
+        .map((s) => s.skillId)
+        .sort(),
+    ).toEqual(["python", "sql"]);
     expect(live.salary?.median).toBe(32500);
 
     vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("offline"));

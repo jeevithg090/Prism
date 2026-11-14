@@ -15,15 +15,51 @@ vi.mock("@/lib/connectors/firecrawl", () => ({ fcSearch }));
 import { findGuides, githubLanguage, topGap } from "./guides";
 
 const aisha: Profile = {
-  id: "aisha", name: "Aisha Rahman", programmeId: "uom-bsc-cs", year: 1, startedAt: "2026-09-21",
-  badges: ["new-to-uni", "international"], interests: ["computer vision", "healthcare AI"], availability: ["tue-eve"],
-  dna: { targetRoles: ["ml-engineer"], timelineLabel: "Placement 2027", targetDate: "2027-09-01", hoursPerWeek: 8, theoryPractice: 70, formats: ["projects"], budget: "free", constraints: [], accessibility: [], language: "en" },
+  id: "aisha",
+  name: "Aisha Rahman",
+  programmeId: "uom-bsc-cs",
+  year: 1,
+  startedAt: "2026-09-21",
+  badges: ["new-to-uni", "international"],
+  interests: ["computer vision", "healthcare AI"],
+  availability: ["tue-eve"],
+  dna: {
+    targetRoles: ["ml-engineer"],
+    timelineLabel: "Placement 2027",
+    targetDate: "2027-09-01",
+    hoursPerWeek: 8,
+    theoryPractice: 70,
+    formats: ["projects"],
+    budget: "free",
+    constraints: [],
+    accessibility: [],
+    language: "en",
+  },
 };
-const node = (skillId: string, name: string, category: BridgeNode["category"], status: BridgeNode["status"], demand: number): BridgeNode => ({
-  skillId, name, category, status, demand, level: 0, evidenceIds: [], moduleCodes: [],
+const node = (
+  skillId: string,
+  name: string,
+  category: BridgeNode["category"],
+  status: BridgeNode["status"],
+  demand: number,
+): BridgeNode => ({
+  skillId,
+  name,
+  category,
+  status,
+  demand,
+  level: 0,
+  evidenceIds: [],
+  moduleCodes: [],
 });
 const map = (nodes: BridgeNode[]): BridgeMap => ({
-  userId: "aisha", roleId: "ml-engineer", nodes, edges: [], readinessNow: 0.38, readinessProjected: 0.6, generatedAt: "2026-11-07T10:00:00Z",
+  userId: "aisha",
+  roleId: "ml-engineer",
+  nodes,
+  edges: [],
+  readinessNow: 0.38,
+  readinessProjected: 0.6,
+  generatedAt: "2026-11-07T10:00:00Z",
 });
 const DOCKER_MAP = map([
   node("python", "Python", "language", "proven", 0.62),

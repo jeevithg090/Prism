@@ -2,27 +2,11 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  within,
-} from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import type { Pod } from "@/lib/types";
-import {
-  SkillExchangeGraph,
-  buildExchangeEdges,
-  describeExchange,
-  groupExchangeEdges,
-} from "@/components/pods/SkillExchangeGraph";
+import { SkillExchangeGraph, buildExchangeEdges, describeExchange, groupExchangeEdges } from "@/components/pods/SkillExchangeGraph";
 
-const pod = JSON.parse(
-  readFileSync(
-    path.join(process.cwd(), "data/fixtures/pod.aisha.json"),
-    "utf8",
-  ),
-) as Pod;
+const pod = JSON.parse(readFileSync(path.join(process.cwd(), "data/fixtures/pod.aisha.json"), "utf8")) as Pod;
 const names = {
   aisha: "Aisha Rahman",
   priya: "Priya Shah",
@@ -52,12 +36,8 @@ describe("buildExchangeEdges", () => {
     // nobody teaches themselves, and nobody is taught a skill they did not ask to learn
     for (const e of edges) {
       expect(e.from).not.toBe(e.to);
-      expect(pod.members.find((m) => m.userId === e.to)?.learns).toContain(
-        e.skillId,
-      );
-      expect(pod.members.find((m) => m.userId === e.from)?.teaches).toContain(
-        e.skillId,
-      );
+      expect(pod.members.find((m) => m.userId === e.to)?.learns).toContain(e.skillId);
+      expect(pod.members.find((m) => m.userId === e.from)?.teaches).toContain(e.skillId);
     }
   });
 
@@ -82,12 +62,8 @@ describe("buildExchangeEdges", () => {
     expect(groups).toHaveLength(7);
     const pa = groups.find((g) => g.key === "priya>aisha")!;
     expect(pa.skillIds).toEqual(["pytorch", "docker"]);
-    expect(describeExchange(pa, names, "aisha")).toBe(
-      "Priya teaches PyTorch and Docker to you",
-    );
-    expect(describeExchange(pa, names)).toBe(
-      "Priya teaches PyTorch and Docker to Aisha",
-    );
+    expect(describeExchange(pa, names, "aisha")).toBe("Priya teaches PyTorch and Docker to you");
+    expect(describeExchange(pa, names)).toBe("Priya teaches PyTorch and Docker to Aisha");
     expect(
       describeExchange(
         groups.find((g) => g.key === "aisha>mei")!,
@@ -100,64 +76,34 @@ describe("buildExchangeEdges", () => {
 
 describe("SkillExchangeGraph", () => {
   it("renders an accessible graph with a text summary and highlights the viewer", () => {
-    const { container } = render(
-      <SkillExchangeGraph pod={pod} names={names} viewerId="aisha" />,
-    );
+    const { container } = render(<SkillExchangeGraph pod={pod} names={names} viewerId="aisha" />);
     const img = screen.getByRole("img", {
       name: /Pod \w+ skill exchange graph: 4 podmates and 9 skills/,
     });
     expect(img.tagName.toLowerCase()).toBe("svg");
     expect(container.querySelectorAll("[data-edge]")).toHaveLength(7);
-    expect(container.querySelector('[data-node="aisha"]')).toHaveAttribute(
-      "data-viewer",
-      "true",
-    );
-    expect(container.querySelector('[data-node="priya"]')).not.toHaveAttribute(
-      "data-viewer",
-    );
+    expect(container.querySelector('[data-node="aisha"]')).toHaveAttribute("data-viewer", "true");
+    expect(container.querySelector('[data-node="priya"]')).not.toHaveAttribute("data-viewer");
 
     const list = screen.getByRole("list", { name: "Skill swaps" });
-    expect(
-      within(list).getByText("Tom teaches SQL to you"),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("Priya teaches PyTorch and Docker to you"),
-    ).toBeInTheDocument();
+    expect(within(list).getByText("Tom teaches SQL to you")).toBeInTheDocument();
+    expect(screen.getByText("Priya teaches PyTorch and Docker to you")).toBeInTheDocument();
     expect(screen.getByText("Mei teaches React to Tom")).toBeInTheDocument();
     expect(screen.getByText("Knowledge graph")).toBeInTheDocument();
     expect(screen.getByText("teaches")).toBeInTheDocument();
     // by default the viewer's arrows are lit
-    expect(
-      container.querySelector('[data-edge="priya>aisha"]'),
-    ).toHaveAttribute("data-active", "true");
-    expect(
-      container.querySelector('[data-edge="mei>tom"]'),
-    ).not.toHaveAttribute("data-active");
+    expect(container.querySelector('[data-edge="priya>aisha"]')).toHaveAttribute("data-active", "true");
+    expect(container.querySelector('[data-edge="mei>tom"]')).not.toHaveAttribute("data-active");
   });
 
   it("focusing a podmate highlights only their arrows", () => {
-    const { container } = render(
-      <SkillExchangeGraph pod={pod} names={names} viewerId="aisha" />,
-    );
-    fireEvent.focus(
-      screen.getByRole("button", { name: "Trace Mei's skill swaps" }),
-    );
-    expect(container.querySelector('[data-edge="mei>tom"]')).toHaveAttribute(
-      "data-active",
-      "true",
-    );
-    expect(container.querySelector('[data-edge="aisha>mei"]')).toHaveAttribute(
-      "data-active",
-      "true",
-    );
-    expect(
-      container.querySelector('[data-edge="priya>aisha"]'),
-    ).not.toHaveAttribute("data-active");
+    const { container } = render(<SkillExchangeGraph pod={pod} names={names} viewerId="aisha" />);
+    fireEvent.focus(screen.getByRole("button", { name: "Trace Mei's skill swaps" }));
+    expect(container.querySelector('[data-edge="mei>tom"]')).toHaveAttribute("data-active", "true");
+    expect(container.querySelector('[data-edge="aisha>mei"]')).toHaveAttribute("data-active", "true");
+    expect(container.querySelector('[data-edge="priya>aisha"]')).not.toHaveAttribute("data-active");
     fireEvent.mouseEnter(container.querySelector('[data-node="tom"]')!);
-    expect(container.querySelector('[data-edge="tom>priya"]')).toHaveAttribute(
-      "data-active",
-      "true",
-    );
+    expect(container.querySelector('[data-edge="tom>priya"]')).toHaveAttribute("data-active", "true");
   });
 
   it("shows a friendly empty state when nobody can teach anybody", () => {

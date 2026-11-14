@@ -3,7 +3,14 @@ import type { BridgeNode } from "@/lib/types";
 import { computeReadiness, projectedReadiness, readinessRaw, shiftReadiness } from "./readiness";
 
 const node = (skillId: string, status: BridgeNode["status"], demand: number): BridgeNode => ({
-  skillId, name: skillId, category: "practice", status, demand, level: 0, evidenceIds: [], moduleCodes: [],
+  skillId,
+  name: skillId,
+  category: "practice",
+  status,
+  demand,
+  level: 0,
+  evidenceIds: [],
+  moduleCodes: [],
 });
 
 describe("readiness (contract formula)", () => {

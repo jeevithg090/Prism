@@ -24,7 +24,11 @@ export function computeReadiness(nodes: Pick<BridgeNode, "demand" | "status">[])
 export const readiness = computeReadiness;
 
 /** Planned skills count as proven and degree skills taught before the target date as degree-done. */
-export function projectNodes<T extends Pick<BridgeNode, "skillId" | "status">>(nodes: T[], plannedSkillIds: SkillId[], upcomingByTarget: SkillId[]): T[] {
+export function projectNodes<T extends Pick<BridgeNode, "skillId" | "status">>(
+  nodes: T[],
+  plannedSkillIds: SkillId[],
+  upcomingByTarget: SkillId[],
+): T[] {
   const planned = new Set(plannedSkillIds);
   const upcoming = new Set(upcomingByTarget);
   return nodes.map((n) => {
@@ -43,6 +47,10 @@ export function projectedReadiness(nodes: BridgeNode[], plannedSkillIds: SkillId
  * formula doesn't reproduce exactly (it was computed over the full role demand), so we shift it by the delta,
  * the same way the proof loop does. Rounded to 2 decimals and clamped to 0..1.
  */
-export function shiftReadiness(stored: number, before: Pick<BridgeNode, "demand" | "status">[], after: Pick<BridgeNode, "demand" | "status">[]): number {
+export function shiftReadiness(
+  stored: number,
+  before: Pick<BridgeNode, "demand" | "status">[],
+  after: Pick<BridgeNode, "demand" | "status">[],
+): number {
   return round2(clamp01(stored + readinessRaw(after) - readinessRaw(before)));
 }

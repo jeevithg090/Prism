@@ -105,15 +105,17 @@ export const ChallengeMenuZ = z.object({
   userId: z.string(),
   focusSkillId: z.string().optional(),
   focusWeek: z.number().optional(),
-  options: z.array(z.object({
-    skillId: z.string(),
-    skillName: z.string(),
-    /** Share of ads for the primary target role, 0..1. */
-    demand: z.number().optional(),
-    status: z.enum(["proven", "degree-done", "degree-upcoming", "gap"]).optional(),
-    /** Rung 1 already done for this skill. */
-    tried: z.boolean(),
-  })),
+  options: z.array(
+    z.object({
+      skillId: z.string(),
+      skillName: z.string(),
+      /** Share of ads for the primary target role, 0..1. */
+      demand: z.number().optional(),
+      status: z.enum(["proven", "degree-done", "degree-upcoming", "gap"]).optional(),
+      /** Rung 1 already done for this skill. */
+      tried: z.boolean(),
+    }),
+  ),
 });
 export type ChallengeMenu = z.infer<typeof ChallengeMenuZ>;
 

@@ -2,7 +2,12 @@
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/store", () => ({
-  getStore: () => ({ get: async () => null, list: async () => [], upsert: async (_c: string, _i: string, d: unknown) => d, remove: async () => {} }),
+  getStore: () => ({
+    get: async () => null,
+    list: async () => [],
+    upsert: async (_c: string, _i: string, d: unknown) => d,
+    remove: async () => {},
+  }),
 }));
 
 import { GET } from "./route";

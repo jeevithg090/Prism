@@ -11,12 +11,28 @@ vi.mock("@/lib/llm", () => ({ llmJSON, LLMError: class extends Error {} }));
 vi.mock("@/lib/agents/cohort", () => ({ loadCohort, loadMap, loadProgramme, loadRoleDemand }));
 
 import {
-  THRESHOLD_MESSAGE, buildLecturerInsights, computeCohortRoles, computeLecturerGaps, templateLabIdeas,
-  type CohortStudent, type Coverage, type DemandByRole,
+  THRESHOLD_MESSAGE,
+  buildLecturerInsights,
+  computeCohortRoles,
+  computeLecturerGaps,
+  templateLabIdeas,
+  type CohortStudent,
+  type Coverage,
+  type DemandByRole,
 } from "./lecturer";
 
 const demand: DemandByRole = {
-  "ml-engineer": { python: 0.6, docker: 0.41, pytorch: 0.38, sql: 0.35, mlops: 0.28, "llm-apps": 0.26, kubernetes: 0.18, tiny: 0.05, git: 0.3 },
+  "ml-engineer": {
+    python: 0.6,
+    docker: 0.41,
+    pytorch: 0.38,
+    sql: 0.35,
+    mlops: 0.28,
+    "llm-apps": 0.26,
+    kubernetes: 0.18,
+    tiny: 0.05,
+    git: 0.3,
+  },
 };
 const coverage: Coverage = {
   covered: new Set(["python", "testing", "databases", "machine-learning"]),
@@ -60,14 +76,20 @@ describe("computeCohortRoles", () => {
   it("gives the anonymous role split and the role demand refers to", () => {
     const r = computeCohortRoles("uom-bsc-cs", students(), demand);
     expect(r).toEqual({
-      programmeId: "uom-bsc-cs", cohortSize: 10, suppressed: false,
+      programmeId: "uom-bsc-cs",
+      cohortSize: 10,
+      suppressed: false,
       demandRole: { roleId: "ml-engineer", roleName: "ML engineer" },
       roles: [
         { roleId: "ml-engineer", roleName: "ML engineer", students: 6, pct: 60 },
         { roleId: "software-engineer", roleName: "Software engineer", students: 3, pct: 30 },
       ],
     });
-    expect(computeCohortRoles("uom-bsc-cs", students().slice(0, 4), demand)).toMatchObject({ suppressed: true, roles: [], demandRole: null });
+    expect(computeCohortRoles("uom-bsc-cs", students().slice(0, 4), demand)).toMatchObject({
+      suppressed: true,
+      roles: [],
+      demandRole: null,
+    });
   });
 });
 
@@ -83,7 +105,14 @@ describe("templateLabIdeas", () => {
   });
 
   it("quotes a learning outcome when the syllabus gives them", () => {
-    const modules = [{ code: "COMP23311", title: "Software Engineering", skills: ["testing"], learningOutcomes: ["Work in a team", "Plan a project", "Deploy and evaluate software."] }];
+    const modules = [
+      {
+        code: "COMP23311",
+        title: "Software Engineering",
+        skills: ["testing"],
+        learningOutcomes: ["Work in a team", "Plan a project", "Deploy and evaluate software."],
+      },
+    ];
     const [idea] = templateLabIdeas([{ skillId: "docker", demandPct: 41, studentsTargeting: 8 }], modules);
     expect(idea).toBe(
       "Add a containerised deployment step to the COMP23311 Software Engineering coursework: students ship their solution as a Docker image a marker can run with one command (supports learning outcome 3: 'Deploy and evaluate software').",
@@ -97,7 +126,12 @@ describe("buildLecturerInsights", () => {
     { id: "stu_se_0", programmeId: "uom-bsc-cs", dna: { targetRoles: ["software-engineer"] } },
   ];
   const map = {
-    userId: "stu_ml_0", roleId: "ml-engineer", edges: [], readinessNow: 0.38, readinessProjected: 0.8, generatedAt: "",
+    userId: "stu_ml_0",
+    roleId: "ml-engineer",
+    edges: [],
+    readinessNow: 0.38,
+    readinessProjected: 0.8,
+    generatedAt: "",
     nodes: [
       { skillId: "python", status: "proven", demand: 0.62, moduleCodes: [] },
       { skillId: "testing", status: "degree-upcoming", demand: 0.15, moduleCodes: ["COMP2xxx3"] },
@@ -122,8 +156,19 @@ describe("buildLecturerInsights", () => {
   });
 
   it("uses the LLM's ideas when it answers, and skips it in demo mode", async () => {
-    llmJSON.mockResolvedValue({ labIdeas: ["Add a Docker build to COMP2xxx3 (supports outcome 2).", "Idea two for a module.", "Idea three for a module.", "A fourth idea, dropped."] });
-    expect((await buildLecturerInsights("uom-bsc-cs")).labIdeas).toEqual(["Add a Docker build to COMP2xxx3 (supports outcome 2).", "Idea two for a module.", "Idea three for a module."]);
+    llmJSON.mockResolvedValue({
+      labIdeas: [
+        "Add a Docker build to COMP2xxx3 (supports outcome 2).",
+        "Idea two for a module.",
+        "Idea three for a module.",
+        "A fourth idea, dropped.",
+      ],
+    });
+    expect((await buildLecturerInsights("uom-bsc-cs")).labIdeas).toEqual([
+      "Add a Docker build to COMP2xxx3 (supports outcome 2).",
+      "Idea two for a module.",
+      "Idea three for a module.",
+    ]);
     llmJSON.mockClear();
     await buildLecturerInsights("uom-bsc-cs", { demo: true });
     expect(llmJSON).not.toHaveBeenCalled();

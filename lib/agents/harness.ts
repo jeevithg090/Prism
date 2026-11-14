@@ -127,7 +127,10 @@ export class OutputSchemaError extends Error {
   }
 }
 export class GuardrailBlockedError extends Error {
-  constructor(public readonly guardrail: string, detail?: string) {
+  constructor(
+    public readonly guardrail: string,
+    detail?: string,
+  ) {
     super(`blocked by ${guardrail}${detail ? `: ${detail}` : ""}`);
     this.name = "GuardrailBlockedError";
   }
@@ -135,10 +138,20 @@ export class GuardrailBlockedError extends Error {
 
 // ---------- helpers ----------
 const LABELS: Record<AgentName, string> = {
-  orchestrator: "Orchestrator", syllabus: "Syllabus Agent", skillmap: "Skill Mapper", market: "Market Agent",
-  trends: "Trend Forecaster", evidence: "Evidence Agent", roadmap: "Roadmap Agent", matchmaker: "Matchmaker",
-  architect: "Project Architect", techlead: "AI Tech Lead", trajectories: "Trajectories", guides: "Guides",
-  voice: "Voice", n8n: "Automations",
+  orchestrator: "Orchestrator",
+  syllabus: "Syllabus Agent",
+  skillmap: "Skill Mapper",
+  market: "Market Agent",
+  trends: "Trend Forecaster",
+  evidence: "Evidence Agent",
+  roadmap: "Roadmap Agent",
+  matchmaker: "Matchmaker",
+  architect: "Project Architect",
+  techlead: "AI Tech Lead",
+  trajectories: "Trajectories",
+  guides: "Guides",
+  voice: "Voice",
+  n8n: "Automations",
 };
 export const agentLabel = (a: AgentName): string => LABELS[a] ?? a;
 
@@ -209,7 +222,13 @@ function applyGuardrails<O>(value: O, guardrails: Guardrail<O>[], ctx: Guardrail
 function validate<O>(schema: z.ZodType<O> | undefined, value: O): O {
   if (!schema) return value;
   const r = schema.safeParse(value);
-  if (!r.success) throw new OutputSchemaError(r.error.issues.slice(0, 3).map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`).join("; "));
+  if (!r.success)
+    throw new OutputSchemaError(
+      r.error.issues
+        .slice(0, 3)
+        .map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`)
+        .join("; "),
+    );
   return r.data;
 }
 
@@ -236,8 +255,13 @@ export async function runAgent<O>(spec: AgentSpec<O>): Promise<{ output: O; meta
   // A context goes quiet once its path is abandoned (e.g. the primary run timed out and the fallback took over).
   const makeCtx = (active: () => boolean = () => true): AgentCtx => {
     const ctx: AgentCtx = {
-      runId, agent, input: spec.input, memo: {},
-      emit: (status, message, data) => { if (active()) send(status, message, data); },
+      runId,
+      agent,
+      input: spec.input,
+      memo: {},
+      emit: (status, message, data) => {
+        if (active()) send(status, message, data);
+      },
       async step<T>(name: string, fn: () => Promise<T> | T, describe?: StepDescribe<T>): Promise<T> {
         const s0 = performance.now();
         const result = await fn();
@@ -255,10 +279,18 @@ export async function runAgent<O>(spec: AgentSpec<O>): Promise<{ output: O; meta
         if (active()) send("progress", message, { ...(data ?? {}), step: name, durationMs });
         return result;
       },
-      done(message, data) { if (active()) doneMsg = { message, data }; },
-      degraded(reason) { if (active()) degradedReason ??= reason; },
-      record(f) { if (active()) findings.push(f); },
-      guard<T>(value: T, guardrails: Guardrail<T>[]): T { return applyGuardrails(value, guardrails, ctx, findings); },
+      done(message, data) {
+        if (active()) doneMsg = { message, data };
+      },
+      degraded(reason) {
+        if (active()) degradedReason ??= reason;
+      },
+      record(f) {
+        if (active()) findings.push(f);
+      },
+      guard<T>(value: T, guardrails: Guardrail<T>[]): T {
+        return applyGuardrails(value, guardrails, ctx, findings);
+      },
     };
     return ctx;
   };
@@ -276,7 +308,10 @@ export async function runAgent<O>(spec: AgentSpec<O>): Promise<{ output: O; meta
   let primaryActive = true;
   try {
     const ctx = makeCtx(() => primaryActive);
-    const raw = await withTimeout(Promise.resolve().then(() => spec.run(ctx)), timeoutMs);
+    const raw = await withTimeout(
+      Promise.resolve().then(() => spec.run(ctx)),
+      timeoutMs,
+    );
     output = applyGuardrails(validate(spec.outputSchema, raw), guardrails, ctx, findings);
     if (degradedReason) {
       status = "fallback";
@@ -347,7 +382,16 @@ export async function runAgent<O>(spec: AgentSpec<O>): Promise<{ output: O; meta
   });
   return {
     output: output as O,
-    meta: { entryId, runId, agent, status, usedFallback, durationMs, guardrails: findings, ...(spec.checkpoint ? { checkpoint: spec.checkpoint } : {}) },
+    meta: {
+      entryId,
+      runId,
+      agent,
+      status,
+      usedFallback,
+      durationMs,
+      guardrails: findings,
+      ...(spec.checkpoint ? { checkpoint: spec.checkpoint } : {}),
+    },
   };
 }
 
@@ -358,7 +402,9 @@ const withSource = (e: AgentRunEntry): AgentRunEntry =>
 
 const REVIEW_NOTE = "The AI comments with questions only; a podmate approves and merges, never the AI";
 const MERGE_CHECKPOINT: Checkpoint = {
-  kind: "peer-approval", who: "your pod reviewer", note: "A podmate approved and merged this PR, never the AI",
+  kind: "peer-approval",
+  who: "your pod reviewer",
+  note: "A podmate approved and merged this PR, never the AI",
 };
 
 type MergedRow = { podId?: string; merged?: { issueIndex?: number; skillId?: string; mergedAt?: string }[] };
@@ -383,11 +429,20 @@ async function checkpointRuns(stored: AgentRunEntry[]): Promise<AgentRunEntry[]>
         const proof = proofById.get(key);
         const issue = (m.issueIndex as number) + 1;
         out.push({
-          id: `merge:${key}`, runId: proof?.runId ?? `merge_${key}`, agent: "evidence",
+          id: `merge:${key}`,
+          runId: proof?.runId ?? `merge_${key}`,
+          agent: "evidence",
           purpose: `A podmate merged the PR for issue #${issue}, so ${proof?.skillName ?? "its skill"} counts as proven`,
-          startedAt: m.mergedAt, durationMs: -1, status: "ok", usedFallback: false, guardrails: [],
-          checkpoint: MERGE_CHECKPOINT, inputDigest: digestInput({ podId: row.podId, issueIndex: m.issueIndex }),
-          model: "deterministic", source: "rules", steps: [],
+          startedAt: m.mergedAt,
+          durationMs: -1,
+          status: "ok",
+          usedFallback: false,
+          guardrails: [],
+          checkpoint: MERGE_CHECKPOINT,
+          inputDigest: digestInput({ podId: row.podId, issueIndex: m.issueIndex }),
+          model: "deterministic",
+          source: "rules",
+          steps: [],
         });
       }
     }
@@ -408,14 +463,29 @@ async function checkpointRuns(stored: AgentRunEntry[]): Promise<AgentRunEntry[]>
     const source = runSource(lead, durationMs, false);
     const pr = done.data?.prNumber as number;
     fresh.push({
-      id: `${runId}:techlead:review`, runId, agent: "techlead", purpose: `Reviewing PR #${pr} with guiding questions`,
-      startedAt, durationMs, status: "ok", usedFallback: false, guardrails: [],
+      id: `${runId}:techlead:review`,
+      runId,
+      agent: "techlead",
+      purpose: `Reviewing PR #${pr} with guiding questions`,
+      startedAt,
+      durationMs,
+      status: "ok",
+      usedFallback: false,
+      guardrails: [],
       checkpoint: { kind: "peer-approval", who: "your pod reviewer", note: REVIEW_NOTE },
       inputDigest: digestInput({ pr, sample: started?.data?.sample === true }),
-      model: source === "model" ? process.env.LLM_MODEL || "gpt-4.1-mini" : "deterministic", source, steps: [],
+      model: source === "model" ? process.env.LLM_MODEL || "gpt-4.1-mini" : "deterministic",
+      source,
+      steps: [],
     });
   }
-  await Promise.all(fresh.map((e) => Promise.resolve().then(() => store.upsert(AGENT_RUNS, e.id, e)).catch(() => undefined)));
+  await Promise.all(
+    fresh.map((e) =>
+      Promise.resolve()
+        .then(() => store.upsert(AGENT_RUNS, e.id, e))
+        .catch(() => undefined),
+    ),
+  );
   return [...out, ...fresh];
 }
 

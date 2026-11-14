@@ -6,51 +6,91 @@ type Row = { doc: unknown; userId?: string };
 const db = new Map<string, Map<string, Row>>();
 const col = (c: string) => {
   let m = db.get(c);
-  if (!m) { m = new Map(); db.set(c, m); }
+  if (!m) {
+    m = new Map();
+    db.set(c, m);
+  }
   return m;
 };
 
 const workingStore = {
-  get: vi.fn(async (c: string, id: string) => (col(c).get(id)?.doc ?? null)),
+  get: vi.fn(async (c: string, id: string) => col(c).get(id)?.doc ?? null),
   list: vi.fn(async (c: string, f?: { userId?: string }) =>
-    [...col(c).values()].filter((r) => !f?.userId || r.userId === f.userId).map((r) => r.doc as Application)),
-  upsert: vi.fn(async (c: string, id: string, doc: unknown, userId?: string) => { col(c).set(id, { doc, userId }); return doc; }),
-  remove: vi.fn(async (c: string, id: string) => { col(c).delete(id); return undefined; }),
+    [...col(c).values()].filter((r) => !f?.userId || r.userId === f.userId).map((r) => r.doc as Application),
+  ),
+  upsert: vi.fn(async (c: string, id: string, doc: unknown, userId?: string) => {
+    col(c).set(id, { doc, userId });
+    return doc;
+  }),
+  remove: vi.fn(async (c: string, id: string) => {
+    col(c).delete(id);
+    return undefined;
+  }),
 };
 
 const failingStore = {
-  get: vi.fn(async () => { throw new Error("store is down"); }),
-  list: vi.fn(async () => { throw new Error("store is down"); }),
-  upsert: vi.fn(async () => { throw new Error("store is down"); }),
-  remove: vi.fn(async () => { throw new Error("store is down"); }),
+  get: vi.fn(async () => {
+    throw new Error("store is down");
+  }),
+  list: vi.fn(async () => {
+    throw new Error("store is down");
+  }),
+  upsert: vi.fn(async () => {
+    throw new Error("store is down");
+  }),
+  remove: vi.fn(async () => {
+    throw new Error("store is down");
+  }),
 };
 
 vi.mock("@/lib/store", () => ({ getStore: vi.fn(() => workingStore) }));
 
-import {
-  createApplication,
-  listApplications,
-  matchSkillsForJob,
-  removeApplication,
-  updateApplication,
-} from "./application-tracker";
+import { createApplication, listApplications, matchSkillsForJob, removeApplication, updateApplication } from "./application-tracker";
 
 const seed: Application[] = [
   {
-    id: "app_01", userId: "aisha", company: "Arm", roleTitle: "ML Engineer", roleUrl: "https://example.com/arm-ml",
-    status: "applied", appliedAt: "2026-11-01T09:00:00Z", source: "adzuna",
-    notes: "Python and PyTorch", matchedSkills: ["python", "pytorch"], matchScore: 0.67,
-    createdAt: "2026-11-01T09:00:00Z", updatedAt: "2026-11-01T09:00:00Z",
+    id: "app_01",
+    userId: "aisha",
+    company: "Arm",
+    roleTitle: "ML Engineer",
+    roleUrl: "https://example.com/arm-ml",
+    status: "applied",
+    appliedAt: "2026-11-01T09:00:00Z",
+    source: "adzuna",
+    notes: "Python and PyTorch",
+    matchedSkills: ["python", "pytorch"],
+    matchScore: 0.67,
+    createdAt: "2026-11-01T09:00:00Z",
+    updatedAt: "2026-11-01T09:00:00Z",
   },
   {
-    id: "app_02", userId: "aisha", company: "Ocado", roleTitle: "Data Analyst",
-    status: "interviewing", appliedAt: "2026-11-03T09:00:00Z", source: "reed",
-    notes: "SQL and Tableau", matchedSkills: ["sql"], matchScore: 0.25,
-    createdAt: "2026-11-03T09:00:00Z", updatedAt: "2026-11-03T09:00:00Z",
+    id: "app_02",
+    userId: "aisha",
+    company: "Ocado",
+    roleTitle: "Data Analyst",
+    status: "interviewing",
+    appliedAt: "2026-11-03T09:00:00Z",
+    source: "reed",
+    notes: "SQL and Tableau",
+    matchedSkills: ["sql"],
+    matchScore: 0.25,
+    createdAt: "2026-11-03T09:00:00Z",
+    updatedAt: "2026-11-03T09:00:00Z",
   },
-  { id: "app_03", userId: "tom", company: "BBC", roleTitle: "Java Developer", status: "rejected",
-    appliedAt: "2026-11-02T09:00:00Z", source: "reed", notes: "Java", matchedSkills: ["java"], matchScore: 1,
-    createdAt: "2026-11-02T09:00:00Z", updatedAt: "2026-11-02T09:00:00Z" },
+  {
+    id: "app_03",
+    userId: "tom",
+    company: "BBC",
+    roleTitle: "Java Developer",
+    status: "rejected",
+    appliedAt: "2026-11-02T09:00:00Z",
+    source: "reed",
+    notes: "Java",
+    matchedSkills: ["java"],
+    matchScore: 1,
+    createdAt: "2026-11-02T09:00:00Z",
+    updatedAt: "2026-11-02T09:00:00Z",
+  },
 ];
 
 beforeEach(() => {
@@ -61,9 +101,7 @@ beforeEach(() => {
 
 describe("matchSkillsForJob (pure)", () => {
   it("matches known skills by name, case-insensitive", () => {
-    const { matchedSkills, matchScore } = matchSkillsForJob("Python and React developer", undefined, [
-      "python", "react", "docker",
-    ]);
+    const { matchedSkills, matchScore } = matchSkillsForJob("Python and React developer", undefined, ["python", "react", "docker"]);
     expect(matchedSkills).toEqual(["python", "react"]);
     expect(matchScore).toBe(Math.round((2 / 3) * 100) / 100);
   });
@@ -74,9 +112,7 @@ describe("matchSkillsForJob (pure)", () => {
   });
 
   it("skips unknown skills and does not substring-match (java !== javascript)", () => {
-    const { matchedSkills, matchScore } = matchSkillsForJob("JavaScript developer", undefined, [
-      "java", "javascript", "python",
-    ]);
+    const { matchedSkills, matchScore } = matchSkillsForJob("JavaScript developer", undefined, ["java", "javascript", "python"]);
     expect(matchedSkills).toEqual(["javascript"]);
     expect(matchScore).toBe(0.33);
   });
@@ -84,7 +120,8 @@ describe("matchSkillsForJob (pure)", () => {
   it("returns empty and score 0 when nothing is proven", () => {
     expect(matchSkillsForJob("Python developer", undefined, [])).toEqual({ matchedSkills: [], matchScore: 0 });
     expect(matchSkillsForJob("Python developer", "nothing relevant", ["rust"])).toEqual({
-      matchedSkills: [], matchScore: 0,
+      matchedSkills: [],
+      matchScore: 0,
     });
   });
 
@@ -97,7 +134,11 @@ describe("matchSkillsForJob (pure)", () => {
 describe("create → list roundtrip", () => {
   it("creates an application and lists it for the same user", async () => {
     const created = await createApplication({
-      userId: "aisha", company: "NewCo", roleTitle: "Intern", status: "applied", notes: "Go",
+      userId: "aisha",
+      company: "NewCo",
+      roleTitle: "Intern",
+      status: "applied",
+      notes: "Go",
     });
     expect(created.id).toMatch(/^app_[A-Za-z0-9_-]{8}$/);
     expect(created.status).toBe("applied");

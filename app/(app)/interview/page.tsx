@@ -22,7 +22,11 @@ function FlowSkeleton() {
       <div className="rounded-2xl border bg-card p-6 shadow-sm md:p-8">
         <Skeleton className="h-7 w-52" />
         <Skeleton className="mt-6 h-44 w-full rounded-xl" />
-        <div className="mt-6 grid grid-cols-3 gap-4"><Skeleton className="h-16" /><Skeleton className="h-16" /><Skeleton className="h-16" /></div>
+        <div className="mt-6 grid grid-cols-3 gap-4">
+          <Skeleton className="h-16" />
+          <Skeleton className="h-16" />
+          <Skeleton className="h-16" />
+        </div>
         <Skeleton className="mt-6 h-11 w-full rounded-xl sm:w-56" />
       </div>
       <div className="rounded-2xl border bg-card p-6 shadow-sm">

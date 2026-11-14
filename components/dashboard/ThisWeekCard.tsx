@@ -17,13 +17,15 @@ const card = "rounded-2xl border bg-card p-6 shadow-sm";
 /** The page's one filled action (ink board, size lg) and its quiet partner (cotton card). */
 export const primaryLink = cn(buttonVariants({ size: "lg" }), "w-full sm:w-auto");
 export const secondaryLink = cn(buttonVariants({ variant: "outline", size: "lg" }), "w-full sm:w-auto");
-const textLink = "font-medium text-primary underline decoration-1 underline-offset-4 outline-none hover:decoration-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
+const textLink =
+  "font-medium text-primary underline decoration-1 underline-offset-4 outline-none hover:decoration-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
 
 /** One plain sentence on why this skill, built from the receipt numbers. */
 export function whySentence(name: string, role: string, r: Pick<Receipt, "demandPct" | "coveredByDegree" | "moduleCode">): string {
   const ask = `${r.demandPct}% of ${role} ads ask for ${name}`;
   if (r.coveredByDegree === "no") return `${ask}, and none of your modules teach it.`;
-  if (r.coveredByDegree === "upcoming") return `${ask}. Your degree covers it later${r.moduleCode ? ` in ${r.moduleCode}` : ""}, so this week is a head start.`;
+  if (r.coveredByDegree === "upcoming")
+    return `${ask}. Your degree covers it later${r.moduleCode ? ` in ${r.moduleCode}` : ""}, so this week is a head start.`;
   return `${ask}. You've met it${r.moduleCode ? ` in ${r.moduleCode}` : " in your degree"}; this week turns it into proof.`;
 }
 
@@ -73,9 +75,28 @@ export function weekToShow(roadmap: Roadmap, map: BridgeMap): { week: RoadmapWee
 }
 
 function WeekBody({
-  userId, label, name, skillId, role, receipt, tasks, proof, isExamWeek, note, proven,
+  userId,
+  label,
+  name,
+  skillId,
+  role,
+  receipt,
+  tasks,
+  proof,
+  isExamWeek,
+  note,
+  proven,
 }: {
-  userId: string; label: string; name: string; skillId: string; role: string; receipt: Receipt; tasks: RoadmapTask[]; proof: string; isExamWeek?: boolean; note?: React.ReactNode;
+  userId: string;
+  label: string;
+  name: string;
+  skillId: string;
+  role: string;
+  receipt: Receipt;
+  tasks: RoadmapTask[];
+  proof: string;
+  isExamWeek?: boolean;
+  note?: React.ReactNode;
   /** The skill a merged PR just proved, so last week's focus reads as done. */
   proven?: string;
 }) {
@@ -88,7 +109,11 @@ function WeekBody({
           </h2>
           <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
             <p className="text-sm font-medium text-muted-foreground">{label}</p>
-            {isExamWeek && <span className="inline-flex h-6 items-center rounded-md border bg-muted px-2 text-xs font-medium text-foreground">Lighter week: exams</span>}
+            {isExamWeek && (
+              <span className="inline-flex h-6 items-center rounded-md border bg-muted px-2 text-xs font-medium text-foreground">
+                Lighter week: exams
+              </span>
+            )}
           </div>
           {proven && (
             <p className="mt-3 flex items-center gap-2 text-base font-medium text-foreground" data-testid="this-week-proven">
@@ -97,7 +122,9 @@ function WeekBody({
             </p>
           )}
           <div className="mt-4 flex flex-wrap items-center gap-2">
-            <StatusBadge status={receipt.coveredByDegree === "no" ? "gap" : receipt.coveredByDegree === "done" ? "degree-done" : "degree-upcoming"} />
+            <StatusBadge
+              status={receipt.coveredByDegree === "no" ? "gap" : receipt.coveredByDegree === "done" ? "degree-done" : "degree-upcoming"}
+            />
             {receipt.trend === "rising" && <StatusBadge status="rising" />}
           </div>
           <p className="mt-4 max-w-[52ch] text-lg text-pretty text-foreground">{receipt.reason || whySentence(name, role, receipt)}</p>
@@ -113,7 +140,12 @@ function WeekBody({
                   return (
                     <li key={t.id} className="flex items-start gap-3 py-3">
                       <Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
-                      <span className={cn("min-w-0 flex-1 text-base text-pretty text-foreground", t.done && "text-muted-foreground line-through")}>
+                      <span
+                        className={cn(
+                          "min-w-0 flex-1 text-base text-pretty text-foreground",
+                          t.done && "text-muted-foreground line-through",
+                        )}
+                      >
                         {t.title}
                         {t.done && <span className="sr-only"> (done)</span>}
                       </span>
@@ -125,7 +157,9 @@ function WeekBody({
             )}
             <p className={cn("flex items-start gap-3 py-3 text-base text-pretty text-foreground", tasks.length > 0 && "border-t")}>
               <BadgeCheck className="mt-0.5 size-5 shrink-0 text-status-proven" aria-hidden />
-              <span><span className="font-semibold">Proof:</span> {proof}</span>
+              <span>
+                <span className="font-semibold">Proof:</span> {proof}
+              </span>
             </p>
           </div>
           <PodIssueLine userId={userId} skillId={skillId} />
@@ -194,10 +228,16 @@ export function ThisWeekCard({ userId, map }: { userId: string; map: BridgeMap }
   if (!gap) {
     return (
       <section aria-labelledby="this-week-title" className={card}>
-        <h2 id="this-week-title" className="text-2xl font-semibold text-balance text-foreground md:text-3xl">This week: no gaps left for {role} roles</h2>
-        <p className="mt-3 max-w-[52ch] text-lg text-pretty text-muted-foreground">Everything this role asks for is proven or covered by your degree. Keep adding proof to your passport.</p>
+        <h2 id="this-week-title" className="text-2xl font-semibold text-balance text-foreground md:text-3xl">
+          This week: no gaps left for {role} roles
+        </h2>
+        <p className="mt-3 max-w-[52ch] text-lg text-pretty text-muted-foreground">
+          Everything this role asks for is proven or covered by your degree. Keep adding proof to your passport.
+        </p>
         <div className="mt-6">
-          <Link href="/map" className={primaryLink}>Open your Bridge Map</Link>
+          <Link href="/map" className={primaryLink}>
+            Open your Bridge Map
+          </Link>
         </div>
       </section>
     );

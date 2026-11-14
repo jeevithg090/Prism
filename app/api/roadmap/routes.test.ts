@@ -17,11 +17,17 @@ import { POST as generate } from "@/app/api/roadmap/generate/route";
 import { GET as getRoadmap } from "@/app/api/roadmap/[userId]/route";
 import { PATCH as patchTask } from "@/app/api/roadmap/[userId]/tasks/[taskId]/route";
 
-const params = <T,>(p: T) => ({ params: Promise.resolve(p) });
+const params = <T>(p: T) => ({ params: Promise.resolve(p) });
 const json = (body: unknown, method = "POST") => ({ method, headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
 
-beforeEach(() => { h.store = memStore(); h.events.length = 0; });
-afterEach(() => { delete process.env.DEMO_MODE; vi.restoreAllMocks(); });
+beforeEach(() => {
+  h.store = memStore();
+  h.events.length = 0;
+});
+afterEach(() => {
+  delete process.env.DEMO_MODE;
+  vi.restoreAllMocks();
+});
 
 describe("GET /api/graph/[userId]", () => {
   it("returns Aisha's map with readiness 0.38 → 0.84 and her role from her profile", async () => {
@@ -43,11 +49,27 @@ describe("GET /api/graph/[userId]", () => {
 
 describe("evidence routes", () => {
   it("GET lists fixture and store evidence, newest first", async () => {
-    await h.store.upsert("evidence", "ev_pod_x", { id: "ev_pod_x", userId: "aisha", skillId: "docker", level: 2, confidence: 0.9, source: "keystone-pod", url: "https://github.com/x/pull/1", createdAt: "2026-11-07T15:00:00Z" }, "aisha");
+    await h.store.upsert(
+      "evidence",
+      "ev_pod_x",
+      {
+        id: "ev_pod_x",
+        userId: "aisha",
+        skillId: "docker",
+        level: 2,
+        confidence: 0.9,
+        source: "keystone-pod",
+        url: "https://github.com/x/pull/1",
+        createdAt: "2026-11-07T15:00:00Z",
+      },
+      "aisha",
+    );
     const res = await getEvidence(new Request("http://x"), params({ userId: "aisha" }));
     const body = await res.json();
     expect(body.data[0].id).toBe("ev_pod_x");
-    expect(body.data.map((e: { skillId: string }) => e.skillId)).toEqual(expect.arrayContaining(["python", "git", "html-css", "javascript"]));
+    expect(body.data.map((e: { skillId: string }) => e.skillId)).toEqual(
+      expect.arrayContaining(["python", "git", "html-css", "javascript"]),
+    );
   });
   it("POST sync validates, and in DEMO_MODE returns the fixture without calling GitHub", async () => {
     expect((await syncEvidence(new Request("http://x", json({})))).status).toBe(400);
@@ -60,10 +82,45 @@ describe("evidence routes", () => {
     expect(h.events.at(-1)).toMatchObject({ agent: "evidence", status: "done" });
   });
   it("POST sync live: GitHub languages become conservative evidence", async () => {
-    await h.store.upsert("profiles", "zed", { id: "zed", name: "Zed", programmeId: "uom-bsc-cs", year: 1, startedAt: "2026-09-21", badges: [], interests: [], availability: [], dna: { targetRoles: ["ml-engineer"], timelineLabel: "", targetDate: "2027-09-01", hoursPerWeek: 8, theoryPractice: 50, formats: [], budget: "free", constraints: [], accessibility: [], language: "en" } }, "zed");
+    await h.store.upsert(
+      "profiles",
+      "zed",
+      {
+        id: "zed",
+        name: "Zed",
+        programmeId: "uom-bsc-cs",
+        year: 1,
+        startedAt: "2026-09-21",
+        badges: [],
+        interests: [],
+        availability: [],
+        dna: {
+          targetRoles: ["ml-engineer"],
+          timelineLabel: "",
+          targetDate: "2027-09-01",
+          hoursPerWeek: 8,
+          theoryPractice: 50,
+          formats: [],
+          budget: "free",
+          constraints: [],
+          accessibility: [],
+          language: "en",
+        },
+      },
+      "zed",
+    );
     vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
       const u = String(url);
-      if (u.includes("/users/zed-gh/repos")) return Response.json([{ name: "cv", html_url: "https://github.com/zed-gh/cv", fork: false, pushed_at: "2026-11-01", languages_url: "https://api.github.com/repos/zed-gh/cv/languages" }]);
+      if (u.includes("/users/zed-gh/repos"))
+        return Response.json([
+          {
+            name: "cv",
+            html_url: "https://github.com/zed-gh/cv",
+            fork: false,
+            pushed_at: "2026-11-01",
+            languages_url: "https://api.github.com/repos/zed-gh/cv/languages",
+          },
+        ]);
       return Response.json({ Python: 80_000, HTML: 2_000 });
     });
     const res = await syncEvidence(new Request("http://x", json({ userId: "zed", githubLogin: "zed-gh" })));
@@ -72,24 +129,117 @@ describe("evidence routes", () => {
     expect(items.find((e) => e.skillId === "html-css")).toMatchObject({ level: 1 });
   });
   it("POST sync live: a LeetCode handle alone runs the LeetCode connector", async () => {
-    await h.store.upsert("profiles", "lee", { id: "lee", name: "Lee", programmeId: "uom-bsc-cs", year: 1, startedAt: "2026-09-21", badges: [], interests: [], availability: [], dna: { targetRoles: ["ml-engineer"], timelineLabel: "", targetDate: "2027-09-01", hoursPerWeek: 8, theoryPractice: 50, formats: [], budget: "free", constraints: [], accessibility: [], language: "en" } }, "lee");
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async () => Response.json({ data: {
-      matchedUser: { username: "lee-lc", profile: { ranking: 1000 }, submitStatsGlobal: { acSubmissionNum: [{ difficulty: "All", count: 200 }, { difficulty: "Easy", count: 80 }, { difficulty: "Medium", count: 100 }, { difficulty: "Hard", count: 20 }] }, problemsSolvedBeatsStats: [] },
-      recentAcSubmissionList: [],
-    } }));
+    await h.store.upsert(
+      "profiles",
+      "lee",
+      {
+        id: "lee",
+        name: "Lee",
+        programmeId: "uom-bsc-cs",
+        year: 1,
+        startedAt: "2026-09-21",
+        badges: [],
+        interests: [],
+        availability: [],
+        dna: {
+          targetRoles: ["ml-engineer"],
+          timelineLabel: "",
+          targetDate: "2027-09-01",
+          hoursPerWeek: 8,
+          theoryPractice: 50,
+          formats: [],
+          budget: "free",
+          constraints: [],
+          accessibility: [],
+          language: "en",
+        },
+      },
+      "lee",
+    );
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async () =>
+      Response.json({
+        data: {
+          matchedUser: {
+            username: "lee-lc",
+            profile: { ranking: 1000 },
+            submitStatsGlobal: {
+              acSubmissionNum: [
+                { difficulty: "All", count: 200 },
+                { difficulty: "Easy", count: 80 },
+                { difficulty: "Medium", count: 100 },
+                { difficulty: "Hard", count: 20 },
+              ],
+            },
+            problemsSolvedBeatsStats: [],
+          },
+          recentAcSubmissionList: [],
+        },
+      }),
+    );
     const res = await syncEvidence(new Request("http://x", json({ userId: "lee", leetcodeUser: "lee-lc" })));
     expect(res.status).toBe(200);
     expect(String(fetchSpy.mock.calls[0][0])).toContain("leetcode.com/graphql");
     const items = (await res.json()).data as { skillId: string; source: string; level: number }[];
-    expect(items.filter((e) => e.source === "leetcode").map((e) => e.skillId).sort()).toEqual(["algorithms", "data-structures"]);
+    expect(
+      items
+        .filter((e) => e.source === "leetcode")
+        .map((e) => e.skillId)
+        .sort(),
+    ).toEqual(["algorithms", "data-structures"]);
     expect(items.find((e) => e.skillId === "algorithms")).toMatchObject({ level: 2 });
   });
   it("POST sync live: GitHub and LeetCode together return both sources' evidence", async () => {
-    await h.store.upsert("profiles", "duo", { id: "duo", name: "Duo", programmeId: "uom-bsc-cs", year: 1, startedAt: "2026-09-21", badges: [], interests: [], availability: [], dna: { targetRoles: ["ml-engineer"], timelineLabel: "", targetDate: "2027-09-01", hoursPerWeek: 8, theoryPractice: 50, formats: [], budget: "free", constraints: [], accessibility: [], language: "en" } }, "duo");
+    await h.store.upsert(
+      "profiles",
+      "duo",
+      {
+        id: "duo",
+        name: "Duo",
+        programmeId: "uom-bsc-cs",
+        year: 1,
+        startedAt: "2026-09-21",
+        badges: [],
+        interests: [],
+        availability: [],
+        dna: {
+          targetRoles: ["ml-engineer"],
+          timelineLabel: "",
+          targetDate: "2027-09-01",
+          hoursPerWeek: 8,
+          theoryPractice: 50,
+          formats: [],
+          budget: "free",
+          constraints: [],
+          accessibility: [],
+          language: "en",
+        },
+      },
+      "duo",
+    );
     vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
       const u = String(url);
-      if (u.includes("leetcode.com")) return Response.json({ data: { matchedUser: { username: "duo", profile: {}, submitStatsGlobal: { acSubmissionNum: [{ difficulty: "All", count: 30 }] }, problemsSolvedBeatsStats: [] }, recentAcSubmissionList: [] } });
-      if (u.includes("/users/duo-gh/repos")) return Response.json([{ name: "cv", html_url: "https://github.com/duo-gh/cv", fork: false, pushed_at: "2026-11-01", languages_url: "https://api.github.com/repos/duo-gh/cv/languages" }]);
+      if (u.includes("leetcode.com"))
+        return Response.json({
+          data: {
+            matchedUser: {
+              username: "duo",
+              profile: {},
+              submitStatsGlobal: { acSubmissionNum: [{ difficulty: "All", count: 30 }] },
+              problemsSolvedBeatsStats: [],
+            },
+            recentAcSubmissionList: [],
+          },
+        });
+      if (u.includes("/users/duo-gh/repos"))
+        return Response.json([
+          {
+            name: "cv",
+            html_url: "https://github.com/duo-gh/cv",
+            fork: false,
+            pushed_at: "2026-11-01",
+            languages_url: "https://api.github.com/repos/duo-gh/cv/languages",
+          },
+        ]);
       return Response.json({ Python: 80_000 });
     });
     const res = await syncEvidence(new Request("http://x", json({ userId: "duo", githubLogin: "duo-gh", leetcodeUser: "duo" })));

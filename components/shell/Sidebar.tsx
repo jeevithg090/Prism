@@ -64,7 +64,10 @@ export function isActive(pathname: string | null, item: NavItem): boolean {
 /** The Keystone arch: five voussoirs on two piers, the keystone at the crown in full strength. */
 export function KeystoneMark({ className }: { className?: string }) {
   return (
-    <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm", className)} aria-hidden>
+    <span
+      className={cn("flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm", className)}
+      aria-hidden
+    >
       <svg viewBox="0 0 32 32" className="size-6" fill="currentColor" focusable="false" aria-hidden>
         <g opacity="0.6">
           <path d="M4 19A12 12 0 0 1 5.99 12.38L10.58 15.41A6.5 6.5 0 0 0 9.5 19Z" />
@@ -114,12 +117,16 @@ export function SidebarView({ pathname, viewerId }: { pathname: string | null; v
       </Link>
       <nav aria-label="Main" className="flex min-h-0 flex-1 flex-col overflow-y-auto px-3 pb-3">
         <ul className="space-y-0.5">
-          {main.map((item) => <NavLink key={item.id} item={item} active={isActive(pathname, item)} />)}
+          {main.map((item) => (
+            <NavLink key={item.id} item={item} active={isActive(pathname, item)} />
+          ))}
         </ul>
         <div className="mt-5 border-t border-sidebar-border pt-4">
           <p className="mb-1.5 px-3 text-xs font-medium text-muted-foreground md:sr-only lg:not-sr-only">For staff &amp; judges</p>
           <ul className="space-y-0.5">
-            {STAFF_NAV.map((item) => <NavLink key={item.id} item={item} active={isActive(pathname, item)} />)}
+            {STAFF_NAV.map((item) => (
+              <NavLink key={item.id} item={item} active={isActive(pathname, item)} />
+            ))}
           </ul>
         </div>
         <ul className="mt-auto space-y-0.5 pt-4">

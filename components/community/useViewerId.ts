@@ -7,5 +7,9 @@ export function readViewerId(cookie: string = typeof document === "undefined" ? 
 }
 const noopSubscribe = () => () => {};
 export function useViewerId(): string {
-  return React.useSyncExternalStore(noopSubscribe, () => readViewerId(), () => "aisha");
+  return React.useSyncExternalStore(
+    noopSubscribe,
+    () => readViewerId(),
+    () => "aisha",
+  );
 }

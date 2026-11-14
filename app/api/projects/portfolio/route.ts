@@ -4,11 +4,7 @@
 // PATCH { id, userId, ... } → update (title, pitch, status, showcaseUrl)
 import { badRequest, fail, internal, ok } from "@/lib/schemas/community";
 import { withReplayInfo } from "@/lib/replay";
-import {
-  CapstoneCreateReqZ,
-  CapstoneUpdateReqZ,
-  MilestoneUpdateReqZ,
-} from "@/lib/schemas/capstone";
+import { CapstoneCreateReqZ, CapstoneUpdateReqZ, MilestoneUpdateReqZ } from "@/lib/schemas/capstone";
 import { createCapstone, listCapstones, toggleMilestone, updateCapstone } from "@/lib/agents/capstone-project";
 
 async function handleGET(req: Request): Promise<Response> {

@@ -17,7 +17,10 @@ type Usage = { id: string; userId: string; day: string; count: number };
 
 /** `not_found` → no profile (404) · `daily_limit` → today's drafts are used up (429). */
 export class GuidesError extends Error {
-  constructor(readonly code: "not_found" | "daily_limit", message: string) {
+  constructor(
+    readonly code: "not_found" | "daily_limit",
+    message: string,
+  ) {
     super(message);
     this.name = "GuidesError";
   }
@@ -44,11 +47,16 @@ const hasNodes = (m: BridgeMap | null | undefined): m is BridgeMap => Array.isAr
 
 /** The user's map: cached in the store → built by P2's loadGraph → the fixture file → Aisha's demo map. */
 async function loadMap(userId: string, roleId: string): Promise<BridgeMap | null> {
-  const cached = await getStore().get<BridgeMap>("maps", `${userId}:${roleId}`).catch(() => null);
+  const cached = await getStore()
+    .get<BridgeMap>("maps", `${userId}:${roleId}`)
+    .catch(() => null);
   if (hasNodes(cached)) return cached;
   const built = await loadGraph(userId, roleId).catch(() => null);
   if (hasNodes(built)) return built;
-  const own = SAFE_ID.test(userId) && SAFE_ID.test(roleId) ? (readJSON(`data/fixtures/bridgemap.${userId}.${roleId}.json`) as BridgeMap | undefined) : undefined;
+  const own =
+    SAFE_ID.test(userId) && SAFE_ID.test(roleId)
+      ? (readJSON(`data/fixtures/bridgemap.${userId}.${roleId}.json`) as BridgeMap | undefined)
+      : undefined;
   if (hasNodes(own)) return own;
   const demo = readJSON("data/fixtures/bridgemap.aisha.ml-engineer.json") as BridgeMap | undefined;
   return hasNodes(demo) ? demo : null;

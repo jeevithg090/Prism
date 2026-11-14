@@ -18,7 +18,10 @@ export function MarketSkeleton({ header, switcher }: { header?: React.ReactNode;
           <div className="mt-6 divide-y">
             {Array.from({ length: 8 }, (_, i) => (
               <div key={i} className="space-y-2 py-3">
-                <div className="flex justify-between gap-4"><Skeleton className="h-5 w-32" /><Skeleton className="h-5 w-24" /></div>
+                <div className="flex justify-between gap-4">
+                  <Skeleton className="h-5 w-32" />
+                  <Skeleton className="h-5 w-24" />
+                </div>
                 <Skeleton className="h-2.5 rounded-xs" style={{ width: `${92 - i * 8}%` }} />
               </div>
             ))}
@@ -36,7 +39,11 @@ export function MarketSkeleton({ header, switcher }: { header?: React.ReactNode;
       </div>
       <div className="space-y-5 rounded-2xl border bg-card p-6 shadow-sm">
         <Skeleton className="h-7 w-64 rounded-lg" />
-        <div className="flex flex-wrap gap-2">{[0, 1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-9 w-24 rounded-lg" />)}</div>
+        <div className="flex flex-wrap gap-2">
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} className="h-9 w-24 rounded-lg" />
+          ))}
+        </div>
         <Skeleton className="h-[280px] w-full rounded-xl md:h-[26rem]" />
       </div>
     </div>

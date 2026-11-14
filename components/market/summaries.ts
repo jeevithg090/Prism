@@ -101,12 +101,23 @@ export function trendSummary(series: TrendSeries[]): string {
 export type RisingItem = { skillId: SkillId; growthPerYear: number; share: number; week?: number; status?: SkillStatus };
 
 /** Rising skills the role asks for, fastest first, with the roadmap week that covers each (if any). */
-export function risingForRole(demand: RoleDemand, trends: TrendSeries[], statusBySkill: StatusBySkill, weeks: RoadmapWeeks | null): RisingItem[] {
+export function risingForRole(
+  demand: RoleDemand,
+  trends: TrendSeries[],
+  statusBySkill: StatusBySkill,
+  weeks: RoadmapWeeks | null,
+): RisingItem[] {
   const share = new Map(demand.skills.map((s) => [s.skillId, s.share]));
   return trends
     .filter((t) => t.label === "rising" && share.has(t.skillId))
     .sort((a, b) => b.growthPerYear - a.growthPerYear)
-    .map((t) => ({ skillId: t.skillId, growthPerYear: t.growthPerYear, share: share.get(t.skillId)!, week: weeks?.[t.skillId], status: statusBySkill[t.skillId] }));
+    .map((t) => ({
+      skillId: t.skillId,
+      growthPerYear: t.growthPerYear,
+      share: share.get(t.skillId)!,
+      week: weeks?.[t.skillId],
+      status: statusBySkill[t.skillId],
+    }));
 }
 
 /** Default chart picks: the fastest-rising skill the role asks for, plus your biggest gap that has trend data. */

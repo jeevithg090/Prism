@@ -8,7 +8,14 @@
 // whether each service is configured.
 import { z } from "zod";
 import {
-  defaultRunMode, fillFromCookieHeader, MODE_COOKIE, MODE_MAX_AGE_S, modeFromCookieHeader, replayStats, strictFromCookieHeader, type RunMode,
+  defaultRunMode,
+  fillFromCookieHeader,
+  MODE_COOKIE,
+  MODE_MAX_AGE_S,
+  modeFromCookieHeader,
+  replayStats,
+  strictFromCookieHeader,
+  type RunMode,
 } from "@/lib/replay";
 import { badRequest, fail, internal, ok } from "@/lib/schemas/community";
 import { resetStore } from "@/lib/store";
@@ -31,7 +38,12 @@ function state(mode: RunMode, cookie: string | null) {
     /** Dev-only recording Demo (ks_replay=fill): exact recordings replay, misses are called live and recorded. */
     fill: !strictFromCookieHeader(cookie) && fillFromCookieHeader(cookie),
     /** Which live services are configured here (true/false only). */
-    services: { openai: set("OPENAI_API_KEY"), firecrawl: set("FIRECRAWL_API_KEY"), elevenlabs: set("ELEVENLABS_API_KEY"), github: set("GITHUB_TOKEN") },
+    services: {
+      openai: set("OPENAI_API_KEY"),
+      firecrawl: set("FIRECRAWL_API_KEY"),
+      elevenlabs: set("ELEVENLABS_API_KEY"),
+      github: set("GITHUB_TOKEN"),
+    },
     /** Live AI here creates GitHub repos and posts PR comments ("Start our project", "Review my PR"). */
     githubWrites: set("GITHUB_TOKEN") && set("GITHUB_ORG"),
     recordings: s.byNamespace,

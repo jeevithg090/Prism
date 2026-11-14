@@ -19,7 +19,7 @@ export async function POST(req: Request) {
   try {
     body = await req.json();
   } catch {
-    return badRequest("Body must be JSON like {\"text\":\"Hello\"}");
+    return badRequest('Body must be JSON like {"text":"Hello"}');
   }
   const parsed = TtsReqZ.safeParse(body);
   if (!parsed.success) return badRequest(parsed.error);
@@ -48,10 +48,15 @@ export async function POST(req: Request) {
         return tts(text, voiceId);
       },
       {
-        ext: "mp3", contentType: "audio/mpeg", requires: ["ELEVENLABS_API_KEY"], loose: false,
+        ext: "mp3",
+        contentType: "audio/mpeg",
+        requires: ["ELEVENLABS_API_KEY"],
+        loose: false,
         // The voice id stays out of the stored metadata; it is only part of the hashed key.
         meta: { kind: "tts", model: TTS_MODEL_ID, label: text },
-        onReplay: () => { replayed = true; },
+        onReplay: () => {
+          replayed = true;
+        },
       },
     );
     return audioResponse(audio, replayed ? "replayed" : "live");

@@ -6,14 +6,20 @@ import { POST } from "./route";
 // Spy on the live binding so the route's imported `buildInterviewPrep` is controlled in tests.
 const prepMock = vi.spyOn(IP, "buildInterviewPrep");
 
-const request = (body: unknown) =>
-  new Request("http://localhost/api/interview/prep", { method: "POST", body: JSON.stringify(body) });
+const request = (body: unknown) => new Request("http://localhost/api/interview/prep", { method: "POST", body: JSON.stringify(body) });
 
 const prep: InterviewPrepSlice[] = [
   {
     skillId: "docker",
     questions: [
-      { id: "prep-docker-q1", skillId: "docker", question: "What's the difference between a Docker image and a container?", type: "technical", difficulty: 1, tip: "An image is the read-only template; a container is a running instance." },
+      {
+        id: "prep-docker-q1",
+        skillId: "docker",
+        question: "What's the difference between a Docker image and a container?",
+        type: "technical",
+        difficulty: 1,
+        tip: "An image is the read-only template; a container is a running instance.",
+      },
     ],
     focus: "Focus on Docker: it's your biggest gap for ML engineer roles.",
   },

@@ -20,7 +20,11 @@ function readStored(): "dark" | "light" | null {
 export function applyTheme(theme: "dark" | "light", persist = true) {
   document.documentElement.classList.toggle("dark", theme === "dark");
   if (persist) {
-    try { window.localStorage.setItem(THEME_KEY, theme); } catch { /* private mode: the class still applies */ }
+    try {
+      window.localStorage.setItem(THEME_KEY, theme);
+    } catch {
+      /* private mode: the class still applies */
+    }
   }
   window.dispatchEvent(new Event(EVENT));
 }
@@ -44,11 +48,7 @@ export function ThemeToggle({ className }: { className?: string }) {
       onClick={() => applyTheme(dark ? "light" : "dark")}
       aria-label={label}
       title={label}
-      className={cn(
-        buttonVariants({ variant: "outline", size: "icon" }),
-        "size-10 text-muted-foreground hover:text-foreground",
-        className,
-      )}
+      className={cn(buttonVariants({ variant: "outline", size: "icon" }), "size-10 text-muted-foreground hover:text-foreground", className)}
     >
       {dark ? <Sun className="size-5" aria-hidden /> : <Moon className="size-5" aria-hidden />}
     </button>

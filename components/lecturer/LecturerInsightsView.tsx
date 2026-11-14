@@ -44,18 +44,27 @@ export function LecturerInsightsView({ programmeId }: { programmeId: string }) {
   // ---- headline stats (gate for the whole page: below 10 students nothing else is shown) ----
   let stats: React.ReactNode;
   if (cohort) stats = <LecturerStats cohort={cohort} insights={insights} />;
-  else if (cohortQ.isError) stats = <ErrorState title="We couldn't load your cohort" body="The cohort numbers didn't arrive. Try again, or show the demo cohort." onRetry={() => cohortQ.refetch()} onUseDemo={useDemo} />;
-  else stats = (
-    <div role="status" className="grid gap-6 md:grid-cols-3" aria-busy="true" aria-label="Loading cohort numbers">
-      {[0, 1, 2].map((i) => (
-        <div key={i} className="space-y-3">
-          <Skeleton className="h-4 w-40 max-w-full" />
-          <Skeleton className="h-12 w-28" />
-          <Skeleton className="h-4 w-56 max-w-full" />
-        </div>
-      ))}
-    </div>
-  );
+  else if (cohortQ.isError)
+    stats = (
+      <ErrorState
+        title="We couldn't load your cohort"
+        body="The cohort numbers didn't arrive. Try again, or show the demo cohort."
+        onRetry={() => cohortQ.refetch()}
+        onUseDemo={useDemo}
+      />
+    );
+  else
+    stats = (
+      <div role="status" className="grid gap-6 md:grid-cols-3" aria-busy="true" aria-label="Loading cohort numbers">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="space-y-3">
+            <Skeleton className="h-4 w-40 max-w-full" />
+            <Skeleton className="h-12 w-28" />
+            <Skeleton className="h-4 w-56 max-w-full" />
+          </div>
+        ))}
+      </div>
+    );
 
   if (cohort?.suppressed) {
     return (
@@ -73,41 +82,75 @@ export function LecturerInsightsView({ programmeId }: { programmeId: string }) {
   // ---- gaps chart ----
   let gaps: React.ReactNode;
   if (insights) {
-    gaps = insights.gaps.length
-      ? <GapsChart gaps={insights.gaps} roleName={roleName} />
-      : <EmptyState icon={SearchCheck} title="Your syllabus covers every in-demand skill we track" body="When job ads start asking for something no module teaches, it will show up here." />;
+    gaps = insights.gaps.length ? (
+      <GapsChart gaps={insights.gaps} roleName={roleName} />
+    ) : (
+      <EmptyState
+        icon={SearchCheck}
+        title="Your syllabus covers every in-demand skill we track"
+        body="When job ads start asking for something no module teaches, it will show up here."
+      />
+    );
   } else if (insightsQ.isError) {
-    gaps = <ErrorState title="We couldn't compare your syllabus with job ads" body="Try again, or show the demo programme." onRetry={() => insightsQ.refetch()} onUseDemo={useDemo} />;
+    gaps = (
+      <ErrorState
+        title="We couldn't compare your syllabus with job ads"
+        body="Try again, or show the demo programme."
+        onRetry={() => insightsQ.refetch()}
+        onUseDemo={useDemo}
+      />
+    );
   } else gaps = <LoadingSkeleton variant="chart" />;
 
   // ---- lab ideas ----
   let labs: React.ReactNode;
   if (insights) {
-    labs = insights.labIdeas.length && insights.gaps.length
-      ? <LabIdeas ideas={insights.labIdeas} />
-      : <EmptyState icon={FlaskConical} title="No lab ideas needed right now" body="Lab ideas appear when an in-demand skill isn't covered by any module." />;
+    labs =
+      insights.labIdeas.length && insights.gaps.length ? (
+        <LabIdeas ideas={insights.labIdeas} />
+      ) : (
+        <EmptyState
+          icon={FlaskConical}
+          title="No lab ideas needed right now"
+          body="Lab ideas appear when an in-demand skill isn't covered by any module."
+        />
+      );
   } else if (insightsQ.isError) {
     labs = <ErrorState title="We couldn't write lab ideas" onRetry={() => insightsQ.refetch()} onUseDemo={useDemo} />;
-  } else labs = (
-    <div role="status" className="divide-y" aria-busy="true" aria-label="Loading lab ideas">
-      {[0, 1, 2].map((i) => (
-        <div key={i} className="grid gap-x-6 gap-y-3 py-5 first:pt-0 last:pb-0 md:grid-cols-[9rem_minmax(0,1fr)_auto]">
-          <Skeleton className="h-4 w-24" />
-          <div className="space-y-2"><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-4/5" /></div>
-          <Skeleton className="h-9 w-44 rounded-xl" />
-        </div>
-      ))}
-    </div>
-  );
+  } else
+    labs = (
+      <div role="status" className="divide-y" aria-busy="true" aria-label="Loading lab ideas">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="grid gap-x-6 gap-y-3 py-5 first:pt-0 last:pb-0 md:grid-cols-[9rem_minmax(0,1fr)_auto]">
+            <Skeleton className="h-4 w-24" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-4/5" />
+            </div>
+            <Skeleton className="h-9 w-44 rounded-xl" />
+          </div>
+        ))}
+      </div>
+    );
 
   // ---- peer teaching ----
   let teaching: React.ReactNode;
   if (peer) {
-    teaching = peer.suppressed
-      ? <EmptyState icon={ShieldCheck} title="Hidden to protect students" body="Peer-teaching numbers appear once 10 or more students on this programme use Keystone." />
-      : peer.peerTeachable.length || peer.unteachableGaps.length
-        ? <PeerTeaching data={peer} />
-        : <EmptyState icon={Users} title="No skills data yet" body="Once students connect their work, you'll see which skills they can teach each other." />;
+    teaching = peer.suppressed ? (
+      <EmptyState
+        icon={ShieldCheck}
+        title="Hidden to protect students"
+        body="Peer-teaching numbers appear once 10 or more students on this programme use Keystone."
+      />
+    ) : peer.peerTeachable.length || peer.unteachableGaps.length ? (
+      <PeerTeaching data={peer} />
+    ) : (
+      <EmptyState
+        icon={Users}
+        title="No skills data yet"
+        body="Once students connect their work, you'll see which skills they can teach each other."
+      />
+    );
   } else if (peerQ.isError) {
     teaching = <ErrorState title="We couldn't load peer-teaching numbers" onRetry={() => peerQ.refetch()} onUseDemo={useDemo} />;
   } else teaching = <LoadingSkeleton variant="list" />;
@@ -131,13 +174,19 @@ export function LecturerInsightsView({ programmeId }: { programmeId: string }) {
         >
           {gaps}
         </SectionCard>
-      ) : gaps}
+      ) : (
+        gaps
+      )}
 
       <section aria-labelledby="labs-heading" className={labsReady ? "rounded-2xl border bg-card p-6 shadow-sm" : "space-y-4"}>
         <div className={labsReady ? "mb-5" : undefined}>
           {/* Hallmark · reworded "Suggested practical labs" to "Labs that would close these gaps" · review: generic heading, tie it to the ledger */}
-          <h2 id="labs-heading" className="text-xl font-semibold text-foreground">Labs that would close these gaps</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Small additions to modules you already run, each linked to what the module teaches.</p>
+          <h2 id="labs-heading" className="text-xl font-semibold text-foreground">
+            Labs that would close these gaps
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Small additions to modules you already run, each linked to what the module teaches.
+          </p>
         </div>
         {labs}
       </section>
@@ -149,7 +198,9 @@ export function LecturerInsightsView({ programmeId }: { programmeId: string }) {
         >
           {teaching}
         </SectionCard>
-      ) : teaching}
+      ) : (
+        teaching
+      )}
 
       <Footer />
     </div>

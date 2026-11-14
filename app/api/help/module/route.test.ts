@@ -6,7 +6,13 @@ vi.mock("@/lib/agents/module-help", () => ({ createModuleHelpRequest }));
 import { POST } from "./route";
 
 const post = (body: unknown) =>
-  POST(new Request("http://test/api/help/module", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }));
+  POST(
+    new Request("http://test/api/help/module", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    }),
+  );
 
 beforeEach(() => {
   vi.clearAllMocks();

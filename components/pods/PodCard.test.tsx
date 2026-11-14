@@ -40,7 +40,12 @@ describe("PodCard", () => {
 
   it("starts the project: POSTs the podId, shows a disabled 'Designing your project…' button, then navigates", async () => {
     let resolve!: (b: ProjectBrief) => void;
-    apiPost.mockImplementation(() => new Promise<ProjectBrief>((r) => { resolve = r; }));
+    apiPost.mockImplementation(
+      () =>
+        new Promise<ProjectBrief>((r) => {
+          resolve = r;
+        }),
+    );
     const user = userEvent.setup();
     renderWithClient(<PodCard pod={demoPod(false)} viewerId="aisha" cta="start" />);
 
@@ -52,7 +57,10 @@ describe("PodCard", () => {
 
     resolve(demoPod(true).project!);
     await waitFor(() => expect(push).toHaveBeenCalledWith("/pods/pod_demo01"));
-    expect(toastSuccess).toHaveBeenCalledWith("Repo is live", expect.objectContaining({ action: expect.objectContaining({ label: "Open repo" }) }));
+    expect(toastSuccess).toHaveBeenCalledWith(
+      "Repo is live",
+      expect.objectContaining({ action: expect.objectContaining({ label: "Open repo" }) }),
+    );
   });
 
   it("links to the existing project instead of creating another one", () => {

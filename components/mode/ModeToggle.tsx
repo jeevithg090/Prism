@@ -30,9 +30,13 @@ const OPTIONS: { value: RunMode; label: string }[] = [
 ];
 
 const NS_LABEL: Record<string, [string, string]> = {
-  llm: ["AI answer", "AI answers"], embed: ["embedding batch", "embedding batches"], firecrawl: ["Firecrawl page or search", "Firecrawl pages and searches"],
-  tts: ["voice clip", "voice clips"], hn: ["Hacker News backfill", "Hacker News backfills"],
-  github: ["GitHub read", "GitHub reads"], market: ["job-ad search", "job-ad searches"],
+  llm: ["AI answer", "AI answers"],
+  embed: ["embedding batch", "embedding batches"],
+  firecrawl: ["Firecrawl page or search", "Firecrawl pages and searches"],
+  tts: ["voice clip", "voice clips"],
+  hn: ["Hacker News backfill", "Hacker News backfills"],
+  github: ["GitHub read", "GitHub reads"],
+  market: ["job-ad search", "job-ad searches"],
 };
 
 export const MODE_EVENT = "keystone:mode";
@@ -56,8 +60,24 @@ function watchReplay() {
       const source = res.headers?.get?.(REPLAY_HEADER);
       if (source && source !== "off") {
         const send = (info: ReplayInfo | null) => window.dispatchEvent(new CustomEvent(REPLAY_EVENT, { detail: info }));
-        if ((res.headers.get("content-type") ?? "").includes("json")) void res.clone().json().then((j) => send(replayInfoOf(j)), () => undefined);
-        else if (source === "replayed" || source === "live") send({ mode: source === "replayed" ? "demo" : "live", source, replayed: source === "replayed" ? 1 : 0, recorded: 0, live: source === "live" ? 1 : 0, missed: 0, kinds: ["tts"] });
+        if ((res.headers.get("content-type") ?? "").includes("json"))
+          void res
+            .clone()
+            .json()
+            .then(
+              (j) => send(replayInfoOf(j)),
+              () => undefined,
+            );
+        else if (source === "replayed" || source === "live")
+          send({
+            mode: source === "replayed" ? "demo" : "live",
+            source,
+            replayed: source === "replayed" ? 1 : 0,
+            recorded: 0,
+            live: source === "live" ? 1 : 0,
+            missed: 0,
+            kinds: ["tts"],
+          });
       }
     } catch {
       /* watching is best-effort */
@@ -85,7 +105,17 @@ export function recordingsSummary(s: ModeState | null): string {
   return `${total} recording${total === 1 ? "" : "s"} from real runs: ${parts.join(", ")}.${last ? ` Last recorded ${last}.` : ""}`;
 }
 
-function Segments({ mode, busy, onChoose, idPrefix }: { mode: RunMode | null; busy: boolean; onChoose: (m: RunMode) => void; idPrefix: string }) {
+function Segments({
+  mode,
+  busy,
+  onChoose,
+  idPrefix,
+}: {
+  mode: RunMode | null;
+  busy: boolean;
+  onChoose: (m: RunMode) => void;
+  idPrefix: string;
+}) {
   return (
     <div role="group" aria-label="AI mode" className="inline-flex h-10 shrink-0 items-stretch gap-0.5 rounded-xl border bg-card p-0.5">
       {OPTIONS.map((o) => {
@@ -142,8 +172,12 @@ export function ModeToggle({ className, initial }: { className?: string; initial
           setMode(j.data.mode);
         }
       })
-      .catch(() => { /* the switch still works; it just starts without a highlighted option */ });
-    return () => { alive = false; };
+      .catch(() => {
+        /* the switch still works; it just starts without a highlighted option */
+      });
+    return () => {
+      alive = false;
+    };
   }, []);
 
   const choose = async (next: RunMode) => {
@@ -152,15 +186,25 @@ export function ModeToggle({ className, initial }: { className?: string; initial
     setMode(next);
     setBusy(true);
     try {
-      const r = await fetch("/api/mode", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mode: next }) });
+      const r = await fetch("/api/mode", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ mode: next }),
+      });
       const j = (await r.json().catch(() => null)) as { ok?: boolean; data?: ModeState } | null;
       if (!r.ok || !j?.ok) throw new Error("mode_failed");
       if (j.data) setState(j.data);
-      setLive(next === "demo" ? "Demo: replaying recorded results of real runs." : "Live AI: calling OpenAI, Firecrawl and ElevenLabs now.");
+      setLive(
+        next === "demo" ? "Demo: replaying recorded results of real runs." : "Live AI: calling OpenAI, Firecrawl and ElevenLabs now.",
+      );
       startTransition(() => router.refresh());
       // Client-fetched panels still hold the other mode's answers: refetch them under the new cookie.
       void queryClient?.invalidateQueries();
-      try { window.dispatchEvent(new CustomEvent(MODE_EVENT, { detail: { mode: next } })); } catch { /* old browsers */ }
+      try {
+        window.dispatchEvent(new CustomEvent(MODE_EVENT, { detail: { mode: next } }));
+      } catch {
+        /* old browsers */
+      }
     } catch {
       setMode(prev);
       toast.error("Couldn't switch mode", { description: "Nothing changed. Please try again." });
@@ -181,7 +225,9 @@ export function ModeToggle({ className, initial }: { className?: string; initial
             "inline-flex h-10 min-w-10 items-center justify-center gap-1.5 rounded-xl border bg-card px-2.5 text-sm font-medium text-muted-foreground outline-none transition-colors duration-150 hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring sm:border-transparent sm:bg-transparent sm:px-0",
           )}
         >
-          <span aria-hidden className="text-foreground sm:hidden">{current ?? "Mode"}</span>
+          <span aria-hidden className="text-foreground sm:hidden">
+            {current ?? "Mode"}
+          </span>
           <Info className="size-5" aria-hidden />
           <span className="sr-only">{current ? `Mode: ${current}. ` : ""}About Demo and Live AI</span>
         </PopoverTrigger>
@@ -199,11 +245,15 @@ export function ModeToggle({ className, initial }: { className?: string; initial
             </div>
           )}
           {state?.demoModeEnv && (
-            <p className="text-sm leading-6 text-muted-foreground">This server runs the offline demo, so both options show Keystone&apos;s built-in demo data here.</p>
+            <p className="text-sm leading-6 text-muted-foreground">
+              This server runs the offline demo, so both options show Keystone&apos;s built-in demo data here.
+            </p>
           )}
         </PopoverContent>
       </Popover>
-      <span className="sr-only" aria-live="polite">{live}</span>
+      <span className="sr-only" aria-live="polite">
+        {live}
+      </span>
     </div>
   );
 }

@@ -16,7 +16,11 @@ export async function GET(req: Request) {
     if (!conversationConfigured()) return ok(base);
     const agentId = process.env.ELEVENLABS_INTERVIEW_AGENT_ID!.trim();
     try {
-      return ok({ agentId, signedUrl: await getSignedConversationUrl(agentId), dynamicVariables: ctx.dynamicVariables } satisfies InterviewConfig);
+      return ok({
+        agentId,
+        signedUrl: await getSignedConversationUrl(agentId),
+        dynamicVariables: ctx.dynamicVariables,
+      } satisfies InterviewConfig);
     } catch {
       return ok(base); // ElevenLabs is down or the key is wrong: Practice mode still works
     }

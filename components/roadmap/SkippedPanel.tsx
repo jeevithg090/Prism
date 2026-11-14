@@ -6,19 +6,32 @@ import { skillName } from "@/lib/schemas/community";
 import { readableModules, shortModuleTitle, termText } from "./roadmapUtils";
 
 export function SkippedPanel({
-  skipped, nodes, hoursPerWeek, moduleTitles,
-}: { skipped: SkippedItem[]; nodes?: BridgeNode[]; hoursPerWeek?: number; moduleTitles?: Record<string, string> }) {
+  skipped,
+  nodes,
+  hoursPerWeek,
+  moduleTitles,
+}: {
+  skipped: SkippedItem[];
+  nodes?: BridgeNode[];
+  hoursPerWeek?: number;
+  moduleTitles?: Record<string, string>;
+}) {
   const n = skipped.length;
   return (
     <section id="skipped" aria-labelledby="skipped-h" className="scroll-mt-6 rounded-2xl border bg-card p-6 shadow-sm">
       <div className="flex items-start gap-3">
         <GraduationCap className="mt-1 size-6 shrink-0 text-status-degree" aria-hidden />
         <div className="min-w-0">
-          <h2 id="skipped-h" className="text-xl font-semibold text-balance">Your degree covers these</h2>
-          <p className="mt-1 text-base text-pretty text-muted-foreground">Skipped in this plan: don&apos;t buy a course for something your modules already teach.</p>
+          <h2 id="skipped-h" className="text-xl font-semibold text-balance">
+            Your degree covers these
+          </h2>
+          <p className="mt-1 text-base text-pretty text-muted-foreground">
+            Skipped in this plan: don&apos;t buy a course for something your modules already teach.
+          </p>
           {n && hoursPerWeek ? (
             <p className="mt-3 text-base font-medium text-pretty text-foreground">
-              Saves you {n} study {n === 1 ? "week" : "weeks"}, <span className="tabular-nums">{n * hoursPerWeek}</span> hours, on this plan.
+              Saves you {n} study {n === 1 ? "week" : "weeks"}, <span className="tabular-nums">{n * hoursPerWeek}</span> hours, on this
+              plan.
             </p>
           ) : null}
         </div>
@@ -31,7 +44,9 @@ export function SkippedPanel({
             const title = moduleTitles?.[s.moduleCode];
             const when = node?.upcomingLabel ? termText(node.upcomingLabel) : undefined;
             // With the module's title known, one plain sentence; without it, the planner's own sentence, read as words.
-            const line = title ? `Taught in ${shortModuleTitle(title)}${when ? `, ${when}` : ""}.` : readableModules(s.message, moduleTitles);
+            const line = title
+              ? `Taught in ${shortModuleTitle(title)}${when ? `, ${when}` : ""}.`
+              : readableModules(s.message, moduleTitles);
             return (
               <li key={`${s.skillId}-${s.moduleCode}`} className="rounded-xl bg-muted p-4">
                 <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
@@ -44,7 +59,9 @@ export function SkippedPanel({
           })}
         </ul>
       ) : (
-        <p className="mt-5 text-base text-pretty text-muted-foreground">Nothing skipped this time: none of your next modules overlaps with your gaps.</p>
+        <p className="mt-5 text-base text-pretty text-muted-foreground">
+          Nothing skipped this time: none of your next modules overlaps with your gaps.
+        </p>
       )}
     </section>
   );

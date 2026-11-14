@@ -11,9 +11,23 @@ export async function playText(text: string, opts: { rate?: number } = {}): Prom
       const url = URL.createObjectURL(await r.blob());
       const audio = new Audio(url);
       audio.playbackRate = opts.rate ?? 1;
-      const done = new Promise<void>((resolve) => { audio.onended = () => { URL.revokeObjectURL(url); resolve(); }; audio.onerror = () => resolve(); });
+      const done = new Promise<void>((resolve) => {
+        audio.onended = () => {
+          URL.revokeObjectURL(url);
+          resolve();
+        };
+        audio.onerror = () => resolve();
+      });
       await audio.play();
-      return { via: "elevenlabs", done, stop: () => { audio.pause(); URL.revokeObjectURL(url); }, audio };
+      return {
+        via: "elevenlabs",
+        done,
+        stop: () => {
+          audio.pause();
+          URL.revokeObjectURL(url);
+        },
+        audio,
+      };
     }
   } catch {
     // fall through to the browser voice

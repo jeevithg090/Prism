@@ -10,7 +10,13 @@ afterEach(cleanup);
 describe("FeedbackCard", () => {
   it("renders 4 labelled score bars, the filler rate, improvements and the saved proof", async () => {
     const onAgain = vi.fn();
-    const fb: FeedbackView = { ...(fixture as FeedbackView), evidence: [{ id: "a", label: "Communication" }, { id: "b", label: "Docker (explained)" }] };
+    const fb: FeedbackView = {
+      ...(fixture as FeedbackView),
+      evidence: [
+        { id: "a", label: "Communication" },
+        { id: "b", label: "Docker (explained)" },
+      ],
+    };
     render(<FeedbackCard feedback={fb} name="Aisha" onAgain={onAgain} passportHref="/profile/aisha" />);
     const meters = screen.getAllByRole("meter");
     expect(meters).toHaveLength(4);

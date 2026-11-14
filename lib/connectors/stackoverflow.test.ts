@@ -9,12 +9,16 @@ vi.mock("@/lib/store", () => ({
   getStore: () => ({
     get: async (c: string, id: string) => structuredClone(h.docs.get(`${c}/${id}`)?.doc ?? null),
     list: async (c: string, f?: { userId?: string }) =>
-      [...h.docs.entries()].filter(([k, r]) => k.startsWith(`${c}/`) && (!f?.userId || r.userId === f.userId)).map(([, r]) => structuredClone(r.doc)),
+      [...h.docs.entries()]
+        .filter(([k, r]) => k.startsWith(`${c}/`) && (!f?.userId || r.userId === f.userId))
+        .map(([, r]) => structuredClone(r.doc)),
     upsert: async (c: string, id: string, doc: unknown, userId?: string) => {
       h.docs.set(`${c}/${id}`, { doc: structuredClone(doc), userId });
       return doc;
     },
-    remove: async (c: string, id: string) => { h.docs.delete(`${c}/${id}`); },
+    remove: async (c: string, id: string) => {
+      h.docs.delete(`${c}/${id}`);
+    },
   }),
 }));
 
@@ -27,18 +31,22 @@ const RUN_ID = () => `run_so_${++runNo}`;
 
 // Shape captured from the live API (users/22656 = Jon Skeet, 8 Nov 2026).
 const SE_USER = {
-  user_id: 22656, display_name: "Jon Skeet", reputation: 1530453,
+  user_id: 22656,
+  display_name: "Jon Skeet",
+  reputation: 1530453,
   badge_counts: { bronze: 9364, silver: 9325, gold: 895 },
   link: "https://stackoverflow.com/users/22656/jon-skeet",
   profile_image: "https://www.gravatar.com/avatar/6d8ebb117e8d83d74ea95fbdd0f87e13?s=256&d=identicon&r=PG",
   user_type: "registered",
 };
-const SE_TAGS = { items: [
-  { user_id: 22656, answer_count: 19992, answer_score: 269937, tag_name: "c#" },
-  { user_id: 22656, answer_count: 10585, answer_score: 159724, tag_name: "java" },
-  { user_id: 22656, answer_count: 5638, answer_score: 93616, tag_name: ".net" },
-  { user_id: 22656, answer_count: 3000, answer_score: 38880, tag_name: "linq" },
-] };
+const SE_TAGS = {
+  items: [
+    { user_id: 22656, answer_count: 19992, answer_score: 269937, tag_name: "c#" },
+    { user_id: 22656, answer_count: 10585, answer_score: 159724, tag_name: "java" },
+    { user_id: 22656, answer_count: 5638, answer_score: 93616, tag_name: ".net" },
+    { user_id: 22656, answer_count: 3000, answer_score: 38880, tag_name: "linq" },
+  ],
+};
 
 const respond = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
 
@@ -57,8 +65,14 @@ const routeFetch = (user: { body: unknown; status?: number }, tags?: { body: unk
 /** One item of GitHub evidence, so every test can see a re-sync keeps the evidence you already have. */
 const seedPriorEvidence = async () => {
   const prior: EvidenceItem = {
-    id: "ev_test-user_python_github", userId: USER_ID, skillId: "python", level: 1, confidence: 0.5,
-    source: "github", url: "https://github.com/test-user/proj", createdAt: "2026-11-01T00:00:00Z",
+    id: "ev_test-user_python_github",
+    userId: USER_ID,
+    skillId: "python",
+    level: 1,
+    confidence: 0.5,
+    source: "github",
+    url: "https://github.com/test-user/proj",
+    createdAt: "2026-11-01T00:00:00Z",
   };
   const { getStore } = await import("@/lib/store");
   await getStore().upsert("evidence", prior.id, prior, USER_ID);
@@ -88,7 +102,11 @@ describe("tagsToEvidence (pure mapper)", () => {
 
   it("keeps the order the API scores for us and claims a skill once, however many tags hit it", () => {
     const items = tagsToEvidence(USER_ID, SE_USER, [
-      { tag_name: "html" }, { tag_name: "css" }, { tag_name: "javascript" }, { tag_name: "unit-testing" }, { tag_name: "javascript" },
+      { tag_name: "html" },
+      { tag_name: "css" },
+      { tag_name: "javascript" },
+      { tag_name: "unit-testing" },
+      { tag_name: "javascript" },
     ]);
     expect(items.map((e) => e.skillId)).toEqual(["html-css", "javascript", "testing"]);
     expect(items.every((e) => e.source === "stackoverflow" && e.url === SE_USER.link)).toBe(true);
@@ -184,11 +202,18 @@ describe("syncStackOverflowEvidence", () => {
 
   it("a profile with no mappable top tags finishes cleanly and claims nothing", async () => {
     await seedPriorEvidence();
-    routeFetch({ body: { items: [SE_USER] } }, { body: { items: [
-      { user_id: 22656, answer_count: 500, answer_score: 9000, tag_name: "c#" },
-      { user_id: 22656, answer_count: 300, answer_score: 4000, tag_name: ".net" },
-      { user_id: 22656, answer_count: 100, answer_score: 900, tag_name: "string" },
-    ] } });
+    routeFetch(
+      { body: { items: [SE_USER] } },
+      {
+        body: {
+          items: [
+            { user_id: 22656, answer_count: 500, answer_score: 9000, tag_name: "c#" },
+            { user_id: 22656, answer_count: 300, answer_score: 4000, tag_name: ".net" },
+            { user_id: 22656, answer_count: 100, answer_score: 900, tag_name: "string" },
+          ],
+        },
+      },
+    );
     const runId = RUN_ID();
     const out = await syncStackOverflowEvidence({ userId: USER_ID, handle: SE_ID, runId });
     expect(out.map((e) => e.source)).toEqual(["github"]);

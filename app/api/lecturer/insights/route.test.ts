@@ -15,17 +15,59 @@ import { GET } from "./route";
 
 const ROLES = ["ml-engineer", "ml-engineer", "ml-engineer", "data-analyst", "software-engineer"];
 const profiles = (n: number) =>
-  Array.from({ length: n }, (_, i) => ({ id: `uid_${i}_zq`, name: `Student Name${i}Zq`, programmeId: "uom-bsc-cs", dna: { targetRoles: [ROLES[i % ROLES.length]] } }));
+  Array.from({ length: n }, (_, i) => ({
+    id: `uid_${i}_zq`,
+    name: `Student Name${i}Zq`,
+    programmeId: "uom-bsc-cs",
+    dna: { targetRoles: [ROLES[i % ROLES.length]] },
+  }));
 const skills = (n: number) =>
-  Object.fromEntries(Array.from({ length: n }, (_, i) => [`uid_${i}_zq`, { proven: i === 0 ? ["docker"] : [], gaps: i % 2 ? ["aws", "docker"] : ["sql"] }]));
+  Object.fromEntries(
+    Array.from({ length: n }, (_, i) => [`uid_${i}_zq`, { proven: i === 0 ? ["docker"] : [], gaps: i % 2 ? ["aws", "docker"] : ["sql"] }]),
+  );
 
 /** P1's fixtures (programme + market) are present here, to exercise the primary path. */
 const programme = {
-  id: "uom-bsc-cs", university: "UoM", name: "BSc CS", url: "", extractedAt: "", source: "manual",
+  id: "uom-bsc-cs",
+  university: "UoM",
+  name: "BSc CS",
+  url: "",
+  extractedAt: "",
+  source: "manual",
   modules: [
-    { code: "COMP23311", title: "Software Engineering", year: 2, semester: "1", compulsory: true, topics: [], learningOutcomes: ["Work in teams", "Test code", "Deploy and evaluate software"], skills: [{ skillId: "testing", level: 2 }, { skillId: "git", level: 2 }] },
-    { code: "COMP23111", title: "Database Systems", year: 2, semester: "1", compulsory: true, topics: [], learningOutcomes: ["Design a schema", "Query data"], skills: [{ skillId: "databases", level: 2 }] },
-    { code: "COMP16321", title: "Programming 1", year: 1, semester: "1", compulsory: true, topics: [], learningOutcomes: ["Write Python programs"], skills: [{ skillId: "python", level: 2 }] },
+    {
+      code: "COMP23311",
+      title: "Software Engineering",
+      year: 2,
+      semester: "1",
+      compulsory: true,
+      topics: [],
+      learningOutcomes: ["Work in teams", "Test code", "Deploy and evaluate software"],
+      skills: [
+        { skillId: "testing", level: 2 },
+        { skillId: "git", level: 2 },
+      ],
+    },
+    {
+      code: "COMP23111",
+      title: "Database Systems",
+      year: 2,
+      semester: "1",
+      compulsory: true,
+      topics: [],
+      learningOutcomes: ["Design a schema", "Query data"],
+      skills: [{ skillId: "databases", level: 2 }],
+    },
+    {
+      code: "COMP16321",
+      title: "Programming 1",
+      year: 1,
+      semester: "1",
+      compulsory: true,
+      topics: [],
+      learningOutcomes: ["Write Python programs"],
+      skills: [{ skillId: "python", level: 2 }],
+    },
   ],
 };
 const market = (shares: Record<string, number>) => ({ skills: Object.entries(shares).map(([skillId, share]) => ({ skillId, share })) });
@@ -40,8 +82,10 @@ beforeEach(() => {
   loadMap.mockResolvedValue(undefined);
   loadProgramme.mockReturnValue(programme);
   loadRoleDemand.mockImplementation((roleId: string) =>
-    roleId === "ml-engineer" ? market({ python: 0.62, docker: 0.41, aws: 0.33, sql: 0.35, git: 0.3, testing: 0.2, kubernetes: 0.04 })
-      : roleId === "data-analyst" ? market({ sql: 0.7, python: 0.5 })
+    roleId === "ml-engineer"
+      ? market({ python: 0.62, docker: 0.41, aws: 0.33, sql: 0.35, git: 0.3, testing: 0.2, kubernetes: 0.04 })
+      : roleId === "data-analyst"
+        ? market({ sql: 0.7, python: 0.5 })
         : undefined,
   );
 });
@@ -87,13 +131,18 @@ describe("GET /api/lecturer/insights", () => {
   it("falls back to Bridge Map demand and coverage when P1's fixtures are missing", async () => {
     loadProgramme.mockReturnValue(undefined);
     loadRoleDemand.mockReturnValue(undefined);
-    loadMap.mockImplementation(async (id: string) => id === "uid_0_zq"
-      ? { roleId: "ml-engineer", nodes: [
-          { skillId: "python", status: "proven", demand: 0.62, moduleCodes: [] },
-          { skillId: "testing", status: "degree-upcoming", demand: 0.15, moduleCodes: ["COMP2xxx3"] },
-          { skillId: "docker", status: "gap", demand: 0.41, moduleCodes: [] },
-        ] }
-      : undefined);
+    loadMap.mockImplementation(async (id: string) =>
+      id === "uid_0_zq"
+        ? {
+            roleId: "ml-engineer",
+            nodes: [
+              { skillId: "python", status: "proven", demand: 0.62, moduleCodes: [] },
+              { skillId: "testing", status: "degree-upcoming", demand: 0.15, moduleCodes: ["COMP2xxx3"] },
+              { skillId: "docker", status: "gap", demand: 0.41, moduleCodes: [] },
+            ],
+          }
+        : undefined,
+    );
     const json = await (await call()).json();
     expect(json.data.gaps).toEqual([{ skillId: "docker", demandPct: 41, studentsTargeting: 11 }]);
     expect(json.data.labIdeas[0]).toContain("COMP2xxx3");

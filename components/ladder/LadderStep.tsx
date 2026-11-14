@@ -8,7 +8,12 @@ import { cn } from "@/lib/utils";
 import { RungDot } from "./LadderRungs";
 import { RUNG_LABEL, RUNG_MEANING, RUNGS, type RungNumber } from "./model";
 
-export function LadderStep({ skillName, level, from, className }: {
+export function LadderStep({
+  skillName,
+  level,
+  from,
+  className,
+}: {
   skillName: string;
   /** The rung just reached, 1..3. */
   level: RungNumber;

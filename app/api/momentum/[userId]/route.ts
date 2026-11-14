@@ -11,7 +11,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ userId: string 
     const params = UserIdParamZ.safeParse(await ctx.params);
     if (!params.success) return badRequest(params.error);
     const view = ViewZ.safeParse(new URL(req.url).searchParams.get("view") ?? undefined);
-    if (!view.success) return badRequest("view must be \"weeks\" or \"events\"");
+    if (!view.success) return badRequest('view must be "weeks" or "events"');
 
     const { userId } = params.data;
     return ok(view.data === "events" ? await loadBuildLog(userId) : await loadMomentumWeeks(userId));

@@ -5,7 +5,13 @@ import userEvent from "@testing-library/user-event";
 import { PodsFlow } from "./PodsFlow";
 import { demoPod, profileGet, renderWithClient } from "./testUtils";
 
-const { apiGet, apiPost, push, start, setOpen } = vi.hoisted(() => ({ apiGet: vi.fn(), apiPost: vi.fn(), push: vi.fn(), start: vi.fn(), setOpen: vi.fn() }));
+const { apiGet, apiPost, push, start, setOpen } = vi.hoisted(() => ({
+  apiGet: vi.fn(),
+  apiPost: vi.fn(),
+  push: vi.fn(),
+  start: vi.fn(),
+  setOpen: vi.fn(),
+}));
 vi.mock("@/lib/fetcher", () => ({ apiGet, apiPost, apiPatch: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push, replace: vi.fn(), back: vi.fn(), refresh: vi.fn(), prefetch: vi.fn() }) }));
 vi.mock("sonner", () => ({ toast: Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn() }) }));

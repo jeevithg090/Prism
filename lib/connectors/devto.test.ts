@@ -9,12 +9,16 @@ vi.mock("@/lib/store", () => ({
   getStore: () => ({
     get: async (c: string, id: string) => structuredClone(h.docs.get(`${c}/${id}`)?.doc ?? null),
     list: async (c: string, f?: { userId?: string }) =>
-      [...h.docs.entries()].filter(([k, r]) => k.startsWith(`${c}/`) && (!f?.userId || r.userId === f.userId)).map(([, r]) => structuredClone(r.doc)),
+      [...h.docs.entries()]
+        .filter(([k, r]) => k.startsWith(`${c}/`) && (!f?.userId || r.userId === f.userId))
+        .map(([, r]) => structuredClone(r.doc)),
     upsert: async (c: string, id: string, doc: unknown, userId?: string) => {
       h.docs.set(`${c}/${id}`, { doc: structuredClone(doc), userId });
       return doc;
     },
-    remove: async (c: string, id: string) => { h.docs.delete(`${c}/${id}`); },
+    remove: async (c: string, id: string) => {
+      h.docs.delete(`${c}/${id}`);
+    },
   }),
 }));
 
@@ -28,19 +32,35 @@ const RUN_ID = () => `run_dev_${++runNo}`;
 // Shape captured from the live API (dev.to/api/articles, 8 Nov 2026); the input is deliberately out of order.
 const ARTICLES = [
   {
-    type_of: "article", id: 101, title: "Cool TypeScript patterns", description: "Types help.",
-    url: "https://dev.to/dev-writer/typescript-patterns", published_at: "2026-10-01T09:00:00Z",
-    tag_list: ["typescript", "webdev"], tags: "typescript, webdev",
+    type_of: "article",
+    id: 101,
+    title: "Cool TypeScript patterns",
+    description: "Types help.",
+    url: "https://dev.to/dev-writer/typescript-patterns",
+    published_at: "2026-10-01T09:00:00Z",
+    tag_list: ["typescript", "webdev"],
+    tags: "typescript, webdev",
   },
   {
-    type_of: "article", id: 103, title: "Getting started with PyTorch", description: "First tensors.",
-    url: "https://dev.to/dev-writer/getting-started-with-pytorch", published_at: "2026-11-05T10:00:00Z",
-    tag_list: ["pytorch", "machinelearning", "deep-learning"], tags: "pytorch, machinelearning, deep-learning",
+    type_of: "article",
+    id: 103,
+    title: "Getting started with PyTorch",
+    description: "First tensors.",
+    url: "https://dev.to/dev-writer/getting-started-with-pytorch",
+    published_at: "2026-11-05T10:00:00Z",
+    tag_list: ["pytorch", "machinelearning", "deep-learning"],
+    tags: "pytorch, machinelearning, deep-learning",
   },
   {
-    type_of: "article", id: 102, title: "CSS grid tips", description: "Grid beats flex, sometimes.",
-    url: "https://dev.to/dev-writer/css-grid-tips", published_at: "2026-09-20T10:00:00Z", published_timestamp: "2026-09-20T10:00:00Z",
-    tag_list: ["css", "beginners"], tags: "css, beginners",
+    type_of: "article",
+    id: 102,
+    title: "CSS grid tips",
+    description: "Grid beats flex, sometimes.",
+    url: "https://dev.to/dev-writer/css-grid-tips",
+    published_at: "2026-09-20T10:00:00Z",
+    published_timestamp: "2026-09-20T10:00:00Z",
+    tag_list: ["css", "beginners"],
+    tags: "css, beginners",
   },
 ];
 
@@ -56,8 +76,14 @@ const routeFetch = (articles: { body: unknown; status?: number }) =>
 /** One item of GitHub evidence, so every test can see a re-sync keeps the evidence you already have. */
 const seedPriorEvidence = async () => {
   const prior: EvidenceItem = {
-    id: "ev_test-user_python_github", userId: USER_ID, skillId: "python", level: 1, confidence: 0.5,
-    source: "github", url: "https://github.com/test-user/proj", createdAt: "2026-11-01T00:00:00Z",
+    id: "ev_test-user_python_github",
+    userId: USER_ID,
+    skillId: "python",
+    level: 1,
+    confidence: 0.5,
+    source: "github",
+    url: "https://github.com/test-user/proj",
+    createdAt: "2026-11-01T00:00:00Z",
   };
   const { getStore } = await import("@/lib/store");
   await getStore().upsert("evidence", prior.id, prior, USER_ID);
@@ -97,7 +123,9 @@ describe("articlesToEvidence (pure mapper)", () => {
 
   it("nothing to claim for zero articles or articles with no mappable tag", () => {
     expect(articlesToEvidence(USER_ID, HANDLE, [])).toEqual([]);
-    expect(articlesToEvidence(USER_ID, HANDLE, [{ title: "Why I mentor juniors", tag_list: ["beginners", "career", "motivation"] }])).toEqual([]);
+    expect(
+      articlesToEvidence(USER_ID, HANDLE, [{ title: "Why I mentor juniors", tag_list: ["beginners", "career", "motivation"] }]),
+    ).toEqual([]);
   });
 
   it("a missing url falls back to the profile URL", () => {
@@ -136,8 +164,11 @@ describe("syncDevtoEvidence", () => {
     expect(spy.mock.calls.map((c) => String(c[0]))).toEqual([`https://dev.to/api/articles?username=${HANDLE}&per_page=30`]);
     expect(out.map((e) => e.id)).toEqual([
       prior.id,
-      `ev_${USER_ID}_pytorch_devto`, `ev_${USER_ID}_machine-learning_devto`, `ev_${USER_ID}_deep-learning_devto`,
-      `ev_${USER_ID}_typescript_devto`, `ev_${USER_ID}_html-css_devto`,
+      `ev_${USER_ID}_pytorch_devto`,
+      `ev_${USER_ID}_machine-learning_devto`,
+      `ev_${USER_ID}_deep-learning_devto`,
+      `ev_${USER_ID}_typescript_devto`,
+      `ev_${USER_ID}_html-css_devto`,
     ]);
     expect(out.at(-2)?.level).toBe(1);
     expect(out.at(-2)?.confidence).toBe(0.5);
@@ -165,9 +196,17 @@ describe("syncDevtoEvidence", () => {
 
   it("articles whose tags are all outside the taxonomy finish cleanly claiming nothing", async () => {
     await seedPriorEvidence();
-    routeFetch({ body: [
-      { id: 1, title: "Why I mentor juniors", url: "https://dev.to/dev-writer/mentorship", published_at: "2026-10-10T00:00:00Z", tag_list: ["beginners", "career", "motivation"] },
-    ] });
+    routeFetch({
+      body: [
+        {
+          id: 1,
+          title: "Why I mentor juniors",
+          url: "https://dev.to/dev-writer/mentorship",
+          published_at: "2026-10-10T00:00:00Z",
+          tag_list: ["beginners", "career", "motivation"],
+        },
+      ],
+    });
     const runId = RUN_ID();
     const out = await syncDevtoEvidence({ userId: USER_ID, handle: HANDLE, runId });
     expect(out.map((e) => e.source)).toEqual(["github"]);
