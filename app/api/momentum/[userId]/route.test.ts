@@ -77,7 +77,9 @@ describe("GET /api/momentum/[userId]", () => {
   it("adds Aisha's live events on top of her history outside DEMO_MODE", async () => {
     put({ id: "live1", userId: "aisha", kind: "helped-newcomer", ts: "2026-11-07T10:00:00Z" });
     const body = (await (await call("aisha")).json()) as { ok: true; data: MomentumWeek[] };
-    expect(body.data.at(-1)).toMatchObject({ week: "2026-W45", score: 13, changePct: 53 });
+    // W45 from the fixture: 2 problems (1+1) + 1 newcomer helped (3) = 5, plus the live newcomer (3) = 8;
+    // baseline is the mean of W41–W44 (3, 4, 5, 5) = 4.25, so change = 8 / 4.25 − 1 = +88%.
+    expect(body.data.at(-1)).toMatchObject({ week: "2026-W45", score: 8, changePct: 88 });
     const events = (await (await call("aisha", "?view=events")).json()) as { ok: true; data: MomentumEvent[] };
     expect(events.data[0].id).toBe("live1");
   });
