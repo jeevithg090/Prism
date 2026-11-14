@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  verify:
+    name: Lint, typecheck, test, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci --no-audit --no-fund
+
+      - name: Secret scan
+        run: |
+          if git grep -nIE '(sk-[A-Za-z0-9_-]{32,}|ghp_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{40,}|glpat-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----)' -- ':!*.test.ts' ':!.github/workflows/ci.yml' ':!.gitlab-ci.yml'; then
+            echo "::error::Secret-like string found. Remove it and rotate the key."
+            exit 1
+          fi
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Format
+        run: npm run format:check
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      # Tests mock every network and LLM call and set DEMO_MODE themselves where they need it.
+      - name: Test
+        run: npm test
+
+      # Demo mode serves the committed fixtures, so the build needs no API keys.
+      - name: Build
+        run: npm run build
+        env:
+          DEMO_MODE: "true"
