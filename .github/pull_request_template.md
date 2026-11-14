@@ -1,11 +1,16 @@
 ## What
-## Why (which feature in docs/team/P?.md)
-## How to test (commands + what you should see)
-## Screenshots / recording (UI PRs: required, light + mobile)
+
+## Why
+
+## How to test
+<!-- Commands to run and what you should see. -->
+
+## Screenshots
+<!-- UI changes: desktop and mobile. -->
+
 ## Checklist
-- [ ] Tests added/updated and passing locally (`npm test`), output pasted below
-- [ ] `npm run typecheck` and `npm run lint` pass
-- [ ] Works with DEMO_MODE=true (fixtures/cache)
-- [ ] UI: loading / empty / error / success states; keyboard + focus; axe clean
-- [ ] Only touched files I own (or requested the owner's review)
-- [ ] No secrets, no console.log noise
+- [ ] `npm run check` passes (typecheck, lint, format, tests)
+- [ ] `npm run build` passes
+- [ ] Works with `DEMO_MODE=true` (fixtures and cache, no API keys)
+- [ ] UI: loading, empty, error and success states; keyboard and focus; axe clean (`npm run ui-gate`)
+- [ ] No secrets committed, no stray `console.log`

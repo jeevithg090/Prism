@@ -51,3 +51,12 @@ next-env.d.ts
 
 # agent worktrees created by workflows
 .claude/worktrees/
+
+# design tool output
+.hallmark/
+
+# editor / OS
+.idea/
+.vscode/*
+!.vscode/extensions.json
+Thumbs.db

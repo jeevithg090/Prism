@@ -1,4 +1,4 @@
-# Keystone CI/CD on GitLab (replaces GitHub Actions).
+# Keystone CI/CD on GitLab (optional mirror pipeline; GitHub Actions in .github/workflows/ci.yml is the primary CI).
 # Same gates as contract §12: secret scan → typecheck → lint → test → build (DEMO_MODE), plus e2e,
 # optional Vercel deploys (review apps per branch, production on main) and a commit status back to GitHub
 # named "ci" so GitHub branch protection can require it.
@@ -6,7 +6,7 @@
 # Optional CI/CD variables (Settings → CI/CD → Variables, masked):
 #   VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID   → enables deploy jobs
 #   GITHUB_STATUS_TOKEN (fine-grained PAT, "Commit statuses: RW" on the GitHub repo) → enables status reporting
-#   GITHUB_REPO (default jeevithg090/Reply_Hack)
+#   GITHUB_REPO (default jeevithg090/Prism)
 
 default:
   image: node:22
@@ -22,7 +22,7 @@ default:
 variables:
   DEMO_MODE: "true"
   NEXT_TELEMETRY_DISABLED: "1"
-  GITHUB_REPO: "jeevithg090/Reply_Hack"
+  GITHUB_REPO: "jeevithg090/Prism"
 
 stages: [verify, build, e2e, deploy, report]
 
