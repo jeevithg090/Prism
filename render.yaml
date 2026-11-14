@@ -7,7 +7,7 @@ services:
     runtime: node
     plan: free
     region: frankfurt
-    branch: p5/integration
+    branch: main
     buildCommand: npm ci && npm run build
     startCommand: npm run start
     healthCheckPath: /api/health
