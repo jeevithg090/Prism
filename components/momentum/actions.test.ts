@@ -7,7 +7,8 @@ vi.mock("./server", () => ({ loadBuildLog: mocks.loadBuildLog }));
 
 import { turnIntoCvBullets } from "./actions";
 import { parseBullets, templateBullets } from "./cv";
-import fixture from "@/data/fixtures/momentum-events.aisha.json";
+// A frozen event history (pod PRs + roadmap milestones) so these tests exercise the CV logic, not the live demo fixture.
+import fixture from "./__fixtures__/cv-events.json";
 
 const EVENTS = fixture as MomentumEvent[];
 
