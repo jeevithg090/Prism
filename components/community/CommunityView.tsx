@@ -21,7 +21,13 @@ export function CommunityView() {
   });
 
   const all = React.useMemo(() => help.data ?? [], [help.data]);
-  const profiles = useProfiles([viewerId, ...all.map((r) => r.fromUserId), ...all.flatMap((r) => (r.toUserId ? [r.toUserId] : []))]);
+  // Helpers are only named for requests someone took on; an open request's addressee (a senior from
+  // Trajectories) has no profile, so fetching it would only 404.
+  const profiles = useProfiles([
+    viewerId,
+    ...all.map((r) => r.fromUserId),
+    ...all.flatMap((r) => (r.toUserId && r.status !== "open" ? [r.toUserId] : [])),
+  ]);
   const feed = sortHelpFeed(
     all.filter((r) => r.status === "open"),
     profiles,
