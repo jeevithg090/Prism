@@ -65,7 +65,7 @@ export function TopBar({ readiness }: { readiness?: React.ReactNode }) {
         <Link
           href="/dashboard"
           aria-label="Keystone dashboard"
-          className="rounded-lg outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring md:hidden"
+          className="rounded-lg outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring max-sm:hidden md:hidden"
         >
           <KeystoneMark />
         </Link>
