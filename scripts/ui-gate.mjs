@@ -4,6 +4,7 @@
 //   node scripts/ui-gate.mjs                         # default routes on http://localhost:3000
 //   node scripts/ui-gate.mjs --base http://localhost:3311 /dashboard /map
 //   node scripts/ui-gate.mjs --only /pods?demo=1     # just the routes you name
+//   CHROMIUM_PATH=/path/to/chromium node scripts/ui-gate.mjs   # use an existing Chromium binary
 //
 // For every route at 1440x900 and 390x844 it loads the page (network idle), then:
 //   FAIL  axe serious/critical violations (WCAG 2.2 AA tags)
@@ -326,7 +327,8 @@ async function main() {
 
   let browser;
   try {
-    browser = await chromium.launch();
+    // CHROMIUM_PATH points at an already-installed Chromium (CI images, containers) instead of Playwright's download.
+    browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
   } catch (e) {
     console.error(`ui-gate: could not start Chromium (${String(e?.message ?? e).split("\n")[0]}). Run: npx playwright install chromium`);
     process.exit(2);
