@@ -18,7 +18,11 @@ import { withReplayInfo } from "@/lib/replay";
 async function handlePOST(req: Request) {
   try {
     let body: unknown;
-    try { body = await req.json(); } catch { return badRequest("Send a JSON body with a userId."); }
+    try {
+      body = await req.json();
+    } catch {
+      return badRequest("Send a JSON body with a userId.");
+    }
     const parsed = EvidenceSyncReqZ.safeParse(body);
     if (!parsed.success) return badRequest(parsed.error);
     const { userId } = parsed.data;
@@ -29,7 +33,13 @@ async function handlePOST(req: Request) {
     if (process.env.DEMO_MODE === "true") {
       const fixture = evidenceFixture(userId);
       const items = fixture.length ? fixture : await listEvidence(userId);
-      emit({ runId, agent: "evidence", status: "done", message: `Evidence Agent: ${items.length} evidence items from saved data`, data: { items: items.length, demo: true } });
+      emit({
+        runId,
+        agent: "evidence",
+        status: "done",
+        message: `Evidence Agent: ${items.length} evidence items from saved data`,
+        data: { items: items.length, demo: true },
+      });
       return ok(items);
     }
     const d = parsed.data;
@@ -45,7 +55,13 @@ async function handlePOST(req: Request) {
     const todo = handles.filter(([h]) => h);
     if (!todo.length) {
       const items = await listEvidence(userId);
-      emit({ runId, agent: "evidence", status: "done", message: `No usernames yet: kept your ${items.length} evidence items`, data: { items: items.length } });
+      emit({
+        runId,
+        agent: "evidence",
+        status: "done",
+        message: `No usernames yet: kept your ${items.length} evidence items`,
+        data: { items: items.length },
+      });
       return ok(items);
     }
     let items: EvidenceItem[] = [];

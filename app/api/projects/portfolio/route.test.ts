@@ -30,18 +30,22 @@ const project = {
 };
 
 const post = (body: unknown) =>
-  POST(new Request("http://localhost/api/projects/portfolio", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: typeof body === "string" ? body : JSON.stringify(body),
-  }));
+  POST(
+    new Request("http://localhost/api/projects/portfolio", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: typeof body === "string" ? body : JSON.stringify(body),
+    }),
+  );
 
 const patch = (body: unknown) =>
-  PATCH(new Request("http://localhost/api/projects/portfolio", {
-    method: "PATCH",
-    headers: { "content-type": "application/json" },
-    body: typeof body === "string" ? body : JSON.stringify(body),
-  }));
+  PATCH(
+    new Request("http://localhost/api/projects/portfolio", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: typeof body === "string" ? body : JSON.stringify(body),
+    }),
+  );
 
 const get = (url: string) => GET(new Request(url));
 

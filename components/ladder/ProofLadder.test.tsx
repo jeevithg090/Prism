@@ -12,27 +12,70 @@ import { ProofLadder, ProofLadderView, VERIFIED_LINE } from "./ProofLadder";
 import { LadderStep } from "./LadderStep";
 import type { ProofLadder as Data, SkillLadder } from "./model";
 
-afterEach(() => { cleanup(); vi.restoreAllMocks(); });
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 
 const docker: SkillLadder = {
-  skillId: "docker", skillName: "Docker", level: 2, status: "proven", demand: 0.41,
+  skillId: "docker",
+  skillName: "Docker",
+  level: 2,
+  status: "proven",
+  demand: 0.41,
   rungs: [
-    { rung: 1, label: "Tried it", status: "done", evidence: { id: "ev1", source: "micro-challenge", url: "/challenge?skill=docker", quote: "Passed the 20-minute Docker micro-challenge", createdAt: "2026-11-07T15:00:00.000Z" } },
-    { rung: 2, label: "Built it", status: "done", evidence: { id: "ev2", source: "keystone-pod", url: "https://github.com/keystone-demo/pod-vision-demo/pull/8", quote: "Merged 'Containerise the captioning API with Docker'", createdAt: "2026-11-07T16:00:00.000Z" } },
+    {
+      rung: 1,
+      label: "Tried it",
+      status: "done",
+      evidence: {
+        id: "ev1",
+        source: "micro-challenge",
+        url: "/challenge?skill=docker",
+        quote: "Passed the 20-minute Docker micro-challenge",
+        createdAt: "2026-11-07T15:00:00.000Z",
+      },
+    },
+    {
+      rung: 2,
+      label: "Built it",
+      status: "done",
+      evidence: {
+        id: "ev2",
+        source: "keystone-pod",
+        url: "https://github.com/keystone-demo/pod-vision-demo/pull/8",
+        quote: "Merged 'Containerise the captioning API with Docker'",
+        createdAt: "2026-11-07T16:00:00.000Z",
+      },
+    },
     { rung: 3, label: "Can teach it", status: "open" },
   ],
 };
 const sql: SkillLadder = {
-  skillId: "sql", skillName: "SQL", level: 3,
+  skillId: "sql",
+  skillName: "SQL",
+  level: 3,
   rungs: [
     { rung: 1, label: "Tried it", status: "done", impliedBy: 3 },
     { rung: 2, label: "Built it", status: "done", impliedBy: 3 },
-    { rung: 3, label: "Can teach it", status: "done", evidence: { id: "ev3", source: "code-review", url: "https://github.com/x/y/pull/2", quote: "Reviewed Tom's SQL PR", createdAt: "2026-11-06T10:00:00.000Z" } },
+    {
+      rung: 3,
+      label: "Can teach it",
+      status: "done",
+      evidence: {
+        id: "ev3",
+        source: "code-review",
+        url: "https://github.com/x/y/pull/2",
+        quote: "Reviewed Tom's SQL PR",
+        createdAt: "2026-11-06T10:00:00.000Z",
+      },
+    },
   ],
 };
 const data: Data = { userId: "aisha", generatedAt: "2026-11-07T16:00:00.000Z", skills: [sql, docker] };
 
-const wrap = (ui: React.ReactNode) => render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>{ui}</QueryClientProvider>);
+const wrap = (ui: React.ReactNode) =>
+  render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>{ui}</QueryClientProvider>);
 
 describe("ProofLadderView", () => {
   it("compact + skillId renders one ●●○ strip whose rungs say what proved them", () => {
@@ -74,7 +117,9 @@ describe("ProofLadderView", () => {
 
 describe("ProofLadder (fetching)", () => {
   it("loads the ladder for a skill from the API", async () => {
-    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ ok: true, data: { ...data, skills: [docker] } })));
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(new Response(JSON.stringify({ ok: true, data: { ...data, skills: [docker] } })));
     wrap(<ProofLadder userId="aisha" skillId="docker" />);
     expect(screen.getByRole("status", { name: "Loading the proof ladder" })).toBeInTheDocument();
     expect(await screen.findByRole("list", { name: "Docker proof ladder" })).toBeInTheDocument();
@@ -82,7 +127,9 @@ describe("ProofLadder (fetching)", () => {
   });
 
   it("shows Retry and Use demo data on error, and the demo ladder after choosing it", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ ok: false, error: { code: "internal", message: "boom" } }), { status: 500 }));
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ ok: false, error: { code: "internal", message: "boom" } }), { status: 500 }),
+    );
     wrap(<ProofLadder userId="aisha" />);
     expect(await screen.findByRole("button", { name: "Retry" })).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Use demo data" }));

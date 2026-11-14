@@ -3,13 +3,7 @@
 import { z } from "zod";
 import { SkillIdZ } from "@/lib/schemas/community";
 
-export const ApplicationStatusZ = z.enum([
-  "applied",
-  "interviewing",
-  "offered",
-  "rejected",
-  "withdrawn",
-]);
+export const ApplicationStatusZ = z.enum(["applied", "interviewing", "offered", "rejected", "withdrawn"]);
 
 export const ApplicationZ = z.object({
   id: z.string().min(1),

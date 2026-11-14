@@ -31,27 +31,96 @@ export const ALIASES: Record<SkillId, string[]> = {
   kubernetes: ["kubernetes", "k8s", "helm", "eks", "gke"],
   aws: ["aws", "amazon web services", "ec2", "s3", "sagemaker"],
   "cloud-computing": ["cloud computing", "cloud", "gcp", "azure", "google cloud"],
-  "ci-cd": ["ci/cd", "ci-cd", "continuous integration", "continuous delivery", "continuous deployment", "github actions", "jenkins", "gitlab ci"],
+  "ci-cd": [
+    "ci/cd",
+    "ci-cd",
+    "continuous integration",
+    "continuous delivery",
+    "continuous deployment",
+    "github actions",
+    "jenkins",
+    "gitlab ci",
+  ],
   testing: ["testing", "unit testing", "unit tests", "test-driven development", "tdd", "pytest", "junit", "software testing"],
   "data-structures": ["data structures", "data structure", "linked lists", "hash tables", "binary trees"],
   algorithms: ["algorithms", "algorithm", "algorithmic", "dynamic programming", "graph algorithms", "complexity analysis"],
-  databases: ["database", "databases", "relational model", "relational databases", "database design", "normalisation", "normalization", "entity-relationship"],
+  databases: [
+    "database",
+    "databases",
+    "relational model",
+    "relational databases",
+    "database design",
+    "normalisation",
+    "normalization",
+    "entity-relationship",
+  ],
   postgresql: ["postgresql", "postgres", "psql"],
   "system-design": ["system design", "systems design", "distributed systems", "software architecture", "microservices", "scalability"],
   "security-basics": ["security", "cybersecurity", "cyber security", "cryptography", "owasp"],
   statistics: ["statistics", "statistical", "probability", "hypothesis testing", "a/b testing"],
   "linear-algebra": ["linear algebra", "matrices", "matrix algebra", "eigenvalues"],
-  "machine-learning": ["machine learning", "ml", "supervised learning", "unsupervised learning", "predictive modelling", "predictive modeling"],
+  "machine-learning": [
+    "machine learning",
+    "ml",
+    "supervised learning",
+    "unsupervised learning",
+    "predictive modelling",
+    "predictive modeling",
+  ],
   "deep-learning": ["deep learning", "neural networks", "neural network", "cnn", "cnns", "convolutional neural networks", "transformers"],
   pytorch: ["pytorch", "torch"],
   tensorflow: ["tensorflow", "keras"],
   "scikit-learn": ["scikit-learn", "scikit learn", "sklearn"],
   pandas: ["pandas"],
   numpy: ["numpy"],
-  "data-visualisation": ["data visualisation", "data visualization", "visualisation", "visualization", "tableau", "power bi", "matplotlib", "dashboards", "looker"],
-  "llm-apps": ["llm", "llms", "large language models", "large language model", "generative ai", "genai", "rag", "retrieval-augmented generation", "retrieval augmented generation", "langchain", "prompt engineering", "llm applications"],
-  "llm-evaluation": ["llm evaluation", "llm evaluations", "llm evals", "evals", "evaluation harness", "llm-as-a-judge", "llm as a judge", "red teaming", "hallucination detection"],
-  "vector-databases": ["vector database", "vector databases", "vector db", "vector store", "pinecone", "weaviate", "pgvector", "faiss", "qdrant", "milvus"],
+  "data-visualisation": [
+    "data visualisation",
+    "data visualization",
+    "visualisation",
+    "visualization",
+    "tableau",
+    "power bi",
+    "matplotlib",
+    "dashboards",
+    "looker",
+  ],
+  "llm-apps": [
+    "llm",
+    "llms",
+    "large language models",
+    "large language model",
+    "generative ai",
+    "genai",
+    "rag",
+    "retrieval-augmented generation",
+    "retrieval augmented generation",
+    "langchain",
+    "prompt engineering",
+    "llm applications",
+  ],
+  "llm-evaluation": [
+    "llm evaluation",
+    "llm evaluations",
+    "llm evals",
+    "evals",
+    "evaluation harness",
+    "llm-as-a-judge",
+    "llm as a judge",
+    "red teaming",
+    "hallucination detection",
+  ],
+  "vector-databases": [
+    "vector database",
+    "vector databases",
+    "vector db",
+    "vector store",
+    "pinecone",
+    "weaviate",
+    "pgvector",
+    "faiss",
+    "qdrant",
+    "milvus",
+  ],
   mlops: ["mlops", "ml ops", "mlflow", "model deployment", "model serving", "kubeflow", "feature store", "weights & biases"],
   "code-review": ["code review", "code reviews", "pull requests", "peer review"],
   communication: ["communication skills", "communication", "stakeholders", "stakeholder", "presentation skills", "technical writing"],
@@ -100,12 +169,16 @@ function index() {
 
 /** "JS" → "javascript", "Postgres" → "postgresql", "k8s" → "kubernetes"; unknown terms → null. */
 export function canonicalize(term: string): SkillId | null {
-  const t = term.toLowerCase().trim().replace(/^[^a-z0-9+#]+|[^a-z0-9+#]+$/g, "");
+  const t = term
+    .toLowerCase()
+    .trim()
+    .replace(/^[^a-z0-9+#]+|[^a-z0-9+#]+$/g, "");
   if (!t) return null;
   return index().byAlias.get(t) ?? (t === "c" ? "c" : null);
 }
 
-const BUILD = /\b(build|built|building|implement|implementing|develop|developing|design|designing|deploy|deploying|create|creating|ship)\b/i;
+const BUILD =
+  /\b(build|built|building|implement|implementing|develop|developing|design|designing|deploy|deploying|create|creating|ship)\b/i;
 const APPLY = /\b(use|using|apply|applying|write|writing|work with|working with|analyse|analyze|program)\b/i;
 
 /** Level heuristic from the verb nearest before the match, within the same sentence. */
@@ -173,8 +246,17 @@ export async function mapTextToSkills(
       // No key or a model error: the deterministic pass already ran.
     }
   }
-  const skills = [...found.entries()].map(([skillId, level]) => ({ skillId, level })).sort((a, b) => b.level - a.level || a.skillId.localeCompare(b.skillId));
-  if (opts.runId) emit({ runId: opts.runId, agent: "skillmap", status: "progress", message: `Skill Mapper: mapped ${skills.length} skills`, data: { skills: skills.length, unknownTerms: unknownTerms.length } });
+  const skills = [...found.entries()]
+    .map(([skillId, level]) => ({ skillId, level }))
+    .sort((a, b) => b.level - a.level || a.skillId.localeCompare(b.skillId));
+  if (opts.runId)
+    emit({
+      runId: opts.runId,
+      agent: "skillmap",
+      status: "progress",
+      message: `Skill Mapper: mapped ${skills.length} skills`,
+      data: { skills: skills.length, unknownTerms: unknownTerms.length },
+    });
   return { skills, unknownTerms };
 }
 
@@ -188,7 +270,10 @@ export function trackUnknownTerms(terms: string[]): void {
 }
 /** Terms seen 3 or more times: candidates for a new taxonomy entry. */
 export function emergingCandidates(): { term: string; count: number }[] {
-  return [...unknownCounts.entries()].filter(([, n]) => n >= 3).map(([term, count]) => ({ term, count })).sort((a, b) => b.count - a.count);
+  return [...unknownCounts.entries()]
+    .filter(([, n]) => n >= 3)
+    .map(([term, count]) => ({ term, count }))
+    .sort((a, b) => b.count - a.count);
 }
 export function resetUnknownTerms(): void {
   unknownCounts.clear();

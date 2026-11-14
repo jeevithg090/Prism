@@ -15,7 +15,11 @@ export const choiceOn = "border-primary ring-1 ring-inset ring-primary hover:bg-
 
 export function FieldError({ id, message }: { id: string; message?: string }) {
   if (!message) return null;
-  return <p id={id} className="text-sm text-status-gap">{message}</p>;
+  return (
+    <p id={id} className="text-sm text-status-gap">
+      {message}
+    </p>
+  );
 }
 
 export function StepHeading({ title, body }: { title: string; body: string }) {
@@ -29,16 +33,37 @@ export function StepHeading({ title, body }: { title: string; body: string }) {
 
 type Choice<T extends string | number> = { value: T; label: string; description?: string; icon?: React.ReactNode };
 
-export function ChoiceGroup<T extends string | number>({ legend, name, options, value, onChange, error, hint, className, compact }: {
-  legend: string; name: string; options: Choice<T>[]; value: T | ""; onChange: (v: T) => void;
-  error?: string; hint?: string; className?: string; compact?: boolean;
+export function ChoiceGroup<T extends string | number>({
+  legend,
+  name,
+  options,
+  value,
+  onChange,
+  error,
+  hint,
+  className,
+  compact,
+}: {
+  legend: string;
+  name: string;
+  options: Choice<T>[];
+  value: T | "";
+  onChange: (v: T) => void;
+  error?: string;
+  hint?: string;
+  className?: string;
+  compact?: boolean;
 }) {
   const errId = `${name}-error`;
   const hintId = `${name}-hint`;
   return (
     <fieldset className="space-y-2.5" aria-describedby={cn(hint && hintId, error && errId) || undefined}>
       <legend className="mb-2.5 text-sm font-medium text-foreground">{legend}</legend>
-      {hint && <p id={hintId} className="text-sm text-muted-foreground">{hint}</p>}
+      {hint && (
+        <p id={hintId} className="text-sm text-muted-foreground">
+          {hint}
+        </p>
+      )}
       <div className={cn("grid gap-3", className)}>
         {options.map((o) => {
           const on = value === o.value;
@@ -55,7 +80,11 @@ export function ChoiceGroup<T extends string | number>({ legend, name, options, 
             >
               <input type="radio" className="sr-only" name={name} value={String(o.value)} checked={on} onChange={() => onChange(o.value)} />
               {on && compact && <Check className="size-4 shrink-0 text-primary" aria-hidden />}
-              {o.icon && <span className={cn("mt-0.5 shrink-0", on ? "text-foreground" : "text-muted-foreground")} aria-hidden>{o.icon}</span>}
+              {o.icon && (
+                <span className={cn("mt-0.5 shrink-0", on ? "text-foreground" : "text-muted-foreground")} aria-hidden>
+                  {o.icon}
+                </span>
+              )}
               <span className="min-w-0 space-y-1">
                 <span className={cn("block", compact ? (on ? "font-semibold" : "font-medium") : "text-base font-semibold")}>{o.label}</span>
                 {o.description && <span className="block text-sm text-pretty text-muted-foreground">{o.description}</span>}
@@ -84,10 +113,29 @@ export function ToggleChip({ pressed, onToggle, children }: { pressed: boolean; 
   );
 }
 
-export function CheckboxRow({ id, label, checked, onChange }: { id: string; label: string; checked: boolean; onChange: (v: boolean) => void }) {
+export function CheckboxRow({
+  id,
+  label,
+  checked,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
   return (
-    <label htmlFor={id} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-1 text-sm text-foreground transition-[background-color] duration-(--dur-short) hover:bg-muted">
-      <input id={id} type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="size-5 shrink-0 cursor-pointer rounded accent-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" />
+    <label
+      htmlFor={id}
+      className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-1 text-sm text-foreground transition-[background-color] duration-(--dur-short) hover:bg-muted"
+    >
+      <input
+        id={id}
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="size-5 shrink-0 cursor-pointer rounded accent-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+      />
       {label}
     </label>
   );

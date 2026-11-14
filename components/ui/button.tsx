@@ -1,7 +1,7 @@
-import { Button as ButtonPrimitive } from "@base-ui/react/button"
-import { cva, type VariantProps } from "class-variance-authority"
+import { Button as ButtonPrimitive } from "@base-ui/react/button";
+import { cva, type VariantProps } from "class-variance-authority";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
 // Keystone controls (DESIGN.md "Controls"): the filled action is ink board, the quiet one is a cotton card.
 // Eight states: rest, hover (one signal), focus (instant 2px ring, never transitioned), active (1px press),
@@ -14,17 +14,13 @@ const buttonVariants = cva(
         default: "bg-board text-board-type shadow-sm hover:bg-board-hover",
         outline:
           "bg-card text-foreground shadow-stock hover:-translate-y-px hover:shadow-stock-lift active:shadow-stock aria-expanded:bg-muted",
-        secondary:
-          "bg-secondary text-secondary-foreground hover:bg-accent aria-expanded:bg-accent",
-        ghost:
-          "text-foreground hover:bg-muted aria-expanded:bg-muted",
-        destructive:
-          "border-destructive/40 bg-card text-destructive hover:bg-destructive/10",
+        secondary: "bg-secondary text-secondary-foreground hover:bg-accent aria-expanded:bg-accent",
+        ghost: "text-foreground hover:bg-muted aria-expanded:bg-muted",
+        destructive: "border-destructive/40 bg-card text-destructive hover:bg-destructive/10",
         link: "h-auto! px-0! text-primary underline decoration-1 underline-offset-4 hover:decoration-2",
       },
       size: {
-        default:
-          "h-9 gap-2 px-3.5 has-data-[icon=inline-end]:pr-3 has-data-[icon=inline-start]:pl-3",
+        default: "h-9 gap-2 px-3.5 has-data-[icon=inline-end]:pr-3 has-data-[icon=inline-start]:pl-3",
         xs: "h-8 gap-1.5 rounded-lg px-2.5 text-xs [&_svg:not([class*='size-'])]:size-3.5",
         sm: "h-8 gap-1.5 rounded-lg px-3 text-xs has-data-[icon=inline-end]:pr-2.5 has-data-[icon=inline-start]:pl-2.5 [&_svg:not([class*='size-'])]:size-3.5",
         lg: "h-11 gap-2 px-5 text-base has-data-[icon=inline-end]:pr-4 has-data-[icon=inline-start]:pl-4",
@@ -38,8 +34,8 @@ const buttonVariants = cva(
       variant: "default",
       size: "default",
     },
-  }
-)
+  },
+);
 
 function Button({
   className,
@@ -47,13 +43,7 @@ function Button({
   size = "default",
   ...props
 }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
-  return (
-    <ButtonPrimitive
-      data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
-      {...props}
-    />
-  )
+  return <ButtonPrimitive data-slot="button" className={cn(buttonVariants({ variant, size, className }))} {...props} />;
 }
 
-export { Button, buttonVariants }
+export { Button, buttonVariants };

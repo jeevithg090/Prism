@@ -67,18 +67,10 @@ function IssueRow({
             </span>
           )}
           <SkillChip skillId={issue.skillId} name={skillName(issue.skillId)} status={merged ? "proven" : undefined} />
-          {mine ? (
-            <span className="font-medium text-foreground">Assigned to you</span>
-          ) : (
-            <span>Assignee: {assignee.firstName}</span>
-          )}
+          {mine ? <span className="font-medium text-foreground">Assigned to you</span> : <span>Assignee: {assignee.firstName}</span>}
           <span className="inline-flex items-center gap-2">
             <MemberAvatar member={reviewer} size="xs" />
-            {reviewing ? (
-              <span className="font-medium text-foreground">You review this</span>
-            ) : (
-              <span>Reviewer: {reviewer.firstName}</span>
-            )}
+            {reviewing ? <span className="font-medium text-foreground">You review this</span> : <span>Reviewer: {reviewer.firstName}</span>}
           </span>
         </div>
       </div>
@@ -127,7 +119,10 @@ export function IssueList({
         const headingId = `milestone-${i}-heading`;
         return (
           <section key={g.milestone} aria-labelledby={headingId}>
-            <h3 id={headingId} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 text-base font-semibold text-muted-foreground">
+            <h3
+              id={headingId}
+              className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 text-base font-semibold text-muted-foreground"
+            >
               <span className="min-w-0 leading-snug">{g.milestone}</span>{" "}
               <span className="text-sm font-normal whitespace-nowrap text-muted-foreground">
                 {g.issues.length} {g.issues.length === 1 ? "issue" : "issues"}
@@ -142,7 +137,9 @@ export function IssueList({
                   const reviewing = !!viewerId && issue.reviewerUserId === viewerId;
                   // Only the assignee and the reviewer merge an issue; other rows just show whether it's merged.
                   const action = !podId ? undefined : !(mine || reviewing) ? (
-                    merged ? <MergedPill /> : undefined
+                    merged ? (
+                      <MergedPill />
+                    ) : undefined
                   ) : progressPending ? (
                     <Skeleton className={cn("rounded-lg", mine ? "h-9 w-36" : "h-8 w-32")} />
                   ) : (

@@ -17,7 +17,18 @@ export const DEMO_POD_ID = "pod_demo01";
 
 /** The 12 seeded students the matchmaker compares (data/seed/students.json). */
 export const SEEDED_STUDENT_IDS = [
-  "priya", "tom", "mei", "jakub", "sara", "leo", "amara", "dev", "hannah", "yusuf", "chloe", "ollie",
+  "priya",
+  "tom",
+  "mei",
+  "jakub",
+  "sara",
+  "leo",
+  "amara",
+  "dev",
+  "hannah",
+  "yusuf",
+  "chloe",
+  "ollie",
 ] as const;
 
 export function capitalise(id: string): string {

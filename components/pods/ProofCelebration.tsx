@@ -3,25 +3,14 @@
 import * as React from "react";
 import Link from "next/link";
 import { animate, motion, useReducedMotion } from "motion/react";
-import {
-  ArrowRight,
-  Check,
-  HeartHandshake,
-  Target,
-  TrendingUp,
-} from "lucide-react";
+import { ArrowRight, Check, HeartHandshake, Target, TrendingUp } from "lucide-react";
 import type { ProofResult } from "@/lib/schemas/studio";
 import type { SkillStatus } from "@/lib/types";
 import { BadgePill, StatusBadge } from "@/components/keystone";
 import { LadderStep } from "@/components/ladder/LadderStep";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 
 /** The proof engine adds the skill's Bridge Map status before the merge beside the contract fields. */
 type ProofWithStatus = ProofResult & { statusBefore?: SkillStatus };
@@ -33,18 +22,10 @@ const STATUS_WORD: Record<SkillStatus, string> = {
 };
 
 const firstName = (names: Record<string, string>, id: string) =>
-  (names[id]?.trim() || (id ? id[0].toUpperCase() + id.slice(1) : id)).split(
-    /\s+/,
-  )[0];
+  (names[id]?.trim() || (id ? id[0].toUpperCase() + id.slice(1) : id)).split(/\s+/)[0];
 
 /** Animated integer count-up; returns the final value straight away when `run` is false. */
-function useCountUp(
-  from: number,
-  to: number,
-  run: boolean,
-  delay = 0.9,
-  duration = 1.2,
-) {
+function useCountUp(from: number, to: number, run: boolean, delay = 0.9, duration = 1.2) {
   const [value, setValue] = React.useState(from);
   React.useEffect(() => {
     if (!run) return;
@@ -60,31 +41,11 @@ function useCountUp(
 }
 
 /** Readiness as an arc: coral for where you were, green for what this proof added, drawn in once. */
-function ReadinessArc({
-  before,
-  after,
-  reduce,
-}: {
-  before: number;
-  after: number;
-  reduce: boolean;
-}) {
+function ReadinessArc({ before, after, reduce }: { before: number; after: number; reduce: boolean }) {
   const gained = Math.max(after - before, 0);
   return (
-    <svg
-      viewBox="0 0 120 120"
-      className="size-32 shrink-0 -rotate-90"
-      aria-hidden
-      focusable="false"
-    >
-      <circle
-        cx="60"
-        cy="60"
-        r="50"
-        fill="none"
-        strokeWidth="12"
-        className="stroke-paper-3"
-      />
+    <svg viewBox="0 0 120 120" className="size-32 shrink-0 -rotate-90" aria-hidden focusable="false">
+      <circle cx="60" cy="60" r="50" fill="none" strokeWidth="12" className="stroke-paper-3" />
       <circle
         cx="60"
         cy="60"
@@ -175,9 +136,7 @@ function CelebrationBody({
       </div>
 
       <DialogTitle className="text-center text-3xl leading-tight font-semibold text-balance text-foreground sm:text-4xl">
-        {already
-          ? `You built it: ${result.skillName}`
-          : `${result.skillName} is now proven`}
+        {already ? `You built it: ${result.skillName}` : `${result.skillName} is now proven`}
       </DialogTitle>
       <DialogDescription className="mx-auto mt-2 max-w-sm text-center text-base text-pretty text-muted-foreground">
         {already
@@ -216,46 +175,27 @@ function CelebrationBody({
         </div>
       )}
 
-      <LadderStep
-        skillName={result.skillName}
-        from={1}
-        level={2}
-        className="mt-6"
-      />
+      <LadderStep skillName={result.skillName} from={1} level={2} className="mt-6" />
 
       {/* Readiness: before, after, and what moved it (hidden when this proof didn't move it) */}
       {showReadiness && (
         <div className="mt-6 flex flex-col items-center gap-5 rounded-xl bg-muted p-5 sm:flex-row sm:gap-6 sm:p-6">
           <ReadinessArc before={before} after={after} reduce={reduce} />
           <div className="min-w-0 text-center sm:text-left">
-            <p className="text-sm font-medium text-muted-foreground">
-              Job readiness
-            </p>
+            <p className="text-sm font-medium text-muted-foreground">Job readiness</p>
             <p className="sr-only">
               Readiness went from {before}% to {after}%, {deltaLabel}.
             </p>
-            <div
-              aria-hidden
-              className="mt-1 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 sm:justify-start"
-            >
-              <span
-                data-testid="readiness-before"
-                className="font-mono text-3xl font-semibold text-muted-foreground tabular-nums"
-              >
+            <div aria-hidden className="mt-1 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 sm:justify-start">
+              <span data-testid="readiness-before" className="font-mono text-3xl font-semibold text-muted-foreground tabular-nums">
                 {before}%
               </span>
               <ArrowRight className="size-5 text-muted-foreground" />
-              <span
-                data-testid="readiness-after"
-                className="font-mono text-5xl leading-none font-semibold text-foreground tabular-nums"
-              >
+              <span data-testid="readiness-after" className="font-mono text-5xl leading-none font-semibold text-foreground tabular-nums">
                 {shown}%
               </span>
             </div>
-            <div
-              aria-hidden
-              className="mt-3 flex flex-wrap items-center justify-center gap-2 sm:justify-start"
-            >
+            <div aria-hidden className="mt-3 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
               <motion.span
                 initial={reduce ? false : { opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -264,9 +204,7 @@ function CelebrationBody({
               >
                 {deltaLabel}
               </motion.span>
-              <span className="text-sm text-muted-foreground">
-                for proving {result.skillName}
-              </span>
+              <span className="text-sm text-muted-foreground">for proving {result.skillName}</span>
             </div>
           </div>
         </div>
@@ -279,23 +217,13 @@ function CelebrationBody({
         ))}
         <span className="inline-flex h-7 items-center gap-1.5 rounded-md border bg-card px-2 text-sm font-medium text-foreground">
           <TrendingUp className="size-4 text-muted-foreground" aria-hidden />
-          <span className="tabular-nums">
-            +{result.momentumPoints} momentum
-          </span>
+          <span className="tabular-nums">+{result.momentumPoints} momentum</span>
         </span>
       </div>
-      <p
-        data-testid="reviewer-proof"
-        className="mx-auto mt-4 max-w-md text-center text-base text-balance text-muted-foreground"
-      >
-        <HeartHandshake
-          className="mr-1.5 inline size-5 -translate-y-px text-muted-foreground"
-          aria-hidden
-        />
-        <strong className="font-semibold text-foreground">{reviewer}</strong>{" "}
-        earned a{" "}
-        <strong className="font-semibold text-foreground">Code review</strong>{" "}
-        proof for teaching you
+      <p data-testid="reviewer-proof" className="mx-auto mt-4 max-w-md text-center text-base text-balance text-muted-foreground">
+        <HeartHandshake className="mr-1.5 inline size-5 -translate-y-px text-muted-foreground" aria-hidden />
+        <strong className="font-semibold text-foreground">{reviewer}</strong> earned a{" "}
+        <strong className="font-semibold text-foreground">Code review</strong> proof for teaching you
       </p>
 
       <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">

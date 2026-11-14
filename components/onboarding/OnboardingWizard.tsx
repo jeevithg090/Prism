@@ -24,10 +24,7 @@ import { AgentBrief } from "./AgentBrief";
 // agents → /map when the orchestrator is done.
 
 type Phase =
-  | { kind: "form" }
-  | { kind: "submitting"; demo: boolean }
-  | { kind: "running"; runId: string; firstName: string }
-  | { kind: "error" };
+  { kind: "form" } | { kind: "submitting"; demo: boolean } | { kind: "running"; runId: string; firstName: string } | { kind: "error" };
 
 const STEP_VIEWS = [StepYou, StepGoal, StepLearn, StepBadges];
 const LAST = STEPS.length - 1;
@@ -35,7 +32,9 @@ const LAST = STEPS.length - 1;
 function setUserCookie(id: string) {
   try {
     document.cookie = `ks_uid=${encodeURIComponent(id)}; path=/; max-age=${60 * 60 * 24 * 7}; samesite=lax`;
-  } catch { /* the server also sets it */ }
+  } catch {
+    /* the server also sets it */
+  }
 }
 
 export function OnboardingWizard() {
@@ -100,7 +99,10 @@ export function OnboardingWizard() {
     try {
       const profile = await apiPost<Profile>("/api/profile", toProfileInput(draft));
       setUserCookie(profile.id);
-      const { runId } = await apiPost<{ runId: string }>("/api/onboard/run", { userId: profile.id, programmeUrl: draft.programmeUrl.trim() });
+      const { runId } = await apiPost<{ runId: string }>("/api/onboard/run", {
+        userId: profile.id,
+        programmeUrl: draft.programmeUrl.trim(),
+      });
       begin(runId, profile.name);
     } catch {
       failed();
@@ -139,8 +141,18 @@ export function OnboardingWizard() {
         title="Build your bridge"
         subtitle="Four short steps. Then agents read your syllabus, real job ads and your GitHub, and show you the gaps between them."
         actions={
-          <Button variant="outline" className="w-full sm:w-auto" onClick={startDemoProfile} disabled={busy} aria-busy={busy && phase.demo ? true : undefined}>
-            {busy && phase.demo ? <Loader2 className="size-4 motion-safe:animate-spin" aria-hidden /> : <Sparkles className="size-4" aria-hidden />}
+          <Button
+            variant="outline"
+            className="w-full sm:w-auto"
+            onClick={startDemoProfile}
+            disabled={busy}
+            aria-busy={busy && phase.demo ? true : undefined}
+          >
+            {busy && phase.demo ? (
+              <Loader2 className="size-4 motion-safe:animate-spin" aria-hidden />
+            ) : (
+              <Sparkles className="size-4" aria-hidden />
+            )}
             Use Aisha&apos;s demo profile
           </Button>
         }
@@ -149,7 +161,12 @@ export function OnboardingWizard() {
       <div className="grid items-start gap-6 lg:pb-16 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_23rem]">
         <div className="min-w-0 space-y-6">
           {phase.kind === "error" && (
-            <ErrorState title="We couldn't start your agents" body="That's on us, not you. Try again, or explore Keystone with Aisha's demo profile." onRetry={() => void finish()} onUseDemo={() => void startDemoProfile()} />
+            <ErrorState
+              title="We couldn't start your agents"
+              body="That's on us, not you. Try again, or explore Keystone with Aisha's demo profile."
+              onRetry={() => void finish()}
+              onUseDemo={() => void startDemoProfile()}
+            />
           )}
           <section aria-label="Your answers" className="rounded-2xl border bg-card p-6 shadow-sm md:p-8">
             <Stepper current={step} onJump={(i) => go(i)} />
@@ -165,21 +182,45 @@ export function OnboardingWizard() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.2, ease: "easeOut" }}
               >
-                <span id="ob-step-title" className="sr-only">Step {step + 1} of {STEPS.length}: {STEPS[step].title}</span>
+                <span id="ob-step-title" className="sr-only">
+                  Step {step + 1} of {STEPS.length}: {STEPS[step].title}
+                </span>
                 <View draft={draft} set={set} errors={visibleErrors} touch={touch} />
               </motion.div>
 
               <div className="flex flex-col-reverse gap-3 border-t pt-6 sm:flex-row sm:items-start sm:justify-between">
                 {step > 0 ? (
                   <Button type="button" variant="outline" size="lg" onClick={() => go(step - 1)} disabled={busy}>
-                    <ArrowLeft className="size-4" aria-hidden />Back
+                    <ArrowLeft className="size-4" aria-hidden />
+                    Back
                   </Button>
-                ) : <span className="hidden sm:block" />}
+                ) : (
+                  <span className="hidden sm:block" />
+                )}
                 <div className="flex flex-col items-stretch gap-2 sm:items-end">
-                  <Button type="submit" size="lg" disabled={!valid || busy} aria-busy={busy && !phase.demo ? true : undefined} aria-describedby={!valid ? "ob-continue-hint" : undefined}>
-                    {busy && !phase.demo ? <><Loader2 className="size-4 motion-safe:animate-spin" aria-hidden />Starting your agents…</> : step < LAST ? "Continue" : "Build my bridge"}
+                  <Button
+                    type="submit"
+                    size="lg"
+                    disabled={!valid || busy}
+                    aria-busy={busy && !phase.demo ? true : undefined}
+                    aria-describedby={!valid ? "ob-continue-hint" : undefined}
+                  >
+                    {busy && !phase.demo ? (
+                      <>
+                        <Loader2 className="size-4 motion-safe:animate-spin" aria-hidden />
+                        Starting your agents…
+                      </>
+                    ) : step < LAST ? (
+                      "Continue"
+                    ) : (
+                      "Build my bridge"
+                    )}
                   </Button>
-                  {!valid && <p id="ob-continue-hint" className="text-sm text-pretty text-muted-foreground sm:text-right">{firstError}</p>}
+                  {!valid && (
+                    <p id="ob-continue-hint" className="text-sm text-pretty text-muted-foreground sm:text-right">
+                      {firstError}
+                    </p>
+                  )}
                 </div>
               </div>
             </form>
@@ -208,20 +249,35 @@ function RunningView({ runId, firstName }: { runId: string; firstName: string })
   const finishedCount = [...agents.values()].filter((s) => s === "done" || s === "error").length;
   return (
     <div>
-      <PageHeader title={`Building ${firstName}'s bridge`} subtitle="Your agents are reading your syllabus, real job ads and your GitHub. Your Bridge Map opens as soon as they finish." />
-      <section className="max-w-3xl rounded-2xl border bg-card p-6 shadow-sm md:p-8" aria-labelledby="ob-running-title" aria-busy={status !== "done" ? true : undefined}>
+      <PageHeader
+        title={`Building ${firstName}'s bridge`}
+        subtitle="Your agents are reading your syllabus, real job ads and your GitHub. Your Bridge Map opens as soon as they finish."
+      />
+      <section
+        className="max-w-3xl rounded-2xl border bg-card p-6 shadow-sm md:p-8"
+        aria-labelledby="ob-running-title"
+        aria-busy={status !== "done" ? true : undefined}
+      >
         <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
           <div className="min-w-0 space-y-1">
-            <h2 id="ob-running-title" className="text-xl font-semibold text-foreground">{status === "done" ? "Your bridge is ready" : "Your agents are working"}</h2>
+            <h2 id="ob-running-title" className="text-xl font-semibold text-foreground">
+              {status === "done" ? "Your bridge is ready" : "Your agents are working"}
+            </h2>
             <p className="text-muted-foreground">
               {agents.size ? (
-                <><span className="font-mono font-semibold tabular-nums text-foreground">{finishedCount}</span> of <span className="font-mono font-semibold tabular-nums text-foreground">{agents.size}</span> agents finished</>
-              ) : "Starting your agents…"}
+                <>
+                  <span className="font-mono font-semibold tabular-nums text-foreground">{finishedCount}</span> of{" "}
+                  <span className="font-mono font-semibold tabular-nums text-foreground">{agents.size}</span> agents finished
+                </>
+              ) : (
+                "Starting your agents…"
+              )}
             </p>
           </div>
           {agents.size > 0 && (
             <p className="font-mono text-5xl font-semibold tabular-nums text-foreground" aria-hidden>
-              {finishedCount}<span className="text-muted-foreground">/{agents.size}</span>
+              {finishedCount}
+              <span className="text-muted-foreground">/{agents.size}</span>
             </p>
           )}
         </div>
@@ -238,21 +294,31 @@ function RunningView({ runId, firstName }: { runId: string; firstName: string })
             : [...agents.entries()].map(([agent, s]) => (
                 <li key={agent} className="flex items-center gap-3 border-t py-3">
                   {/* The GitHub mark ignores AgentAvatar's inline size; pin every icon to the same 16px. */}
-                  <span className="contents [&_svg]:size-4"><AgentAvatar agent={agent} size={32} /></span>
+                  <span className="contents [&_svg]:size-4">
+                    <AgentAvatar agent={agent} size={32} />
+                  </span>
                   <span className="min-w-0 flex-1 truncate font-medium text-foreground">{AGENT_META[agent]?.name ?? agent}</span>
-                  <span className="inline-flex shrink-0 items-center gap-1.5 text-sm text-muted-foreground">{RUN_STATUS[s].icon}{RUN_STATUS[s].label}</span>
+                  <span className="inline-flex shrink-0 items-center gap-1.5 text-sm text-muted-foreground">
+                    {RUN_STATUS[s].icon}
+                    {RUN_STATUS[s].label}
+                  </span>
                 </li>
               ))}
         </ul>
 
         {latest && (
           <p className="mt-6 rounded-xl bg-muted p-4 text-foreground">
-            <span className="font-semibold">Latest: </span><HighlightNumbers text={latest.message} />
+            <span className="font-semibold">Latest: </span>
+            <HighlightNumbers text={latest.message} />
           </p>
         )}
         <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-          <Link href="/map" className={cn(buttonVariants({ variant: "outline", size: "lg" }))}>Go to my Bridge Map</Link>
-          <Button size="lg" onClick={() => setOpen(true)}>Watch the agents</Button>
+          <Link href="/map" className={cn(buttonVariants({ variant: "outline", size: "lg" }))}>
+            Go to my Bridge Map
+          </Link>
+          <Button size="lg" onClick={() => setOpen(true)}>
+            Watch the agents
+          </Button>
         </div>
       </section>
     </div>

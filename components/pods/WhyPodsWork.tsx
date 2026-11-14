@@ -1,18 +1,8 @@
 "use client";
 // "Why pods work": a pedagogy receipt with real citations (WIN-PLAN item 7).
 import * as React from "react";
-import {
-  BookOpenCheck,
-  GraduationCap,
-  ShieldCheck,
-  Users,
-  type LucideIcon,
-} from "lucide-react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { BookOpenCheck, GraduationCap, ShieldCheck, Users, type LucideIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -42,8 +32,7 @@ export const WHY_PODS_RECEIPTS: Receipt[] = [
   },
   {
     icon: Users,
-    claim:
-      "Peer review raises academic performance: a meta-analysis of 54 studies found an effect of g = 0.31.",
+    claim: "Peer review raises academic performance: a meta-analysis of 54 studies found an effect of g = 0.31.",
     cite: {
       authors: "Double, McGrane & Hopfenbeck",
       year: 2020,
@@ -54,8 +43,7 @@ export const WHY_PODS_RECEIPTS: Receipt[] = [
   },
   {
     icon: ShieldCheck,
-    claim:
-      "Matched on skills, interests and availability. Never on personal characteristics.",
+    claim: "Matched on skills, interests and availability. Never on personal characteristics.",
   },
 ];
 
@@ -68,9 +56,7 @@ function ReceiptList({ dense }: { dense?: boolean }) {
           <li key={r.claim} className="flex gap-3">
             <Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
             <div className="min-w-0 space-y-1">
-              <p className="text-sm leading-snug font-medium text-pretty text-foreground">
-                {r.claim}
-              </p>
+              <p className="text-sm leading-snug font-medium text-pretty text-foreground">{r.claim}</p>
               {r.cite && (
                 <a
                   href={r.cite.url}
@@ -79,9 +65,7 @@ function ReceiptList({ dense }: { dense?: boolean }) {
                   className="rounded-sm text-sm text-primary underline decoration-1 underline-offset-4 outline-none hover:decoration-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                 >
                   <span>
-                    {r.cite.authors} ({r.cite.year}),{" "}
-                    <cite>{r.cite.journal}</cite>{" "}
-                    {r.cite.issue}
+                    {r.cite.authors} ({r.cite.year}), <cite>{r.cite.journal}</cite> {r.cite.issue}
                   </span>
                   <span className="sr-only"> (opens in a new tab)</span>
                 </a>
@@ -103,22 +87,10 @@ function Heading() {
   );
 }
 
-export function WhyPodsWork({
-  variant = "popover",
-  className,
-}: {
-  variant?: "popover" | "inline";
-  className?: string;
-}) {
+export function WhyPodsWork({ variant = "popover", className }: { variant?: "popover" | "inline"; className?: string }) {
   if (variant === "inline") {
     return (
-      <section
-        aria-label="Why pods work"
-        className={cn(
-          "space-y-3 rounded-xl bg-muted p-4 sm:p-5",
-          className,
-        )}
-      >
+      <section aria-label="Why pods work" className={cn("space-y-3 rounded-xl bg-muted p-4 sm:p-5", className)}>
         <Heading />
         <ReceiptList />
       </section>
@@ -126,23 +98,11 @@ export function WhyPodsWork({
   }
   return (
     <Popover>
-      <PopoverTrigger
-        render={
-          <Button
-            variant="outline"
-            size="sm"
-            className={className}
-            aria-label="Why pods work: the research"
-          />
-        }
-      >
+      <PopoverTrigger render={<Button variant="outline" size="sm" className={className} aria-label="Why pods work: the research" />}>
         <BookOpenCheck aria-hidden />
         Why?
       </PopoverTrigger>
-      <PopoverContent
-        align="start"
-        className="w-[min(26rem,calc(100vw-2rem))] gap-4 rounded-2xl p-5"
-      >
+      <PopoverContent align="start" className="w-[min(26rem,calc(100vw-2rem))] gap-4 rounded-2xl p-5">
         <Heading />
         <ReceiptList dense />
       </PopoverContent>

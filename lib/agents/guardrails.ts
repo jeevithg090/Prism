@@ -6,7 +6,13 @@ import type { AgentCtx, Guardrail, GuardrailCtx, GuardrailResult } from "@/lib/a
 const MAX_DEPTH = 6;
 
 /** Maps every string inside a value (strings, arrays, plain objects), skipping `skipKeys`. */
-function mapStrings(value: unknown, fn: (s: string, key?: string) => string, skipKeys: ReadonlySet<string> = new Set(), depth = 0, key?: string): unknown {
+function mapStrings(
+  value: unknown,
+  fn: (s: string, key?: string) => string,
+  skipKeys: ReadonlySet<string> = new Set(),
+  depth = 0,
+  key?: string,
+): unknown {
   if (typeof value === "string") return fn(value, key);
   if (depth >= MAX_DEPTH || value === null || typeof value !== "object") return value;
   if (Array.isArray(value)) return value.map((v) => mapStrings(v, fn, skipKeys, depth + 1, key));
@@ -51,7 +57,10 @@ function stripCode(text: string, maxLines: number): { text: string; removed: num
   let longest = 0;
   for (let i = 0; i < lines.length; i++) {
     const open = lines[i].match(/^\s*(`{3,}|~{3,})/);
-    if (!open) { out.push(lines[i]); continue; }
+    if (!open) {
+      out.push(lines[i]);
+      continue;
+    }
     const fence = open[1];
     let j = i + 1;
     while (j < lines.length && !lines[j].trim().startsWith(fence)) j++;
@@ -114,7 +123,8 @@ export function noFullSolutions<O>(opts: { maxLines?: number } = {}): Guardrail<
 // ---------- noDemographicSignals ----------
 /** Badge values that must never reach a scoring function. `new-to-uni` (tenure) is allowed for the near-peer mix rule. */
 export const DEMOGRAPHIC_BADGES = ["international", "first-gen", "career-changer"] as const;
-const DEMOGRAPHIC_KEYS = /^(nationality|ethnicity|race|gender|sex|religion|disability|age|dateOfBirth|dob|firstGen|international|careerChanger|homeCountry)$/i;
+const DEMOGRAPHIC_KEYS =
+  /^(nationality|ethnicity|race|gender|sex|religion|disability|age|dateOfBirth|dob|firstGen|international|careerChanger|homeCountry)$/i;
 
 /** Lists demographic signals found anywhere in a value ("international ×2", "key:gender"). */
 export function findDemographicSignals(value: unknown): string[] {
@@ -139,7 +149,11 @@ export function noDemographicSignals<O>(opts: { inputs?: (output: O, ctx: Guardr
       const found = findDemographicSignals(inspected);
       if (found.length) return { output, action: "blocked", detail: `scoring inputs contain ${found.join(", ")}` };
       const n = Array.isArray(inspected) ? inspected.length : undefined;
-      return { output, action: "pass", detail: n !== undefined ? `${plural(n, "scoring input")} checked: skills, interests, availability, tenure only` : undefined };
+      return {
+        output,
+        action: "pass",
+        detail: n !== undefined ? `${plural(n, "scoring input")} checked: skills, interests, availability, tenure only` : undefined,
+      };
     },
   };
 }
@@ -154,9 +168,7 @@ export function anonymityThreshold<O>(n = 10, opts: { size?: (output: O) => numb
     name: "anonymityThreshold",
     apply(output) {
       const o = output as unknown as Record<string, unknown>;
-      const size = opts.size
-        ? opts.size(output)
-        : [o?.cohortSize, o?.n, o?.count].find((x): x is number => typeof x === "number");
+      const size = opts.size ? opts.size(output) : [o?.cohortSize, o?.n, o?.count].find((x): x is number => typeof x === "number");
       if (size === undefined) return { output, action: "pass", detail: "no group size to check" };
       if (size >= n) return { output, action: "pass", detail: `group of ${size} (≥ ${n})` };
       if (Array.isArray(output)) return { output: [] as unknown as O, action: "modified", detail: `group of ${size} < ${n}: suppressed` };
@@ -180,7 +192,10 @@ export function redactPII(text: string): string {
 export function redactCount(text: string): { text: string; emails: number; phones: number } {
   let emails = 0;
   let phones = 0;
-  const noEmails = text.replace(EMAIL_RE, () => { emails++; return "[email]"; });
+  const noEmails = text.replace(EMAIL_RE, () => {
+    emails++;
+    return "[email]";
+  });
   const out = noEmails.replace(PHONE_RE, (m) => {
     const digits = m.replace(/\D/g, "").length;
     if (digits < 10 || digits > 15) return m;
@@ -194,17 +209,23 @@ export function redactCount(text: string): { text: string; emails: number; phone
 export function redactDeep<T>(value: T, skipKeys: string[] = []): { value: T; emails: number; phones: number } {
   let emails = 0;
   let phones = 0;
-  const next = mapStrings(value, (s) => {
-    const r = redactCount(s);
-    emails += r.emails;
-    phones += r.phones;
-    return r.text;
-  }, new Set(skipKeys)) as T;
+  const next = mapStrings(
+    value,
+    (s) => {
+      const r = redactCount(s);
+      emails += r.emails;
+      phones += r.phones;
+      return r.text;
+    },
+    new Set(skipKeys),
+  ) as T;
   return { value: next, emails, phones };
 }
 
 const piiDetail = (emails: number, phones: number, where: string) =>
-  emails || phones ? `redacted ${[emails ? plural(emails, "email") : "", phones ? plural(phones, "phone number") : ""].filter(Boolean).join(" and ")} ${where}` : `no emails or phone numbers ${where}`;
+  emails || phones
+    ? `redacted ${[emails ? plural(emails, "email") : "", phones ? plural(phones, "phone number") : ""].filter(Boolean).join(" and ")} ${where}`
+    : `no emails or phone numbers ${where}`;
 
 /** Output guardrail: redacts emails and phone numbers in string fields. */
 export function piiRedactor<O>(opts: { skipKeys?: string[] } = {}): Guardrail<O> {
@@ -222,12 +243,17 @@ export function piiRedactor<O>(opts: { skipKeys?: string[] } = {}): Guardrail<O>
 /** Input-side redaction: redacts a prompt payload before it goes to an LLM and records a piiRedactor finding. */
 export function redactForLLM<T>(ctx: Pick<AgentCtx, "record">, value: T, skipKeys: string[] = []): T {
   const r = redactDeep(value, skipKeys);
-  ctx.record({ name: "piiRedactor", action: r.emails || r.phones ? "modified" : "pass", detail: piiDetail(r.emails, r.phones, "in the LLM input") });
+  ctx.record({
+    name: "piiRedactor",
+    action: r.emails || r.phones ? "modified" : "pass",
+    detail: piiDetail(r.emails, r.phones, "in the LLM input"),
+  });
   return r.value;
 }
 
 // ---------- noOutboundMessaging ----------
-const SEND_KEYS = /^(send|sent|sendAt|sendNow|autoSend|autoSent|post|posted|postTo|postUrl|publish|dispatch|deliver|deliverTo|recipient|recipients|to|cc|bcc|toEmail|emailTo|webhook|webhookUrl|mailto|channelId)$/i;
+const SEND_KEYS =
+  /^(send|sent|sendAt|sendNow|autoSend|autoSent|post|posted|postTo|postUrl|publish|dispatch|deliver|deliverTo|recipient|recipients|to|cc|bcc|toEmail|emailTo|webhook|webhookUrl|mailto|channelId)$/i;
 
 /** Blocks an output that carries send/post intent (a recipient, a webhook, an auto-send flag, a mailto: link). */
 export function noOutboundMessaging<O>(): Guardrail<O> {

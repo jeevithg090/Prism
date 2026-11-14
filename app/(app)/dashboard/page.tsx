@@ -10,7 +10,11 @@ export const metadata: Metadata = { title: "Dashboard · Keystone" };
 async function DashboardData() {
   const { userId, profile, roleId } = await getViewer();
   let map = null;
-  try { map = await loadGraph(userId, roleId); } catch { map = null; }
+  try {
+    map = await loadGraph(userId, roleId);
+  } catch {
+    map = null;
+  }
   return <DashboardView userId={userId} roleId={roleId} profile={profile} initialMap={map} />;
 }
 

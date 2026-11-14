@@ -13,7 +13,10 @@ const series = (n: number, a: number, b: number): TrendPoint[] =>
 describe("olsFit", () => {
   it("recovers slope and intercept of an exact line with zero residual error", () => {
     const xs = [0, 1, 2, 3, 4];
-    const fit = olsFit(xs, xs.map((x) => 3 + 2 * x));
+    const fit = olsFit(
+      xs,
+      xs.map((x) => 3 + 2 * x),
+    );
     expect(fit.slope).toBeCloseTo(2, 10);
     expect(fit.intercept).toBeCloseTo(3, 10);
     expect(fit.residualSE).toBeCloseTo(0, 10);
@@ -50,7 +53,10 @@ describe("forecast", () => {
   });
 
   it("only fits the last 24 months", () => {
-    const flatThenRising = [...series(12, logit(0.05), 0), ...series(24, logit(0.05), 0.04)].map((p, i) => ({ ...p, month: addMonths("2023-11", i) }));
+    const flatThenRising = [...series(12, logit(0.05), 0), ...series(24, logit(0.05), 0.04)].map((p, i) => ({
+      ...p,
+      month: addMonths("2023-11", i),
+    }));
     expect(forecast(flatThenRising).growthPerYear).toBeCloseTo(Math.exp(0.48) - 1, 2);
   });
 
@@ -79,7 +85,11 @@ describe("forecast", () => {
 
   it("handles empty and unsorted histories", () => {
     expect(forecast([])).toEqual({ projection: [], growthPerYear: 0, label: "stable" });
-    const s = toSeries("docker", [{ month: "2026-02", share: 0.1 }, { month: "2026-01", share: 0.1 }, { month: "2026-03", share: 0.1 }]);
+    const s = toSeries("docker", [
+      { month: "2026-02", share: 0.1 },
+      { month: "2026-01", share: 0.1 },
+      { month: "2026-03", share: 0.1 },
+    ]);
     expect(s.history.map((p) => p.month)).toEqual(["2026-01", "2026-02", "2026-03"]);
     expect(s.projection[0].month).toBe("2026-04");
     expect(s.source).toBe("hn-whoishiring");
@@ -107,7 +117,10 @@ describe("HN connector", () => {
       ["docker", "python"],
       (t) => matchSkills(t).keys(),
     );
-    expect(out.docker).toEqual([{ month: "2026-09", share: 0.5 }, { month: "2026-10", share: 0.6667 }]);
+    expect(out.docker).toEqual([
+      { month: "2026-09", share: 0.5 },
+      { month: "2026-10", share: 0.6667 },
+    ]);
     expect(out.python.map((p) => p.share)).toEqual([0.5, 0.3333]);
   });
 });

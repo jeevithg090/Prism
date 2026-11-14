@@ -9,8 +9,16 @@ import { createHelpRequest } from "@/lib/community/help";
 import { getStore } from "@/lib/store";
 import type { HelpRequest, Profile } from "@/lib/types";
 import {
-  HelpCreateReqZ, HelpRequestZ, HelpStatusZ, HelpUpdateReqZ, MomentumEventZ,
-  badRequest, fail, internal, ok, type MomentumEvent,
+  HelpCreateReqZ,
+  HelpRequestZ,
+  HelpStatusZ,
+  HelpUpdateReqZ,
+  MomentumEventZ,
+  badRequest,
+  fail,
+  internal,
+  ok,
+  type MomentumEvent,
 } from "@/lib/schemas/community";
 
 // Help requests are for humans, so a message that tries to instruct an AI is still accepted, just flagged.
@@ -47,9 +55,7 @@ export async function GET(req: Request) {
     const status = statusParam === null ? undefined : HelpStatusZ.safeParse(statusParam);
     if (status && !status.success) return badRequest(status.error);
 
-    const source = url.searchParams.get("demo") === "1"
-      ? readFixture()
-      : await getStore().list<HelpRequest>("help");
+    const source = url.searchParams.get("demo") === "1" ? readFixture() : await getStore().list<HelpRequest>("help");
 
     const items = source
       .map((r) => StoredHelpZ.safeParse(r))

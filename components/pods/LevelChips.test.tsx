@@ -8,23 +8,11 @@ afterEach(cleanup);
 
 describe("LevelChips", () => {
   it("renders a labelled pill per Reply level-3 item", () => {
-    render(
-      <LevelChips
-        items={["multi-agent", "knowledge-graph", "launch-campaign"]}
-      />,
-    );
-    expect(
-      screen.getByRole("list", { name: "Reply level 3 features" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /Multi-agent/ }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /Knowledge graph/ }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /Launch campaign/ }),
-    ).toBeInTheDocument();
+    render(<LevelChips items={["multi-agent", "knowledge-graph", "launch-campaign"]} />);
+    expect(screen.getByRole("list", { name: "Reply level 3 features" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Multi-agent/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Knowledge graph/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Launch campaign/ })).toBeInTheDocument();
     expect(screen.getAllByText("L3")).toHaveLength(3);
   });
 
@@ -32,11 +20,7 @@ describe("LevelChips", () => {
     render(<LevelChips items={["multi-agent"]} />);
     await userEvent.tab();
     expect(screen.getByRole("button", { name: /Multi-agent/ })).toHaveFocus();
-    expect(
-      await screen.findByText(
-        /Matchmaker, Architect, Tech Lead and Evidence agents hand off to each other/,
-      ),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(/Matchmaker, Architect, Tech Lead and Evidence agents hand off to each other/)).toBeInTheDocument();
   });
 
   it("renders nothing for an empty list", () => {

@@ -54,7 +54,11 @@ function readPractised(questionId: string): boolean {
 
 function writePractised(questionId: string, value: boolean): void {
   if (typeof window === "undefined") return;
-  try { localStorage.setItem(`keystone:interview-prep:practised:${questionId}`, String(value)); } catch { /* localStorage unavailable */ }
+  try {
+    localStorage.setItem(`keystone:interview-prep:practised:${questionId}`, String(value));
+  } catch {
+    /* localStorage unavailable */
+  }
 }
 
 /** "Mark practised" toggle: a keyboard-reachable switch with a focus ring and aria-checked. */
@@ -96,13 +100,7 @@ function DifficultyChips({ difficulty }: { difficulty: 1 | 2 | 3 }) {
   );
 }
 
-export function InterviewPrepCard({
-  userId, roleId,
-}: {
-  userId: string;
-  roleId: string;
-  map?: BridgeMap | null;
-}) {
+export function InterviewPrepCard({ userId, roleId }: { userId: string; roleId: string; map?: BridgeMap | null }) {
   const query = useQuery({
     queryKey: ["interview-prep", userId, roleId],
     queryFn: () => fetchPrep(userId, roleId),
@@ -142,7 +140,10 @@ export function InterviewPrepCard({
           </CardHeader>
           <CardContent className="space-y-3">
             {slice.questions.map((q) => (
-              <div key={q.id} className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 p-3 rounded-xl bg-muted/50 border border-rule/50">
+              <div
+                key={q.id}
+                className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 p-3 rounded-xl bg-muted/50 border border-rule/50"
+              >
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-foreground leading-snug">{q.question}</p>
                   <div className="mt-2 flex flex-wrap gap-2">

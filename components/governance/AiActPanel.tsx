@@ -10,7 +10,9 @@ const POINTS: { icon: LucideIcon; text: string }[] = [
 export function AiActPanel() {
   return (
     <section aria-labelledby="ai-act-title" className="rounded-2xl border bg-card p-6 shadow-sm">
-      <h2 id="ai-act-title" className="text-xl font-semibold text-balance text-foreground">EU AI Act: Keystone is decision support</h2>
+      <h2 id="ai-act-title" className="text-xl font-semibold text-balance text-foreground">
+        EU AI Act: Keystone is decision support
+      </h2>
       <ul className="mt-5 grid divide-y md:grid-cols-3 md:divide-x md:divide-y-0">
         {POINTS.map(({ icon: Icon, text }) => (
           <li key={text} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0 md:px-6 md:py-0 md:first:pl-0 md:last:pr-0">

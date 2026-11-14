@@ -35,14 +35,18 @@ function originAllowed(req: Request): boolean {
   const allowed = [new URL(req.url).host, req.headers.get("host") ?? ""];
   try {
     if (process.env.NEXT_PUBLIC_APP_URL) allowed.push(new URL(process.env.NEXT_PUBLIC_APP_URL).host);
-  } catch { /* ignore a malformed app URL */ }
+  } catch {
+    /* ignore a malformed app URL */
+  }
   return allowed.includes(o.host);
 }
 
 export async function POST(req: Request) {
   if (!originAllowed(req)) return json(rpcError(null, RPC.INVALID_REQUEST, "Origin not allowed."), 403);
   if (!authorised(req)) {
-    return json(rpcError(null, -32001, "Unauthorized: send Authorization: Bearer <KEYSTONE_SHARED_SECRET>."), 401, { "www-authenticate": "Bearer realm=\"keystone\"" });
+    return json(rpcError(null, -32001, "Unauthorized: send Authorization: Bearer <KEYSTONE_SHARED_SECRET>."), 401, {
+      "www-authenticate": 'Bearer realm="keystone"',
+    });
   }
 
   let body: unknown;

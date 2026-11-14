@@ -7,8 +7,20 @@ export const STATUS_ORDER: SkillStatus[] = ["proven", "degree-done", "degree-upc
 
 export const STATUS_META: Record<SkillStatus, { label: string; long: string; icon: LucideIcon; dot: string; cssVar: string }> = {
   proven: { label: "Proven", long: "Proven by your work", icon: CheckCircle2, dot: "bg-status-proven", cssVar: "--status-proven" },
-  "degree-done": { label: "In your degree", long: "Covered by your degree", icon: GraduationCap, dot: "bg-status-degree", cssVar: "--status-degree" },
-  "degree-upcoming": { label: "Later in your degree", long: "Your degree covers it later", icon: GraduationCap, dot: "border-2 border-dashed border-status-degree bg-card", cssVar: "--status-degree" },
+  "degree-done": {
+    label: "In your degree",
+    long: "Covered by your degree",
+    icon: GraduationCap,
+    dot: "bg-status-degree",
+    cssVar: "--status-degree",
+  },
+  "degree-upcoming": {
+    label: "Later in your degree",
+    long: "Your degree covers it later",
+    icon: GraduationCap,
+    dot: "border-2 border-dashed border-status-degree bg-card",
+    cssVar: "--status-degree",
+  },
   gap: { label: "Gap", long: "A gap to close", icon: Target, dot: "bg-status-gap", cssVar: "--status-gap" },
 };
 
@@ -36,7 +48,8 @@ export function mapSummary(map: Pick<BridgeMap, "nodes" | "roleId">, visible?: B
   return (
     `Of the ${role.length} skills ${roleName(map.roleId)} ads ask for, you've proven ${c.proven}, ` +
     `your degree covers ${degree} (${c["degree-done"]} already, ${c["degree-upcoming"]} later) and ${c.gap} ${c.gap === 1 ? "is a gap" : "are gaps"}.` +
-    (gap ? ` Your biggest gap is ${gap.name}, in ${pctOf(gap.demand)}% of ads.` : "") + shown
+    (gap ? ` Your biggest gap is ${gap.name}, in ${pctOf(gap.demand)}% of ads.` : "") +
+    shown
   );
 }
 

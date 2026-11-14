@@ -15,17 +15,31 @@ import { skillName } from "@/lib/schemas/community";
 import { ProofResultZ, type ProjectProgress, type ProofResult } from "@/lib/schemas/studio";
 import type { BridgeMap, BridgeNode, EvidenceItem, Profile, Roadmap, RoadmapWeek } from "@/lib/types";
 import {
-  levelOf, RUNG_LABEL, RUNGS,
-  type LadderEvidence, type LadderRung, type LatestProof, type Passport, type ProofLadder, type RungNumber, type SkillLadder,
+  levelOf,
+  RUNG_LABEL,
+  RUNGS,
+  type LadderEvidence,
+  type LadderRung,
+  type LatestProof,
+  type Passport,
+  type ProofLadder,
+  type RungNumber,
+  type SkillLadder,
 } from "@/components/ladder/model";
 
 export class NotFoundError extends Error {
   readonly code = "not_found";
-  constructor(message: string) { super(message); this.name = "NotFoundError"; }
+  constructor(message: string) {
+    super(message);
+    this.name = "NotFoundError";
+  }
 }
 export class PrivateError extends Error {
   readonly code = "private";
-  constructor(message: string) { super(message); this.name = "PrivateError"; }
+  constructor(message: string) {
+    super(message);
+    this.name = "PrivateError";
+  }
 }
 
 export const DEMO_USER_ID = "aisha";
@@ -46,7 +60,9 @@ export async function loadProfile(userId: string): Promise<(Profile & { passport
   try {
     const p = await getStore().get<Profile & { passportPublic?: boolean }>("profiles", userId);
     if (p) return p;
-  } catch { /* fall through */ }
+  } catch {
+    /* fall through */
+  }
   const fx = readFixture<Profile>(`data/fixtures/profile.${userId}.json`);
   return fx?.id === userId ? fx : null;
 }
@@ -57,11 +73,15 @@ export async function loadUserMap(userId: string, roleId?: string): Promise<Brid
   try {
     const stored = await getStore().get<BridgeMap>("maps", `${userId}:${role}`);
     if (stored && Array.isArray(stored.nodes)) return stored;
-  } catch { /* fall through */ }
+  } catch {
+    /* fall through */
+  }
   try {
     const built = await loadGraph(userId, role);
     if (built && Array.isArray(built.nodes)) return built;
-  } catch { /* fall through */ }
+  } catch {
+    /* fall through */
+  }
   const fx = readFixture<BridgeMap>(`data/fixtures/bridgemap.${userId}.${role}.json`);
   return fx && Array.isArray(fx.nodes) ? fx : null;
 }
@@ -69,7 +89,11 @@ export async function loadUserMap(userId: string, roleId?: string): Promise<Brid
 /** The roadmap week you're on now: the first week whose tasks aren't all done. */
 export async function currentRoadmapWeek(userId: string, roleId?: string): Promise<RoadmapWeek | null> {
   let roadmap: Roadmap | null = null;
-  try { roadmap = await getStore().get<Roadmap>("roadmaps", userId); } catch { /* fall through */ }
+  try {
+    roadmap = await getStore().get<Roadmap>("roadmaps", userId);
+  } catch {
+    /* fall through */
+  }
   if (!roadmap?.weeks?.length) {
     const role = roleId ?? (await loadProfile(userId))?.dna?.targetRoles?.[0];
     roadmap = role ? readFixture<Roadmap>(`data/fixtures/roadmap.${userId}.${role}.json`) : null;
@@ -79,8 +103,11 @@ export async function currentRoadmapWeek(userId: string, roleId?: string): Promi
 }
 
 const isEvidence = (e: unknown): e is EvidenceItem =>
-  !!e && typeof e === "object" && typeof (e as EvidenceItem).id === "string" &&
-  typeof (e as EvidenceItem).skillId === "string" && typeof (e as EvidenceItem).source === "string";
+  !!e &&
+  typeof e === "object" &&
+  typeof (e as EvidenceItem).id === "string" &&
+  typeof (e as EvidenceItem).skillId === "string" &&
+  typeof (e as EvidenceItem).source === "string";
 
 /** The user's evidence: the store, plus `data/fixtures/evidence.<user>.json` when present (the store wins on id). */
 export async function loadEvidence(userId: string): Promise<EvidenceItem[]> {
@@ -91,7 +118,9 @@ export async function loadEvidence(userId: string): Promise<EvidenceItem[]> {
     for (const e of await getStore().list<unknown>("evidence", { userId })) {
       if (isEvidence(e) && e.userId === userId) byId.set(e.id, e);
     }
-  } catch { /* store unavailable: fixtures only */ }
+  } catch {
+    /* store unavailable: fixtures only */
+  }
   return [...byId.values()];
 }
 
@@ -107,7 +136,11 @@ async function loadProofs(): Promise<ProofResult[]> {
 }
 
 async function loadProgress(podId: string): Promise<ProjectProgress | null> {
-  try { return await getStore().get<ProjectProgress>("pod_progress", podId); } catch { return null; }
+  try {
+    return await getStore().get<ProjectProgress>("pod_progress", podId);
+  } catch {
+    return null;
+  }
 }
 
 /** Seeded students' proven skills (data/seed/student-skills.json): their GitHub-proven skills. */
@@ -142,8 +175,7 @@ function add(c: Candidates, skillId: string, rung: RungNumber, ev: LadderEvidenc
   c.set(skillId, entry);
 }
 
-const newest = (xs: LadderEvidence[]) =>
-  [...xs].sort((a, b) => (Date.parse(b.createdAt) || 0) - (Date.parse(a.createdAt) || 0))[0];
+const newest = (xs: LadderEvidence[]) => [...xs].sort((a, b) => (Date.parse(b.createdAt) || 0) - (Date.parse(a.createdAt) || 0))[0];
 
 function fromEvidence(c: Candidates, e: EvidenceItem) {
   const base = { id: e.id, url: e.url ?? "", createdAt: e.createdAt ?? "" };
@@ -154,16 +186,26 @@ function fromEvidence(c: Candidates, e: EvidenceItem) {
       return;
     case "keystone-pod":
       if (e.skillId === "code-review") {
-        for (const s of skillsMentioned(quote ?? "")) add(c, s, 3, { ...base, source: "code-review", quote: quote || "Reviewed a peer's pull request" });
+        for (const s of skillsMentioned(quote ?? ""))
+          add(c, s, 3, { ...base, source: "code-review", quote: quote || "Reviewed a peer's pull request" });
       } else {
-        add(c, e.skillId, 2, { ...base, source: "keystone-pod", quote: quote || `Merged a ${skillName(e.skillId)} pull request in your pod` });
+        add(c, e.skillId, 2, {
+          ...base,
+          source: "keystone-pod",
+          quote: quote || `Merged a ${skillName(e.skillId)} pull request in your pod`,
+        });
       }
       return;
     case "keystone-interview":
-      add(c, e.skillId, 3, { ...base, source: "keystone-interview", quote: quote || `Explained ${skillName(e.skillId)} in a mock interview` });
+      add(c, e.skillId, 3, {
+        ...base,
+        source: "keystone-interview",
+        quote: quote || `Explained ${skillName(e.skillId)} in a mock interview`,
+      });
       return;
     default:
-      if ((e.level ?? 0) >= 1) add(c, e.skillId, 1, { ...base, source: e.source, quote: quote || `${skillName(e.skillId)} evidence from ${e.source}` });
+      if ((e.level ?? 0) >= 1)
+        add(c, e.skillId, 1, { ...base, source: e.source, quote: quote || `${skillName(e.skillId)} evidence from ${e.source}` });
   }
 }
 
@@ -184,13 +226,19 @@ async function fromProofs(c: Candidates, userId: string, evidence: EvidenceItem[
     const createdAt = merged?.mergedAt ?? "";
     if (learner) {
       add(c, p.skillId, 2, {
-        id: p.evidenceIds[0] ?? `proof_${p.podId}_${p.issueIndex}`, source: "keystone-pod", url, createdAt,
+        id: p.evidenceIds[0] ?? `proof_${p.podId}_${p.issueIndex}`,
+        source: "keystone-pod",
+        url,
+        createdAt,
         quote: issue ? `Merged '${issue.title}'` : p.message,
       });
     } else {
       const learnerName = capitalise(p.userId);
       add(c, p.skillId, 3, {
-        id: p.evidenceIds[1] ?? `proof_${p.podId}_${p.issueIndex}_review`, source: "code-review", url, createdAt,
+        id: p.evidenceIds[1] ?? `proof_${p.podId}_${p.issueIndex}_review`,
+        source: "code-review",
+        url,
+        createdAt,
         quote: `Reviewed ${learnerName}'s ${p.skillName} PR`,
       });
     }
@@ -202,13 +250,19 @@ function fromMap(c: Candidates, map: BridgeMap) {
     const has = c.get(n.skillId);
     if (n.status === "proven" && !has?.[1].length && !has?.[2].length) {
       add(c, n.skillId, 1, {
-        id: n.evidenceIds?.[0] ?? `map_${n.skillId}`, source: "github", url: "/map", createdAt: map.generatedAt ?? "",
+        id: n.evidenceIds?.[0] ?? `map_${n.skillId}`,
+        source: "github",
+        url: "/map",
+        createdAt: map.generatedAt ?? "",
         quote: `Found in your GitHub repos by the Evidence Agent (level ${n.level ?? 1} of 3 on your Bridge Map)`,
       });
     } else if (n.status === "degree-done" && !has?.[1].length) {
       const modules = n.moduleCodes?.length ? n.moduleCodes.join(", ") : "a module";
       add(c, n.skillId, 1, {
-        id: `degree_${n.skillId}`, source: "degree", url: "/map", createdAt: map.generatedAt ?? "",
+        id: `degree_${n.skillId}`,
+        source: "degree",
+        url: "/map",
+        createdAt: map.generatedAt ?? "",
         quote: `Completed ${modules} in your degree`,
       });
     }
@@ -240,7 +294,13 @@ export async function getProofLadder(userId: string, skillId?: string): Promise<
   if (map) fromMap(c, map);
   for (const s of seededProven(userId)) {
     if (!c.get(s)?.[1].length && !c.get(s)?.[2].length) {
-      add(c, s, 1, { id: `seed_${userId}_${s}`, source: "github", url: "", createdAt: "", quote: "Found in their GitHub repos (seeded demo profile)" });
+      add(c, s, 1, {
+        id: `seed_${userId}_${s}`,
+        source: "github",
+        url: "",
+        createdAt: "",
+        quote: "Found in their GitHub repos (seeded demo profile)",
+      });
     }
   }
 
@@ -249,14 +309,19 @@ export async function getProofLadder(userId: string, skillId?: string): Promise<
     ? [skillId]
     : [...new Set([...c.keys(), ...(map?.nodes ?? []).filter((n) => n.status === "gap").map((n) => n.skillId)])];
 
-  const skills: SkillLadder[] = ids.filter((id) => id !== "code-review").map((id) => {
-    const rungs = buildRungs(c.get(id));
-    const node = nodes.get(id);
-    return {
-      skillId: id, skillName: node?.name ?? skillName(id), rungs, level: levelOf(rungs),
-      ...(node ? { status: node.status, demand: node.demand } : {}),
-    };
-  });
+  const skills: SkillLadder[] = ids
+    .filter((id) => id !== "code-review")
+    .map((id) => {
+      const rungs = buildRungs(c.get(id));
+      const node = nodes.get(id);
+      return {
+        skillId: id,
+        skillName: node?.name ?? skillName(id),
+        rungs,
+        level: levelOf(rungs),
+        ...(node ? { status: node.status, demand: node.demand } : {}),
+      };
+    });
   skills.sort((a, b) => b.level - a.level || (b.demand ?? 0) - (a.demand ?? 0) || a.skillName.localeCompare(b.skillName));
   return { userId, skills, generatedAt: new Date().toISOString() };
 }
@@ -264,9 +329,11 @@ export async function getProofLadder(userId: string, skillId?: string): Promise<
 // ---------- latest proof (the mock interview asks about the PR you just merged) ----------
 
 const ROLE_NAME: Record<string, string> = {
-  "ml-engineer": "ML engineer", "software-engineer": "Software engineer", "data-analyst": "Data analyst",
+  "ml-engineer": "ML engineer",
+  "software-engineer": "Software engineer",
+  "data-analyst": "Data analyst",
 };
-export const roleName = (id?: string) => (id ? ROLE_NAME[id] ?? capitalise(id.replace(/-/g, " ")) : undefined);
+export const roleName = (id?: string) => (id ? (ROLE_NAME[id] ?? capitalise(id.replace(/-/g, " "))) : undefined);
 
 const firstName = (p: Profile | null, id: string) => p?.name?.split(" ")[0] || capitalise(id);
 
@@ -279,24 +346,35 @@ function mergedOn(iso?: string): string {
 /** The newest merged pod PR for `userId`, or (for the demo pod) the first issue they're working on; null if none. */
 export async function getLatestProof(userId: string): Promise<LatestProof | null> {
   const mine = (await loadProofs()).filter((p) => p.userId === userId);
-  const dated = await Promise.all(mine.map(async (p) => {
-    const merged = (await loadProgress(p.podId))?.merged?.find((m) => m.issueIndex === p.issueIndex);
-    return { p, mergedAt: merged?.mergedAt, prUrl: merged?.prUrl };
-  }));
+  const dated = await Promise.all(
+    mine.map(async (p) => {
+      const merged = (await loadProgress(p.podId))?.merged?.find((m) => m.issueIndex === p.issueIndex);
+      return { p, mergedAt: merged?.mergedAt, prUrl: merged?.prUrl };
+    }),
+  );
   dated.sort((a, b) => (Date.parse(b.mergedAt ?? "") || 0) - (Date.parse(a.mergedAt ?? "") || 0));
   const top = dated[0];
 
-  let podId: string; let issueIndex: number; let status: "merged" | "in-progress"; let mergedAt: string | undefined;
-  let prUrl: string | undefined; let base: Pick<ProofResult, "readinessBefore" | "readinessAfter" | "message"> | null = null;
+  let podId: string;
+  let issueIndex: number;
+  let status: "merged" | "in-progress";
+  let mergedAt: string | undefined;
+  let prUrl: string | undefined;
+  let base: Pick<ProofResult, "readinessBefore" | "readinessAfter" | "message"> | null = null;
   if (top) {
     ({ podId, issueIndex } = top.p);
-    status = "merged"; mergedAt = top.mergedAt; prUrl = top.prUrl; base = top.p;
+    status = "merged";
+    mergedAt = top.mergedAt;
+    prUrl = top.prUrl;
+    base = top.p;
   } else {
     const fx = readFixture<{ id: string }>("data/fixtures/pod.aisha.json");
     const pod = fx ? await loadPod(fx.id) : null;
     const idx = pod?.project?.issues?.findIndex((i) => i.assigneeUserId === userId) ?? -1;
     if (!pod || idx < 0) return null;
-    podId = pod.id; issueIndex = idx; status = "in-progress";
+    podId = pod.id;
+    issueIndex = idx;
+    status = "in-progress";
   }
 
   const pod = await loadPod(podId);
@@ -313,11 +391,24 @@ export async function getLatestProof(userId: string): Promise<LatestProof | null
   const levelLabel = level ? `${level} of 3: ${RUNG_LABEL[level as RungNumber]}` : "0 of 3";
 
   return {
-    userId, podId, podName: pod.name, issueIndex, skillId: issue.skillId, skillName: skill, prTitle: issue.title,
-    prUrl: url, repo, reviewerUserId: issue.reviewerUserId, reviewerName,
-    ...(mergedAt ? { mergedAt } : {}), status,
-    readinessBefore: base?.readinessBefore ?? 0, readinessAfter: base?.readinessAfter ?? 0,
-    ladderLevel: level, message, isDemo: status === "in-progress",
+    userId,
+    podId,
+    podName: pod.name,
+    issueIndex,
+    skillId: issue.skillId,
+    skillName: skill,
+    prTitle: issue.title,
+    prUrl: url,
+    repo,
+    reviewerUserId: issue.reviewerUserId,
+    reviewerName,
+    ...(mergedAt ? { mergedAt } : {}),
+    status,
+    readinessBefore: base?.readinessBefore ?? 0,
+    readinessAfter: base?.readinessAfter ?? 0,
+    ladderLevel: level,
+    message,
+    isDemo: status === "in-progress",
     dynamicVariables: {
       latest_pr_title: issue.title,
       latest_pr_skill: skill,
@@ -352,11 +443,17 @@ export async function getPassport(userId: string, viewerId: string): Promise<Pas
   const role = profile.dna?.targetRoles?.[0];
   const [ladder, map] = await Promise.all([getProofLadder(userId), loadUserMap(userId, role)]);
   return {
-    userId, name: profile.name, ...(profile.avatarUrl ? { avatarUrl: profile.avatarUrl } : {}),
-    programme: programmeLabel(profile.programmeId), year: profile.year, badges: profile.badges ?? [],
+    userId,
+    name: profile.name,
+    ...(profile.avatarUrl ? { avatarUrl: profile.avatarUrl } : {}),
+    programme: programmeLabel(profile.programmeId),
+    year: profile.year,
+    badges: profile.badges ?? [],
     ...(role ? { roleName: roleName(role) } : {}),
     ...(map ? { readinessNow: map.readinessNow, readinessProjected: map.readinessProjected } : {}),
-    isPublic, isOwner, isDemo: profile.isDemo === true || isDemoMode(),
+    isPublic,
+    isOwner,
+    isDemo: profile.isDemo === true || isDemoMode(),
     skills: ladder.skills.filter((s) => s.level > 0),
   };
 }

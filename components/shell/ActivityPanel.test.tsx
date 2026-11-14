@@ -15,14 +15,31 @@ class MockEventSource {
   listeners: Record<string, ((m: MessageEvent) => void)[]> = {};
   onerror: (() => void) | null = null;
   closed = false;
-  constructor(public url: string) { MockEventSource.instances.push(this); }
-  addEventListener(type: string, cb: (m: MessageEvent) => void) { (this.listeners[type] ??= []).push(cb); }
-  close() { this.closed = true; }
-  send(e: AgentEvent) { act(() => this.listeners.agent?.forEach((cb) => cb({ data: JSON.stringify(e) } as MessageEvent))); }
-  fail() { act(() => this.onerror?.()); }
+  constructor(public url: string) {
+    MockEventSource.instances.push(this);
+  }
+  addEventListener(type: string, cb: (m: MessageEvent) => void) {
+    (this.listeners[type] ??= []).push(cb);
+  }
+  close() {
+    this.closed = true;
+  }
+  send(e: AgentEvent) {
+    act(() => this.listeners.agent?.forEach((cb) => cb({ data: JSON.stringify(e) } as MessageEvent)));
+  }
+  fail() {
+    act(() => this.onerror?.());
+  }
 }
 
-const ev = (agent: AgentEvent["agent"], status: AgentEvent["status"], message: string, data?: Record<string, unknown>): AgentEvent => ({ runId: "run_t", agent, status, message, ts: new Date().toISOString(), ...(data ? { data } : {}) });
+const ev = (agent: AgentEvent["agent"], status: AgentEvent["status"], message: string, data?: Record<string, unknown>): AgentEvent => ({
+  runId: "run_t",
+  agent,
+  status,
+  message,
+  ts: new Date().toISOString(),
+  ...(data ? { data } : {}),
+});
 
 function Starter({ id = "run_t" }: { id?: string }) {
   const { start, setOpen } = useActivity();
@@ -35,7 +52,11 @@ function Starter({ id = "run_t" }: { id?: string }) {
 }
 const setup = async () => {
   const user = userEvent.setup();
-  render(<ActivityProvider><Starter /></ActivityProvider>);
+  render(
+    <ActivityProvider>
+      <Starter />
+    </ActivityProvider>,
+  );
   await user.click(screen.getByRole("button", { name: "start run" }));
   return { user, es: MockEventSource.instances.at(-1)! };
 };
@@ -75,7 +96,11 @@ describe("ActivityPanel", () => {
     const groups = screen.getAllByRole("listitem").filter((li) => li.hasAttribute("data-agent"));
     expect(groups.map((g) => g.getAttribute("data-agent"))).toEqual(["orchestrator", "syllabus", "market"]);
     groups.shift();
-    expect(within(groups[0]).getAllByTestId("agent-row").map((r) => r.textContent)).toEqual([expect.stringContaining("Reading the programme page"), expect.stringContaining("Found 41 course units")]);
+    expect(
+      within(groups[0])
+        .getAllByTestId("agent-row")
+        .map((r) => r.textContent),
+    ).toEqual([expect.stringContaining("Reading the programme page"), expect.stringContaining("Found 41 course units")]);
     expect(within(groups[0]).getByText("Done")).toBeInTheDocument();
     expect(within(groups[1]).getByText("Working")).toBeInTheDocument();
     expect(screen.getByTestId("run-progress")).toHaveTextContent("1 of 2 agents finished");
@@ -111,7 +136,16 @@ describe("ActivityPanel", () => {
 
   it("falls back to polling ?poll=1 after 2 EventSource errors", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(JSON.stringify({ ok: true, data: [ev("orchestrator", "started", "Building"), ev("market", "done", "214 ads analysed"), ev("orchestrator", "done", "Bridge ready · 38% → 84%", { readinessNow: 0.38, readinessProjected: 0.84 })] })),
+      new Response(
+        JSON.stringify({
+          ok: true,
+          data: [
+            ev("orchestrator", "started", "Building"),
+            ev("market", "done", "214 ads analysed"),
+            ev("orchestrator", "done", "Bridge ready · 38% → 84%", { readinessNow: 0.38, readinessProjected: 0.84 }),
+          ],
+        }),
+      ),
     );
     const { es } = await setup();
     es.fail();
@@ -134,7 +168,11 @@ describe("ActivityPanel", () => {
   it("shows the empty state and replays the demo run from it", async () => {
     h.apiPost.mockResolvedValue({ runId: "run_demo1" });
     const user = userEvent.setup();
-    render(<ActivityProvider><Starter /></ActivityProvider>);
+    render(
+      <ActivityProvider>
+        <Starter />
+      </ActivityProvider>,
+    );
     await user.click(screen.getByRole("button", { name: "open panel" }));
     expect(screen.getByText("No agents running")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Replay demo run" }));
@@ -154,7 +192,11 @@ describe("panel helpers", () => {
     expect(relativeTime(t, at(150))).toBe("2m ago");
   });
   it("HighlightNumbers wraps every number", () => {
-    const { container } = render(<p><HighlightNumbers text="LLM evaluation rising +38%/yr" /></p>);
+    const { container } = render(
+      <p>
+        <HighlightNumbers text="LLM evaluation rising +38%/yr" />
+      </p>,
+    );
     expect(container.querySelectorAll("span.font-mono")).toHaveLength(1);
     expect(container.textContent).toBe("LLM evaluation rising +38%/yr");
   });

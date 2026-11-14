@@ -4,7 +4,10 @@ import { GET } from "./route";
 import { TrendSeriesZ } from "@/lib/schemas/data";
 
 const call = (qs = "") => GET(new Request(`http://localhost/api/trends${qs}`));
-afterEach(() => { delete process.env.DEMO_MODE; vi.restoreAllMocks(); });
+afterEach(() => {
+  delete process.env.DEMO_MODE;
+  vi.restoreAllMocks();
+});
 
 describe("GET /api/trends", () => {
   it("?skills=docker returns exactly 1 series", async () => {

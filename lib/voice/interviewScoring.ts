@@ -54,16 +54,94 @@ export function fillerWordsPerMin(transcript: string, durationSec: number): numb
 
 // ---------- content: skill keywords ----------
 const SKILL_KEYWORDS: Record<string, string[]> = {
-  docker: ["dockerfile", "image", "container", "layer", "cache", "caching", "base image", "requirements", "pip install", "docker run", "docker compose", "compose", "port", "volume", "entrypoint", "cmd", "copy", "build", "registry", "isolated", "file system"],
-  pytorch: ["tensor", "model", "training", "batch", "gpu", "epoch", "loss", "optimizer", "dataloader", "inference", "gradient", "fine-tune", "checkpoint", "torch"],
-  python: ["function", "module", "package", "list", "dictionary", "pandas", "numpy", "test", "virtual environment", "pip", "class", "exception", "type hints"],
-  sql: ["table", "query", "join", "index", "primary key", "foreign key", "schema", "select", "where", "normalise", "postgres", "migration", "constraint"],
+  docker: [
+    "dockerfile",
+    "image",
+    "container",
+    "layer",
+    "cache",
+    "caching",
+    "base image",
+    "requirements",
+    "pip install",
+    "docker run",
+    "docker compose",
+    "compose",
+    "port",
+    "volume",
+    "entrypoint",
+    "cmd",
+    "copy",
+    "build",
+    "registry",
+    "isolated",
+    "file system",
+  ],
+  pytorch: [
+    "tensor",
+    "model",
+    "training",
+    "batch",
+    "gpu",
+    "epoch",
+    "loss",
+    "optimizer",
+    "dataloader",
+    "inference",
+    "gradient",
+    "fine-tune",
+    "checkpoint",
+    "torch",
+  ],
+  python: [
+    "function",
+    "module",
+    "package",
+    "list",
+    "dictionary",
+    "pandas",
+    "numpy",
+    "test",
+    "virtual environment",
+    "pip",
+    "class",
+    "exception",
+    "type hints",
+  ],
+  sql: [
+    "table",
+    "query",
+    "join",
+    "index",
+    "primary key",
+    "foreign key",
+    "schema",
+    "select",
+    "where",
+    "normalise",
+    "postgres",
+    "migration",
+    "constraint",
+  ],
   aws: ["ec2", "s3", "lambda", "region", "iam", "bucket", "deploy", "instance", "load balancer", "cloud", "permissions", "cost"],
   react: ["component", "state", "props", "hook", "render", "accessibility", "aria", "screen reader", "form", "effect", "keyboard"],
   git: ["branch", "commit", "pull request", "merge", "rebase", "conflict", "review", "history"],
 };
-const GENERIC_KEYWORDS = ["test", "review", "pull request", "merged", "bug", "design", "trade-off", "measured", "users", "deploy", "documentation"];
-const DEPTH_RE = /\b(because|so that|which means|for example|for instance|\d+(\.\d+)?\s?(%|percent|seconds|minutes|ms|mb|x)?|from \w+ (minutes|seconds) to)\b/gi;
+const GENERIC_KEYWORDS = [
+  "test",
+  "review",
+  "pull request",
+  "merged",
+  "bug",
+  "design",
+  "trade-off",
+  "measured",
+  "users",
+  "deploy",
+  "documentation",
+];
+const DEPTH_RE =
+  /\b(because|so that|which means|for example|for instance|\d+(\.\d+)?\s?(%|percent|seconds|minutes|ms|mb|x)?|from \w+ (minutes|seconds) to)\b/gi;
 
 function keywordHits(text: string, skillId: string, extra: string[] = []): string[] {
   const t = ` ${text.toLowerCase().replace(/[^a-z0-9+#.\- ]+/g, " ")} `;
@@ -73,14 +151,20 @@ function keywordHits(text: string, skillId: string, extra: string[] = []): strin
 
 // ---------- structure: STAR ----------
 const STAR: Record<"situation" | "task" | "action" | "result", RegExp> = {
-  situation: /\b(in (our|my|the) (pod|team|project|course|module|internship|group)|we('re| are| were) (building|working|making)|the (problem|situation|context) (was|is)|when (i|we) (started|joined|were))\b/i,
+  situation:
+    /\b(in (our|my|the) (pod|team|project|course|module|internship|group)|we('re| are| were) (building|working|making)|the (problem|situation|context) (was|is)|when (i|we) (started|joined|were))\b/i,
   task: /\b(my (issue|task|job|role|goal|part) (was|is)|i (needed|had|was asked) to|i was responsible|the goal was)\b/i,
-  action: /\bi (wrote|built|added|moved|changed|used|created|tested|fixed|decided|tried|set up|refactored|implemented|designed|split|asked|measured|replaced)\b/i,
-  result: /\b(as a result|in the end|the result|which meant|so now|now (it|we|anyone|everyone)|it worked|(went|dropped|fell) from|reduced|improved|approved|was merged|got merged|i learned|i learnt)\b/i,
+  action:
+    /\bi (wrote|built|added|moved|changed|used|created|tested|fixed|decided|tried|set up|refactored|implemented|designed|split|asked|measured|replaced)\b/i,
+  result:
+    /\b(as a result|in the end|the result|which meant|so now|now (it|we|anyone|everyone)|it worked|(went|dropped|fell) from|reduced|improved|approved|was merged|got merged|i learned|i learnt)\b/i,
 };
 
 function sentences(text: string): string[] {
-  return text.split(/[.!?]+(?:\s|$)|\n/).map((s) => s.trim()).filter((s) => (s.match(/\S+/g)?.length ?? 0) >= 2);
+  return text
+    .split(/[.!?]+(?:\s|$)|\n/)
+    .map((s) => s.trim())
+    .filter((s) => (s.match(/\S+/g)?.length ?? 0) >= 2);
 }
 const wordCount = (s: string) => s.match(/[A-Za-z0-9'’-]+/g)?.length ?? 0;
 const clamp = (n: number) => Math.max(1, Math.min(5, Math.round(n)));
@@ -92,7 +176,15 @@ export interface RuleScore {
   fillerWordsPerMin: number;
   strengths: string[];
   improvements: string[];
-  detail: { words: number; keywordHits: string[]; star: string[]; avgSentence: number; fillers: number; topFiller?: string; hedges: number };
+  detail: {
+    words: number;
+    keywordHits: string[];
+    star: string[];
+    avgSentence: number;
+    fillers: number;
+    topFiller?: string;
+    hedges: number;
+  };
 }
 
 /** Deterministic scores + specific strengths and improvements for one transcript. */
@@ -128,7 +220,9 @@ export function scoreTranscript(i: { transcript: string; durationSec: number; sk
   const topFiller = [...tally.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
   const missing = (["situation", "task", "action", "result"] as const).filter((k) => !star.includes(k));
   const avgR = Math.round(avg);
-  const resultQuote = text.match(/[^.!?\n]*\b(as a result|went from|it worked|approved|was merged|reduced|improved)\b[^.!?\n]*/i)?.[0]?.trim();
+  const resultQuote = text
+    .match(/[^.!?\n]*\b(as a result|went from|it worked|approved|was merged|reduced|improved)\b[^.!?\n]*/i)?.[0]
+    ?.trim();
   const suggestions = (SKILL_KEYWORDS[i.skillId] ?? GENERIC_KEYWORDS).filter((k) => !hits.includes(k)).slice(0, 2);
 
   const strength: Record<Dim, string> = {
@@ -148,9 +242,10 @@ export function scoreTranscript(i: { transcript: string; durationSec: number; sk
     structure: missing.length
       ? `Structure answers as situation → action → result; your answers skipped the ${missing.join(" and ")}.`
       : `Say the result first in one line, then explain how you got there.`,
-    clarity: avgR > 22
-      ? `Your sentences ran to about ${avgR} words; split long answers into two or three sentences.`
-      : `Slow down on the technical bit and define one term before you use it.`,
+    clarity:
+      avgR > 22
+        ? `Your sentences ran to about ${avgR} words; split long answers into two or three sentences.`
+        : `Slow down on the technical bit and define one term before you use it.`,
     confidence: fillers.length
       ? `Pause instead of saying "${topFiller}": you used ${fillers.length} filler word${fillers.length === 1 ? "" : "s"} (${fpm} a minute; aim for under 4).`
       : hedges
@@ -164,15 +259,20 @@ export function scoreTranscript(i: { transcript: string; durationSec: number; sk
   const improvements = weakest.slice(0, 2).map((d) => improvement[d]);
 
   return {
-    scores, fillerWordsPerMin: fpm, strengths, improvements,
+    scores,
+    fillerWordsPerMin: fpm,
+    strengths,
+    improvements,
     detail: { words, keywordHits: hits, star, avgSentence: Math.round(avg * 10) / 10, fillers: fillers.length, topFiller, hedges },
   };
 }
 
 const LlmScoreZ = z.object({
   scores: z.object({
-    content: z.number().int().min(1).max(5), structure: z.number().int().min(1).max(5),
-    clarity: z.number().int().min(1).max(5), confidence: z.number().int().min(1).max(5),
+    content: z.number().int().min(1).max(5),
+    structure: z.number().int().min(1).max(5),
+    clarity: z.number().int().min(1).max(5),
+    confidence: z.number().int().min(1).max(5),
   }),
   strengths: z.array(z.string().min(1)).length(2),
   improvements: z.array(z.string().min(1)).length(2),
@@ -182,8 +282,15 @@ const COACH_SYSTEM =
   "You are an encouraging interview coach for university students. Score the CANDIDATE's answers only, 1-5 each for content (accuracy, depth), structure (clear situation→action→result), clarity (plain, concise), confidence (decisive, ownership). Give 2 specific strengths and 2 specific, actionable improvements quoting their words where possible. Plain UK English, second person.";
 
 export interface ScoreInput {
-  userId: string; roleId: string; roleName?: string; transcript: string; durationSec: number;
-  skillId: string; prTitle?: string; roleKeywords?: string[]; runId?: string;
+  userId: string;
+  roleId: string;
+  roleName?: string;
+  transcript: string;
+  durationSec: number;
+  skillId: string;
+  prTitle?: string;
+  roleKeywords?: string[];
+  runId?: string;
 }
 
 /**
@@ -218,14 +325,21 @@ export async function scoreInterview(i: ScoreInput): Promise<InterviewResult> {
   let improvements = rules.improvements;
   let scoredBy: InterviewResult["scoredBy"] = "rules";
   emit({
-    runId, agent: "voice", status: "progress",
+    runId,
+    agent: "voice",
+    status: "progress",
     message: `${rules.detail.words} words, ${rules.fillerWordsPerMin} filler words a minute, ${rules.detail.star.length} of 4 STAR parts`,
   });
 
   if (process.env.DEMO_MODE !== "true") {
     try {
       const llm = await llmJSON({
-        agent: "voice", runId, system: COACH_SYSTEM, schema: LlmScoreZ, schemaName: "interview_feedback", temperature: 0.2,
+        agent: "voice",
+        runId,
+        system: COACH_SYSTEM,
+        schema: LlmScoreZ,
+        schemaName: "interview_feedback",
+        temperature: 0.2,
         user: `ROLE: ${i.roleName ?? i.roleId}\nTOPIC: their merged pod PR "${i.prTitle ?? skill}" (${skill})\nTRANSCRIPT:\n${i.transcript.slice(0, 12000)}`,
       });
       const blend = (d: Dim) => clamp((rules.scores[d] + llm.scores[d]) / 2);
@@ -243,37 +357,72 @@ export async function scoreInterview(i: ScoreInput): Promise<InterviewResult> {
   const id = `iv_${i.userId}_${now.getTime()}`;
   const avg = (scores.content + scores.structure + scores.clarity + scores.confidence) / 4;
   const feedback: InterviewFeedback = {
-    userId: i.userId, roleId: i.roleId, scores, fillerWordsPerMin: rules.fillerWordsPerMin,
-    strengths, improvements, transcript: i.transcript.slice(0, 20000), createdAt,
+    userId: i.userId,
+    roleId: i.roleId,
+    scores,
+    fillerWordsPerMin: rules.fillerWordsPerMin,
+    strengths,
+    improvements,
+    transcript: i.transcript.slice(0, 20000),
+    createdAt,
   };
 
   const store = getStore();
   await store.upsert("interviews", id, { id, ...feedback, durationSec: i.durationSec, skillId: i.skillId }, i.userId);
-  await store.upsert("momentum_events", `mock-interview-${id}`, {
-    id: `mock-interview-${id}`, userId: i.userId, kind: "mock-interview", ts: createdAt, label: `Mock interview: ${i.roleName ?? i.roleId}`, url: "/interview",
-  }, i.userId);
+  await store.upsert(
+    "momentum_events",
+    `mock-interview-${id}`,
+    {
+      id: `mock-interview-${id}`,
+      userId: i.userId,
+      kind: "mock-interview",
+      ts: createdAt,
+      label: `Mock interview: ${i.roleName ?? i.roleId}`,
+      url: "/interview",
+    },
+    i.userId,
+  );
 
   const evidence: InterviewResult["evidence"] = [];
   const save = async (skillId: string, level: Level, confidence: number, quote: string, label: string) => {
     const ev: EvidenceItem = {
-      id: `ev_interview_${id}_${skillId}`, userId: i.userId, skillId, level, confidence: Math.round(confidence * 100) / 100,
-      source: "keystone-interview", url: "/interview", quote, createdAt,
+      id: `ev_interview_${id}_${skillId}`,
+      userId: i.userId,
+      skillId,
+      level,
+      confidence: Math.round(confidence * 100) / 100,
+      source: "keystone-interview",
+      url: "/interview",
+      quote,
+      createdAt,
     };
     await store.upsert("evidence", ev.id, ev, i.userId);
     evidence.push({ id: ev.id, skillId, label, level });
   };
-  await save("communication", avg >= 3.5 ? 2 : 1, Math.min(0.9, 0.4 + avg / 10),
-    `Mock interview for ${i.roleName ?? i.roleId}: structure ${scores.structure}/5, clarity ${scores.clarity}/5`, "Communication");
+  await save(
+    "communication",
+    avg >= 3.5 ? 2 : 1,
+    Math.min(0.9, 0.4 + avg / 10),
+    `Mock interview for ${i.roleName ?? i.roleId}: structure ${scores.structure}/5, clarity ${scores.clarity}/5`,
+    "Communication",
+  );
   if (scores.content >= 3 && i.skillId !== "communication") {
     // Explaining a skill is rung 3 ("Explained it"). Without a merged PR in it, the talk alone stays below proof
     // confidence (0.6), so the skill doesn't turn proven and readiness waits for the build.
     const built = await hasMergedPR(store, i.userId, i.skillId);
     const confidence = built ? Math.min(0.9, 0.55 + scores.content * 0.07) : Math.min(0.5, 0.2 + scores.content * 0.06);
-    await save(i.skillId, 3, confidence,
-      `Explained "${i.prTitle ?? skill}" in a mock interview (content ${scores.content}/5)`, `${skill} (explained)`);
+    await save(
+      i.skillId,
+      3,
+      confidence,
+      `Explained "${i.prTitle ?? skill}" in a mock interview (content ${scores.content}/5)`,
+      `${skill} (explained)`,
+    );
   }
   emit({
-    runId, agent: "evidence", status: "done",
+    runId,
+    agent: "evidence",
+    status: "done",
     message: `Saved as proof: ${evidence.map((e) => e.label).join(", ")}`,
     data: { userId: i.userId, evidenceIds: evidence.map((e) => e.id) },
   });

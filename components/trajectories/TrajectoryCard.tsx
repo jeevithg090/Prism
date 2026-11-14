@@ -8,8 +8,13 @@ import { Button } from "@/components/ui/button";
 import { DemoDataNote } from "@/components/keystone";
 
 const KIND_LABEL: Record<Trajectory["steps"][number]["kind"], string> = {
-  "module-choice": "Modules", project: "Project", society: "Society", hackathon: "Hackathon",
-  internship: "Internship", placement: "Placement", "first-role": "First role",
+  "module-choice": "Modules",
+  project: "Project",
+  society: "Society",
+  hackathon: "Hackathon",
+  internship: "Internship",
+  placement: "Placement",
+  "first-role": "First role",
 };
 
 /** Keeps compound words like "health-tech" on one line (non-breaking hyphen). */
@@ -18,11 +23,20 @@ function keepCompounds(text: string) {
 }
 
 function initials(name: string) {
-  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase()).join("");
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase())
+    .join("");
 }
 
 export function TrajectoryCard({
-  trajectory, similarity, onAsk, className, showDemoNote = true,
+  trajectory,
+  similarity,
+  onAsk,
+  className,
+  showDemoNote = true,
 }: {
   trajectory: Trajectory;
   /** 0..1, from /api/trajectories/similar */
@@ -35,18 +49,21 @@ export function TrajectoryCard({
   const first = trajectory.name.split(/\s+/)[0] ?? trajectory.name;
   const headingId = `traj-${trajectory.id}-name`;
   return (
-    <article
-      aria-labelledby={headingId}
-      className={cn("relative flex flex-col gap-5 rounded-2xl border bg-card p-6 shadow-sm", className)}
-    >
+    <article aria-labelledby={headingId} className={cn("relative flex flex-col gap-5 rounded-2xl border bg-card p-6 shadow-sm", className)}>
       <header className="flex items-start gap-3">
-        <span aria-hidden className="flex size-11 shrink-0 items-center justify-center rounded-full bg-muted text-base font-semibold text-foreground">
+        <span
+          aria-hidden
+          className="flex size-11 shrink-0 items-center justify-center rounded-full bg-muted text-base font-semibold text-foreground"
+        >
           {initials(trajectory.name)}
         </span>
         <div className="min-w-0 flex-1">
-          <h3 id={headingId} className="text-lg leading-tight font-semibold [overflow-wrap:break-word] text-foreground">{trajectory.name}</h3>
+          <h3 id={headingId} className="text-lg leading-tight font-semibold [overflow-wrap:break-word] text-foreground">
+            {trajectory.name}
+          </h3>
           <p className="mt-1 min-h-[2lh] text-sm leading-snug text-pretty text-muted-foreground">
-            <span className="sr-only">Now: </span>{keepCompounds(trajectory.outcomeRole)}
+            <span className="sr-only">Now: </span>
+            {keepCompounds(trajectory.outcomeRole)}
           </p>
         </div>
       </header>

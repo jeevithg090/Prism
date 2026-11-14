@@ -37,60 +37,36 @@ describe("ProofCelebration", () => {
   });
 
   it("renders the skill, both readiness numbers, the delta and the Shipped badge", () => {
-    render(
-      <ProofCelebration result={proof} names={names} onClose={() => {}} />,
-    );
+    render(<ProofCelebration result={proof} names={names} onClose={() => {}} />);
     const dialog = screen.getByRole("dialog");
     expect(dialog).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: "Docker is now proven" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Docker is now proven" })).toBeInTheDocument();
     expect(screen.getByTestId("readiness-before")).toHaveTextContent("38%");
     expect(screen.getByTestId("readiness-after")).toHaveTextContent("41%");
     expect(screen.getByText("+3 points")).toBeInTheDocument();
-    expect(
-      screen.getByText("Readiness went from 38% to 41%, +3 points."),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Readiness went from 38% to 41%, +3 points.")).toBeInTheDocument();
     expect(screen.getByText("Shipped")).toBeInTheDocument();
     expect(screen.getByText(/\+5 momentum/)).toBeInTheDocument();
-    expect(screen.getByTestId("reviewer-proof")).toHaveTextContent(
-      "Priya earned a Code review proof for teaching you",
-    );
+    expect(screen.getByTestId("reviewer-proof")).toHaveTextContent("Priya earned a Code review proof for teaching you");
     expect(screen.getByText("Gap")).toBeInTheDocument();
     expect(screen.getByText("Proven")).toBeInTheDocument();
-    expect(
-      screen.getByRole("link", { name: /See it on my Bridge Map/ }),
-    ).toHaveAttribute("href", "/map");
+    expect(screen.getByRole("link", { name: /See it on my Bridge Map/ })).toHaveAttribute("href", "/map");
   });
 
   it("counts readiness up from the old value when motion is allowed", async () => {
     motionPrefs.reduce = false;
-    render(
-      <ProofCelebration result={proof} names={names} onClose={() => {}} />,
-    );
+    render(<ProofCelebration result={proof} names={names} onClose={() => {}} />);
     expect(screen.getByTestId("readiness-after")).toHaveTextContent("38%");
-    await vi.waitFor(
-      () =>
-        expect(screen.getByTestId("readiness-after")).toHaveTextContent("41%"),
-      { timeout: 4000 },
-    );
+    await vi.waitFor(() => expect(screen.getByTestId("readiness-after")).toHaveTextContent("41%"), { timeout: 4000 });
   });
 
   it("closes from Back to the project and renders nothing without a result", async () => {
     const onClose = vi.fn();
-    const { rerender } = render(
-      <ProofCelebration result={proof} names={names} onClose={onClose} />,
-    );
-    await userEvent.click(
-      screen.getByRole("button", { name: "Back to the project" }),
-    );
+    const { rerender } = render(<ProofCelebration result={proof} names={names} onClose={onClose} />);
+    await userEvent.click(screen.getByRole("button", { name: "Back to the project" }));
     expect(onClose).toHaveBeenCalled();
-    rerender(
-      <ProofCelebration result={null} names={names} onClose={onClose} />,
-    );
-    await vi.waitFor(() =>
-      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
-    );
+    rerender(<ProofCelebration result={null} names={names} onClose={onClose} />);
+    await vi.waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
   });
 
   it("for a skill that was already proven, shows the Built it rung and hides the status change and readiness", () => {

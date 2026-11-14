@@ -34,10 +34,20 @@ export function useActivity(): Ctx {
 }
 
 export const AGENT_LABEL: Record<AgentName, string> = {
-  orchestrator: "Orchestrator", syllabus: "Syllabus Agent", skillmap: "Skill Mapper", market: "Market Agent",
-  trends: "Trends Agent", evidence: "Evidence Agent", roadmap: "Roadmap Agent", matchmaker: "Matchmaker",
-  architect: "Project Architect", techlead: "Tech Lead", trajectories: "Trajectories Agent", guides: "Guides Agent",
-  voice: "Voice Coach", n8n: "n8n Automations",
+  orchestrator: "Orchestrator",
+  syllabus: "Syllabus Agent",
+  skillmap: "Skill Mapper",
+  market: "Market Agent",
+  trends: "Trends Agent",
+  evidence: "Evidence Agent",
+  roadmap: "Roadmap Agent",
+  matchmaker: "Matchmaker",
+  architect: "Project Architect",
+  techlead: "Tech Lead",
+  trajectories: "Trajectories Agent",
+  guides: "Guides Agent",
+  voice: "Voice Coach",
+  n8n: "n8n Automations",
 };
 
 const POLL_MS = 1000;
@@ -61,7 +71,13 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
   const [events, setEvents] = React.useState<AgentEvent[]>([]);
   const [open, setOpen] = React.useState(false);
   const [status, setStatus] = React.useState<RunStatus>("idle");
-  const conn = React.useRef<{ id: string | null; es: EventSource | null; poll: ReturnType<typeof setInterval> | null; settle: ReturnType<typeof setTimeout> | null; log: AgentEvent[] }>({ id: null, es: null, poll: null, settle: null, log: [] });
+  const conn = React.useRef<{
+    id: string | null;
+    es: EventSource | null;
+    poll: ReturnType<typeof setInterval> | null;
+    settle: ReturnType<typeof setTimeout> | null;
+    log: AgentEvent[];
+  }>({ id: null, es: null, poll: null, settle: null, log: [] });
 
   const stop = React.useCallback(() => {
     const c = conn.current;
@@ -75,75 +91,88 @@ export function ActivityProvider({ children }: { children: React.ReactNode }) {
 
   React.useEffect(() => stop, [stop]);
 
-  const start = React.useCallback((id: string) => {
-    stop();
-    const c = conn.current;
-    c.id = id;
-    c.log = [];
-    setRunId(id);
-    setEvents([]);
-    setOpen(true);
-    setStatus("connecting");
-
-    const finish = (s: "done" | "error") => {
-      if (c.id !== id) return;
+  const start = React.useCallback(
+    (id: string) => {
       stop();
-      setStatus(s);
-    };
-    // Merge new events (EventSource reconnects and polling both resend history), then check for the end.
-    const ingest = (incoming: AgentEvent[]) => {
-      if (c.id !== id) return;
-      const seen = new Set(c.log.map(keyOf));
-      const fresh = incoming.filter((e) => e && e.runId === id && !seen.has(keyOf(e)));
-      if (!fresh.length) return;
-      c.log = [...c.log, ...fresh];
-      setEvents(c.log);
-      setStatus((s) => (s === "connecting" ? "live" : s));
-      if (c.settle) { clearTimeout(c.settle); c.settle = null; }
-      const lead = c.log[0];
-      const end = fresh.find((e) => isRunEnd(e, lead));
-      if (end) return finish(end.status === "error" ? "error" : "done");
-      const last = fresh[fresh.length - 1];
-      if (lead.agent !== "orchestrator" && last.agent === lead.agent && last.status === "error") {
-        c.settle = setTimeout(() => finish("error"), ERROR_SETTLE_MS);
-      }
-    };
+      const c = conn.current;
+      c.id = id;
+      c.log = [];
+      setRunId(id);
+      setEvents([]);
+      setOpen(true);
+      setStatus("connecting");
 
-    const startPolling = () => {
-      c.es?.close();
-      c.es = null;
-      const began = Date.now();
-      const tick = async () => {
+      const finish = (s: "done" | "error") => {
         if (c.id !== id) return;
-        if (Date.now() - began > MAX_POLL_MS) return finish("error");
-        try {
-          const res = await fetch(`/api/agents/stream?runId=${encodeURIComponent(id)}&poll=1`);
-          const json = (await res.json()) as { ok: boolean; data?: AgentEvent[] };
-          if (json.ok && Array.isArray(json.data)) ingest(json.data);
-        } catch { /* try again next tick */ }
+        stop();
+        setStatus(s);
       };
-      void tick();
-      c.poll = setInterval(() => void tick(), POLL_MS);
-    };
+      // Merge new events (EventSource reconnects and polling both resend history), then check for the end.
+      const ingest = (incoming: AgentEvent[]) => {
+        if (c.id !== id) return;
+        const seen = new Set(c.log.map(keyOf));
+        const fresh = incoming.filter((e) => e && e.runId === id && !seen.has(keyOf(e)));
+        if (!fresh.length) return;
+        c.log = [...c.log, ...fresh];
+        setEvents(c.log);
+        setStatus((s) => (s === "connecting" ? "live" : s));
+        if (c.settle) {
+          clearTimeout(c.settle);
+          c.settle = null;
+        }
+        const lead = c.log[0];
+        const end = fresh.find((e) => isRunEnd(e, lead));
+        if (end) return finish(end.status === "error" ? "error" : "done");
+        const last = fresh[fresh.length - 1];
+        if (lead.agent !== "orchestrator" && last.agent === lead.agent && last.status === "error") {
+          c.settle = setTimeout(() => finish("error"), ERROR_SETTLE_MS);
+        }
+      };
 
-    if (typeof EventSource === "undefined") return startPolling();
-    let errors = 0;
-    const es = new EventSource(`/api/agents/stream?runId=${encodeURIComponent(id)}`);
-    c.es = es;
-    es.addEventListener("agent", (m) => {
-      try {
-        ingest([JSON.parse((m as MessageEvent<string>).data) as AgentEvent]);
-      } catch { /* ignore a malformed frame */ }
-    });
-    es.onerror = () => {
-      if (c.es !== es) return;
-      errors += 1;
-      if (errors >= ERRORS_BEFORE_POLLING) startPolling();
-    };
-  }, [stop]);
+      const startPolling = () => {
+        c.es?.close();
+        c.es = null;
+        const began = Date.now();
+        const tick = async () => {
+          if (c.id !== id) return;
+          if (Date.now() - began > MAX_POLL_MS) return finish("error");
+          try {
+            const res = await fetch(`/api/agents/stream?runId=${encodeURIComponent(id)}&poll=1`);
+            const json = (await res.json()) as { ok: boolean; data?: AgentEvent[] };
+            if (json.ok && Array.isArray(json.data)) ingest(json.data);
+          } catch {
+            /* try again next tick */
+          }
+        };
+        void tick();
+        c.poll = setInterval(() => void tick(), POLL_MS);
+      };
+
+      if (typeof EventSource === "undefined") return startPolling();
+      let errors = 0;
+      const es = new EventSource(`/api/agents/stream?runId=${encodeURIComponent(id)}`);
+      c.es = es;
+      es.addEventListener("agent", (m) => {
+        try {
+          ingest([JSON.parse((m as MessageEvent<string>).data) as AgentEvent]);
+        } catch {
+          /* ignore a malformed frame */
+        }
+      });
+      es.onerror = () => {
+        if (c.es !== es) return;
+        errors += 1;
+        if (errors >= ERRORS_BEFORE_POLLING) startPolling();
+      };
+    },
+    [stop],
+  );
 
   const live = status === "connecting" || status === "live";
-  const value = React.useMemo<Ctx>(() => ({ runId, events, open, setOpen, start, live, status }), [runId, events, open, start, live, status]);
+  const value = React.useMemo<Ctx>(
+    () => ({ runId, events, open, setOpen, start, live, status }),
+    [runId, events, open, start, live, status],
+  );
   return (
     <ActivityContext.Provider value={value}>
       {children}
@@ -165,7 +194,11 @@ export function AgentsButton({ className }: { className?: string }) {
       data-live={live || undefined}
       aria-label={live ? "Agents, a run is live" : "Agents"}
     >
-      {live ? <Loader2 className="size-[1.125rem] animate-spin text-primary" aria-hidden /> : <Workflow className="size-[1.125rem]" aria-hidden />}
+      {live ? (
+        <Loader2 className="size-[1.125rem] animate-spin text-primary" aria-hidden />
+      ) : (
+        <Workflow className="size-[1.125rem]" aria-hidden />
+      )}
       <span className="max-sm:sr-only">{live ? "Agents running" : "Agents"}</span>
     </Button>
   );
@@ -180,15 +213,25 @@ function subscribeClock(cb: () => void) {
   clockSubs.add(cb);
   if (!clockTimer) {
     clockNow = Date.now();
-    clockTimer = setInterval(() => { clockNow = Date.now(); clockSubs.forEach((f) => f()); }, 1000);
+    clockTimer = setInterval(() => {
+      clockNow = Date.now();
+      clockSubs.forEach((f) => f());
+    }, 1000);
   }
   return () => {
     clockSubs.delete(cb);
-    if (!clockSubs.size && clockTimer) { clearInterval(clockTimer); clockTimer = undefined; }
+    if (!clockSubs.size && clockTimer) {
+      clearInterval(clockTimer);
+      clockTimer = undefined;
+    }
   };
 }
 function useNow() {
-  return React.useSyncExternalStore(subscribeClock, () => clockNow, () => 0);
+  return React.useSyncExternalStore(
+    subscribeClock,
+    () => clockNow,
+    () => 0,
+  );
 }
 export function relativeTime(ts: string, now: number): string {
   const t = Date.parse(ts);
@@ -205,7 +248,15 @@ export function HighlightNumbers({ text }: { text: string }) {
   const parts = text.split(/(\d+%?)/g);
   return (
     <>
-      {parts.map((p, i) => (i % 2 === 1 ? <span key={i} className="font-mono font-semibold tabular-nums text-foreground">{p}</span> : <React.Fragment key={i}>{p}</React.Fragment>))}
+      {parts.map((p, i) =>
+        i % 2 === 1 ? (
+          <span key={i} className="font-mono font-semibold tabular-nums text-foreground">
+            {p}
+          </span>
+        ) : (
+          <React.Fragment key={i}>{p}</React.Fragment>
+        ),
+      )}
     </>
   );
 }
@@ -239,9 +290,27 @@ function StateBadge({ state }: { state: Group["state"] }) {
 
 function RowIcon({ e, latest, working }: { e: AgentEvent; latest: boolean; working: boolean }) {
   const cls = "mt-1 size-4 shrink-0";
-  if (e.status === "error") return <><AlertTriangle className={cn(cls, "text-status-rising")} aria-hidden /><span className="sr-only">Problem: </span></>;
-  if (e.status === "done") return <><CheckCircle2 className={cn(cls, "text-status-proven")} aria-hidden /><span className="sr-only">Done: </span></>;
-  if (latest && working) return <><Loader2 className={cn(cls, "animate-spin text-primary")} aria-hidden /><span className="sr-only">In progress: </span></>;
+  if (e.status === "error")
+    return (
+      <>
+        <AlertTriangle className={cn(cls, "text-status-rising")} aria-hidden />
+        <span className="sr-only">Problem: </span>
+      </>
+    );
+  if (e.status === "done")
+    return (
+      <>
+        <CheckCircle2 className={cn(cls, "text-status-proven")} aria-hidden />
+        <span className="sr-only">Done: </span>
+      </>
+    );
+  if (latest && working)
+    return (
+      <>
+        <Loader2 className={cn(cls, "animate-spin text-primary")} aria-hidden />
+        <span className="sr-only">In progress: </span>
+      </>
+    );
   return <Check className={cn(cls, "text-muted-foreground")} aria-hidden />;
 }
 
@@ -257,7 +326,9 @@ function ActivityPanel() {
   const workers = groups.filter((g) => g.agent !== "orchestrator");
   const doneCount = workers.filter((g) => g.state !== "working").length;
   const lead = events[0];
-  const end = finished ? [...events].reverse().find((e) => isRunEnd(e, lead) || (e.agent === lead?.agent && e.status === "error")) : undefined;
+  const end = finished
+    ? [...events].reverse().find((e) => isRunEnd(e, lead) || (e.agent === lead?.agent && e.status === "error"))
+    : undefined;
   const isDemo = events.some((e) => e.data?.demo === true);
   const latestKey = events.length ? keyOf(events[events.length - 1]) : "";
 
@@ -279,9 +350,10 @@ function ActivityPanel() {
     }
   };
 
-  const readiness = end?.status === "done" && typeof end.data?.readinessNow === "number" && typeof end.data?.readinessProjected === "number"
-    ? { now: Math.round((end.data.readinessNow as number) * 100), projected: Math.round((end.data.readinessProjected as number) * 100) }
-    : null;
+  const readiness =
+    end?.status === "done" && typeof end.data?.readinessNow === "number" && typeof end.data?.readinessProjected === "number"
+      ? { now: Math.round((end.data.readinessNow as number) * 100), projected: Math.round((end.data.readinessProjected as number) * 100) }
+      : null;
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -291,17 +363,32 @@ function ActivityPanel() {
             <SheetTitle className="text-xl font-semibold text-foreground">Agents at work</SheetTitle>
             <p className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
               <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
-                {status === "live" || status === "connecting"
-                  ? <Loader2 className="size-4 animate-spin text-primary" aria-hidden />
-                  : finished ? <CheckCircle2 className="size-4 text-status-proven" aria-hidden /> : <Circle className="size-4 text-muted-foreground" aria-hidden />}
+                {status === "live" || status === "connecting" ? (
+                  <Loader2 className="size-4 animate-spin text-primary" aria-hidden />
+                ) : finished ? (
+                  <CheckCircle2 className="size-4 text-status-proven" aria-hidden />
+                ) : (
+                  <Circle className="size-4 text-muted-foreground" aria-hidden />
+                )}
                 {status === "connecting" ? "Connecting" : status === "live" ? "Live" : finished ? "Finished" : "Idle"}
               </span>
-              <span><span className="font-mono font-semibold tabular-nums text-foreground">{workers.length}</span> {workers.length === 1 ? "agent" : "agents"}</span>
+              <span>
+                <span className="font-mono font-semibold tabular-nums text-foreground">{workers.length}</span>{" "}
+                {workers.length === 1 ? "agent" : "agents"}
+              </span>
               {isDemo && <DemoDataNote />}
             </p>
-            <SheetDescription className="text-sm text-muted-foreground">Each agent reports what it read and what it found, with real numbers.</SheetDescription>
+            <SheetDescription className="text-sm text-muted-foreground">
+              Each agent reports what it read and what it found, with real numbers.
+            </SheetDescription>
           </div>
-          <Button variant="ghost" size="icon" className="size-10 shrink-0" onClick={() => setOpen(false)} aria-label="Close the agent panel">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-10 shrink-0"
+            onClick={() => setOpen(false)}
+            aria-label="Close the agent panel"
+          >
             <X className="size-5" aria-hidden />
           </Button>
         </div>
@@ -313,42 +400,88 @@ function ActivityPanel() {
               <div className="rounded-xl border border-status-proven/35 bg-status-proven/10 p-4" data-testid="bridge-ready">
                 <p className="flex items-center gap-2 text-base font-semibold text-foreground">
                   <CheckCircle2 className="size-5 text-status-proven" aria-hidden />
-                  <span>Bridge ready · <span className="font-mono tabular-nums">{readiness.now}%</span> → <span className="font-mono tabular-nums">{readiness.projected}%</span></span>
+                  <span>
+                    Bridge ready · <span className="font-mono tabular-nums">{readiness.now}%</span> →{" "}
+                    <span className="font-mono tabular-nums">{readiness.projected}%</span>
+                  </span>
                 </p>
-                <p className="mt-1 text-sm text-muted-foreground">You&apos;re {readiness.now}% of the way to your target role today, and {readiness.projected}% if you follow your plan.</p>
-                <Link href="/map" onClick={() => setOpen(false)} className={cn(buttonVariants({ size: "lg" }), "mt-3 w-full")}>See my Bridge Map</Link>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  You&apos;re {readiness.now}% of the way to your target role today, and {readiness.projected}% if you follow your plan.
+                </p>
+                <Link href="/map" onClick={() => setOpen(false)} className={cn(buttonVariants({ size: "lg" }), "mt-3 w-full")}>
+                  See my Bridge Map
+                </Link>
               </div>
             )}
             {end?.status === "done" && !readiness && (
-              <div className="rounded-xl border border-status-proven/35 bg-status-proven/10 p-4 text-sm text-foreground" data-testid="run-done">
-                <p className="flex items-center gap-2 font-semibold"><CheckCircle2 className="size-4 text-status-proven" aria-hidden /><HighlightNumbers text={end.message} /></p>
+              <div
+                className="rounded-xl border border-status-proven/35 bg-status-proven/10 p-4 text-sm text-foreground"
+                data-testid="run-done"
+              >
+                <p className="flex items-center gap-2 font-semibold">
+                  <CheckCircle2 className="size-4 text-status-proven" aria-hidden />
+                  <HighlightNumbers text={end.message} />
+                </p>
               </div>
             )}
             {end?.status === "error" && (
               <div className="rounded-xl border border-status-rising/45 bg-status-rising/12 p-4 text-sm text-foreground" role="alert">
-                <p className="flex items-center gap-2 font-semibold"><AlertTriangle className="size-4 text-status-rising" aria-hidden />{end.message}</p>
-                {end.agent === "orchestrator" && <Link href="/map" onClick={() => setOpen(false)} className={cn(buttonVariants({ variant: "outline" }), "mt-3 h-10 w-full")}>See the demo Bridge Map</Link>}
+                <p className="flex items-center gap-2 font-semibold">
+                  <AlertTriangle className="size-4 text-status-rising" aria-hidden />
+                  {end.message}
+                </p>
+                {end.agent === "orchestrator" && (
+                  <Link
+                    href="/map"
+                    onClick={() => setOpen(false)}
+                    className={cn(buttonVariants({ variant: "outline" }), "mt-3 h-10 w-full")}
+                  >
+                    See the demo Bridge Map
+                  </Link>
+                )}
               </div>
             )}
             {!finished && workers.length > 0 && (
-              <p className="text-sm text-muted-foreground" data-testid="run-progress"><span className="font-mono font-semibold tabular-nums text-foreground">{doneCount}</span> of <span className="font-mono font-semibold tabular-nums text-foreground">{workers.length}</span> agents finished</p>
+              <p className="text-sm text-muted-foreground" data-testid="run-progress">
+                <span className="font-mono font-semibold tabular-nums text-foreground">{doneCount}</span> of{" "}
+                <span className="font-mono font-semibold tabular-nums text-foreground">{workers.length}</span> agents finished
+              </p>
             )}
           </div>
         )}
 
-        <div ref={listRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-4" role="region" tabIndex={0} aria-label="Agent timeline">
+        <div
+          ref={listRef}
+          className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-4"
+          role="region"
+          tabIndex={0}
+          aria-label="Agent timeline"
+        >
           {!runId && (
             <EmptyState
               icon={Sparkles}
               title="No agents running"
               body="Start onboarding, or replay Aisha's demo run to watch the agents read her syllabus, job ads and GitHub."
-              action={<Button size="lg" onClick={replay} disabled={replaying} aria-busy={replaying || undefined}>{replaying ? <><Loader2 className="size-4 animate-spin" aria-hidden />Starting…</> : "Replay demo run"}</Button>}
+              action={
+                <Button size="lg" onClick={replay} disabled={replaying} aria-busy={replaying || undefined}>
+                  {replaying ? (
+                    <>
+                      <Loader2 className="size-4 animate-spin" aria-hidden />
+                      Starting…
+                    </>
+                  ) : (
+                    "Replay demo run"
+                  )}
+                </Button>
+              }
             />
           )}
           {runId && !events.length && (
             <div className="space-y-3" aria-busy="true">
               <p className="text-sm text-muted-foreground">Starting your agents…</p>
-              {[0, 1, 2].map((i) => <Skeleton key={i} className="h-20 w-full rounded-xl" />)}
+              {[0, 1, 2].map((i) => (
+                <Skeleton key={i} className="h-20 w-full rounded-xl" />
+              ))}
             </div>
           )}
 
@@ -357,7 +490,9 @@ function ActivityPanel() {
             {groups.map((g) => (
               <li key={g.agent} className="rounded-xl bg-muted p-4" data-agent={g.agent}>
                 <div className="flex items-center gap-3">
-                  <span aria-hidden><AgentAvatar agent={g.agent} /></span>
+                  <span aria-hidden>
+                    <AgentAvatar agent={g.agent} />
+                  </span>
                   <span className="min-w-0 flex-1 truncate font-semibold text-foreground">{AGENT_LABEL[g.agent] ?? g.agent}</span>
                   <StateBadge state={g.state} />
                 </div>
@@ -375,8 +510,12 @@ function ActivityPanel() {
                         transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
                       >
                         <RowIcon e={e} latest={latest} working={g.state === "working"} />
-                        <span className="min-w-0 flex-1 break-words"><HighlightNumbers text={e.message} /></span>
-                        <time dateTime={e.ts} className="shrink-0 text-xs text-muted-foreground tabular-nums">{relativeTime(e.ts, now)}</time>
+                        <span className="min-w-0 flex-1 break-words">
+                          <HighlightNumbers text={e.message} />
+                        </span>
+                        <time dateTime={e.ts} className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                          {relativeTime(e.ts, now)}
+                        </time>
                       </motion.li>
                     );
                   })}

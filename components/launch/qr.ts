@@ -43,7 +43,9 @@ function rsRemainder(data: number[], divisor: number[]): number[] {
   for (const b of data) {
     const factor = b ^ (r.shift() as number);
     r.push(0);
-    divisor.forEach((c, i) => { r[i] ^= gfMul(c, factor); });
+    divisor.forEach((c, i) => {
+      r[i] ^= gfMul(c, factor);
+    });
   }
   return r;
 }
@@ -72,7 +74,9 @@ export function qrMatrix(text: string): boolean[][] {
 
   // 1. Data bits: byte mode, count, data, terminator, padding.
   const bits: number[] = [];
-  const put = (val: number, len: number) => { for (let i = len - 1; i >= 0; i--) bits.push((val >>> i) & 1); };
+  const put = (val: number, len: number) => {
+    for (let i = len - 1; i >= 0; i--) bits.push((val >>> i) & 1);
+  };
   put(0b0100, 4);
   put(bytes.length, ver < 10 ? 8 : 16);
   bytes.forEach((b) => put(b, 8));
@@ -100,33 +104,52 @@ export function qrMatrix(text: string): boolean[][] {
   }
   const codewords: number[] = [];
   for (let i = 0; i < blocks[0].length; i++) {
-    blocks.forEach((b, j) => { if (i !== shortLen - eccLen || j >= numShort) codewords.push(b[i]); });
+    blocks.forEach((b, j) => {
+      if (i !== shortLen - eccLen || j >= numShort) codewords.push(b[i]);
+    });
   }
 
   // 3. Function patterns.
   const mod: boolean[][] = Array.from({ length: size }, () => new Array<boolean>(size).fill(false));
   const fn: boolean[][] = Array.from({ length: size }, () => new Array<boolean>(size).fill(false));
-  const set = (x: number, y: number, dark: boolean) => { mod[y][x] = dark; fn[y][x] = true; };
-  for (let i = 0; i < size; i++) { set(6, i, i % 2 === 0); set(i, 6, i % 2 === 0); }
-  const finder = (cx: number, cy: number) => {
-    for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) {
-      const x = cx + dx, y = cy + dy;
-      if (x >= 0 && x < size && y >= 0 && y < size) { const d = Math.max(Math.abs(dx), Math.abs(dy)); set(x, y, d !== 2 && d !== 4); }
-    }
+  const set = (x: number, y: number, dark: boolean) => {
+    mod[y][x] = dark;
+    fn[y][x] = true;
   };
-  finder(3, 3); finder(size - 4, 3); finder(3, size - 4);
+  for (let i = 0; i < size; i++) {
+    set(6, i, i % 2 === 0);
+    set(i, 6, i % 2 === 0);
+  }
+  const finder = (cx: number, cy: number) => {
+    for (let dy = -4; dy <= 4; dy++)
+      for (let dx = -4; dx <= 4; dx++) {
+        const x = cx + dx,
+          y = cy + dy;
+        if (x >= 0 && x < size && y >= 0 && y < size) {
+          const d = Math.max(Math.abs(dx), Math.abs(dy));
+          set(x, y, d !== 2 && d !== 4);
+        }
+      }
+  };
+  finder(3, 3);
+  finder(size - 4, 3);
+  finder(3, size - 4);
   const al = alignmentPositions(ver, size);
-  al.forEach((ax, i) => al.forEach((ay, j) => {
-    if ((i === 0 && j === 0) || (i === 0 && j === al.length - 1) || (i === al.length - 1 && j === 0)) return;
-    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) set(ax + dx, ay + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1);
-  }));
+  al.forEach((ax, i) =>
+    al.forEach((ay, j) => {
+      if ((i === 0 && j === 0) || (i === 0 && j === al.length - 1) || (i === al.length - 1 && j === 0)) return;
+      for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) set(ax + dx, ay + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1);
+    }),
+  );
   const drawFormat = (mask: number) => {
     const d = (FORMAT_BITS_M << 3) | mask;
     let rem = d;
     for (let i = 0; i < 10; i++) rem = (rem << 1) ^ ((rem >>> 9) * 0x537);
     const b = ((d << 10) | rem) ^ 0x5412;
     for (let i = 0; i <= 5; i++) set(8, i, bit(b, i));
-    set(8, 7, bit(b, 6)); set(8, 8, bit(b, 7)); set(7, 8, bit(b, 8));
+    set(8, 7, bit(b, 6));
+    set(8, 8, bit(b, 7));
+    set(7, 8, bit(b, 8));
     for (let i = 9; i < 15; i++) set(14 - i, 8, bit(b, i));
     for (let i = 0; i < 8; i++) set(size - 1 - i, 8, bit(b, i));
     for (let i = 8; i < 15; i++) set(8, size - 15 + i, bit(b, i));
@@ -137,25 +160,38 @@ export function qrMatrix(text: string): boolean[][] {
     let rem = ver;
     for (let i = 0; i < 12; i++) rem = (rem << 1) ^ ((rem >>> 11) * 0x1f25);
     const b = (ver << 12) | rem;
-    for (let i = 0; i < 18; i++) { const a = size - 11 + (i % 3), c = Math.floor(i / 3); set(a, c, bit(b, i)); set(c, a, bit(b, i)); }
+    for (let i = 0; i < 18; i++) {
+      const a = size - 11 + (i % 3),
+        c = Math.floor(i / 3);
+      set(a, c, bit(b, i));
+      set(c, a, bit(b, i));
+    }
   }
 
   // 4. Codewords in the zigzag order.
   let i = 0;
   for (let right = size - 1; right >= 1; right -= 2) {
     if (right === 6) right = 5;
-    for (let vert = 0; vert < size; vert++) for (let j = 0; j < 2; j++) {
-      const x = right - j;
-      const y = ((right + 1) & 2) === 0 ? size - 1 - vert : vert;
-      if (!fn[y][x] && i < codewords.length * 8) { mod[y][x] = bit(codewords[i >>> 3], 7 - (i & 7)); i++; }
-    }
+    for (let vert = 0; vert < size; vert++)
+      for (let j = 0; j < 2; j++) {
+        const x = right - j;
+        const y = ((right + 1) & 2) === 0 ? size - 1 - vert : vert;
+        if (!fn[y][x] && i < codewords.length * 8) {
+          mod[y][x] = bit(codewords[i >>> 3], 7 - (i & 7));
+          i++;
+        }
+      }
   }
 
   // 5. Mask: pick the lowest penalty of the 8 patterns.
   const maskFn = [
-    (x: number, y: number) => (x + y) % 2 === 0, (_x: number, y: number) => y % 2 === 0, (x: number) => x % 3 === 0,
-    (x: number, y: number) => (x + y) % 3 === 0, (x: number, y: number) => (Math.floor(x / 3) + Math.floor(y / 2)) % 2 === 0,
-    (x: number, y: number) => ((x * y) % 2) + ((x * y) % 3) === 0, (x: number, y: number) => (((x * y) % 2) + ((x * y) % 3)) % 2 === 0,
+    (x: number, y: number) => (x + y) % 2 === 0,
+    (_x: number, y: number) => y % 2 === 0,
+    (x: number) => x % 3 === 0,
+    (x: number, y: number) => (x + y) % 3 === 0,
+    (x: number, y: number) => (Math.floor(x / 3) + Math.floor(y / 2)) % 2 === 0,
+    (x: number, y: number) => ((x * y) % 2) + ((x * y) % 3) === 0,
+    (x: number, y: number) => (((x * y) % 2) + ((x * y) % 3)) % 2 === 0,
     (x: number, y: number) => (((x + y) % 2) + ((x * y) % 3)) % 2 === 0,
   ];
   const applyMask = (m: number) => {
@@ -167,24 +203,35 @@ export function qrMatrix(text: string): boolean[][] {
       for (const horiz of [true, false]) {
         let run = 1;
         for (let x = 1; x < size; x++) {
-          const a = horiz ? mod[y][x] : mod[x][y], b = horiz ? mod[y][x - 1] : mod[x - 1][y];
-          if (a === b) { run++; if (run === 5) p += 3; else if (run > 5) p++; } else run = 1;
+          const a = horiz ? mod[y][x] : mod[x][y],
+            b = horiz ? mod[y][x - 1] : mod[x - 1][y];
+          if (a === b) {
+            run++;
+            if (run === 5) p += 3;
+            else if (run > 5) p++;
+          } else run = 1;
         }
       }
     }
-    for (let y = 0; y < size - 1; y++) for (let x = 0; x < size - 1; x++) {
-      const c = mod[y][x];
-      if (c === mod[y][x + 1] && c === mod[y + 1][x] && c === mod[y + 1][x + 1]) p += 3;
-    }
+    for (let y = 0; y < size - 1; y++)
+      for (let x = 0; x < size - 1; x++) {
+        const c = mod[y][x];
+        if (c === mod[y][x + 1] && c === mod[y + 1][x] && c === mod[y + 1][x + 1]) p += 3;
+      }
     const dark = mod.reduce((n, row) => n + row.filter(Boolean).length, 0);
     p += Math.max(0, Math.ceil(Math.abs(dark * 20 - size * size * 10) / (size * size)) - 1) * 10;
     return p;
   };
-  let best = 0, bestP = Infinity;
+  let best = 0,
+    bestP = Infinity;
   for (let m = 0; m < 8; m++) {
-    applyMask(m); drawFormat(m);
+    applyMask(m);
+    drawFormat(m);
     const p = penalty();
-    if (p < bestP) { bestP = p; best = m; }
+    if (p < bestP) {
+      bestP = p;
+      best = m;
+    }
     applyMask(m); // undo (XOR)
   }
   applyMask(best);
@@ -195,6 +242,10 @@ export function qrMatrix(text: string): boolean[][] {
 /** SVG path data for the dark modules, offset by a 4-module quiet zone. */
 export function qrPath(matrix: boolean[][], quiet = 4): string {
   let d = "";
-  matrix.forEach((row, y) => row.forEach((dark, x) => { if (dark) d += `M${x + quiet} ${y + quiet}h1v1h-1z`; }));
+  matrix.forEach((row, y) =>
+    row.forEach((dark, x) => {
+      if (dark) d += `M${x + quiet} ${y + quiet}h1v1h-1z`;
+    }),
+  );
   return d;
 }

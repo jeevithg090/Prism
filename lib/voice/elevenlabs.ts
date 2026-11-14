@@ -10,7 +10,11 @@ export const DEFAULT_VOICE_ID = "JBFqnCBsd6RMkjVDRZzb";
 export const TTS_MODEL_ID = "eleven_multilingual_v2";
 
 export class VoiceError extends Error {
-  constructor(public code: "not_configured" | "upstream", message: string, public status?: number) {
+  constructor(
+    public code: "not_configured" | "upstream",
+    message: string,
+    public status?: number,
+  ) {
     super(message);
     this.name = "VoiceError";
   }

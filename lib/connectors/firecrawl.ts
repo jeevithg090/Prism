@@ -25,7 +25,7 @@ export async function fcSearch(query: string, opts?: { limit?: number }): Promis
         if (!r.ok) throw new Error(`Firecrawl ${r.status}`);
         const j = (await r.json()) as { data?: { web?: FcResult[] } | FcResult[] };
         const d = j.data;
-        return Array.isArray(d) ? d : d?.web ?? [];
+        return Array.isArray(d) ? d : (d?.web ?? []);
       },
       {
         requires: ["FIRECRAWL_API_KEY"],

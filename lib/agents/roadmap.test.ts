@@ -10,7 +10,10 @@ const h = vi.hoisted(() => ({
 }));
 vi.mock("@/lib/store", () => ({ getStore: () => h.store }));
 vi.mock("@/lib/llm", () => ({ llmJSON: h.llm, LLMError: class extends Error {} }));
-vi.mock("@/lib/agents/events", () => ({ emit: (e: { agent: string; status: string; message: string }) => h.events.push(e), newRunId: () => "run_test" }));
+vi.mock("@/lib/agents/events", () => ({
+  emit: (e: { agent: string; status: string; message: string }) => h.events.push(e),
+  newRunId: () => "run_test",
+}));
 
 import { applyPolish, buildRoadmap, generateRoadmap, hoursSplit, isFreeUrl, receiptFor, setTaskDone } from "./roadmap";
 import { planRoadmap } from "@/lib/graph/plan";
@@ -21,16 +24,33 @@ const POD = JSON.parse(fs.readFileSync("data/fixtures/pod.aisha.json", "utf8")) 
 const profile: Profile = JSON.parse(fs.readFileSync("data/fixtures/profile.aisha.json", "utf8"));
 
 const node = (skillId: string, status: BridgeNode["status"], demand: number, extra: Partial<BridgeNode> = {}): BridgeNode => ({
-  skillId, name: skillId[0].toUpperCase() + skillId.slice(1), category: "cloud-devops", status, demand, level: 0, evidenceIds: [], moduleCodes: [], ...extra,
+  skillId,
+  name: skillId[0].toUpperCase() + skillId.slice(1),
+  category: "cloud-devops",
+  status,
+  demand,
+  level: 0,
+  evidenceIds: [],
+  moduleCodes: [],
+  ...extra,
 });
 
-beforeEach(() => { h.store = memStore(); h.llm.mockReset(); h.llm.mockRejectedValue(new Error("no_key")); h.events.length = 0; });
+beforeEach(() => {
+  h.store = memStore();
+  h.llm.mockReset();
+  h.llm.mockRejectedValue(new Error("no_key"));
+  h.events.length = 0;
+});
 
 describe("deterministic planner", () => {
   it("skips a skill the degree covers before the target date, with the message, and never makes it a focus", () => {
     const { roadmap } = buildRoadmap({ profile, map: AISHA_MAP, pod: POD, now: NOW, polish: false });
     const stats = roadmap.skipped.find((s) => s.skillId === "statistics");
-    expect(stats).toEqual({ skillId: "statistics", moduleCode: "COMP1xxx4", message: "Don't pay for a statistics course: your Year 1 · Semester 2 module (COMP1xxx4) covers it." });
+    expect(stats).toEqual({
+      skillId: "statistics",
+      moduleCode: "COMP1xxx4",
+      message: "Don't pay for a statistics course: your Year 1 · Semester 2 module (COMP1xxx4) covers it.",
+    });
     expect(roadmap.skipped.map((s) => s.skillId)).toContain("linear-algebra");
     expect(roadmap.weeks.map((w) => w.focusSkillId)).not.toContain("statistics");
   });
@@ -38,7 +58,12 @@ describe("deterministic planner", () => {
   it("starts week 1 with Docker and names the pod repo in the proof", () => {
     const { roadmap } = buildRoadmap({ profile, map: AISHA_MAP, pod: POD, now: NOW, polish: false });
     expect(roadmap.weeks).toHaveLength(12);
-    expect(roadmap.weeks[0]).toMatchObject({ week: 1, startDate: "2026-11-09", focusSkillId: "docker", proof: "Merge a PR that adds a Dockerfile to your pod repo (VisionAid)" });
+    expect(roadmap.weeks[0]).toMatchObject({
+      week: 1,
+      startDate: "2026-11-09",
+      focusSkillId: "docker",
+      proof: "Merge a PR that adds a Dockerfile to your pod repo (VisionAid)",
+    });
     expect(roadmap.weeks[0].tasks.some((t) => t.resourceUrl === "https://github.com/keystone-demo/pod-vision-demo/issues/1")).toBe(true);
     for (const w of roadmap.weeks) expect(w.proof).toContain("your pod repo (VisionAid)");
   });
@@ -69,14 +94,30 @@ describe("deterministic planner", () => {
   });
 
   it("ranks by demand: Docker (41%) above Kubernetes (27%), and a skill the degree covers later drops", () => {
-    const later = node("machine-learning", "degree-upcoming", 0.55, { category: "ml-ai", moduleCodes: ["COMP2xxx2"], upcomingLabel: "Year 2 · Semester 2" });
-    const plan = planRoadmap({ nodes: [node("kubernetes", "gap", 0.27), node("docker", "gap", 0.41), later], edges: [], startedAt: "2026-09-21", targetDate: "2027-09-01", now: NOW });
+    const later = node("machine-learning", "degree-upcoming", 0.55, {
+      category: "ml-ai",
+      moduleCodes: ["COMP2xxx2"],
+      upcomingLabel: "Year 2 · Semester 2",
+    });
+    const plan = planRoadmap({
+      nodes: [node("kubernetes", "gap", 0.27), node("docker", "gap", 0.41), later],
+      edges: [],
+      startedAt: "2026-09-21",
+      targetDate: "2027-09-01",
+      now: NOW,
+    });
     expect(plan.ranked.map((r) => r.node.skillId)).toEqual(["docker", "kubernetes", "machine-learning"]);
     expect(plan.ranked[2].coveredLater).toBe(true);
   });
 
   it("writes a receipt from the numbers: 41% of ads, not covered, none of your modules", () => {
-    const plan = planRoadmap({ nodes: [node("docker", "gap", 0.41, { name: "Docker" })], edges: [], startedAt: "2026-09-21", targetDate: "2027-09-01", now: NOW });
+    const plan = planRoadmap({
+      nodes: [node("docker", "gap", 0.41, { name: "Docker" })],
+      edges: [],
+      startedAt: "2026-09-21",
+      targetDate: "2027-09-01",
+      now: NOW,
+    });
     const r = receiptFor(plan.ranked[0], "ml-engineer");
     expect(r.demandPct).toBe(41);
     expect(r.coveredByDegree).toBe("no");
@@ -88,11 +129,22 @@ describe("deterministic planner", () => {
 describe("LLM wording pass", () => {
   it("keeps free URLs, drops paid ones on a free budget, and fixes hours on the last task", () => {
     const { roadmap } = buildRoadmap({ profile, map: AISHA_MAP, pod: POD, now: NOW, polish: false });
-    const out = applyPolish(roadmap.weeks, { weeks: [{ week: 1, tasks: [
-      { type: "learn", title: "Docker docs", resourceUrl: "https://docs.docker.com/get-started/", hours: 2 },
-      { type: "learn", title: "A paid course", resourceUrl: "https://paid.example.com/course", hours: 2 },
-      { type: "build", title: "Dockerise the API", hours: 9 },
-    ] }] }, "free");
+    const out = applyPolish(
+      roadmap.weeks,
+      {
+        weeks: [
+          {
+            week: 1,
+            tasks: [
+              { type: "learn", title: "Docker docs", resourceUrl: "https://docs.docker.com/get-started/", hours: 2 },
+              { type: "learn", title: "A paid course", resourceUrl: "https://paid.example.com/course", hours: 2 },
+              { type: "build", title: "Dockerise the API", hours: 9 },
+            ],
+          },
+        ],
+      },
+      "free",
+    );
     const w1 = out[0];
     expect(w1.tasks[0]).toMatchObject({ resourceUrl: "https://docs.docker.com/get-started/", free: true });
     expect(w1.tasks[1].resourceUrl).toBeUndefined();
@@ -125,7 +177,7 @@ describe("LLM wording pass", () => {
 
 describe("ticking tasks", () => {
   it("records a roadmap-milestone momentum event when the last task of a week is ticked", async () => {
-    const rm = (await generateRoadmap({ profile, map: AISHA_MAP, pod: POD, now: NOW, polish: false }));
+    const rm = await generateRoadmap({ profile, map: AISHA_MAP, pod: POD, now: NOW, polish: false });
     const [first, ...rest] = rm.weeks[0].tasks;
     for (const t of rest) await setTaskDone("aisha", t.id, true);
     expect(await h.store.list("momentum_events", { userId: "aisha" })).toHaveLength(0);

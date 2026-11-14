@@ -56,7 +56,10 @@ export type TranscriptTurn = { speaker: "ai" | "user"; text: string };
 
 /** `ai:` / `user:` lines, the transcript format scoring expects. */
 export function formatTranscript(turns: TranscriptTurn[]): string {
-  return turns.filter((t) => t.text.trim()).map((t) => `${t.speaker}: ${t.text.replace(/\s+/g, " ").trim()}`).join("\n");
+  return turns
+    .filter((t) => t.text.trim())
+    .map((t) => `${t.speaker}: ${t.text.replace(/\s+/g, " ").trim()}`)
+    .join("\n");
 }
 
 /** Spoken time estimate (≈150 words a minute) for typed answers, so filler rates stay meaningful. */

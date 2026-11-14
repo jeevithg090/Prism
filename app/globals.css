@@ -88,8 +88,18 @@
   --error-text: var(--foreground);
   font-family: var(--font-body);
 }
-[data-sonner-toast][data-type="success"] [data-icon] { color: var(--status-proven); }
-[data-sonner-toast][data-type="info"] [data-icon] { color: var(--status-degree); }
-[data-sonner-toast][data-type="warning"] [data-icon] { color: var(--status-rising); }
-[data-sonner-toast][data-type="error"] [data-icon] { color: var(--status-gap); }
-[data-sonner-toast] [data-description] { color: var(--muted-foreground); }
+[data-sonner-toast][data-type="success"] [data-icon] {
+  color: var(--status-proven);
+}
+[data-sonner-toast][data-type="info"] [data-icon] {
+  color: var(--status-degree);
+}
+[data-sonner-toast][data-type="warning"] [data-icon] {
+  color: var(--status-rising);
+}
+[data-sonner-toast][data-type="error"] [data-icon] {
+  color: var(--status-gap);
+}
+[data-sonner-toast] [data-description] {
+  color: var(--muted-foreground);
+}

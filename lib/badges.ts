@@ -26,7 +26,11 @@ export function badgeContext(
   const shipped = data.pods.some((p) => !!p.project?.repoUrl && (p.members ?? []).some((m) => m.userId === userId));
   const perInterview = data.interviews
     .map((i) => {
-      const s = i.scores ? [i.scores.content, i.scores.structure, i.scores.clarity, i.scores.confidence].filter((n) => typeof n === "number" && Number.isFinite(n)) : [];
+      const s = i.scores
+        ? [i.scores.content, i.scores.structure, i.scores.clarity, i.scores.confidence].filter(
+            (n) => typeof n === "number" && Number.isFinite(n),
+          )
+        : [];
       return s.length ? s.reduce((a, b) => a + b, 0) / s.length : null;
     })
     .filter((n): n is number => n !== null);

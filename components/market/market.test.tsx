@@ -10,7 +10,16 @@ import { SkillDemandChart } from "./SkillDemandChart";
 import { buildRows, TrendChart, yMaxFor, yTicksFor } from "./TrendChart";
 import { RisingCovered, risingCoveredSummary } from "./RisingCovered";
 import { MarketView } from "./MarketView";
-import { defaultPicks, demandSummary, growthText, pctPosts, risingForRole, subtitleFor, trendSummary, type StatusBySkill } from "./summaries";
+import {
+  defaultPicks,
+  demandSummary,
+  growthText,
+  pctPosts,
+  risingForRole,
+  subtitleFor,
+  trendSummary,
+  type StatusBySkill,
+} from "./summaries";
 
 afterEach(() => cleanup());
 vi.mock("sonner", () => ({ toast: Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn(), info: vi.fn() }) }));
@@ -43,7 +52,8 @@ describe("summaries", () => {
   });
 
   it("trend summary reads now, projection and band", () => {
-    const now = llmEval.history.at(-1)!, end = llmEval.projection.at(-1)!;
+    const now = llmEval.history.at(-1)!,
+      end = llmEval.projection.at(-1)!;
     expect(trendSummary([llmEval])).toBe(
       `LLM evaluation is rising (${growthText(llmEval.growthPerYear)}): ${pctPosts(now.share)} of Hacker News job posts in Oct 2026, projected ${pctPosts(end.share)} (${pctPosts(end.low)} to ${pctPosts(end.high)}) by Oct 2027.`,
     );
@@ -59,7 +69,9 @@ describe("summaries", () => {
     const items = risingForRole(ml, trends, status, { "llm-evaluation": 10, docker: 1 });
     expect(items[0]).toMatchObject({ skillId: "llm-evaluation", week: 10 });
     expect(items.map((i) => i.skillId)).toEqual(["llm-evaluation", "llm-apps", "vector-databases", "mlops", "pytorch", "docker"]);
-    expect(risingCoveredSummary(items, "ML engineer")).toBe(`LLM evaluation is rising fast (${growthText(llmEval.growthPerYear)}). Your roadmap already includes it in week 10.`);
+    expect(risingCoveredSummary(items, "ML engineer")).toBe(
+      `LLM evaluation is rising fast (${growthText(llmEval.growthPerYear)}). Your roadmap already includes it in week 10.`,
+    );
   });
 
   it("subtitle follows the role", () => {
@@ -102,7 +114,8 @@ describe("SkillDemandChart", () => {
     render(<SkillDemandChart demand={ml} statusBySkill={status} picked={[]} onPick={onPick} />);
     await userEvent.tab();
     expect(screen.getByRole("button", { name: /^Python/ })).toHaveFocus();
-    await userEvent.tab(); await userEvent.tab();
+    await userEvent.tab();
+    await userEvent.tab();
     await userEvent.keyboard("{Enter}");
     expect(onPick).toHaveBeenCalledWith("docker");
   });
@@ -118,10 +131,21 @@ describe("SkillDemandChart", () => {
 describe("TrendChart", () => {
   it("renders the summary, the honesty label and Rising badges for the picked skills", async () => {
     const onToggle = vi.fn();
-    render(<TrendChart trends={trends} options={["llm-evaluation", "docker", "tensorflow"]} picked={["llm-evaluation", "tensorflow"]} onToggle={onToggle} />);
-    expect(screen.getByTestId("trend-summary")).toHaveTextContent(/^LLM evaluation is rising \(\+\d+% a year\).*TensorFlow is cooling \(−\d+% a year\)/);
+    render(
+      <TrendChart
+        trends={trends}
+        options={["llm-evaluation", "docker", "tensorflow"]}
+        picked={["llm-evaluation", "tensorflow"]}
+        onToggle={onToggle}
+      />,
+    );
+    expect(screen.getByTestId("trend-summary")).toHaveTextContent(
+      /^LLM evaluation is rising \(\+\d+% a year\).*TensorFlow is cooling \(−\d+% a year\)/,
+    );
     expect(screen.getByText("A projection from past job postings, not a guarantee.")).toBeInTheDocument();
-    expect(screen.getByRole("list", { name: "Trend for each skill on the chart" })).toHaveTextContent(/LLM evaluationRising.*TensorFlowCooling/);
+    expect(screen.getByRole("list", { name: "Trend for each skill on the chart" })).toHaveTextContent(
+      /LLM evaluationRising.*TensorFlowCooling/,
+    );
     expect(screen.getByRole("button", { name: "LLM evaluation" })).toHaveAttribute("aria-pressed", "true");
     await userEvent.click(screen.getByRole("button", { name: "Docker" }));
     expect(onToggle).toHaveBeenCalledWith("docker");
@@ -152,11 +176,23 @@ describe("RisingCovered", () => {
 describe("MarketView states", () => {
   const renderView = () => {
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    return render(<QueryClientProvider client={qc}><MarketView initialRole="ml-engineer" primaryRole="ml-engineer" statusBySkill={status} fallbackStatus="gap" roadmapWeeks={{ "llm-evaluation": 10 }} /></QueryClientProvider>);
+    return render(
+      <QueryClientProvider client={qc}>
+        <MarketView
+          initialRole="ml-engineer"
+          primaryRole="ml-engineer"
+          statusBySkill={status}
+          fallbackStatus="gap"
+          roadmapWeeks={{ "llm-evaluation": 10 }}
+        />
+      </QueryClientProvider>,
+    );
   };
 
   it("loading → success with stats, both charts and the source line", async () => {
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (u) => Response.json({ ok: true, data: String(u).includes("/api/trends") ? trends : ml }));
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(async (u) => Response.json({ ok: true, data: String(u).includes("/api/trends") ? trends : ml }));
     renderView();
     expect(screen.getByText("Loading job ads and trends…")).toBeInTheDocument();
     expect(await screen.findByText("214")).toBeInTheDocument();
@@ -171,7 +207,9 @@ describe("MarketView states", () => {
   });
 
   it("error → Retry refetches and Use demo data asks for ?demo=1", async () => {
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({ ok: false, error: { code: "internal", message: "down" } }, { status: 500 }));
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(Response.json({ ok: false, error: { code: "internal", message: "down" } }, { status: 500 }));
     renderView();
     expect(await screen.findByText("We couldn't load job data")).toBeInTheDocument();
     const before = fetchSpy.mock.calls.length;
@@ -183,7 +221,11 @@ describe("MarketView states", () => {
   });
 
   it("empty → explains and offers a refresh", async () => {
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (u) => Response.json({ ok: true, data: String(u).includes("/api/trends") ? trends : { ...ml, skills: [] } }));
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(async (u) =>
+        Response.json({ ok: true, data: String(u).includes("/api/trends") ? trends : { ...ml, skills: [] } }),
+      );
     renderView();
     expect(await screen.findByText("No ads found for this role yet")).toBeInTheDocument();
     fetchSpy.mockRestore();
@@ -191,7 +233,11 @@ describe("MarketView states", () => {
 
   it("switching role changes the subtitle and the ads count", async () => {
     const da = read<RoleDemand>("data/fixtures/market.data-analyst.json");
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (u) => Response.json({ ok: true, data: String(u).includes("/api/trends") ? trends : String(u).includes("data-analyst") ? da : ml }));
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(async (u) =>
+        Response.json({ ok: true, data: String(u).includes("/api/trends") ? trends : String(u).includes("data-analyst") ? da : ml }),
+      );
     renderView();
     await screen.findByText("214");
     await userEvent.click(screen.getByRole("button", { name: /^Data analyst/ }));

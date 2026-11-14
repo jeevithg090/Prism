@@ -18,7 +18,7 @@ async function handlePOST(req: Request) {
   try {
     body = await req.json();
   } catch {
-    return badRequest("Body must be JSON like {\"fromUserId\":\"aisha\",\"message\":\"...\"}.");
+    return badRequest('Body must be JSON like {"fromUserId":"aisha","message":"..."}.');
   }
   const parsed = ModuleHelpReqZ.safeParse(body);
   if (!parsed.success) return badRequest(parsed.error);

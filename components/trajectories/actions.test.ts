@@ -8,8 +8,14 @@ vi.mock("@/lib/store", () => ({ getStore: () => ({ get: getMock }) }));
 import { draftChatRequest } from "./actions";
 
 const priya: Trajectory = {
-  id: "traj_priya", userId: "priya", name: "Priya Shah", programmeId: "uom-bsc-cs", outcomeRole: "ML engineer at a Manchester health-tech startup",
-  advice: "Ship small things.", isDemo: true, openToChat: true,
+  id: "traj_priya",
+  userId: "priya",
+  name: "Priya Shah",
+  programmeId: "uom-bsc-cs",
+  outcomeRole: "ML engineer at a Manchester health-tech startup",
+  advice: "Ship small things.",
+  isDemo: true,
+  openToChat: true,
   steps: [
     { year: 1, kind: "society", label: "Joined the robotics society" },
     { year: 3, kind: "placement", label: "Year in industry at an ML consultancy" },

@@ -12,7 +12,8 @@ async function handleGET(req: Request, ctx: { params: Promise<{ roleId: string }
     const query = MarketQueryZ.safeParse(Object.fromEntries(new URL(req.url).searchParams));
     if (!query.success) return badRequest(query.error);
     const { roleId } = params.data;
-    if (!isRole(roleId)) return fail(404, "not_found", `We don't track "${roleId}" yet. Try ml-engineer, software-engineer or data-analyst.`);
+    if (!isRole(roleId))
+      return fail(404, "not_found", `We don't track "${roleId}" yet. Try ml-engineer, software-engineer or data-analyst.`);
     const { location, refresh, runId } = query.data;
     const demo = process.env.DEMO_MODE === "true" || query.data.demo;
     return ok(await getRoleDemand(roleId, { location, refresh, runId, demo }));

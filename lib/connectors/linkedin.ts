@@ -39,7 +39,8 @@ const SECTION_HEADINGS: [RegExp, SecKey][] = [
 const OTHER_HEADINGS =
   /^(?:summary|about|education|projects|honors? & awards?|awards?|languages|interests|recommendations|volunteer experience|patents|publications|courses|activities|articles?|test scores|featured|background|contact(?: info)?|profile|page \d+(?: of \d+)?|\d+ connections?)$/i;
 /** Sub-groupings inside the skills list — layout labels, not skills. */
-const SKILL_NOISE = /^(?:industry knowledge|tools? & technologies?|technologies|other skills?|endorsed by .*|also knows about.*|skills profile.*)$/i;
+const SKILL_NOISE =
+  /^(?:industry knowledge|tools? & technologies?|technologies|other skills?|endorsed by .*|also knows about.*|skills profile.*)$/i;
 /** Candidate phrases inside a skills-list line (bullets and commas on LinkedIn exports). */
 const LIST_SPLIT = /[•▪‣·|,;\t]+/;
 /** Experience entries carry tenant dates ("Jun 2025 - Sep 2025 · 3 mos"). */
@@ -57,7 +58,11 @@ export type LinkedInHit = {
   tier: 0 | 1 | 2;
 };
 
-const tidy = (s: string): string => s.replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
+const tidy = (s: string): string =>
+  s
+    .replace(/\u00a0/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 
 /** Which of our sections the line opens, or null. */
 function isSectionHeading(line: string): SecKey | null {
@@ -92,7 +97,10 @@ function sectionize(text: string): { sections: Record<SecKey, string[]>; heading
     const heading = line ? classifyLine(line) : null;
     if (heading) {
       headings = true;
-      if (heading.key === "other") { cur = null; continue; }
+      if (heading.key === "other") {
+        cur = null;
+        continue;
+      }
       cur = heading.key;
       if (heading.inline) sections[cur].push(heading.inline);
       continue;
@@ -136,7 +144,11 @@ function idsIn(phrase: string): SkillId[] {
 }
 
 function cleanPhrase(phrase: string): string {
-  return phrase.replace(/["“”«»]/g, "'").replace(/\s+/g, " ").trim().slice(0, 160);
+  return phrase
+    .replace(/["“”«»]/g, "'")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 160);
 }
 
 // ---------- the pure pipeline: PDF text → evidence items ----------
@@ -146,11 +158,7 @@ function cleanPhrase(phrase: string): string {
  * Experience entry bumps to level 2; certification lines with the same skill stay at level 1 unless the
  * experience beat them. One item per skill id, highest level/confidence wins.
  */
-export function textToLinkedInEvidence(
-  userId: string,
-  text: string,
-  now = new Date(),
-): { items: EvidenceItem[]; stats: LinkedInStats } {
+export function textToLinkedInEvidence(userId: string, text: string, now = new Date()): { items: EvidenceItem[]; stats: LinkedInStats } {
   const { sections, headings } = sectionize(text.slice(0, MAX_TEXT_CHARS));
 
   // Degraded fallback: a template without any recognisable LinkedIn headings — trust the whole text as a list.
@@ -167,7 +175,8 @@ export function textToLinkedInEvidence(
   };
 
   // (1) listed skills: level 1, self-reported.
-  for (const phrase of listedPhrases) for (const id of idsIn(phrase)) put({ skillId: id, level: 1, confidence: CONF_LISTED, phrase, tier: 1 });
+  for (const phrase of listedPhrases)
+    for (const id of idsIn(phrase)) put({ skillId: id, level: 1, confidence: CONF_LISTED, phrase, tier: 1 });
 
   // (2) certifications: "Nome — Issuer (Year)" — the name/issuer naming a skill maps at level 1 too.
   for (const phrase of certs) for (const id of idsIn(phrase)) put({ skillId: id, level: 1, confidence: CONF_LISTED, phrase, tier: 2 });
@@ -223,11 +232,7 @@ async function extractPdfText(bytes: Uint8Array, max: number): Promise<string> {
  * known skill keeps the evidence you already have (an error-status event explains why). Only a storage
  * failure is rethrown for the route to answer 500 — delivery is the caller's concern.
  */
-export async function importLinkedInPdfEvidence(input: {
-  userId: string;
-  bytes: Uint8Array;
-  runId?: string;
-}): Promise<EvidenceItem[]> {
+export async function importLinkedInPdfEvidence(input: { userId: string; bytes: Uint8Array; runId?: string }): Promise<EvidenceItem[]> {
   const { userId, bytes, runId } = input;
   const now = new Date();
   say(runId, "started", "Evidence Agent: reading your LinkedIn export");
@@ -247,9 +252,16 @@ export async function importLinkedInPdfEvidence(input: {
   }
   const { items, stats } = textToLinkedInEvidence(userId, text, now);
   const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
-  say(runId, "progress", `read ${plural(stats.skills, "skill", "skills")} · ${plural(stats.experienceEntries, "experience job", "experience jobs")} · ${plural(stats.certifications, "certification", "certifications")}`, { ...stats });
+  say(
+    runId,
+    "progress",
+    `read ${plural(stats.skills, "skill", "skills")} · ${plural(stats.experienceEntries, "experience job", "experience jobs")} · ${plural(stats.certifications, "certification", "certifications")}`,
+    { ...stats },
+  );
   if (!items.length) {
-    say(runId, "error", "We couldn't find any skills we know in that file — copy your skills here instead and we'll build from there.", { ...stats });
+    say(runId, "error", "We couldn't find any skills we know in that file — copy your skills here instead and we'll build from there.", {
+      ...stats,
+    });
     return listEvidence(userId);
   }
   try {
@@ -262,11 +274,16 @@ export async function importLinkedInPdfEvidence(input: {
     throw err instanceof Error ? err : new Error("Evidence store unavailable");
   }
   const all = await listEvidence(userId);
-  say(runId, "done", `found ${plural(items.length, "skill", "skills")} from your LinkedIn export — we kept just the skills, the file itself is gone`, {
-    items: items.length,
-    level2: items.filter((e) => e.level >= 2).length,
-    ...stats,
-  });
+  say(
+    runId,
+    "done",
+    `found ${plural(items.length, "skill", "skills")} from your LinkedIn export — we kept just the skills, the file itself is gone`,
+    {
+      items: items.length,
+      level2: items.filter((e) => e.level >= 2).length,
+      ...stats,
+    },
+  );
   return all;
 }
 
@@ -281,7 +298,10 @@ const DEMO_SAMPLE: { skillId: SkillId; level: Level; phrase: string }[] = [
 /** Deterministic linkedin-pdf evidence "as if parsed" — the route upserts these in DEMO_MODE. */
 export function demoLinkedInEvidence(userId: string): EvidenceItem[] {
   const hits = new Map<SkillId, LinkedInHit>(
-    DEMO_SAMPLE.map((s) => [s.skillId, { ...s, confidence: s.level >= 2 ? CONF_EXPERIENCED : CONF_LISTED, tier: s.level >= 2 ? (0 as const) : (1 as const) }]),
+    DEMO_SAMPLE.map((s) => [
+      s.skillId,
+      { ...s, confidence: s.level >= 2 ? CONF_EXPERIENCED : CONF_LISTED, tier: s.level >= 2 ? (0 as const) : (1 as const) },
+    ]),
   );
   return hitsToItems(userId, hits, new Date());
 }

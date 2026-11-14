@@ -15,10 +15,7 @@ async function PodsFlowFromParams({ searchParams }: { searchParams: SearchParams
 export default function PodsPage({ searchParams }: { searchParams: SearchParams }) {
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Pods"
-        subtitle="Peer learning: teach what you know, learn what you don't, and ship a real project together."
-      />
+      <PageHeader title="Pods" subtitle="Peer learning: teach what you know, learn what you don't, and ship a real project together." />
       <Suspense fallback={<PodCardSkeleton />}>
         <PodsFlowFromParams searchParams={searchParams} />
       </Suspense>

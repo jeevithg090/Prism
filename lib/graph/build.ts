@@ -3,10 +3,26 @@ import "server-only";
 import { connection } from "next/server";
 import { getStore } from "@/lib/store";
 import type {
-  BridgeEdge, BridgeMap, BridgeNode, EvidenceItem, Level, Profile, Programme, RoleDemand, SkillId, TrendSeries,
+  BridgeEdge,
+  BridgeMap,
+  BridgeNode,
+  EvidenceItem,
+  Level,
+  Profile,
+  Programme,
+  RoleDemand,
+  SkillId,
+  TrendSeries,
 } from "@/lib/types";
 import {
-  bridgemapFixture, getProfile, listEvidence, marketFixture, podFor, programmeFixture, skillMeta, studentSkillsSeed,
+  bridgemapFixture,
+  getProfile,
+  listEvidence,
+  marketFixture,
+  podFor,
+  programmeFixture,
+  skillMeta,
+  studentSkillsSeed,
   trendsFixture,
 } from "./data";
 import { planRoadmap } from "./plan";
@@ -22,21 +38,40 @@ const PROVEN_CONFIDENCE = 0.6;
 
 /** Used when the skills catalogue carries no prereqs for a skill (data/skills.json ships them empty). */
 export const CURATED_PREREQS: Record<SkillId, SkillId[]> = {
-  numpy: ["python"], pandas: ["python", "numpy"], "scikit-learn": ["python", "numpy"], pytorch: ["python", "numpy"],
-  tensorflow: ["python"], "machine-learning": ["python", "statistics", "linear-algebra"],
-  "deep-learning": ["machine-learning"], mlops: ["docker", "machine-learning"], docker: ["linux"],
-  kubernetes: ["docker"], aws: ["linux"], "cloud-computing": ["linux"], "ci-cd": ["git", "testing"],
-  "llm-apps": ["python", "rest-apis"], "llm-evaluation": ["llm-apps"], "vector-databases": ["llm-apps"],
-  postgresql: ["sql"], sql: ["databases"], algorithms: ["data-structures"], "system-design": ["algorithms", "databases"],
-  react: ["javascript", "html-css"], typescript: ["javascript"], nodejs: ["javascript"], "rest-apis": ["python"],
-  "code-review": ["git"], "data-visualisation": ["pandas"],
+  numpy: ["python"],
+  pandas: ["python", "numpy"],
+  "scikit-learn": ["python", "numpy"],
+  pytorch: ["python", "numpy"],
+  tensorflow: ["python"],
+  "machine-learning": ["python", "statistics", "linear-algebra"],
+  "deep-learning": ["machine-learning"],
+  mlops: ["docker", "machine-learning"],
+  docker: ["linux"],
+  kubernetes: ["docker"],
+  aws: ["linux"],
+  "cloud-computing": ["linux"],
+  "ci-cd": ["git", "testing"],
+  "llm-apps": ["python", "rest-apis"],
+  "llm-evaluation": ["llm-apps"],
+  "vector-databases": ["llm-apps"],
+  postgresql: ["sql"],
+  sql: ["databases"],
+  algorithms: ["data-structures"],
+  "system-design": ["algorithms", "databases"],
+  react: ["javascript", "html-css"],
+  typescript: ["javascript"],
+  nodejs: ["javascript"],
+  "rest-apis": ["python"],
+  "code-review": ["git"],
+  "data-visualisation": ["pandas"],
 };
 
 /**
  * Proof is level 2+ at confidence 0.6+. A mock interview on its own never proves a skill (communication excepted):
  * talking about Docker is "Explained it" on the Proof Ladder, and only a build (a merged PR, a challenge) turns it proven.
  */
-const talkOnly = (e: Partial<Pick<EvidenceItem, "source" | "skillId">>) => e.source === "keystone-interview" && e.skillId !== "communication";
+const talkOnly = (e: Partial<Pick<EvidenceItem, "source" | "skillId">>) =>
+  e.source === "keystone-interview" && e.skillId !== "communication";
 const isProof = (e: Pick<EvidenceItem, "level" | "confidence"> & Partial<Pick<EvidenceItem, "source" | "skillId">>) =>
   !talkOnly(e) && e.level >= PROVEN_LEVEL && e.confidence >= PROVEN_CONFIDENCE;
 /** The level a piece of evidence lifts a node to: weak or talk-only evidence counts as "tried it" (1) at most. */
@@ -63,23 +98,36 @@ function prereqEdges(nodes: BridgeNode[]): BridgeEdge[] {
 
 /** Builds the map from the programme, the role's job-ad demand, your evidence and the trends. Pure. */
 export function buildBridgeMap(i: {
-  profile: Profile; programme: Programme; roleDemand: RoleDemand; evidence: EvidenceItem[]; trends: TrendSeries[];
-  now?: Date; podLearns?: SkillId[];
+  profile: Profile;
+  programme: Programme;
+  roleDemand: RoleDemand;
+  evidence: EvidenceItem[];
+  trends: TrendSeries[];
+  now?: Date;
+  podLearns?: SkillId[];
 }): BridgeMap {
   const now = i.now ?? new Date();
   const roleSkills = [...i.roleDemand.skills].sort((a, b) => b.share - a.share).slice(0, ROLE_SKILL_CAP);
   const demand = new Map(roleSkills.map((s) => [s.skillId, s.share]));
   const roleTrend = new Map(roleSkills.map((s) => [s.skillId, s.trend]));
   const trendLabel = new Map(i.trends.map((t) => [t.skillId, t.label]));
-  const evBySkill = groupBy(i.evidence.filter((e) => e.userId === i.profile.id || !e.userId), (e) => e.skillId);
+  const evBySkill = groupBy(
+    i.evidence.filter((e) => e.userId === i.profile.id || !e.userId),
+    (e) => e.skillId,
+  );
   const modBySkill = new Map<SkillId, { module: Programme["modules"][number]; level: Level }[]>();
-  for (const m of i.programme.modules) for (const s of m.skills) modBySkill.set(s.skillId, [...(modBySkill.get(s.skillId) ?? []), { module: m, level: s.level }]);
+  for (const m of i.programme.modules)
+    for (const s of m.skills) modBySkill.set(s.skillId, [...(modBySkill.get(s.skillId) ?? []), { module: m, level: s.level }]);
 
   const ids: SkillId[] = [];
-  const add = (id: SkillId) => { if (!ids.includes(id)) ids.push(id); };
+  const add = (id: SkillId) => {
+    if (!ids.includes(id)) ids.push(id);
+  };
   roleSkills.forEach((s) => add(s.skillId));
   [...evBySkill.keys()].forEach(add);
-  [...modBySkill.entries()].sort((a, b) => maxLevel(b[1].map((x) => x.level)) - maxLevel(a[1].map((x) => x.level))).forEach(([id]) => add(id));
+  [...modBySkill.entries()]
+    .sort((a, b) => maxLevel(b[1].map((x) => x.level)) - maxLevel(a[1].map((x) => x.level)))
+    .forEach(([id]) => add(id));
   const kept = ids.slice(0, Math.max(NODE_CAP, roleSkills.length));
 
   const nodes: BridgeNode[] = kept.map((skillId) => {
@@ -87,11 +135,21 @@ export function buildBridgeMap(i: {
     const ev = [...(evBySkill.get(skillId) ?? [])].sort((a, b) => b.level - a.level || b.confidence - a.confidence);
     const mods = modBySkill.get(skillId) ?? [];
     const done = mods.filter((x) => isTermDone(x.module, i.profile.startedAt, now));
-    const upcoming = mods.filter((x) => !isTermDone(x.module, i.profile.startedAt, now))
+    const upcoming = mods
+      .filter((x) => !isTermDone(x.module, i.profile.startedAt, now))
       .sort((a, b) => termStart(a.module, i.profile.startedAt).getTime() - termStart(b.module, i.profile.startedAt).getTime());
-    const status: BridgeNode["status"] = ev.some(isProof) ? "proven" : done.length ? "degree-done" : upcoming.length ? "degree-upcoming" : "gap";
+    const status: BridgeNode["status"] = ev.some(isProof)
+      ? "proven"
+      : done.length
+        ? "degree-done"
+        : upcoming.length
+          ? "degree-upcoming"
+          : "gap";
     const node: BridgeNode = {
-      skillId, name: meta.name, category: meta.category, status,
+      skillId,
+      name: meta.name,
+      category: meta.category,
+      status,
       demand: demand.get(skillId) ?? 0,
       level: (ev[0]?.level ?? (status === "degree-done" ? maxLevel(done.map((x) => x.level)) : 0)) as Level,
       evidenceIds: ev.map((e) => e.id),
@@ -105,11 +163,20 @@ export function buildBridgeMap(i: {
 
   const edges = prereqEdges(nodes);
   const plan = planRoadmap({
-    nodes, edges, startedAt: i.profile.startedAt, targetDate: i.profile.dna.targetDate, programme: i.programme,
-    trends: i.trends, podLearns: i.podLearns, now,
+    nodes,
+    edges,
+    startedAt: i.profile.startedAt,
+    targetDate: i.profile.dna.targetDate,
+    programme: i.programme,
+    trends: i.trends,
+    podLearns: i.podLearns,
+    now,
   });
   return {
-    userId: i.profile.id, roleId: i.roleDemand.roleId, nodes, edges,
+    userId: i.profile.id,
+    roleId: i.roleDemand.roleId,
+    nodes,
+    edges,
     readinessNow: computeReadiness(nodes),
     readinessProjected: computeReadiness(projectNodes(nodes, plan.planned, plan.upcomingByTarget)),
     generatedAt: now.toISOString(),
@@ -141,8 +208,14 @@ export function mergeEvidence(map: BridgeMap, evidence: EvidenceItem[]): BridgeM
     if (known.has(skillId) || !ev.some(isProof)) continue;
     const meta = skillMeta(skillId);
     nodes.push({
-      skillId, name: meta.name, category: meta.category, status: "proven", demand: 0,
-      level: maxLevel(ev.map((e) => e.level)), evidenceIds: ev.map((e) => e.id), moduleCodes: [],
+      skillId,
+      name: meta.name,
+      category: meta.category,
+      status: "proven",
+      demand: 0,
+      level: maxLevel(ev.map((e) => e.level)),
+      evidenceIds: ev.map((e) => e.id),
+      moduleCodes: [],
     });
     changed = true;
   }
@@ -156,8 +229,13 @@ export function mergeEvidence(map: BridgeMap, evidence: EvidenceItem[]): BridgeM
  * status from data/seed/student-skills.json. Degree statuses follow the student's own start date.
  */
 export function deriveSeededMap(i: {
-  userId: string; roleId: string; skills: { proven: SkillId[]; gaps: SkillId[] }; base: BridgeMap | null;
-  roleDemand: RoleDemand | null; profile: Profile | null; now: Date;
+  userId: string;
+  roleId: string;
+  skills: { proven: SkillId[]; gaps: SkillId[] };
+  base: BridgeMap | null;
+  roleDemand: RoleDemand | null;
+  profile: Profile | null;
+  now: Date;
 }): BridgeMap | null {
   const proven = new Set(i.skills.proven);
   const gaps = new Set(i.skills.gaps);
@@ -167,7 +245,17 @@ export function deriveSeededMap(i: {
   else if (i.roleDemand) {
     universe = i.roleDemand.skills.slice(0, ROLE_SKILL_CAP).map((s) => {
       const meta = skillMeta(s.skillId);
-      return { skillId: s.skillId, name: meta.name, category: meta.category, status: "gap" as const, demand: s.share, level: 0 as Level, evidenceIds: [], moduleCodes: [], ...(s.trend ? { trend: s.trend } : {}) };
+      return {
+        skillId: s.skillId,
+        name: meta.name,
+        category: meta.category,
+        status: "gap" as const,
+        demand: s.share,
+        level: 0 as Level,
+        evidenceIds: [],
+        moduleCodes: [],
+        ...(s.trend ? { trend: s.trend } : {}),
+      };
     });
   } else return null;
   if (i.roleDemand) {
@@ -178,7 +266,16 @@ export function deriveSeededMap(i: {
   for (const id of [...proven, ...gaps]) {
     if (ids.has(id)) continue;
     const meta = skillMeta(id);
-    universe.push({ skillId: id, name: meta.name, category: meta.category, status: "gap", demand: 0, level: 0, evidenceIds: [], moduleCodes: [] });
+    universe.push({
+      skillId: id,
+      name: meta.name,
+      category: meta.category,
+      status: "gap",
+      demand: 0,
+      level: 0,
+      evidenceIds: [],
+      moduleCodes: [],
+    });
     ids.add(id);
   }
   const nodes: BridgeNode[] = universe.map((n) => {
@@ -209,11 +306,23 @@ export function deriveSeededMap(i: {
     const plan = planRoadmap({ nodes, edges, startedAt, targetDate: i.profile.dna.targetDate, now: i.now });
     readinessProjected = computeReadiness(projectNodes(nodes, plan.planned, plan.upcomingByTarget));
   }
-  return { userId: i.userId, roleId: i.roleId, nodes, edges, readinessNow, readinessProjected: round2(Math.max(readinessNow, readinessProjected)), generatedAt: i.now.toISOString() };
+  return {
+    userId: i.userId,
+    roleId: i.roleId,
+    nodes,
+    edges,
+    readinessNow,
+    readinessProjected: round2(Math.max(readinessNow, readinessProjected)),
+    generatedAt: i.now.toISOString(),
+  };
 }
 
 const validMap = (m: unknown): m is BridgeMap =>
-  !!m && typeof m === "object" && Array.isArray((m as BridgeMap).nodes) && (m as BridgeMap).nodes.length > 0 && Array.isArray((m as BridgeMap).edges);
+  !!m &&
+  typeof m === "object" &&
+  Array.isArray((m as BridgeMap).nodes) &&
+  (m as BridgeMap).nodes.length > 0 &&
+  Array.isArray((m as BridgeMap).edges);
 
 /**
  * Pod evidence counts once its proof is recorded. While the proof loop is mid-run it applies the evidence to the
@@ -240,7 +349,12 @@ async function buildFromInputs(userId: string, roleId: string, now: Date): Promi
   // Committed evidence only: a pod proof mid-recording must not count yet, or the proof loop's before -> after jump vanishes.
   const [evidence, pod] = await Promise.all([committedEvidence(userId), podFor(userId)]);
   return buildBridgeMap({
-    profile, programme, roleDemand, evidence, trends: trendsFixture() ?? [], now,
+    profile,
+    programme,
+    roleDemand,
+    evidence,
+    trends: trendsFixture() ?? [],
+    now,
     podLearns: pod?.members.find((m) => m.userId === userId)?.learns,
   });
 }
@@ -261,7 +375,11 @@ async function seededMap(userId: string, roleId: string, now: Date): Promise<Bri
  */
 async function requestTime(): Promise<Date> {
   let pending: Promise<void> | undefined;
-  try { pending = connection(); } catch { pending = undefined; }
+  try {
+    pending = connection();
+  } catch {
+    pending = undefined;
+  }
   if (pending) await pending;
   return new Date();
 }
@@ -279,7 +397,9 @@ export async function loadGraph(userId: string, roleId: string): Promise<BridgeM
   try {
     const stored = await getStore().get<BridgeMap>("maps", `${userId}:${roleId}`);
     if (validMap(stored)) base = stored;
-  } catch { /* store down: rebuild */ }
+  } catch {
+    /* store down: rebuild */
+  }
   if (!base && process.env.DEMO_MODE === "true") base = bridgemapFixture(userId, roleId);
   if (!base) base = await seededMap(userId, roleId, now).catch(() => null);
   if (!base) base = await buildFromInputs(userId, roleId, now).catch(() => null);

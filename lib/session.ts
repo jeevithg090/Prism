@@ -25,6 +25,10 @@ export type Viewer = { userId: string; profile: Profile | null; roleId: string }
 export async function getViewer(): Promise<Viewer> {
   const userId = await getCurrentUserId();
   let profile: Profile | null = null;
-  try { profile = (await getStore().get<Profile>("profiles", userId)) ?? null; } catch { profile = null; }
+  try {
+    profile = (await getStore().get<Profile>("profiles", userId)) ?? null;
+  } catch {
+    profile = null;
+  }
   return { userId, profile, roleId: primaryRoleId(profile) };
 }

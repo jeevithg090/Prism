@@ -3,7 +3,15 @@ import type { Trajectory, TrajectoryStep } from "@/lib/types";
 import { buildSankeyData, journeyPath, outcomeGroup, pathRows, summarise, toChartLinks } from "./sankey";
 
 const t = (id: string, outcomeRole: string, steps: TrajectoryStep[]): Trajectory => ({
-  id, userId: id, name: id, programmeId: "uom-bsc-cs", outcomeRole, steps, advice: "Start small.", isDemo: true, openToChat: true,
+  id,
+  userId: id,
+  name: id,
+  programmeId: "uom-bsc-cs",
+  outcomeRole,
+  steps,
+  advice: "Start small.",
+  isDemo: true,
+  openToChat: true,
 });
 
 const three: Trajectory[] = [
@@ -30,7 +38,12 @@ describe("buildSankeyData", () => {
     expect(d.links).toHaveLength(6);
     const name = (i: number) => d.nodes[i].name;
     expect(d.links.map((l) => `${name(l.source)}>${name(l.target)}:${l.value}`).sort()).toEqual([
-      "Hackathon>Open source:1", "Internship>SWE:1", "Open source>PhD:1", "Placement>ML:1", "Society>Internship:1", "Society>Placement:1",
+      "Hackathon>Open source:1",
+      "Internship>SWE:1",
+      "Open source>PhD:1",
+      "Placement>ML:1",
+      "Society>Internship:1",
+      "Society>Placement:1",
     ]);
     expect(d.nodes.find((n) => n.name === "Society")?.count).toBe(2);
     expect(d.summary).toBe("Of 3 journeys, 1 led to ML roles; 1 of those included a placement.");
@@ -43,7 +56,12 @@ describe("buildSankeyData", () => {
   });
 
   it("falls back to Modules and Coursework", () => {
-    const p = journeyPath(t("x", "Founded a startup", [{ year: 1, kind: "module-choice", label: "Picked AI modules" }, { year: 2, kind: "society", label: "Ran the hack society" }]));
+    const p = journeyPath(
+      t("x", "Founded a startup", [
+        { year: 1, kind: "module-choice", label: "Picked AI modules" },
+        { year: 2, kind: "society", label: "Ran the hack society" },
+      ]),
+    );
     expect(p).toEqual({ y1: "Modules", y23: "Coursework", outcome: "Startup" });
   });
 

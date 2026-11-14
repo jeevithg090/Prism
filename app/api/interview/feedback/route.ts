@@ -12,7 +12,7 @@ async function handlePOST(req: Request) {
   try {
     body = await req.json();
   } catch {
-    return badRequest("Body must be JSON like {\"userId\":\"aisha\",\"roleId\":\"ml-engineer\",\"transcript\":\"user: …\",\"durationSec\":120}");
+    return badRequest('Body must be JSON like {"userId":"aisha","roleId":"ml-engineer","transcript":"user: …","durationSec":120}');
   }
   const parsed = FeedbackReqZ.safeParse(body);
   if (!parsed.success) return badRequest(parsed.error);
@@ -20,10 +20,18 @@ async function handlePOST(req: Request) {
     const { userId, roleId, transcript, durationSec, skillId } = parsed.data;
     const ctx = await interviewContext(userId, roleId);
     const discussed = skillId ?? ctx.work.skillId;
-    return ok(await scoreInterview({
-      userId, roleId, roleName: ctx.roleName, transcript, durationSec, skillId: discussed,
-      prTitle: discussed === ctx.work.skillId ? ctx.work.issueTitle : undefined, roleKeywords: ctx.roleKeywords,
-    }));
+    return ok(
+      await scoreInterview({
+        userId,
+        roleId,
+        roleName: ctx.roleName,
+        transcript,
+        durationSec,
+        skillId: discussed,
+        prTitle: discussed === ctx.work.skillId ? ctx.work.issueTitle : undefined,
+        roleKeywords: ctx.roleKeywords,
+      }),
+    );
   } catch {
     return internal();
   }

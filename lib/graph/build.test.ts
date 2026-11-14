@@ -10,50 +10,159 @@ import { buildBridgeMap, loadGraph, mergeEvidence, NODE_CAP } from "./build";
 
 const AISHA_MAP = JSON.parse(fs.readFileSync("data/fixtures/bridgemap.aisha.ml-engineer.json", "utf8")) as BridgeMap;
 const profile: Profile = {
-  id: "zoe", name: "Zoe Test", programmeId: "p", year: 1, startedAt: "2026-09-21", badges: [], interests: [], availability: [],
-  dna: { targetRoles: ["ml-engineer"], timelineLabel: "", targetDate: "2027-09-01", hoursPerWeek: 8, theoryPractice: 70, formats: [], budget: "free", constraints: [], accessibility: [], language: "en" },
+  id: "zoe",
+  name: "Zoe Test",
+  programmeId: "p",
+  year: 1,
+  startedAt: "2026-09-21",
+  badges: [],
+  interests: [],
+  availability: [],
+  dna: {
+    targetRoles: ["ml-engineer"],
+    timelineLabel: "",
+    targetDate: "2027-09-01",
+    hoursPerWeek: 8,
+    theoryPractice: 70,
+    formats: [],
+    budget: "free",
+    constraints: [],
+    accessibility: [],
+    language: "en",
+  },
 };
-const programme = (modules: Programme["modules"]): Programme => ({ id: "p", university: "UoM", name: "CS", url: "", modules, extractedAt: "", source: "manual" });
+const programme = (modules: Programme["modules"]): Programme => ({
+  id: "p",
+  university: "UoM",
+  name: "CS",
+  url: "",
+  modules,
+  extractedAt: "",
+  source: "manual",
+});
 const mod = (code: string, year: 1 | 2, semester: "1" | "2", skills: [string, 0 | 1 | 2 | 3][]): Programme["modules"][number] => ({
-  code, title: code, year, semester, compulsory: true, topics: [], learningOutcomes: [], skills: skills.map(([skillId, level]) => ({ skillId, level })),
+  code,
+  title: code,
+  year,
+  semester,
+  compulsory: true,
+  topics: [],
+  learningOutcomes: [],
+  skills: skills.map(([skillId, level]) => ({ skillId, level })),
 });
 const demand = (skills: [string, number][]): RoleDemand => ({
-  roleId: "ml-engineer", roleName: "ML engineer", location: "uk", adsAnalysed: 214, skills: skills.map(([skillId, share]) => ({ skillId, share })),
-  topCompanies: [], sampleAds: [], snapshotAt: "", source: "cache",
+  roleId: "ml-engineer",
+  roleName: "ML engineer",
+  location: "uk",
+  adsAnalysed: 214,
+  skills: skills.map(([skillId, share]) => ({ skillId, share })),
+  topCompanies: [],
+  sampleAds: [],
+  snapshotAt: "",
+  source: "cache",
 });
 const ev = (skillId: string, level: 0 | 1 | 2 | 3, confidence: number, extra: Partial<EvidenceItem> = {}): EvidenceItem => ({
-  id: `ev_${skillId}`, userId: "zoe", skillId, level, confidence, source: "github", url: "https://github.com/x", createdAt: "2026-11-01T00:00:00Z", ...extra,
+  id: `ev_${skillId}`,
+  userId: "zoe",
+  skillId,
+  level,
+  confidence,
+  source: "github",
+  url: "https://github.com/x",
+  createdAt: "2026-11-01T00:00:00Z",
+  ...extra,
 });
 
-beforeEach(() => { h.store = memStore(); delete process.env.DEMO_MODE; });
+beforeEach(() => {
+  h.store = memStore();
+  delete process.env.DEMO_MODE;
+});
 
 describe("buildBridgeMap", () => {
   it("proof beats the degree: level-2 evidence at 0.7 confidence is proven even if a module teaches it later", () => {
-    const m = buildBridgeMap({ profile, programme: programme([mod("M1", 1, "2", [["python", 2]])]), roleDemand: demand([["python", 0.6]]), evidence: [ev("python", 2, 0.7)], trends: [], now: new Date("2026-11-07") });
+    const m = buildBridgeMap({
+      profile,
+      programme: programme([mod("M1", 1, "2", [["python", 2]])]),
+      roleDemand: demand([["python", 0.6]]),
+      evidence: [ev("python", 2, 0.7)],
+      trends: [],
+      now: new Date("2026-11-07"),
+    });
     expect(m.nodes.find((n) => n.skillId === "python")?.status).toBe("proven");
   });
   it("weak evidence (confidence 0.5) with no module is still a gap", () => {
-    const m = buildBridgeMap({ profile, programme: programme([]), roleDemand: demand([["docker", 0.41]]), evidence: [ev("docker", 2, 0.5)], trends: [], now: new Date("2026-11-07") });
+    const m = buildBridgeMap({
+      profile,
+      programme: programme([]),
+      roleDemand: demand([["docker", 0.41]]),
+      evidence: [ev("docker", 2, 0.5)],
+      trends: [],
+      now: new Date("2026-11-07"),
+    });
     expect(m.nodes[0]).toMatchObject({ skillId: "docker", status: "gap", level: 2 });
   });
   it("uses UoM term dates: Year 1 Semester 1 is upcoming on 7 Nov 2026 and done on 1 Feb 2027", () => {
-    const inputs = { profile, programme: programme([mod("COMP1", 1, "1", [["algorithms", 2]])]), roleDemand: demand([["algorithms", 0.2]]), evidence: [], trends: [] };
+    const inputs = {
+      profile,
+      programme: programme([mod("COMP1", 1, "1", [["algorithms", 2]])]),
+      roleDemand: demand([["algorithms", 0.2]]),
+      evidence: [],
+      trends: [],
+    };
     const before = buildBridgeMap({ ...inputs, now: new Date("2026-11-07") }).nodes[0];
     expect(before).toMatchObject({ status: "degree-upcoming", upcomingLabel: "Year 1 · Semester 1" });
     expect(buildBridgeMap({ ...inputs, now: new Date("2027-02-01") }).nodes[0]).toMatchObject({ status: "degree-done", level: 2 });
   });
   it("keeps every role skill, caps nodes at 80 and only draws edges between nodes that exist", () => {
     const skills: [string, number][] = Array.from({ length: 30 }, (_, i) => [`role-${i}`, 0.5 - i * 0.01]);
-    const modules = [mod("BIG", 1, "1", Array.from({ length: 70 }, (_, i) => [`mod-${i}`, 1] as [string, 1]))];
-    const m = buildBridgeMap({ profile, programme: programme(modules), roleDemand: demand(skills), evidence: [], trends: [], now: new Date("2026-11-07") });
+    const modules = [
+      mod(
+        "BIG",
+        1,
+        "1",
+        Array.from({ length: 70 }, (_, i) => [`mod-${i}`, 1] as [string, 1]),
+      ),
+    ];
+    const m = buildBridgeMap({
+      profile,
+      programme: programme(modules),
+      roleDemand: demand(skills),
+      evidence: [],
+      trends: [],
+      now: new Date("2026-11-07"),
+    });
     expect(m.nodes.length).toBeLessThanOrEqual(NODE_CAP);
     const ids = new Set(m.nodes.map((n) => n.skillId));
-    for (const e of m.edges) { expect(ids.has(e.from)).toBe(true); expect(ids.has(e.to)).toBe(true); }
-    const withK8s = buildBridgeMap({ profile, programme: programme([]), roleDemand: demand([["docker", 0.41], ["kubernetes", 0.18], ["aws", 0.3]]), evidence: [], trends: [], now: new Date("2026-11-07") });
+    for (const e of m.edges) {
+      expect(ids.has(e.from)).toBe(true);
+      expect(ids.has(e.to)).toBe(true);
+    }
+    const withK8s = buildBridgeMap({
+      profile,
+      programme: programme([]),
+      roleDemand: demand([
+        ["docker", 0.41],
+        ["kubernetes", 0.18],
+        ["aws", 0.3],
+      ]),
+      evidence: [],
+      trends: [],
+      now: new Date("2026-11-07"),
+    });
     expect(withK8s.edges).toContainEqual({ from: "docker", to: "kubernetes", kind: "prereq" });
   });
   it("computes readiness with the contract formula", () => {
-    const m = buildBridgeMap({ profile, programme: programme([]), roleDemand: demand([["python", 0.5], ["docker", 0.5]]), evidence: [ev("python", 2, 0.8)], trends: [], now: new Date("2026-11-07") });
+    const m = buildBridgeMap({
+      profile,
+      programme: programme([]),
+      roleDemand: demand([
+        ["python", 0.5],
+        ["docker", 0.5],
+      ]),
+      evidence: [ev("python", 2, 0.8)],
+      trends: [],
+      now: new Date("2026-11-07"),
+    });
     expect(m.readinessNow).toBe(0.5);
     expect(m.readinessProjected).toBe(1);
   });
@@ -79,10 +188,19 @@ describe("mergeEvidence", () => {
 
 describe("loadGraph", () => {
   // DEMO_MODE pins Aisha's base map to the curated fixture (programme/market fixtures may also exist after merge).
-  beforeEach(() => { process.env.DEMO_MODE = "true"; });
+  beforeEach(() => {
+    process.env.DEMO_MODE = "true";
+  });
   const podEvidence: EvidenceItem = {
-    id: "ev_pod_pod_demo01_0_aisha", userId: "aisha", skillId: "docker", level: 2, confidence: 0.9, source: "keystone-pod",
-    url: "https://github.com/keystone-demo/pod-vision-demo/pull/8", quote: "Merged 'Containerise the captioning API with Docker'", createdAt: "2026-11-07T15:00:00Z",
+    id: "ev_pod_pod_demo01_0_aisha",
+    userId: "aisha",
+    skillId: "docker",
+    level: 2,
+    confidence: 0.9,
+    source: "keystone-pod",
+    url: "https://github.com/keystone-demo/pod-vision-demo/pull/8",
+    quote: "Merged 'Containerise the captioning API with Docker'",
+    createdAt: "2026-11-07T15:00:00Z",
   };
 
   it("prefers the store map over the fixture", async () => {
@@ -114,7 +232,12 @@ describe("loadGraph", () => {
   });
 
   it("merges a micro-challenge proof straight away", async () => {
-    await h.store.upsert("evidence", "ev_ch_sql", { ...ev("sql", 2, 0.8), id: "ev_ch_sql", userId: "aisha", source: "micro-challenge" as const }, "aisha");
+    await h.store.upsert(
+      "evidence",
+      "ev_ch_sql",
+      { ...ev("sql", 2, 0.8), id: "ev_ch_sql", userId: "aisha", source: "micro-challenge" as const },
+      "aisha",
+    );
     const m = await loadGraph("aisha", "ml-engineer");
     expect(m!.nodes.find((n) => n.skillId === "sql")!.status).toBe("proven");
     expect(m!.readinessNow).toBeGreaterThan(0.38);

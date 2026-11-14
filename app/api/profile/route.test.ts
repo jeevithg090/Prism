@@ -8,7 +8,8 @@ import type { Profile } from "@/lib/types";
 const aisha = JSON.parse(fs.readFileSync(path.join(process.cwd(), "data/fixtures/profile.aisha.json"), "utf8")) as Profile;
 const { id: _omit, ...newProfile } = { ...aisha, isDemo: undefined };
 void _omit;
-const json = (method: string, url: string, body: unknown) => new Request(url, { method, headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+const json = (method: string, url: string, body: unknown) =>
+  new Request(url, { method, headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
 const params = (id: string) => ({ params: Promise.resolve({ id }) });
 
 describe("POST /api/profile", () => {
@@ -45,7 +46,9 @@ describe("POST /api/profile", () => {
 
 describe("PUT /api/profile/[id]", () => {
   it("merges dna.theoryPractice without wiping other dna fields (PATCH is the same)", async () => {
-    const created = (await (await POST(json("POST", "http://x/api/profile", { ...newProfile, name: "Priyanka Shah" }))).json()) as { data: Profile };
+    const created = (await (await POST(json("POST", "http://x/api/profile", { ...newProfile, name: "Priyanka Shah" }))).json()) as {
+      data: Profile;
+    };
     const id = created.data.id;
     const res = await PUT(json("PUT", "http://x", { dna: { theoryPractice: 30 }, githubLogin: "priyanka-codes" }), params(id));
     expect(res.status).toBe(200);

@@ -8,10 +8,20 @@ const h = vi.hoisted(() => ({
   apiPost: vi.fn(),
   push: vi.fn(),
   toast: { success: vi.fn(), error: vi.fn() },
-  activity: { runId: null as string | null, status: "idle", events: [] as AgentEvent[], open: false, live: false, start: vi.fn(), setOpen: vi.fn() },
+  activity: {
+    runId: null as string | null,
+    status: "idle",
+    events: [] as AgentEvent[],
+    open: false,
+    live: false,
+    start: vi.fn(),
+    setOpen: vi.fn(),
+  },
 }));
 vi.mock("@/lib/fetcher", () => ({ apiPost: h.apiPost, apiGet: vi.fn(), apiPatch: vi.fn() }));
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: h.push, replace: vi.fn(), back: vi.fn(), refresh: vi.fn(), prefetch: vi.fn() }) }));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: h.push, replace: vi.fn(), back: vi.fn(), refresh: vi.fn(), prefetch: vi.fn() }),
+}));
 vi.mock("sonner", () => ({ toast: Object.assign(vi.fn(), h.toast) }));
 vi.mock("motion/react", async (orig) => ({ ...(await orig<typeof import("motion/react")>()), useReducedMotion: () => true }));
 vi.mock("@/components/shell/ActivityPanel", () => ({
@@ -45,7 +55,9 @@ describe("OnboardingWizard", () => {
     const user = userEvent.setup();
     render(<OnboardingWizard />);
     expect(screen.getByRole("heading", { level: 1, name: "Build your bridge" })).toBeInTheDocument();
-    expect(screen.getByLabelText("Programme page URL")).toHaveValue("https://www.manchester.ac.uk/study/undergraduate/courses/2026/00560/bsc-computer-science/");
+    expect(screen.getByLabelText("Programme page URL")).toHaveValue(
+      "https://www.manchester.ac.uk/study/undergraduate/courses/2026/00560/bsc-computer-science/",
+    );
     expect(continueBtn()).toBeDisabled();
     expect(screen.getByText(/Add your name/)).toBeInTheDocument();
     await user.type(screen.getByLabelText("Your name"), "Sam");
@@ -113,7 +125,8 @@ describe("OnboardingWizard", () => {
 
   it("finish creates the profile, then starts the run, opens the panel, and goes to /map when the agents are done", async () => {
     h.apiPost.mockImplementation(async (url: string, body: { name?: string }) =>
-      url === "/api/profile" ? { ...body, id: "sam" } : { runId: "run_sam" });
+      url === "/api/profile" ? { ...body, id: "sam" } : { runId: "run_sam" },
+    );
     const user = userEvent.setup();
     const { rerender } = render(<OnboardingWizard />);
     await fillToLastStep(user);
@@ -121,7 +134,12 @@ describe("OnboardingWizard", () => {
     await user.click(screen.getByRole("button", { name: /Build my bridge/ }));
 
     expect(h.apiPost.mock.calls.map((c) => c[0])).toEqual(["/api/profile", "/api/onboard/run"]);
-    expect(h.apiPost.mock.calls[0][1]).toMatchObject({ name: "Sam Okafor", programmeId: "uom-bsc-cs", badges: ["new-to-uni"], dna: { targetRoles: ["ml-engineer"], theoryPractice: 70 } });
+    expect(h.apiPost.mock.calls[0][1]).toMatchObject({
+      name: "Sam Okafor",
+      programmeId: "uom-bsc-cs",
+      badges: ["new-to-uni"],
+      dna: { targetRoles: ["ml-engineer"], theoryPractice: 70 },
+    });
     expect(h.apiPost.mock.calls[0][1]).not.toHaveProperty("id");
     expect(h.apiPost.mock.calls[1][1]).toMatchObject({ userId: "sam" });
     expect(h.activity.start).toHaveBeenCalledWith("run_sam");
@@ -129,7 +147,13 @@ describe("OnboardingWizard", () => {
     expect(screen.getByRole("heading", { name: "Building Sam's bridge" })).toBeInTheDocument();
     expect(h.push).not.toHaveBeenCalled();
 
-    Object.assign(h.activity, { runId: "run_sam", status: "done", events: [{ runId: "run_sam", agent: "orchestrator", status: "done", message: "Bridge ready · 38% → 84%", ts: "2026-11-07T14:00:00Z" }] });
+    Object.assign(h.activity, {
+      runId: "run_sam",
+      status: "done",
+      events: [
+        { runId: "run_sam", agent: "orchestrator", status: "done", message: "Bridge ready · 38% → 84%", ts: "2026-11-07T14:00:00Z" },
+      ],
+    });
     rerender(<OnboardingWizard />);
     expect(h.push).toHaveBeenCalledWith("/map");
   });

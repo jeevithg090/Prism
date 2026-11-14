@@ -16,7 +16,13 @@ export function StatusPill({ status, title }: { status: RunStatus; title?: strin
   const s = STATUS[status] ?? STATUS.error;
   const Icon = s.icon;
   return (
-    <span title={title} className={cn("inline-flex h-7 items-center gap-1.5 rounded-md border px-2 text-sm font-medium whitespace-nowrap text-foreground", s.cls)}>
+    <span
+      title={title}
+      className={cn(
+        "inline-flex h-7 items-center gap-1.5 rounded-md border px-2 text-sm font-medium whitespace-nowrap text-foreground",
+        s.cls,
+      )}
+    >
       <Icon className={cn("size-4 shrink-0", s.iconCls)} aria-hidden />
       {s.label}
     </span>
@@ -34,7 +40,13 @@ export function GuardrailActionChip({ finding }: { finding: GuardrailFinding }) 
   const a = ACTION[finding.action] ?? ACTION.pass;
   const Icon = a.icon;
   return (
-    <span title={finding.detail} className={cn("inline-flex min-h-7 max-w-full flex-wrap items-center gap-x-1.5 rounded-md border px-2 py-1 text-sm text-foreground", a.cls)}>
+    <span
+      title={finding.detail}
+      className={cn(
+        "inline-flex min-h-7 max-w-full flex-wrap items-center gap-x-1.5 rounded-md border px-2 py-1 text-sm text-foreground",
+        a.cls,
+      )}
+    >
       <Icon className={cn("size-4 shrink-0", a.iconCls)} aria-hidden />
       <span className="font-mono break-all">{finding.name}</span>
       <span className="font-medium text-muted-foreground">{a.label}</span>
@@ -47,7 +59,12 @@ export function GuardrailActionChip({ finding }: { finding: GuardrailFinding }) 
 export function GuardrailChip({ name }: { name: string }) {
   const code = /^[a-z][A-Za-z]+(\(.*\))?$/.test(name); // noFullSolutions, maxItems(8)
   return (
-    <span className={cn("inline-flex min-h-7 items-start gap-1.5 rounded-md border bg-card px-2 py-1 text-sm text-foreground", code && "font-mono")}>
+    <span
+      className={cn(
+        "inline-flex min-h-7 items-start gap-1.5 rounded-md border bg-card px-2 py-1 text-sm text-foreground",
+        code && "font-mono",
+      )}
+    >
       <ShieldCheck className="mt-0.5 size-4 shrink-0 text-status-proven" aria-hidden />
       {name}
     </span>
@@ -58,7 +75,10 @@ export function GuardrailChip({ name }: { name: string }) {
 export function YouDecideChip({ kind, title }: { kind?: CheckpointKind; title?: string }) {
   return (
     <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
-      <span title={title} className="inline-flex h-7 items-center gap-1.5 rounded-md border border-primary/45 bg-card px-2 text-sm font-semibold whitespace-nowrap text-foreground">
+      <span
+        title={title}
+        className="inline-flex h-7 items-center gap-1.5 rounded-md border border-primary/45 bg-card px-2 text-sm font-semibold whitespace-nowrap text-foreground"
+      >
         <UserCheck className="size-4 shrink-0 text-primary" aria-hidden />
         You decide
       </span>

@@ -39,7 +39,7 @@ export function problemCounts(profile?: LeetCodeProfile | null): { all?: number;
   for (const e of nums as unknown as LeetCodeCount[]) {
     const d = e?.difficulty;
     const n = e?.count;
-    if (typeof d !== "string" || !((DIFFICULTY_KEYS as readonly string[]).includes(d.toLowerCase()))) continue;
+    if (typeof d !== "string" || !(DIFFICULTY_KEYS as readonly string[]).includes(d.toLowerCase())) continue;
     if (typeof n !== "number" || !Number.isFinite(n) || n < 0) continue;
     out[d.toLowerCase() as keyof typeof out] = n;
   }
@@ -102,9 +102,13 @@ export function leetCodeToEvidence(
   const strong = total >= LEVEL_2_TOTAL;
   const rank = profile?.profile?.ranking;
   const beat = beatsPercentile(profile);
-  const homeUrl = typeof profile?.username === "string" && profile.username ? `https://leetcode.com/${profile.username}/` : "https://leetcode.com/";
+  const homeUrl =
+    typeof profile?.username === "string" && profile.username ? `https://leetcode.com/${profile.username}/` : "https://leetcode.com/";
 
-  const base = typeof rank === "number" && Number.isFinite(rank) ? `Ranked ${rank} on LeetCode with ${total} problems solved` : `${total} problems solved on LeetCode`;
+  const base =
+    typeof rank === "number" && Number.isFinite(rank)
+      ? `Ranked ${rank} on LeetCode with ${total} problems solved`
+      : `${total} problems solved on LeetCode`;
   const algorithmsQuote = beat ? `${base}, beating ${Math.round(beat.pct)}% of users on ${beat.difficulty} problems` : base;
 
   const bits = countBits(c);
@@ -208,11 +212,10 @@ export async function syncLeetCodeEvidence(input: { userId: string; handle: stri
     const { matchedUser, recentAcSubmissionList: recent } = await getJSON(handle);
     const recentList = Array.isArray(recent) ? recent : [];
     const total = problemCounts(matchedUser).all;
-    say(
-      "progress",
-      `read ${recentList.length} recent accepted submissions · ${total ?? 0} problems solved in total`,
-      { solved: total ?? 0, recent: recentList.length },
-    );
+    say("progress", `read ${recentList.length} recent accepted submissions · ${total ?? 0} problems solved in total`, {
+      solved: total ?? 0,
+      recent: recentList.length,
+    });
     const items = leetCodeToEvidence(userId, matchedUser, recentList);
     const store = getStore();
     await Promise.all(items.map((e) => store.upsert("evidence", e.id, e, userId)));
@@ -220,7 +223,9 @@ export async function syncLeetCodeEvidence(input: { userId: string; handle: stri
     say("done", `found ${items.length} skills from your LeetCode record (${level2} at level 2)`, { skills: items.length, level2 });
     return listEvidence(userId);
   } catch (err) {
-    say("error", "LeetCode wasn't available just now: keeping the evidence we already have", { reason: err instanceof Error ? err.message : "unknown" });
+    say("error", "LeetCode wasn't available just now: keeping the evidence we already have", {
+      reason: err instanceof Error ? err.message : "unknown",
+    });
     return listEvidence(userId);
   }
 }

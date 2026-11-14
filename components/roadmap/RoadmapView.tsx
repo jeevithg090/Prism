@@ -14,7 +14,17 @@ import { apiPatch, apiPost } from "@/lib/fetcher";
 import { roleName } from "@/lib/graph/roles";
 import { skillName } from "@/lib/schemas/community";
 import { cn } from "@/lib/utils";
-import { apiGet, isNotFound, useEvidence, useGraph, useMapViewer, usePods, useProfileQuery, useRoadmapQuery, useToday } from "@/components/map/hooks";
+import {
+  apiGet,
+  isNotFound,
+  useEvidence,
+  useGraph,
+  useMapViewer,
+  usePods,
+  useProfileQuery,
+  useRoadmapQuery,
+  useToday,
+} from "@/components/map/hooks";
 import { RoadmapHeader } from "./RoadmapHeader";
 import { currentWeekIndex, isThisWeek, isWeekDone, usualWeekHours, withTaskDone } from "./roadmapUtils";
 import { SkippedPanel } from "./SkippedPanel";
@@ -40,7 +50,10 @@ export function RoadmapSkeleton() {
             <div key={i} className="flex gap-4">
               <Skeleton className="size-3 shrink-0 translate-y-2 rounded-full" />
               <Skeleton className="h-5 w-24 shrink-0" />
-              <div className="min-w-0 flex-1 space-y-2"><Skeleton className="h-5 w-1/3" /><Skeleton className="h-4 w-1/2" /></div>
+              <div className="min-w-0 flex-1 space-y-2">
+                <Skeleton className="h-5 w-1/3" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
             </div>
           ))}
         </div>
@@ -97,9 +110,15 @@ export function RoadmapView({ demo = false }: { demo?: boolean }) {
       const week = rm?.weeks.find((w) => w.tasks.some((t) => t.id === taskId));
       if (done && week && isWeekDone(week)) {
         setPulse(week.week);
-        toast.success(`Week ${week.week} complete: momentum +4`, { description: `${skillName(week.focusSkillId)} is done. Your next week is ready.` });
+        toast.success(`Week ${week.week} complete: momentum +4`, {
+          description: `${skillName(week.focusSkillId)} is done. Your next week is ready.`,
+        });
       } else if (done) {
-        toast.success("One step closer", { description: week ? `Week ${week.week}: ${week.tasks.filter((t) => t.done).length} of ${week.tasks.length} tasks done.` : undefined });
+        toast.success("One step closer", {
+          description: week
+            ? `Week ${week.week}: ${week.tasks.filter((t) => t.done).length} of ${week.tasks.length} tasks done.`
+            : undefined,
+        });
       } else {
         toast("Task unticked", { description: "It's back on your list." });
       }
@@ -121,7 +140,8 @@ export function RoadmapView({ demo = false }: { demo?: boolean }) {
       void qc.invalidateQueries({ queryKey: ["graph", uid] });
       toast.success(`Roadmap updated (v${rm.version})`, { description: "The Roadmap Agent's steps are in the Activity panel." });
     },
-    onError: (e) => toast.error("We couldn't re-plan right now", { description: e instanceof Error ? e.message : "Try again in a moment." }),
+    onError: (e) =>
+      toast.error("We couldn't re-plan right now", { description: e instanceof Error ? e.message : "Try again in a moment." }),
   });
 
   const rm = roadmap.data;
@@ -133,7 +153,13 @@ export function RoadmapView({ demo = false }: { demo?: boolean }) {
         title="No roadmap yet"
         body="The Roadmap Agent turns your Bridge Map into 12 weeks of tasks, skipping what your degree already teaches."
         action={
-          <button type="button" onClick={() => replan.mutate()} disabled={replan.isPending} aria-busy={replan.isPending || undefined} className={cn(buttonVariants({ size: "lg" }), "focus-visible:outline-solid")}>
+          <button
+            type="button"
+            onClick={() => replan.mutate()}
+            disabled={replan.isPending}
+            aria-busy={replan.isPending || undefined}
+            className={cn(buttonVariants({ size: "lg" }), "focus-visible:outline-solid")}
+          >
             {replan.isPending ? "Building your roadmap…" : "Build my roadmap"}
           </button>
         }
@@ -146,7 +172,10 @@ export function RoadmapView({ demo = false }: { demo?: boolean }) {
         title="We couldn't load your roadmap"
         body="That's on us, not you. Try again, or look at the demo student's plan."
         onRetry={() => void roadmap.refetch()}
-        onUseDemo={() => { setUsingDemo(true); qc.setQueryData(key, DEMO_ROADMAP); }}
+        onUseDemo={() => {
+          setUsingDemo(true);
+          qc.setQueryData(key, DEMO_ROADMAP);
+        }}
       />
     );
   }
@@ -165,21 +194,34 @@ export function RoadmapView({ demo = false }: { demo?: boolean }) {
   return (
     <div className="space-y-6">
       <RoadmapHeader
-        roadmap={rm} targetDate={profile.data?.dna?.targetDate} hoursPerWeek={hoursPerWeek} demo={isDemo}
-        replanning={replan.isPending} onReplan={() => replan.mutate()}
-        currentSkillName={current ? nodeOf(current.focusSkillId)?.name ?? skillName(current.focusSkillId) : undefined} roleLabel={role}
+        roadmap={rm}
+        targetDate={profile.data?.dna?.targetDate}
+        hoursPerWeek={hoursPerWeek}
+        demo={isDemo}
+        replanning={replan.isPending}
+        onReplan={() => replan.mutate()}
+        currentSkillName={current ? (nodeOf(current.focusSkillId)?.name ?? skillName(current.focusSkillId)) : undefined}
+        roleLabel={role}
       />
       <div className="grid gap-6 xl:grid-cols-[minmax(0,5fr)_minmax(0,3fr)]">
         <section aria-labelledby="timeline-h" className="min-w-0 rounded-2xl border bg-card shadow-sm">
           <div className="flex flex-col gap-4 border-b px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <div className="min-w-0">
-              <h2 id="timeline-h" className="text-xl font-semibold text-balance">{rm.weeks.length} weeks, <span className="whitespace-nowrap">most-asked</span> gaps first</h2>
+              <h2 id="timeline-h" className="text-xl font-semibold text-balance">
+                {rm.weeks.length} weeks, <span className="whitespace-nowrap">most-asked</span> gaps first
+              </h2>
               <p className="mt-1 max-w-[52ch] text-sm text-pretty text-muted-foreground">
-                Each % is the share of {role} ads asking for that week&apos;s skill. A week with no tag is a gap your modules don&apos;t teach.
+                Each % is the share of {role} ads asking for that week&apos;s skill. A week with no tag is a gap your modules don&apos;t
+                teach.
               </p>
             </div>
             {current && firstOpen?.resourceUrl && (
-              <a href={firstOpen.resourceUrl} target="_blank" rel="noreferrer" className={cn(buttonVariants({ size: "lg" }), "self-start focus-visible:outline-solid sm:self-auto")}>
+              <a
+                href={firstOpen.resourceUrl}
+                target="_blank"
+                rel="noreferrer"
+                className={cn(buttonVariants({ size: "lg" }), "self-start focus-visible:outline-solid sm:self-auto")}
+              >
                 Start week {current.week}: {skillName(current.focusSkillId)} <ExternalLink className="size-4" aria-hidden />
                 <span className="sr-only">(opens {firstOpen.title} in a new tab)</span>
               </a>

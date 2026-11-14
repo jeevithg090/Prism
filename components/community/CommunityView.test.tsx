@@ -17,8 +17,26 @@ vi.mock("sonner", () => ({ toast }));
 import { CommunityView } from "./CommunityView";
 
 const profile = (id: string, name: string, badges: Profile["badges"]): Profile => ({
-  id, name, programmeId: "uom-bsc-cs", year: 1, startedAt: "2026-09-21", badges, interests: [], availability: [],
-  dna: { targetRoles: ["ml-engineer"], timelineLabel: "", targetDate: "2027-09-01", hoursPerWeek: 5, theoryPractice: 50, formats: [], budget: "free", constraints: [], accessibility: [], language: "en" },
+  id,
+  name,
+  programmeId: "uom-bsc-cs",
+  year: 1,
+  startedAt: "2026-09-21",
+  badges,
+  interests: [],
+  availability: [],
+  dna: {
+    targetRoles: ["ml-engineer"],
+    timelineLabel: "",
+    targetDate: "2027-09-01",
+    hoursPerWeek: 5,
+    theoryPractice: 50,
+    formats: [],
+    budget: "free",
+    constraints: [],
+    accessibility: [],
+    language: "en",
+  },
 });
 const PROFILES: Record<string, Profile> = {
   aisha: profile("aisha", "Aisha Rahman", ["new-to-uni", "international"]),
@@ -29,8 +47,22 @@ const PROFILES: Record<string, Profile> = {
 const now = Date.now();
 const iso = (hoursAgo: number) => new Date(now - hoursAgo * 3600_000).toISOString();
 const HELP: HelpRequest[] = [
-  { id: "help_tom", fromUserId: "tom", kind: "code-review", message: "Can someone review my SQL schema?", status: "open", createdAt: iso(1) },
-  { id: "help_leo", fromUserId: "leo", kind: "question", message: "What is a Python virtual environment?", status: "open", createdAt: iso(5) },
+  {
+    id: "help_tom",
+    fromUserId: "tom",
+    kind: "code-review",
+    message: "Can someone review my SQL schema?",
+    status: "open",
+    createdAt: iso(1),
+  },
+  {
+    id: "help_leo",
+    fromUserId: "leo",
+    kind: "question",
+    message: "What is a Python virtual environment?",
+    status: "open",
+    createdAt: iso(5),
+  },
   { id: "help_aisha", fromUserId: "aisha", kind: "chat-15", message: "15 minutes on Git branches?", status: "open", createdAt: iso(3) },
   { id: "help_done", fromUserId: "leo", toUserId: "priya", kind: "question", message: "Done one", status: "done", createdAt: iso(20) },
 ];
@@ -48,7 +80,11 @@ function setup(opts: { help?: HelpRequest[] | Error; profiles?: Record<string, P
   });
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
   const user = userEvent.setup();
-  render(<QueryClientProvider client={qc}><CommunityView /></QueryClientProvider>);
+  render(
+    <QueryClientProvider client={qc}>
+      <CommunityView />
+    </QueryClientProvider>,
+  );
   return { user };
 }
 
@@ -63,7 +99,9 @@ describe("CommunityView", () => {
     setup();
     const list = await screen.findByRole("list", { name: "Open help requests" });
     await waitFor(() => {
-      const names = within(list).getAllByRole("heading", { level: 3 }).map((h) => h.textContent);
+      const names = within(list)
+        .getAllByRole("heading", { level: 3 })
+        .map((h) => h.textContent);
       // Leo (🌱, 5h ago) and Aisha (🌱, 3h ago) before Tom (newest, but not a newcomer)
       expect(names).toEqual(["Aisha Rahman (you)", "Leo Park", "Tom Baker"]);
     });
@@ -102,13 +140,22 @@ describe("CommunityView", () => {
     expect(box).toHaveFocus();
     expect(box).toHaveAttribute("aria-invalid", "true");
 
-    apiPost.mockResolvedValue({ id: "help_new", fromUserId: "aisha", kind: "code-review", message: "Review my PR?", status: "open", createdAt: new Date().toISOString() });
+    apiPost.mockResolvedValue({
+      id: "help_new",
+      fromUserId: "aisha",
+      kind: "code-review",
+      message: "Review my PR?",
+      status: "open",
+      createdAt: new Date().toISOString(),
+    });
     await user.clear(box);
     await user.type(box, "Review my PR?");
     await user.selectOptions(screen.getByLabelText("Kind of help"), "code-review");
     expect(submit).toBeEnabled();
     await user.click(submit);
-    await waitFor(() => expect(apiPost).toHaveBeenCalledWith("/api/help", { fromUserId: "aisha", kind: "code-review", message: "Review my PR?" }));
+    await waitFor(() =>
+      expect(apiPost).toHaveBeenCalledWith("/api/help", { fromUserId: "aisha", kind: "code-review", message: "Review my PR?" }),
+    );
     await waitFor(() => expect(toast.success).toHaveBeenCalled());
     expect(box).toHaveValue("");
   });

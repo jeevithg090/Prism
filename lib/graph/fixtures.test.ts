@@ -11,7 +11,11 @@ describe("map and roadmap fixtures", () => {
 
   it("roadmap: 12 weeks from 9 Nov 2026, Docker first with the pod-repo proof, readiness 0.38 → 0.84", () => {
     expect(roadmap.weeks).toHaveLength(12);
-    expect(roadmap.weeks[0]).toMatchObject({ startDate: "2026-11-09", focusSkillId: "docker", proof: "Merge a PR that adds a Dockerfile to your pod repo (VisionAid)" });
+    expect(roadmap.weeks[0]).toMatchObject({
+      startDate: "2026-11-09",
+      focusSkillId: "docker",
+      proof: "Merge a PR that adds a Dockerfile to your pod repo (VisionAid)",
+    });
     expect(roadmap.weeks[0].receipt).toMatchObject({ demandPct: 41, coveredByDegree: "no" });
     expect([roadmap.readinessNow, roadmap.readinessProjected]).toEqual([0.38, 0.84]);
   });
@@ -29,7 +33,9 @@ describe("map and roadmap fixtures", () => {
       expect(w.proof).toContain("your pod repo (VisionAid)");
       expect(w.tasks.every((t) => t.free)).toBe(true);
     }
-    expect(new Set(roadmap.weeks.flatMap((w) => w.tasks.map((t) => t.id))).size).toBe(roadmap.weeks.reduce((s, w) => s + w.tasks.length, 0));
+    expect(new Set(roadmap.weeks.flatMap((w) => w.tasks.map((t) => t.id))).size).toBe(
+      roadmap.weeks.reduce((s, w) => s + w.tasks.length, 0),
+    );
   });
   it("evidence: Aisha's GitHub proof for python, git, html-css and javascript, ids matching the map", () => {
     expect(evidence.map((e) => e.skillId).sort()).toEqual(["git", "html-css", "javascript", "python"]);

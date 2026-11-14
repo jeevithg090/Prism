@@ -27,13 +27,20 @@ describe("grounding check", () => {
   });
 
   it("handles invented counts, durations and targets", () => {
-    expect(groundAnswer("You should spend 12 hours on it.", { facts: FACTS, sources: [] }).answer).toBe("You should spend a few hours on it.");
+    expect(groundAnswer("You should spend 12 hours on it.", { facts: FACTS, sources: [] }).answer).toBe(
+      "You should spend a few hours on it.",
+    );
     expect(groundAnswer("Ask 3 students for help.", { facts: FACTS, sources: [] }).answer).toBe("Ask several students for help.");
-    expect(groundAnswer("Your readiness will rise to 95% by June.", { facts: FACTS, sources: [] }).answer).toBe("Your readiness will rise by June.");
+    expect(groundAnswer("Your readiness will rise to 95% by June.", { facts: FACTS, sources: [] }).answer).toBe(
+      "Your readiness will rise by June.",
+    );
   });
 
   it("drops a sentence it can't rewrite, keeps paragraphs, and never returns an empty answer", () => {
-    const r = groundAnswer("Focus on Docker this week.\nReceipt · Docker: 41% of ML engineer ads.\nIt is 2x faster.", { facts: FACTS, sources: [] });
+    const r = groundAnswer("Focus on Docker this week.\nReceipt · Docker: 41% of ML engineer ads.\nIt is 2x faster.", {
+      facts: FACTS,
+      sources: [],
+    });
     expect(r.answer).toBe("Focus on Docker this week.\nReceipt · Docker: 41% of ML engineer ads.\nIt is 2x faster.");
     const only = groundAnswer("99.", { facts: FACTS, sources: [] });
     expect(only.removed).toEqual(["99"]);

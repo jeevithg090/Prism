@@ -1,13 +1,25 @@
 import { describe, expect, it } from "vitest";
 import type { GuardrailCtx, GuardrailFinding } from "./harness";
 import {
-  anonymityThreshold, CODE_REMOVED, findDemographicSignals, maxItems, noDemographicSignals, noFullSolutions,
-  noOutboundMessaging, piiRedactor, redactCount, redactForLLM, redactPII, SOLUTION_REMOVED, stripLongCodeBlocks,
+  anonymityThreshold,
+  CODE_REMOVED,
+  findDemographicSignals,
+  maxItems,
+  noDemographicSignals,
+  noFullSolutions,
+  noOutboundMessaging,
+  piiRedactor,
+  redactCount,
+  redactForLLM,
+  redactPII,
+  SOLUTION_REMOVED,
+  stripLongCodeBlocks,
 } from "./guardrails";
 
 const ctx = (o: Partial<GuardrailCtx> = {}): GuardrailCtx => ({ runId: "run_g", agent: "matchmaker", input: undefined, memo: {}, ...o });
 const block = (n: number) => ["```ts", ...Array.from({ length: n }, (_, i) => `const x${i} = ${i};`), "```"].join("\n");
-const longest = (s: string) => Math.max(0, ...[...s.matchAll(/```[^\n]*\n([\s\S]*?)```/g)].map((m) => m[1].split("\n").filter(Boolean).length));
+const longest = (s: string) =>
+  Math.max(0, ...[...s.matchAll(/```[^\n]*\n([\s\S]*?)```/g)].map((m) => m[1].split("\n").filter(Boolean).length));
 
 describe("noFullSolutions", () => {
   const g = noFullSolutions<unknown>();
@@ -32,7 +44,10 @@ describe("noFullSolutions", () => {
   });
 
   it("flags and removes lines that offer a full solution, but not ones that refuse to", () => {
-    const r = g.apply("- What does this return?\nHere is the full solution: just call sort().\n- I won't give you the complete solution, but check the docs.", ctx());
+    const r = g.apply(
+      "- What does this return?\nHere is the full solution: just call sort().\n- I won't give you the complete solution, but check the docs.",
+      ctx(),
+    );
     expect(r.action).toBe("modified");
     expect(r.output).toContain(SOLUTION_REMOVED);
     expect(r.output).not.toContain("just call sort()");
@@ -50,10 +65,20 @@ describe("noFullSolutions", () => {
 
 describe("noDemographicSignals", () => {
   const g = noDemographicSignals<unknown>();
-  const cand = (badges: string[]) => ({ userId: "u", proven: ["python"], gaps: [], interests: ["international development"], badges, year: 1 });
+  const cand = (badges: string[]) => ({
+    userId: "u",
+    proven: ["python"],
+    gaps: [],
+    interests: ["international development"],
+    badges,
+    year: 1,
+  });
 
   it("blocks when scoring inputs carry international / first-gen / career-changer", () => {
-    const r = g.apply({}, ctx({ memo: { scoringInputs: [cand(["new-to-uni", "international"]), cand(["first-gen"]), cand(["international"])] } }));
+    const r = g.apply(
+      {},
+      ctx({ memo: { scoringInputs: [cand(["new-to-uni", "international"]), cand(["first-gen"]), cand(["international"])] } }),
+    );
     expect(r.action).toBe("blocked");
     expect(r.detail).toContain("international ×2");
     expect(r.detail).toContain("first-gen");
@@ -118,7 +143,10 @@ describe("noOutboundMessaging", () => {
   const g = noOutboundMessaging<unknown>();
   it("passes drafts and blocks outputs with send intent", () => {
     expect(g.apply([{ name: "Jo", draftMessage: "Hi Jo", publicUrl: "https://github.com/jo" }], ctx()).action).toBe("pass");
-    expect(g.apply([{ name: "Jo", draftMessage: "Hi", recipient: "jo@x.org" }], ctx())).toMatchObject({ action: "blocked", detail: "send intent: recipient" });
+    expect(g.apply([{ name: "Jo", draftMessage: "Hi", recipient: "jo@x.org" }], ctx())).toMatchObject({
+      action: "blocked",
+      detail: "send intent: recipient",
+    });
     expect(g.apply({ autoSend: true }, ctx()).action).toBe("blocked");
     expect(g.apply({ autoSend: false }, ctx()).action).toBe("pass");
     expect(g.apply({ publicUrl: "mailto:jo@x.org" }, ctx()).action).toBe("blocked");
@@ -127,7 +155,11 @@ describe("noOutboundMessaging", () => {
 
 describe("maxItems", () => {
   it("caps arrays and array fields", () => {
-    expect(maxItems<number[]>(2).apply([1, 2, 3], ctx())).toEqual({ output: [1, 2], action: "modified", detail: "capped items at 2 (was 3)" });
+    expect(maxItems<number[]>(2).apply([1, 2, 3], ctx())).toEqual({
+      output: [1, 2],
+      action: "modified",
+      detail: "capped items at 2 (was 3)",
+    });
     expect(maxItems<number[]>(5).apply([1, 2], ctx()).action).toBe("pass");
     const r = maxItems<{ issues: number[] }>(1, { field: "issues" }).apply({ issues: [1, 2] }, ctx());
     expect(r.output).toEqual({ issues: [1] });

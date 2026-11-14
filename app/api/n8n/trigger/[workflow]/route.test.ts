@@ -5,10 +5,15 @@ vi.mock("@/lib/n8n", async (orig) => ({ ...(await orig<typeof import("@/lib/n8n"
 
 import { POST } from "./route";
 
-const post = (wf: string, body?: unknown) => POST(
-  new Request(`http://localhost/api/n8n/trigger/${wf}`, { method: "POST", headers: { "content-type": "application/json" }, body: body === undefined ? "" : JSON.stringify(body) }),
-  { params: Promise.resolve({ workflow: wf }) },
-);
+const post = (wf: string, body?: unknown) =>
+  POST(
+    new Request(`http://localhost/api/n8n/trigger/${wf}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: body === undefined ? "" : JSON.stringify(body),
+    }),
+    { params: Promise.resolve({ workflow: wf }) },
+  );
 beforeEach(() => h.trigger.mockClear());
 
 describe("POST /api/n8n/trigger/[workflow]", () => {

@@ -9,8 +9,13 @@ vi.mock("@/lib/store", () => ({
   getStore: () => ({
     get: async (c: string, id: string) => structuredClone(h.docs.get(`${c}/${id}`)?.doc ?? null),
     list: async (c: string, f?: { userId?: string }) =>
-      [...h.docs.entries()].filter(([k, r]) => k.startsWith(`${c}/`) && (!f?.userId || r.userId === f.userId)).map(([, r]) => structuredClone(r.doc)),
-    upsert: async (c: string, id: string, doc: unknown, userId?: string) => { h.docs.set(`${c}/${id}`, { doc: structuredClone(doc), userId }); return doc; },
+      [...h.docs.entries()]
+        .filter(([k, r]) => k.startsWith(`${c}/`) && (!f?.userId || r.userId === f.userId))
+        .map(([, r]) => structuredClone(r.doc)),
+    upsert: async (c: string, id: string, doc: unknown, userId?: string) => {
+      h.docs.set(`${c}/${id}`, { doc: structuredClone(doc), userId });
+      return doc;
+    },
     remove: async () => {},
   }),
 }));
@@ -21,11 +26,24 @@ import { GET as latest } from "../../proof/latest/[userId]/route";
 
 const ctx = (userId: string) => ({ params: Promise.resolve({ userId }) });
 const req = (url: string, init?: RequestInit & { uid?: string }) =>
-  new Request(`http://localhost${url}`, { ...init, headers: { "content-type": "application/json", ...(init?.uid ? { cookie: `ks_uid=${init.uid}` } : {}) } });
+  new Request(`http://localhost${url}`, {
+    ...init,
+    headers: { "content-type": "application/json", ...(init?.uid ? { cookie: `ks_uid=${init.uid}` } : {}) },
+  });
 
 beforeEach(() => {
   h.docs.clear();
-  h.docs.set("profiles/aisha", { doc: { id: "aisha", name: "Aisha Rahman", programmeId: "uom-bsc-cs", year: 1, dna: { targetRoles: ["ml-engineer"] }, badges: ["new-to-uni"] }, userId: "aisha" });
+  h.docs.set("profiles/aisha", {
+    doc: {
+      id: "aisha",
+      name: "Aisha Rahman",
+      programmeId: "uom-bsc-cs",
+      year: 1,
+      dna: { targetRoles: ["ml-engineer"] },
+      badges: ["new-to-uni"],
+    },
+    userId: "aisha",
+  });
   h.docs.set(`pods/${podFixture.id}`, { doc: structuredClone(podFixture), userId: "aisha" });
 });
 
@@ -50,9 +68,21 @@ describe("passport routes", () => {
     expect((await passport(req("/api/proof-ladder/aisha/passport", { uid: "tom" }), ctx("aisha"))).status).toBe(403);
     const own = await (await passport(req("/api/proof-ladder/aisha/passport"), ctx("aisha"))).json();
     expect(own.data).toMatchObject({ isOwner: true, isPublic: false });
-    expect((await setPassport(req("/api/proof-ladder/aisha/passport", { method: "PUT", body: JSON.stringify({ public: true }), uid: "tom" }), ctx("aisha"))).status).toBe(403);
-    expect((await setPassport(req("/api/proof-ladder/aisha/passport", { method: "PUT", body: JSON.stringify({ public: "yes" }) }), ctx("aisha"))).status).toBe(400);
-    const put = await (await setPassport(req("/api/proof-ladder/aisha/passport", { method: "PUT", body: JSON.stringify({ public: true }) }), ctx("aisha"))).json();
+    expect(
+      (
+        await setPassport(
+          req("/api/proof-ladder/aisha/passport", { method: "PUT", body: JSON.stringify({ public: true }), uid: "tom" }),
+          ctx("aisha"),
+        )
+      ).status,
+    ).toBe(403);
+    expect(
+      (await setPassport(req("/api/proof-ladder/aisha/passport", { method: "PUT", body: JSON.stringify({ public: "yes" }) }), ctx("aisha")))
+        .status,
+    ).toBe(400);
+    const put = await (
+      await setPassport(req("/api/proof-ladder/aisha/passport", { method: "PUT", body: JSON.stringify({ public: true }) }), ctx("aisha"))
+    ).json();
     expect(put.data).toEqual({ isPublic: true });
     const visitor = await (await passport(req("/api/proof-ladder/aisha/passport", { uid: "tom" }), ctx("aisha"))).json();
     expect(visitor.data).toMatchObject({ isOwner: false, isPublic: true });

@@ -9,12 +9,16 @@ vi.mock("@/lib/store", () => ({
   getStore: () => ({
     get: async (c: string, id: string) => structuredClone(h.docs.get(`${c}/${id}`)?.doc ?? null),
     list: async (c: string, f?: { userId?: string }) =>
-      [...h.docs.entries()].filter(([k, r]) => k.startsWith(`${c}/`) && (!f?.userId || r.userId === f.userId)).map(([, r]) => structuredClone(r.doc)),
+      [...h.docs.entries()]
+        .filter(([k, r]) => k.startsWith(`${c}/`) && (!f?.userId || r.userId === f.userId))
+        .map(([, r]) => structuredClone(r.doc)),
     upsert: async (c: string, id: string, doc: unknown, userId?: string) => {
       h.docs.set(`${c}/${id}`, { doc: structuredClone(doc), userId });
       return doc;
     },
-    remove: async (c: string, id: string) => { h.docs.delete(`${c}/${id}`); },
+    remove: async (c: string, id: string) => {
+      h.docs.delete(`${c}/${id}`);
+    },
   }),
 }));
 
@@ -26,7 +30,10 @@ let runNo = 0;
 const RUN_ID = () => `run_cf_${++runNo}`;
 
 const RATED_USER = { handle: HANDLE, rating: 1623, rank: "specialist", maxRating: 1659, maxRank: "specialist" };
-const SUBMISSIONS = { status: "OK", result: [{ problem: { name: "Two Sum" } }, { problem: { name: "Merge Intervals" } }, { problem: { name: "Two Sum" } }] };
+const SUBMISSIONS = {
+  status: "OK",
+  result: [{ problem: { name: "Two Sum" } }, { problem: { name: "Merge Intervals" } }, { problem: { name: "Two Sum" } }],
+};
 const NOT_FOUND = { status: "FAILED", comment: `handles: User with handle ${HANDLE} not found` };
 
 const respond = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
@@ -46,8 +53,14 @@ const routeFetch = (info: { body: unknown; status?: number }, statusCall?: { bod
 /** One item of GitHub evidence, so every test can see a re-sync keeps the evidence you already have. */
 const seedPriorEvidence = async () => {
   const prior: EvidenceItem = {
-    id: "ev_test-user_python_github", userId: USER_ID, skillId: "python", level: 1, confidence: 0.5,
-    source: "github", url: "https://github.com/test-user/proj", createdAt: "2026-11-01T00:00:00Z",
+    id: "ev_test-user_python_github",
+    userId: USER_ID,
+    skillId: "python",
+    level: 1,
+    confidence: 0.5,
+    source: "github",
+    url: "https://github.com/test-user/proj",
+    createdAt: "2026-11-01T00:00:00Z",
   };
   const { getStore } = await import("@/lib/store");
   await getStore().upsert("evidence", prior.id, prior, USER_ID);

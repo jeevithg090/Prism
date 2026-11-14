@@ -2,7 +2,14 @@ import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 
 vi.mock("@/lib/llm", () => ({ llmJSON: vi.fn(), LLMError: class extends Error {} }));
-vi.mock("@/lib/store", () => ({ getStore: () => ({ get: async () => null, list: async () => [], upsert: async (_c: string, _i: string, d: unknown) => d, remove: async () => {} }) }));
+vi.mock("@/lib/store", () => ({
+  getStore: () => ({
+    get: async () => null,
+    list: async () => [],
+    upsert: async (_c: string, _i: string, d: unknown) => d,
+    remove: async () => {},
+  }),
+}));
 
 import { buildSystemPrompt, composeRulesAnswer, detectIntent, fitArgs, limitWords, rulesPlan } from "./planner";
 import { canonicalFakes, fakeTool, FACTS } from "./testTools";
@@ -63,7 +70,9 @@ describe("rules planner: intent routing", () => {
   });
 
   it("writes a numbered plan that ends with the grounding check", () => {
-    expect(plan("What should I do this week?").text).toMatch(/^Plan: 1\) Read this week's roadmap plan · 2\) Check your Bridge Map .* · 3\) Check every number/);
+    expect(plan("What should I do this week?").text).toMatch(
+      /^Plan: 1\) Read this week's roadmap plan · 2\) Check your Bridge Map .* · 3\) Check every number/,
+    );
   });
 });
 

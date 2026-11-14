@@ -29,7 +29,11 @@ function cfGet<T>(op: string, handle: string, path: string): Promise<T> {
     async () => {
       const res = await fetch(`https://codeforces.com/api${path}`, { signal: AbortSignal.timeout(8000) });
       let j: CfUserInfo | null = null;
-      try { j = (await res.json()) as CfUserInfo; } catch { /* e.g. an empty body */ }
+      try {
+        j = (await res.json()) as CfUserInfo;
+      } catch {
+        /* e.g. an empty body */
+      }
       if (j?.status !== "OK") throw new Error(j?.comment ? `Codeforces: ${j.comment}` : `Codeforces ${res.status}`);
       return j as T;
     },
@@ -56,8 +60,15 @@ export function ratingToEvidence(userId: string, user: CfUser, now = new Date())
       ? `Codeforces rating ${rating}${rank} — among the top few percent of rated contest programmers`
       : `Codeforces rating ${rating}${rank}${max ? `, max ${max}` : ""} in rated contests`;
   return RATED_SKILLS.map((skillId) => ({
-    id: `ev_${userId}_${skillId}_codeforces`, userId, skillId, level, confidence,
-    source: "codeforces" as const, url, quote, createdAt: now.toISOString(),
+    id: `ev_${userId}_${skillId}_codeforces`,
+    userId,
+    skillId,
+    level,
+    confidence,
+    source: "codeforces" as const,
+    url,
+    quote,
+    createdAt: now.toISOString(),
   }));
 }
 
@@ -75,14 +86,18 @@ export async function syncCodeforcesEvidence(input: { userId: string; handle: st
   try {
     const user = (await cfGet<CfUserInfo>("user-info", handle, `/user.info?handles=${encodeURIComponent(handle)}`)).result?.[0];
     if (!user) throw new Error(`No Codeforces user @${handle}`);
-    const submissions: CfSubmission[] | null = await cfGet<{ status: "OK"; result?: CfSubmission[] }>("user-status", handle, `/user.status?handle=${encodeURIComponent(handle)}&count=100`)
+    const submissions: CfSubmission[] | null = await cfGet<{ status: "OK"; result?: CfSubmission[] }>(
+      "user-status",
+      handle,
+      `/user.status?handle=${encodeURIComponent(handle)}&count=100`,
+    )
       .then((j) => j.result ?? [])
       .catch(() => null);
-    say(
-      "progress",
-      `rating ${user.rating ?? "unrated"}${submissions ? ` · ${submissions.length} recent submissions` : ""}`,
-      { rating: user.rating ?? null, rank: user.rank ?? null, submissions: submissions?.length ?? null },
-    );
+    say("progress", `rating ${user.rating ?? "unrated"}${submissions ? ` · ${submissions.length} recent submissions` : ""}`, {
+      rating: user.rating ?? null,
+      rank: user.rank ?? null,
+      submissions: submissions?.length ?? null,
+    });
     const items = ratingToEvidence(userId, user);
     const store = getStore();
     await Promise.all(items.map((e) => store.upsert("evidence", e.id, e, userId)));
@@ -90,7 +105,9 @@ export async function syncCodeforcesEvidence(input: { userId: string; handle: st
     say("done", `found ${items.length} skills from your contest rating (${level2} at level 2)`, { skills: items.length, level2 });
     return listEvidence(userId);
   } catch (err) {
-    say("error", "Codeforces wasn't available just now: keeping the evidence we already have", { reason: err instanceof Error ? err.message : "unknown" });
+    say("error", "Codeforces wasn't available just now: keeping the evidence we already have", {
+      reason: err instanceof Error ? err.message : "unknown",
+    });
     return listEvidence(userId);
   }
 }

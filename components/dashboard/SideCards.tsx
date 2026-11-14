@@ -6,7 +6,8 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { roleName, useMarket } from "./data";
 
-const textLink = "font-medium text-primary underline decoration-1 underline-offset-4 outline-none hover:decoration-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
+const textLink =
+  "font-medium text-primary underline decoration-1 underline-offset-4 outline-none hover:decoration-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
 
 /** "214 ML engineer ads analysed, with Docker in 41%". Hidden while loading, on 404 and on error: it's a bonus card. */
 export function MarketPulse({ roleId, focus }: { roleId: string; focus?: { skillId: string; name: string } }) {
@@ -41,7 +42,9 @@ export function MarketPulse({ roleId, focus }: { roleId: string; focus?: { skill
 export function AskKeystoneCard({ focusName }: { focusName?: string }) {
   return (
     <section aria-labelledby="ask-title" className="flex h-full flex-col rounded-2xl border bg-card p-6 shadow-sm">
-      <h2 id="ask-title" className="text-xl font-semibold text-foreground">Ask Keystone</h2>
+      <h2 id="ask-title" className="text-xl font-semibold text-foreground">
+        Ask Keystone
+      </h2>
       <p className="mt-3 text-pretty text-muted-foreground">
         {focusName
           ? `Not sure why ${focusName} comes first, or how to fit it around lectures? Ask the coach.`

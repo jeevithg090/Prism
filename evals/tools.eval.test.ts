@@ -4,15 +4,27 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/store", async () => (await import("@/tests/seededStore")).seededStoreModule());
 vi.mock("@/lib/llm", () => ({
-  llmJSON: vi.fn(async () => { throw new Error("no_key"); }),
-  llmText: vi.fn(async () => { throw new Error("no_key"); }),
-  embed: vi.fn(async () => { throw new Error("no_key"); }),
+  llmJSON: vi.fn(async () => {
+    throw new Error("no_key");
+  }),
+  llmText: vi.fn(async () => {
+    throw new Error("no_key");
+  }),
+  embed: vi.fn(async () => {
+    throw new Error("no_key");
+  }),
   cosine: vi.fn(() => 0),
   LLMError: class extends Error {},
 }));
 vi.mock("@/lib/graph/build", () => ({ loadGraph: vi.fn(async () => null) }));
 vi.mock("@/lib/n8n", () => ({ triggerWorkflow: vi.fn(async () => false) }));
-vi.mock("octokit", () => ({ Octokit: class { request = vi.fn(async () => { throw new Error("no network in evals"); }); } }));
+vi.mock("octokit", () => ({
+  Octokit: class {
+    request = vi.fn(async () => {
+      throw new Error("no network in evals");
+    });
+  },
+}));
 
 import { TOOLS, ToolError, MAX_SUMMARY_CHARS } from "@/lib/agents/tools/registry";
 import { POST as mcpPOST } from "@/app/api/mcp/route";
@@ -108,9 +120,13 @@ describe("eval: tool registry quality", () => {
   });
 
   it("MCP tools/list exposes every registry tool", async () => {
-    const res = await mcpPOST(new Request("http://localhost/api/mcp", {
-      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list" }),
-    }));
+    const res = await mcpPOST(
+      new Request("http://localhost/api/mcp", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list" }),
+      }),
+    );
     const body = await res.json();
     expect(body.result.tools).toHaveLength(TOOLS.length);
     expect(body.result.tools.map((t: { name: string }) => t.name)).toEqual(TOOLS.map((t) => t.name));

@@ -4,9 +4,15 @@ import { PodZ } from "@/lib/schemas/community";
 import { POST } from "./route";
 
 vi.mock("@/lib/llm", () => ({
-  embed: vi.fn(async () => { throw new Error("embeddings unavailable"); }),
-  llmJSON: vi.fn(async () => { throw new Error("no_key"); }),
-  llmText: vi.fn(), cosine: () => 0, LLMError: class LLMError extends Error {},
+  embed: vi.fn(async () => {
+    throw new Error("embeddings unavailable");
+  }),
+  llmJSON: vi.fn(async () => {
+    throw new Error("no_key");
+  }),
+  llmText: vi.fn(),
+  cosine: () => 0,
+  LLMError: class LLMError extends Error {},
 }));
 vi.mock("@/lib/agents/events", () => ({ emit: vi.fn(), newRunId: () => "run_route", subscribe: () => () => {} }));
 vi.mock("@/lib/graph/build", () => ({ loadGraph: vi.fn(async (u: string) => (u === "aisha" ? AISHA_MAP : null)) }));
@@ -16,7 +22,13 @@ vi.mock("@/lib/store", async () => {
 });
 
 const post = (body: unknown) =>
-  POST(new Request("http://localhost/api/pods/match", { method: "POST", headers: { "content-type": "application/json" }, body: typeof body === "string" ? body : JSON.stringify(body) }));
+  POST(
+    new Request("http://localhost/api/pods/match", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: typeof body === "string" ? body : JSON.stringify(body),
+    }),
+  );
 
 beforeEach(() => {
   fakeStore.reset();

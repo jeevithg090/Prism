@@ -43,10 +43,26 @@ export const PILOT = [
 ];
 
 export const TIMELINE = [
-  { when: "Week 0", title: "Launch", body: "Posters and QR codes at freshers' groups, the CS society and the careers service. Students map their degree in 10 minutes." },
-  { when: "Week 1", title: "Pods form", body: "The Matchmaker groups students who can teach each other. Each pod gets a real repo with issues tied to everyone's roadmap." },
-  { when: "Weeks 2 to 5", title: "Build and review", body: "Every merged pull request, reviewed by a peer, becomes proof. Seniors join as Trajectory ambassadors and earn the Helper badge." },
-  { when: "Week 6", title: "Demo day", body: "Pods present their projects, practise interviews about them, and leave with a skill passport of linked proof." },
+  {
+    when: "Week 0",
+    title: "Launch",
+    body: "Posters and QR codes at freshers' groups, the CS society and the careers service. Students map their degree in 10 minutes.",
+  },
+  {
+    when: "Week 1",
+    title: "Pods form",
+    body: "The Matchmaker groups students who can teach each other. Each pod gets a real repo with issues tied to everyone's roadmap.",
+  },
+  {
+    when: "Weeks 2 to 5",
+    title: "Build and review",
+    body: "Every merged pull request, reviewed by a peer, becomes proof. Seniors join as Trajectory ambassadors and earn the Helper badge.",
+  },
+  {
+    when: "Week 6",
+    title: "Demo day",
+    body: "Pods present their projects, practise interviews about them, and leave with a skill passport of linked proof.",
+  },
 ];
 
 export const MEASURES = [

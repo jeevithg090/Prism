@@ -9,10 +9,7 @@ import type { ProjectProgress, ProofResult } from "@/lib/schemas/studio";
 import { useActivity } from "@/components/shell/ActivityPanel";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import {
-  projectProgressKey,
-  withMerged,
-} from "@/components/pods/useProjectProgress";
+import { projectProgressKey, withMerged } from "@/components/pods/useProjectProgress";
 
 export function MergedPill({ className }: { className?: string }) {
   return (
@@ -53,8 +50,7 @@ export function MergeProofButton({
   const activity = useActivity();
   const qc = useQueryClient();
   const mutation = useMutation({
-    mutationFn: () =>
-      apiPost<ProofResult>("/api/projects/merge", { podId, issueIndex }),
+    mutationFn: () => apiPost<ProofResult>("/api/projects/merge", { podId, issueIndex }),
     onSuccess: (result) => {
       if (result.runId) {
         activity.start(result.runId);
@@ -84,10 +80,7 @@ export function MergeProofButton({
     },
     onError: (err) => {
       toast.error("We couldn't record that merge", {
-        description:
-          err instanceof Error && err.message
-            ? err.message
-            : "Please try again in a moment.",
+        description: err instanceof Error && err.message ? err.message : "Please try again in a moment.",
       });
     },
   });
@@ -95,9 +88,7 @@ export function MergeProofButton({
   if (merged || mutation.isSuccess) return <MergedPill className={className} />;
 
   // The name starts with the visible text (WCAG 2.5.3 label in name), then says which issue.
-  const label = issueTitle
-    ? `Mark as merged: ${issueTitle}`
-    : `Mark as merged: issue ${issueIndex + 1}`;
+  const label = issueTitle ? `Mark as merged: ${issueTitle}` : `Mark as merged: issue ${issueIndex + 1}`;
   return (
     <Button
       variant={variant}
@@ -108,11 +99,7 @@ export function MergeProofButton({
       aria-label={label}
       className={className}
     >
-      {mutation.isPending ? (
-        <Loader2 className="animate-spin motion-reduce:animate-none" aria-hidden />
-      ) : (
-        <GitMerge aria-hidden />
-      )}
+      {mutation.isPending ? <Loader2 className="animate-spin motion-reduce:animate-none" aria-hidden /> : <GitMerge aria-hidden />}
       {mutation.isPending ? "Recording proof…" : "Mark as merged"}
     </Button>
   );

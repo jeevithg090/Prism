@@ -13,7 +13,8 @@ vi.mock("sonner", () => ({ toast }));
 import { GovernanceView } from "./GovernanceView";
 import { formatDuration } from "./RunLedger";
 
-const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 type Routes = { registry?: () => Response; runs?: (url: string) => Response };
 
 let fetchSpy: ReturnType<typeof vi.spyOn>;
@@ -26,7 +27,11 @@ function setup(routes: Routes) {
   });
   const user = userEvent.setup();
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  render(<QueryClientProvider client={qc}><GovernanceView /></QueryClientProvider>);
+  render(
+    <QueryClientProvider client={qc}>
+      <GovernanceView />
+    </QueryClientProvider>,
+  );
   return { user };
 }
 
@@ -84,7 +89,10 @@ describe("GovernanceView", () => {
     let failRuns = true;
     const { user } = setup({
       registry: () => json({ ok: false, error: { code: "internal", message: "Registry offline." } }, 500),
-      runs: (url) => (failRuns && !url.includes("demo=1") ? json({ ok: false, error: { code: "internal", message: "Ledger offline." } }, 500) : json({ ok: true, data: SAMPLE_RUNS })),
+      runs: (url) =>
+        failRuns && !url.includes("demo=1")
+          ? json({ ok: false, error: { code: "internal", message: "Ledger offline." } }, 500)
+          : json({ ok: true, data: SAMPLE_RUNS }),
     });
     const alerts = await screen.findAllByRole("alert");
     expect(alerts).toHaveLength(2);

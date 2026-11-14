@@ -7,12 +7,34 @@ import ForceGraph2D, { type ForceGraphMethods, type LinkObject, type NodeObject 
 import type { SkillStatus, TrendLabel } from "@/lib/types";
 import { STATUS_META, pctOf } from "./mapUtils";
 import {
-  HEAD_H, PAD, RISE, SPINE, computeLayout, drawGlyph, labelMeasure, labelX, nodeRadius, outer, readPalette, resetTextWidths, textWidth,
-  type Layout, type Palette,
+  HEAD_H,
+  PAD,
+  RISE,
+  SPINE,
+  computeLayout,
+  drawGlyph,
+  labelMeasure,
+  labelX,
+  nodeRadius,
+  outer,
+  readPalette,
+  resetTextWidths,
+  textWidth,
+  type Layout,
+  type Palette,
 } from "./graphDraw";
 
-export interface GraphNode { id: string; name: string; status: SkillStatus; demand: number; trend?: TrendLabel }
-export interface GraphLink { source: string; target: string }
+export interface GraphNode {
+  id: string;
+  name: string;
+  status: SkillStatus;
+  demand: number;
+  trend?: TrendLabel;
+}
+export interface GraphLink {
+  source: string;
+  target: string;
+}
 type N = NodeObject<GraphNode>;
 type L = LinkObject<GraphNode, GraphLink>;
 
@@ -38,7 +60,18 @@ const EMPTY_COUNTS: Record<SkillStatus, number> = { proven: 0, "degree-done": 0,
 const idOf = (end: unknown) => (typeof end === "object" && end ? String((end as N).id) : String(end));
 
 export default function ForceGraphCanvas({
-  nodes, links, width, height, selectedId, focusId, fitSignal, reduceMotion, onSelect, counts, layoutNodes, onLayoutHeight,
+  nodes,
+  links,
+  width,
+  height,
+  selectedId,
+  focusId,
+  fitSignal,
+  reduceMotion,
+  onSelect,
+  counts,
+  layoutNodes,
+  onLayoutHeight,
 }: ForceGraphCanvasProps) {
   const fg = React.useRef<ForceGraphMethods<N, L> | undefined>(undefined);
   // Client-only module (next/dynamic ssr:false), so the document is there on first render.
@@ -54,8 +87,14 @@ export default function ForceGraphCanvas({
   // Names are measured in the web font, so read the faces and measure again once it has loaded.
   React.useEffect(() => {
     let live = true;
-    document.fonts?.ready.then(() => { if (!live) return; resetTextWidths(); setPalette(readPalette()); });
-    return () => { live = false; };
+    document.fonts?.ready.then(() => {
+      if (!live) return;
+      resetTextWidths();
+      setPalette(readPalette());
+    });
+    return () => {
+      live = false;
+    };
   }, []);
   const measure = React.useMemo(() => (palette ? labelMeasure(palette.sans) : undefined), [palette]);
   const layout = React.useMemo<Layout>(
@@ -67,8 +106,12 @@ export default function ForceGraphCanvas({
     [layoutNodes, width, totals, measure, layout.height],
   );
   const layoutRef = React.useRef({ layout, fullHeight });
-  React.useEffect(() => { layoutRef.current = { layout, fullHeight }; }, [layout, fullHeight]);
-  React.useEffect(() => { onLayoutHeight?.(fullHeight); }, [fullHeight, onLayoutHeight]);
+  React.useEffect(() => {
+    layoutRef.current = { layout, fullHeight };
+  }, [layout, fullHeight]);
+  React.useEffect(() => {
+    onLayoutHeight?.(fullHeight);
+  }, [fullHeight, onLayoutHeight]);
   const narrow = layout.mode === "rows";
 
   // Node objects keep their positions across filter changes; a new node starts on its place in its band.
@@ -78,7 +121,10 @@ export default function ForceGraphCanvas({
       const prev = cache.get(n.id);
       const obj = prev ? Object.assign(prev, n) : ({ ...n } as N);
       const p = layout.pos.get(n.id);
-      if (p && (obj.x === undefined || obj.y === undefined)) { obj.x = p.x; obj.y = p.y; }
+      if (p && (obj.x === undefined || obj.y === undefined)) {
+        obj.x = p.x;
+        obj.y = p.y;
+      }
       cache.set(n.id, obj);
       return obj;
     });
@@ -111,27 +157,36 @@ export default function ForceGraphCanvas({
           n.vy = (n.vy ?? 0) + (p.y - (n.y ?? 0)) * 0.3 * alpha;
         }
       },
-      { initialize: (x: N[]) => { ns = x; } },
+      {
+        initialize: (x: N[]) => {
+          ns = x;
+        },
+      },
     );
     g.d3Force("band", hold);
     g.d3ReheatSimulation();
   }, [data]);
 
   /** Fit the whole map, headers included, top-aligned: graph units are CSS pixels, so this lands close to zoom 1. */
-  const fit = React.useCallback((ms: number) => {
-    const g = fg.current;
-    if (!g) return;
-    const { layout: l, fullHeight: h } = layoutRef.current;
-    const k = Math.min(width / l.width, height / h, 1.25);
-    g.centerAt(l.width / 2, height / (2 * k), ms);
-    g.zoom(k, ms);
-  }, [width, height]);
+  const fit = React.useCallback(
+    (ms: number) => {
+      const g = fg.current;
+      if (!g) return;
+      const { layout: l, fullHeight: h } = layoutRef.current;
+      const k = Math.min(width / l.width, height / h, 1.25);
+      g.centerAt(l.width / 2, height / (2 * k), ms);
+      g.zoom(k, ms);
+    },
+    [width, height],
+  );
 
   // Fit once the canvas has its size, and again after the first settle (the library sizes its zoom lazily).
   const fitted = React.useRef(false);
   React.useEffect(() => {
     fitted.current = false;
-    let raf = requestAnimationFrame(() => { raf = requestAnimationFrame(() => fit(0)); });
+    let raf = requestAnimationFrame(() => {
+      raf = requestAnimationFrame(() => fit(0));
+    });
     return () => cancelAnimationFrame(raf);
   }, [fit, fullHeight]);
 
@@ -163,8 +218,13 @@ export default function ForceGraphCanvas({
       const head = `600 ${layout.label}px ${palette.sans}`;
       const note = `500 13px ${palette.sans}`;
       const hair = (x0: number, y0: number, x1: number, y1: number) => {
-        ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1);
-        ctx.setLineDash([]); ctx.lineWidth = px; ctx.strokeStyle = palette.rule; ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x0, y0);
+        ctx.lineTo(x1, y1);
+        ctx.setLineDash([]);
+        ctx.lineWidth = px;
+        ctx.strokeStyle = palette.rule;
+        ctx.stroke();
       };
       ctx.save();
       if (layout.mode === "columns") hair(PAD, PAD + HEAD_H - 4, layout.width - PAD, PAD + HEAD_H - 4);
@@ -194,7 +254,8 @@ export default function ForceGraphCanvas({
           if (cut > 0) ctx.fillText(label.slice(cut + 1), tx, gy + 19);
         }
         if (!b.shown) {
-          ctx.font = note; ctx.fillStyle = palette.ink3;
+          ctx.font = note;
+          ctx.fillStyle = palette.ink3;
           ctx.fillText(b.count ? "Filtered out" : "None yet", tx, top + HEAD_H + (layout.mode === "columns" ? 14 : -14));
         }
       }
@@ -212,14 +273,21 @@ export default function ForceGraphCanvas({
       const r = nodeRadius(n.demand);
       const id = String(node.id);
       if (n.trend === "rising") {
-        ctx.beginPath(); ctx.arc(x, y, r + RISE, 0, 2 * Math.PI);
-        ctx.strokeStyle = palette.rising; ctx.lineWidth = 2.25 * px; ctx.setLineDash([]); ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(x, y, r + RISE, 0, 2 * Math.PI);
+        ctx.strokeStyle = palette.rising;
+        ctx.lineWidth = 2.25 * px;
+        ctx.setLineDash([]);
+        ctx.stroke();
       }
       drawGlyph(ctx, n.status, x, y, r, palette, px);
       const selected = id === selectedId;
       if (selected) {
-        ctx.beginPath(); ctx.arc(x, y, r + (n.trend === "rising" ? RISE : 0) + 4.5, 0, 2 * Math.PI);
-        ctx.strokeStyle = palette.signal; ctx.lineWidth = 2.5 * px; ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(x, y, r + (n.trend === "rising" ? RISE : 0) + 4.5, 0, 2 * Math.PI);
+        ctx.strokeStyle = palette.signal;
+        ctx.lineWidth = 2.5 * px;
+        ctx.stroke();
       }
       const tx = x + labelX(n) + (selected ? 4.5 : 0);
       const w = textWidth(ctx, labelFont, n.name);
@@ -247,7 +315,15 @@ export default function ForceGraphCanvas({
       if (!palette) return;
       const s = link.source as unknown as N;
       const t = link.target as unknown as N;
-      if (typeof s !== "object" || typeof t !== "object" || s.x === undefined || s.y === undefined || t.x === undefined || t.y === undefined) return;
+      if (
+        typeof s !== "object" ||
+        typeof t !== "object" ||
+        s.x === undefined ||
+        s.y === undefined ||
+        t.x === undefined ||
+        t.y === undefined
+      )
+        return;
       const px = 1 / scale;
       const ends = [idOf(link.source), idOf(link.target)];
       const picked = !!lit && ends.includes(lit);
@@ -269,15 +345,22 @@ export default function ForceGraphCanvas({
         const room = (8 * (Math.min(s.x, t.x) - 2) - os - ot) / 6;
         const k = Math.min(room, narrow ? 40 : 64, Math.max(narrow ? 30 : 56, 16 + Math.abs(dy) * 0.3));
         from = [s.x - os - 2 * px, s.y];
-        c1 = [s.x - k, s.y]; c2 = [t.x - k, t.y];
+        c1 = [s.x - k, s.y];
+        c2 = [t.x - k, t.y];
       } else if (!narrow) {
         // Heading right, a line leaves from the end of its name, so no stub shows between a ring and its label.
-        if (dx > 0) from = [s.x + labelX(s as GraphNode) + (String(s.id) === selectedId ? 4.5 : 0) + textWidth(ctx, labelFont, String(s.name)) + 5, s.y];
+        if (dx > 0)
+          from = [
+            s.x + labelX(s as GraphNode) + (String(s.id) === selectedId ? 4.5 : 0) + textWidth(ctx, labelFont, String(s.name)) + 5,
+            s.y,
+          ];
         const run = t.x - from[0];
-        c1 = [from[0] + run * 0.5, s.y]; c2 = [t.x - run * 0.5, t.y];
+        c1 = [from[0] + run * 0.5, s.y];
+        c2 = [t.x - run * 0.5, t.y];
       } else {
         // Two skills on one phone row: an arc over the top.
-        c1 = [s.x, s.y - 28]; c2 = [t.x, t.y - 28];
+        c1 = [s.x, s.y - 28];
+        c2 = [t.x, t.y - 28];
       }
       // Arrowhead on the target's edge, along the curve's last tangent; the line stops at its tip.
       const ax = t.x - c2[0];
@@ -318,7 +401,9 @@ export default function ForceGraphCanvas({
       const n = node as GraphNode;
       const r = nodeRadius(n.demand) + 3;
       ctx.fillStyle = color;
-      ctx.beginPath(); ctx.arc(node.x, node.y, r, 0, 2 * Math.PI); ctx.fill();
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, r, 0, 2 * Math.PI);
+      ctx.fill();
       if (labelFont) {
         const w = textWidth(ctx, labelFont, n.name);
         ctx.fillRect(node.x, node.y - layout.label * 0.8, labelX(n) + w + 6, layout.label * 1.6);

@@ -75,12 +75,15 @@ export function modeFromCookieHeader(header: string | null | undefined): RunMode
 
 export type ReplayMeta = { agent?: string; schemaName?: string; model?: string; kind?: string; label?: string };
 export type ReplayEvent = {
-  ns: string; key: string; mode: RunMode;
+  ns: string;
+  key: string;
+  mode: RunMode;
   /** replayed from a recording · recorded now · called live (not recorded) · miss: no value, the caller's fallback ran. */
   kind: "replayed" | "recorded" | "live" | "miss";
   /** How a replayed value matched: the exact call, numbers/case ignored (loose), or the same question in another state (alt). */
   match?: ReplayMatch;
-  recordedAt?: string; meta?: ReplayMeta;
+  recordedAt?: string;
+  meta?: ReplayMeta;
 };
 type Scope = { mode?: RunMode; events: ReplayEvent[] };
 
@@ -92,7 +95,10 @@ const als: AsyncLocalStorage<Scope> = (g.__ksReplayALS ??= new AsyncLocalStorage
  * Runs `fn` and reports which of its AI / connector values were replayed from a real run, recorded now, or
  * called live (so a response or the Activity panel can say "replayed from a real run"). `mode` forces the mode.
  */
-export async function withReplayTrace<T>(fn: () => Promise<T>, opts: { mode?: RunMode } = {}): Promise<{ value: T; events: ReplayEvent[]; replayed: boolean }> {
+export async function withReplayTrace<T>(
+  fn: () => Promise<T>,
+  opts: { mode?: RunMode } = {},
+): Promise<{ value: T; events: ReplayEvent[]; replayed: boolean }> {
   const scope: Scope = { mode: opts.mode, events: [] };
   const value = await als.run(scope, fn);
   return { value, events: scope.events, replayed: scope.events.some((e) => e.kind === "replayed") };
@@ -131,7 +137,8 @@ export async function getRunMode(): Promise<RunMode> {
 
 // ---------- keys ----------
 
-const MONTHS = "January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec";
+const MONTHS =
+  "January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec";
 type Rule = [RegExp, string | ((m: string, ...groups: string[]) => string)];
 const VOLATILE: Rule[] = [
   [/\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?/g, "<ts>"],
@@ -150,7 +157,10 @@ const VOLATILE: Rule[] = [
   // Prefixed random ids (pod_x8Kd02, help_V1StGX…): only when the tail has a digit or a capital, so
   // snake_case words such as tool names (start_pod_project) keep the key specific.
   [/\b([a-z]{2,12})_([A-Za-z0-9_-]{6,64})(?![A-Za-z0-9_-])/g, (m, prefix, id) => (/[0-9A-Z]/.test(id) ? `${prefix}_<id>` : m)],
-  [/(?<![\w"])("?(?:durationMs|elapsedMs|latencyMs|tookMs|ms|ts|createdAt|updatedAt|startedAt|finishedAt|recordedAt|timestamp)"?\s*[:=]\s*)-?\d+(?:\.\d+)?/g, (_m, field) => `${field}0`],
+  [
+    /(?<![\w"])("?(?:durationMs|elapsedMs|latencyMs|tookMs|ms|ts|createdAt|updatedAt|startedAt|finishedAt|recordedAt|timestamp)"?\s*[:=]\s*)-?\d+(?:\.\d+)?/g,
+    (_m, field) => `${field}0`,
+  ],
   [/\b\d+(?:\.\d+)?\s?(?:ms|milliseconds)\b/gi, "<ms>"],
 ];
 
@@ -190,7 +200,13 @@ export function replayKey(parts: unknown): string {
 }
 
 const looseText = (parts: unknown) =>
-  canonicalJSON(parts).toLowerCase().replace(/\d+(?:[.,]\d+)*/g, "#").replace(/\\n/g, " ").replace(/\s+/g, " ").replace(/ +(?=["\]}])/g, "").replace(/(?<=["[{]) +/g, "");
+  canonicalJSON(parts)
+    .toLowerCase()
+    .replace(/\d+(?:[.,]\d+)*/g, "#")
+    .replace(/\\n/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/ +(?=["\]}])/g, "")
+    .replace(/(?<=["[{]) +/g, "");
 
 /** A looser key (case, whitespace and every number ignored), used only when the exact key has no recording. */
 export function looseReplayKey(parts: unknown): string {
@@ -208,9 +224,16 @@ export function altReplayKey(parts: unknown): string {
 // ---------- the store ----------
 
 export type ReplayRecord<T = unknown> = {
-  key: string; ns: string; loose?: string; alt?: string; recordedAt: string; meta: ReplayMeta;
+  key: string;
+  ns: string;
+  loose?: string;
+  alt?: string;
+  recordedAt: string;
+  meta: ReplayMeta;
   /** Binary values (audio) live in a file next to the JSON: data/replay/tts/<key>.mp3. */
-  file?: string; bytes?: number; contentType?: string;
+  file?: string;
+  bytes?: number;
+  contentType?: string;
   value: T;
 };
 type Header = Omit<ReplayRecord, "value">;
@@ -238,7 +261,14 @@ const unwritable: Set<string> = (g.__ksReplayUnwritable ??= new Set());
 
 function isHeader(h: unknown): h is Header {
   const r = h as Header | null;
-  return !!r && typeof r === "object" && typeof r.key === "string" && KEY_RE.test(r.key) && typeof r.ns === "string" && typeof r.recordedAt === "string";
+  return (
+    !!r &&
+    typeof r === "object" &&
+    typeof r.key === "string" &&
+    KEY_RE.test(r.key) &&
+    typeof r.ns === "string" &&
+    typeof r.recordedAt === "string"
+  );
 }
 
 function readRecord(file: string): ReplayRecord | null {
@@ -270,7 +300,12 @@ function readHeader(file: string): Header | null {
   } catch {
     h = null;
   } finally {
-    if (fd !== undefined) try { fs.closeSync(fd); } catch { /* already closed */ }
+    if (fd !== undefined)
+      try {
+        fs.closeSync(fd);
+      } catch {
+        /* already closed */
+      }
   }
   headers.set(file, h);
   return h;
@@ -320,7 +355,8 @@ function nsFiles(ns: string): string[] {
   for (const dir of [replayDir(), replayTmpDir()]) {
     const nsDir = path.join(/*turbopackIgnore: true*/ dir, ns);
     try {
-      for (const f of fs.readdirSync(nsDir)) if (f.endsWith(".json") && KEY_RE.test(f.slice(0, -5))) out.push(path.join(/*turbopackIgnore: true*/ nsDir, f));
+      for (const f of fs.readdirSync(nsDir))
+        if (f.endsWith(".json") && KEY_RE.test(f.slice(0, -5))) out.push(path.join(/*turbopackIgnore: true*/ nsDir, f));
     } catch {
       /* no recordings there */
     }
@@ -331,7 +367,12 @@ function nsFiles(ns: string): string[] {
 type Hit<T> = ReplayRecord<T> & { match: ReplayMatch };
 
 function lookup<T>(
-  ns: string, key: string, loose: string | undefined, alt: string | undefined, codec: Codec<T>, validate?: (v: unknown) => boolean,
+  ns: string,
+  key: string,
+  loose: string | undefined,
+  alt: string | undefined,
+  codec: Codec<T>,
+  validate?: (v: unknown) => boolean,
 ): Hit<T> | null {
   const take = (file: string): ReplayRecord<T> | null => {
     const rec = readRecord(file);
@@ -363,16 +404,26 @@ function lookup<T>(
   return null;
 }
 
-const exists = (ns: string, key: string) => [replayDir(), replayTmpDir()].some((dir) => fs.existsSync(path.join(/*turbopackIgnore: true*/ dir, ns, `${key}.json`)));
+const exists = (ns: string, key: string) =>
+  [replayDir(), replayTmpDir()].some((dir) => fs.existsSync(path.join(/*turbopackIgnore: true*/ dir, ns, `${key}.json`)));
 
 function cleanMeta(meta: ReplayMeta): ReplayMeta {
   const out: ReplayMeta = {};
-  for (const k of ["agent", "schemaName", "model", "kind"] as const) if (typeof meta[k] === "string" && meta[k]) out[k] = meta[k]!.slice(0, 80);
+  for (const k of ["agent", "schemaName", "model", "kind"] as const)
+    if (typeof meta[k] === "string" && meta[k]) out[k] = meta[k]!.slice(0, 80);
   if (meta.label) out.label = normaliseVolatile(meta.label).replace(/\s+/g, " ").trim().slice(0, 160);
   return out;
 }
 
-function record<T>(ns: string, key: string, loose: string | undefined, alt: string | undefined, value: T, meta: ReplayMeta, codec: Codec<T>): string | null {
+function record<T>(
+  ns: string,
+  key: string,
+  loose: string | undefined,
+  alt: string | undefined,
+  value: T,
+  meta: ReplayMeta,
+  codec: Codec<T>,
+): string | null {
   const recordedAt = new Date().toISOString();
   const dirs = unwritable.has(replayDir()) ? [replayTmpDir()] : [replayDir(), replayTmpDir()];
   for (const dir of dirs) {
@@ -382,7 +433,16 @@ function record<T>(ns: string, key: string, loose: string | undefined, alt: stri
       const fields = codec.write(nsDir, key, value);
       const { value: v, ...rest } = fields;
       // Field order matters: the value goes last so listings can read just the header.
-      const rec = { key, ns, ...(loose ? { loose } : {}), ...(alt ? { alt } : {}), recordedAt, meta: cleanMeta(meta), ...rest, value: v ?? null };
+      const rec = {
+        key,
+        ns,
+        ...(loose ? { loose } : {}),
+        ...(alt ? { alt } : {}),
+        recordedAt,
+        meta: cleanMeta(meta),
+        ...rest,
+        value: v ?? null,
+      };
       const file = path.join(/*turbopackIgnore: true*/ nsDir, `${key}.json`);
       atomicWrite(file, JSON.stringify(rec));
       headers.delete(file);
@@ -436,11 +496,19 @@ async function run<T>(ns: string, keyParts: unknown, fn: () => Promise<T>, opts:
     const hit = fill ? lookup(ns, key, undefined, undefined, codec, opts.validate) : lookup(ns, key, loose, alt, codec, opts.validate);
     if (hit) {
       note({ ns, key, mode, kind: "replayed", match: hit.match, recordedAt: hit.recordedAt, meta: hit.meta });
-      try { opts.onReplay?.(hit, hit.match); } catch { /* reporting never breaks the replay */ }
+      try {
+        opts.onReplay?.(hit, hit.match);
+      } catch {
+        /* reporting never breaks the replay */
+      }
       return hit.value;
     }
     const canLive = !strict && (opts.requires ?? []).every((k) => process.env[k]?.trim());
-    try { opts.onMiss?.(canLive); } catch { /* reporting never breaks the call */ }
+    try {
+      opts.onMiss?.(canLive);
+    } catch {
+      /* reporting never breaks the call */
+    }
     if (!canLive) {
       note({ ns, key, mode, kind: "miss", meta });
       throw opts.missError?.() ?? new LLMError("not_recorded");
@@ -476,7 +544,9 @@ export function replayOrRecord<T>(ns: string, keyParts: unknown, fn: () => Promi
 
 /** replayOrRecord for binary values (audio): stored as data/replay/<ns>/<key>.<ext> next to the JSON. */
 export function replayOrRecordBinary(
-  ns: string, keyParts: unknown, fn: () => Promise<ArrayBuffer>,
+  ns: string,
+  keyParts: unknown,
+  fn: () => Promise<ArrayBuffer>,
   opts: ReplayOptions<ArrayBuffer> & { ext: string; contentType: string },
 ): Promise<ArrayBuffer> {
   return run(ns, keyParts, fn, opts, binaryCodec(opts.ext.replace(/[^a-z0-9]/g, "").slice(0, 5) || "bin", opts.contentType));
@@ -506,15 +576,27 @@ export function hasAnyRecording(ns: string): boolean {
 /** Summarises a request's replay events for the UI (see lib/replay-info.ts). */
 export function replayInfo(events: ReplayEvent[]): ReplayInfo {
   const count = (k: ReplayEvent["kind"]) => events.filter((e) => e.kind === k).length;
-  const replayed = count("replayed"), recorded = count("recorded"), live = count("live"), missed = count("miss");
+  const replayed = count("replayed"),
+    recorded = count("recorded"),
+    live = count("live"),
+    missed = count("miss");
   const mode: RunMode = events.some((e) => e.mode === "demo") ? "demo" : "live";
   const got = replayed + recorded + live;
   const source: ReplayInfo["source"] = missed ? (got ? "mixed" : "template") : replayed ? (recorded + live ? "mixed" : "replayed") : "live";
   const rep = events.filter((e) => e.kind === "replayed");
-  const recordedAt = rep.map((e) => e.recordedAt).filter((x): x is string => !!x).sort().at(-1);
+  const recordedAt = rep
+    .map((e) => e.recordedAt)
+    .filter((x): x is string => !!x)
+    .sort()
+    .at(-1);
   const model = [...rep, ...events].map((e) => e.meta?.model).find((m): m is string => !!m);
   return {
-    mode, source, replayed, recorded, live, missed,
+    mode,
+    source,
+    replayed,
+    recorded,
+    live,
+    missed,
     ...(recordedAt ? { recordedAt } : {}),
     ...(model ? { model } : {}),
     ...(rep.some((e) => e.match && e.match !== "exact") ? { similar: true } : {}),
@@ -544,7 +626,11 @@ export function withReplayInfo<A extends unknown[]>(handler: (...args: A) => Pro
         return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
       }
       headers.delete("content-length");
-      return new Response(JSON.stringify({ ...(json as Record<string, unknown>), replay: info }), { status: res.status, statusText: res.statusText, headers });
+      return new Response(JSON.stringify({ ...(json as Record<string, unknown>), replay: info }), {
+        status: res.status,
+        statusText: res.statusText,
+        headers,
+      });
     } catch {
       return res; // provenance is best-effort
     }
@@ -560,7 +646,10 @@ export function listRecordings(ns?: string): RecordingInfo[] {
   if (!enabled()) return [];
   const out: RecordingInfo[] = [];
   const seen = new Set<string>();
-  for (const [source, dir] of [["bundle", replayDir()], ["tmp", replayTmpDir()]] as const) {
+  for (const [source, dir] of [
+    ["bundle", replayDir()],
+    ["tmp", replayTmpDir()],
+  ] as const) {
     let namespaces: string[];
     try {
       namespaces = ns ? [ns] : fs.readdirSync(/*turbopackIgnore: true*/ dir).filter((n) => NS_RE.test(n));
@@ -600,5 +689,11 @@ export function replayStats(): ReplayStats {
 export function formatRecordedAt(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
-  return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/London" }).format(d);
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/London",
+  }).format(d);
 }

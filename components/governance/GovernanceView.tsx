@@ -73,8 +73,8 @@ export function GovernanceView() {
               Run ledger {seeded && <DemoDataNote />}
             </h2>
             <p className="mt-1 max-w-[68ch] text-pretty text-muted-foreground">
-              Every agent run, newest first: how long it took, which guardrails acted, and who decides next.
-              Inputs are kept as a short fingerprint, never as your data.
+              Every agent run, newest first: how long it took, which guardrails acted, and who decides next. Inputs are kept as a short
+              fingerprint, never as your data.
             </p>
           </div>
           <Button
@@ -106,13 +106,20 @@ export function GovernanceView() {
             icon={ScrollText}
             title="No agent runs yet"
             body="When you find a pod, start a project or look for guides, each agent step is logged here."
-            action={<Button size="lg" onClick={showSampleRuns}>Show sample runs</Button>}
+            action={
+              <Button size="lg" onClick={showSampleRuns}>
+                Show sample runs
+              </Button>
+            }
           />
         ) : (
           <div className="@container rounded-2xl border bg-card shadow-sm">
             <div className="grid divide-y border-b sm:grid-cols-3 sm:divide-x sm:divide-y-0" aria-live="polite">
               {stats.map((s) => (
-                <div key={s.label} className="grid grid-cols-[minmax(0,4.5rem)_minmax(0,1fr)] items-baseline gap-x-4 px-6 py-4 sm:block sm:py-6">
+                <div
+                  key={s.label}
+                  className="grid grid-cols-[minmax(0,4.5rem)_minmax(0,1fr)] items-baseline gap-x-4 px-6 py-4 sm:block sm:py-6"
+                >
                   <p className="row-span-2 font-mono text-4xl leading-none font-semibold text-foreground tabular-nums">{s.value}</p>
                   <p className="text-sm font-medium text-foreground sm:mt-3">{s.label}</p>
                   <p className="text-sm text-muted-foreground sm:mt-1">{s.hint}</p>
@@ -137,8 +144,8 @@ export function GovernanceView() {
             Every agent, its job and its limits {demoRegistry && <DemoDataNote />}
           </h2>
           <p className="mt-1 max-w-[68ch] text-pretty text-muted-foreground">
-            {registry.data ? `${registry.data.length} specialised agents.` : "Specialised agents."} Each has typed inputs and outputs, a safe fallback,
-            and a <span className="font-semibold text-foreground">You decide</span> checkpoint wherever a step matters.
+            {registry.data ? `${registry.data.length} specialised agents.` : "Specialised agents."} Each has typed inputs and outputs, a
+            safe fallback, and a <span className="font-semibold text-foreground">You decide</span> checkpoint wherever a step matters.
           </p>
         </div>
 
@@ -158,7 +165,10 @@ export function GovernanceView() {
           <EmptyState icon={ScrollText} title="No agents registered" body="The registry is empty right now." />
         ) : (
           <div className="@container rounded-2xl border bg-card shadow-sm">
-            <div aria-hidden className="hidden gap-8 border-b px-6 py-3 text-sm font-medium text-muted-foreground @4xl:grid @4xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)_minmax(0,1fr)]">
+            <div
+              aria-hidden
+              className="hidden gap-8 border-b px-6 py-3 text-sm font-medium text-muted-foreground @4xl:grid @4xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)_minmax(0,1fr)]"
+            >
               <span>Agent</span>
               <span>Tools and guardrails</span>
               <span>Human checkpoint and fallback</span>

@@ -84,10 +84,7 @@ export async function createApplication(input: {
   return app;
 }
 
-export async function listApplications(
-  userId: string,
-  opts: { status?: string; limit?: number } = {},
-): Promise<Application[]> {
+export async function listApplications(userId: string, opts: { status?: string; limit?: number } = {}): Promise<Application[]> {
   try {
     let items = await getStore().list<Application>(COLLECTION, { userId });
     items = items.filter((a) => a && a.userId === userId);
@@ -110,9 +107,7 @@ export async function updateApplication(
     if (!current || current.userId !== userId) return null;
     const updated: Application = ApplicationZ.parse({
       ...current,
-      ...(patches.status !== undefined
-        ? { status: patches.status as Application["status"] }
-        : {}),
+      ...(patches.status !== undefined ? { status: patches.status as Application["status"] } : {}),
       ...(patches.notes !== undefined ? { notes: patches.notes } : {}),
       id,
       userId,

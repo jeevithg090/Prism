@@ -70,9 +70,18 @@ export function ModuleHelpAsk({
     <Region
       id="module-help-title"
       title="Ask about a module concept"
-      description={newcomer ? "Stuck on a module concept? Tell us the module or concept, and we'll point you at podmates who proved that skill. Helpers explain in more detail for students new to uni." : "Stuck on a module concept? Tell us the module or concept, and we'll point you at podmates who proved that skill."}
+      description={
+        newcomer
+          ? "Stuck on a module concept? Tell us the module or concept, and we'll point you at podmates who proved that skill. Helpers explain in more detail for students new to uni."
+          : "Stuck on a module concept? Tell us the module or concept, and we'll point you at podmates who proved that skill."
+      }
     >
-      <form noValidate onSubmit={onSubmit} className="space-y-5 p-6 rounded-2xl border bg-card shadow-sm" aria-label="Ask about a module concept">
+      <form
+        noValidate
+        onSubmit={onSubmit}
+        className="space-y-5 p-6 rounded-2xl border bg-card shadow-sm"
+        aria-label="Ask about a module concept"
+      >
         <div className="space-y-2">
           <Label htmlFor="mh-module">Module code (optional)</Label>
           <Input
@@ -106,9 +115,8 @@ export function ModuleHelpAsk({
         </div>
         {suggestion && (
           <p className="text-sm text-muted-foreground">
-            We found {suggestion.students.length} students who proved{" "}
-            <span className="font-semibold">{suggestion.skill}</span>{" "}
-            ({suggestion.students.join(", ")}).
+            We found {suggestion.students.length} students who proved <span className="font-semibold">{suggestion.skill}</span> (
+            {suggestion.students.join(", ")}).
           </p>
         )}
         <Button type="submit" size="lg" disabled={isPending} aria-busy={isPending || undefined} className="w-full">

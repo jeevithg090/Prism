@@ -4,14 +4,23 @@ import mapFixture from "@/data/fixtures/bridgemap.aisha.ml-engineer.json";
 
 const h = vi.hoisted(() => ({ docs: new Map<string, { doc: unknown; userId?: string }>() }));
 vi.mock("@/lib/agents/events", () => ({ emit: vi.fn(), newRunId: () => "run_route", subscribe: vi.fn() }));
-vi.mock("@/lib/llm", () => ({ llmJSON: () => Promise.reject(new Error("no_key")), llmText: () => Promise.reject(new Error("no_key")), LLMError: class extends Error {} }));
+vi.mock("@/lib/llm", () => ({
+  llmJSON: () => Promise.reject(new Error("no_key")),
+  llmText: () => Promise.reject(new Error("no_key")),
+  LLMError: class extends Error {},
+}));
 vi.mock("@/lib/graph/build", () => ({ loadGraph: async (u: string) => (u === "aisha" ? structuredClone(mapFixture) : null) }));
 vi.mock("@/lib/store", () => ({
   getStore: () => ({
     get: async (c: string, id: string) => structuredClone(h.docs.get(`${c}/${id}`)?.doc ?? null),
     list: async (c: string, f?: { userId?: string }) =>
-      [...h.docs.entries()].filter(([k, r]) => k.startsWith(`${c}/`) && (!f?.userId || r.userId === f.userId)).map(([, r]) => structuredClone(r.doc)),
-    upsert: async (c: string, id: string, doc: unknown, userId?: string) => { h.docs.set(`${c}/${id}`, { doc: structuredClone(doc), userId }); return doc; },
+      [...h.docs.entries()]
+        .filter(([k, r]) => k.startsWith(`${c}/`) && (!f?.userId || r.userId === f.userId))
+        .map(([, r]) => structuredClone(r.doc)),
+    upsert: async (c: string, id: string, doc: unknown, userId?: string) => {
+      h.docs.set(`${c}/${id}`, { doc: structuredClone(doc), userId });
+      return doc;
+    },
     remove: async () => {},
   }),
 }));
@@ -23,11 +32,20 @@ import { GET as menu } from "../route";
 
 const docker = fixtures.find((c) => c.skillId === "docker")!;
 const post = (fn: (r: Request) => Promise<Response>, body: unknown) =>
-  fn(new Request("http://localhost/api/challenges", { method: "POST", headers: { "content-type": "application/json" }, body: typeof body === "string" ? body : JSON.stringify(body) }));
+  fn(
+    new Request("http://localhost/api/challenges", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: typeof body === "string" ? body : JSON.stringify(body),
+    }),
+  );
 
 beforeEach(() => {
   h.docs.clear();
-  h.docs.set("profiles/aisha", { doc: { id: "aisha", name: "Aisha Rahman", programmeId: "uom-bsc-cs", dna: { targetRoles: ["ml-engineer"] }, badges: [] }, userId: "aisha" });
+  h.docs.set("profiles/aisha", {
+    doc: { id: "aisha", name: "Aisha Rahman", programmeId: "uom-bsc-cs", dna: { targetRoles: ["ml-engineer"] }, badges: [] },
+    userId: "aisha",
+  });
 });
 
 describe("challenge routes", () => {

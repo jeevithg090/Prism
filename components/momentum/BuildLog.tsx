@@ -39,7 +39,11 @@ export function BuildLog({ userId }: { userId: string }) {
   const [cv, setCv] = React.useState<CvBulletsResult | null>(null);
 
   if (!demo && status === "loading") {
-    return <div role="status" aria-label="Loading your build log"><LoadingSkeleton variant="list" /></div>;
+    return (
+      <div role="status" aria-label="Loading your build log">
+        <LoadingSkeleton variant="list" />
+      </div>
+    );
   }
   if (!demo && status === "error") {
     return (
@@ -47,7 +51,10 @@ export function BuildLog({ userId }: { userId: string }) {
         title="We couldn’t load your build log"
         body="Your steps are safe. Try again in a moment."
         onRetry={retry}
-        onUseDemo={() => { setDemo(DEMO_EVENTS); toast("Showing demo build log data"); }}
+        onUseDemo={() => {
+          setDemo(DEMO_EVENTS);
+          toast("Showing demo build log data");
+        }}
       />
     );
   }
@@ -97,14 +104,18 @@ export function BuildLog({ userId }: { userId: string }) {
       </div>
 
       <ol aria-label="Verified steps">
-        {events.map((e) => <BuildLogRow key={e.id ?? `${e.kind}-${e.ts}`} event={e} />)}
+        {events.map((e) => (
+          <BuildLogRow key={e.id ?? `${e.kind}-${e.ts}`} event={e} />
+        ))}
       </ol>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>CV bullets from your build log</DialogTitle>
-            <DialogDescription>Three STAR-style bullets written from your verified steps. Edit them so they sound like you.</DialogDescription>
+            <DialogDescription>
+              Three STAR-style bullets written from your verified steps. Edit them so they sound like you.
+            </DialogDescription>
           </DialogHeader>
           <div aria-live="polite" aria-busy={!cv}>
             {!cv ? (
@@ -115,7 +126,9 @@ export function BuildLog({ userId }: { userId: string }) {
               </div>
             ) : cv.bullets.length ? (
               <ul className="list-disc space-y-2 ps-5">
-                {cv.bullets.map((b, i) => <li key={i}>{b}</li>)}
+                {cv.bullets.map((b, i) => (
+                  <li key={i}>{b}</li>
+                ))}
               </ul>
             ) : (
               <p className="text-muted-foreground">There’s nothing to write about yet. Your next verified step will change that.</p>
@@ -125,7 +138,9 @@ export function BuildLog({ userId }: { userId: string }) {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Close</Button>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Close
+            </Button>
             <Button onClick={copy} disabled={!cv?.bullets.length}>
               <Copy aria-hidden />
               Copy
@@ -148,7 +163,10 @@ function BuildLogRow({ event }: { event: MomentumEvent }) {
   return (
     <li className="group relative flex gap-4 pb-6 last:pb-0">
       <span aria-hidden className="absolute start-4 top-9 bottom-1 w-px -translate-x-1/2 bg-rule-2 group-last:hidden rtl:translate-x-1/2" />
-      <span aria-hidden className="relative flex size-8 shrink-0 items-center justify-center rounded-full border bg-card text-muted-foreground">
+      <span
+        aria-hidden
+        className="relative flex size-8 shrink-0 items-center justify-center rounded-full border bg-card text-muted-foreground"
+      >
         <Icon className="size-4" />
       </span>
       <div className="min-w-0 pt-1">

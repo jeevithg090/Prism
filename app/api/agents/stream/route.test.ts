@@ -20,8 +20,26 @@ vi.mock("@/lib/agents/events", () => ({
 import { GET } from "./route";
 import { subscribe } from "@/lib/agents/events";
 
-const ev = (agent: AgentEvent["agent"], status: AgentEvent["status"], message: string): AgentEvent => ({ runId: "run_t", agent, status, message, ts: "2026-11-07T14:00:00.000Z" });
-const parse = (text: string) => text.split("\n\n").filter((b) => b.includes("event: agent")).map((b) => JSON.parse(b.split("\n").find((l) => l.startsWith("data: "))!.slice(6)) as AgentEvent);
+const ev = (agent: AgentEvent["agent"], status: AgentEvent["status"], message: string): AgentEvent => ({
+  runId: "run_t",
+  agent,
+  status,
+  message,
+  ts: "2026-11-07T14:00:00.000Z",
+});
+const parse = (text: string) =>
+  text
+    .split("\n\n")
+    .filter((b) => b.includes("event: agent"))
+    .map(
+      (b) =>
+        JSON.parse(
+          b
+            .split("\n")
+            .find((l) => l.startsWith("data: "))!
+            .slice(6),
+        ) as AgentEvent,
+    );
 
 beforeEach(() => {
   h.past = [];
@@ -62,7 +80,11 @@ describe("GET /api/agents/stream", () => {
   });
 
   it("closes straight away when the replay already contains the end, and skips what Last-Event-ID has seen", async () => {
-    h.past = [ev("orchestrator", "started", "Building"), ev("syllabus", "done", "41 units"), ev("orchestrator", "error", "Showing demo data")];
+    h.past = [
+      ev("orchestrator", "started", "Building"),
+      ev("syllabus", "done", "41 units"),
+      ev("orchestrator", "error", "Showing demo data"),
+    ];
     const res = await GET(new Request("http://x/api/agents/stream?runId=run_t", { headers: { "last-event-id": "0" } }));
     const events = parse(await res.text());
     expect(events.map((e) => e.message)).toEqual(["41 units", "Showing demo data"]);
@@ -86,7 +108,11 @@ describe("GET /api/agents/stream", () => {
 
 describe("GET /api/agents/stream for runs without an orchestrator", () => {
   it("closes when the agent that started the run reports done", async () => {
-    h.past = [ev("matchmaker", "started", "Comparing 12 students"), ev("matchmaker", "progress", "pod score 0.82"), ev("matchmaker", "done", "Pod Aurora is ready")];
+    h.past = [
+      ev("matchmaker", "started", "Comparing 12 students"),
+      ev("matchmaker", "progress", "pod score 0.82"),
+      ev("matchmaker", "done", "Pod Aurora is ready"),
+    ];
     const res = await GET(new Request("http://x/api/agents/stream?runId=run_t"));
     expect(parse(await res.text())).toHaveLength(3);
   });

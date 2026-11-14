@@ -76,34 +76,72 @@ export function computeLecturerGaps(input: {
       ).length,
     }))
     .filter((g) => g.studentsTargeting > 0)
-    .sort((a, b) => b.demandPct * b.studentsTargeting - a.demandPct * a.studentsTargeting || b.demandPct - a.demandPct || a.skillId.localeCompare(b.skillId))
+    .sort(
+      (a, b) =>
+        b.demandPct * b.studentsTargeting - a.demandPct * a.studentsTargeting ||
+        b.demandPct - a.demandPct ||
+        a.skillId.localeCompare(b.skillId),
+    )
     .slice(0, input.limit ?? TOP_GAPS);
 }
 
 /** Which existing module skill a lab for each gap builds on, the lab itself, and outcome keywords. */
 const LABS: Record<string, { hosts: string[]; text: string; keywords: string[] }> = {
-  docker: { hosts: ["testing", "system-design", "databases"], keywords: ["deploy", "build", "software", "implement"],
-    text: "Add a containerised deployment step to the {code} coursework: students ship their solution as a Docker image a marker can run with one command" },
-  aws: { hosts: ["system-design", "databases", "security-basics"], keywords: ["deploy", "distributed", "scal", "design"],
-    text: "Add a cloud deployment lab to {code}: students deploy their service to a free-tier cloud account and explain the cost and security trade-offs" },
-  sql: { hosts: ["databases"], keywords: ["query", "data", "database", "design"],
-    text: "Add a hands-on SQL lab to {code}: students write joins, aggregates and window functions against a real open dataset, checked by automated tests" },
-  pytorch: { hosts: ["machine-learning", "deep-learning"], keywords: ["implement", "train", "model", "evaluate"],
-    text: "Re-run one {code} lab in PyTorch: students train a small image classifier and compare it with their scikit-learn baseline" },
-  tensorflow: { hosts: ["deep-learning", "machine-learning"], keywords: ["implement", "train", "model"],
-    text: "Re-run one {code} lab in TensorFlow: students train a small model and compare it with their existing baseline" },
-  mlops: { hosts: ["machine-learning", "deep-learning"], keywords: ["evaluate", "model", "reproduc", "experiment"],
-    text: "Add experiment tracking and a model card to the {code} coursework: students log their runs, version their data and justify the model they ship" },
-  "llm-apps": { hosts: ["deep-learning", "machine-learning"], keywords: ["apply", "implement", "evaluate"],
-    text: "Add a small LLM app exercise to {code}: retrieval-based Q&A over the module notes, with a checklist for spotting wrong answers" },
-  "llm-evaluation": { hosts: ["machine-learning", "deep-learning"], keywords: ["evaluate", "critic", "measure"],
-    text: "Add an evaluation lab to {code}: students build a small test set and measure where a language model's answers go wrong" },
-  "vector-databases": { hosts: ["databases", "machine-learning"], keywords: ["query", "data", "search"],
-    text: "Add a semantic search exercise to {code}: students index documents as embeddings and compare the results with keyword search" },
-  kubernetes: { hosts: ["system-design", "testing"], keywords: ["distributed", "scal", "design", "deploy"],
-    text: "Add a scaling exercise to {code}: students run their service as several replicas behind a load balancer and watch it recover from a failure" },
-  "ci-cd": { hosts: ["testing", "system-design"], keywords: ["test", "quality", "software"],
-    text: "Run the {code} coursework tests in GitHub Actions: every push builds and tests the code, so students practise continuous integration" },
+  docker: {
+    hosts: ["testing", "system-design", "databases"],
+    keywords: ["deploy", "build", "software", "implement"],
+    text: "Add a containerised deployment step to the {code} coursework: students ship their solution as a Docker image a marker can run with one command",
+  },
+  aws: {
+    hosts: ["system-design", "databases", "security-basics"],
+    keywords: ["deploy", "distributed", "scal", "design"],
+    text: "Add a cloud deployment lab to {code}: students deploy their service to a free-tier cloud account and explain the cost and security trade-offs",
+  },
+  sql: {
+    hosts: ["databases"],
+    keywords: ["query", "data", "database", "design"],
+    text: "Add a hands-on SQL lab to {code}: students write joins, aggregates and window functions against a real open dataset, checked by automated tests",
+  },
+  pytorch: {
+    hosts: ["machine-learning", "deep-learning"],
+    keywords: ["implement", "train", "model", "evaluate"],
+    text: "Re-run one {code} lab in PyTorch: students train a small image classifier and compare it with their scikit-learn baseline",
+  },
+  tensorflow: {
+    hosts: ["deep-learning", "machine-learning"],
+    keywords: ["implement", "train", "model"],
+    text: "Re-run one {code} lab in TensorFlow: students train a small model and compare it with their existing baseline",
+  },
+  mlops: {
+    hosts: ["machine-learning", "deep-learning"],
+    keywords: ["evaluate", "model", "reproduc", "experiment"],
+    text: "Add experiment tracking and a model card to the {code} coursework: students log their runs, version their data and justify the model they ship",
+  },
+  "llm-apps": {
+    hosts: ["deep-learning", "machine-learning"],
+    keywords: ["apply", "implement", "evaluate"],
+    text: "Add a small LLM app exercise to {code}: retrieval-based Q&A over the module notes, with a checklist for spotting wrong answers",
+  },
+  "llm-evaluation": {
+    hosts: ["machine-learning", "deep-learning"],
+    keywords: ["evaluate", "critic", "measure"],
+    text: "Add an evaluation lab to {code}: students build a small test set and measure where a language model's answers go wrong",
+  },
+  "vector-databases": {
+    hosts: ["databases", "machine-learning"],
+    keywords: ["query", "data", "search"],
+    text: "Add a semantic search exercise to {code}: students index documents as embeddings and compare the results with keyword search",
+  },
+  kubernetes: {
+    hosts: ["system-design", "testing"],
+    keywords: ["distributed", "scal", "design", "deploy"],
+    text: "Add a scaling exercise to {code}: students run their service as several replicas behind a load balancer and watch it recover from a failure",
+  },
+  "ci-cd": {
+    hosts: ["testing", "system-design"],
+    keywords: ["test", "quality", "software"],
+    text: "Run the {code} coursework tests in GitHub Actions: every push builds and tests the code, so students practise continuous integration",
+  },
 };
 
 function outcomeClause(m: ModuleRef | undefined, keywords: string[], host: string | undefined, label: string): string {
@@ -126,7 +164,8 @@ export function templateLabIdeas(gaps: LecturerInsights["gaps"], modules: Module
   const used = new Set<string>();
   return gaps.slice(0, n).map((g) => {
     const lab = LABS[g.skillId] ?? {
-      hosts: [], keywords: ["apply", "implement", "practical"],
+      hosts: [],
+      keywords: ["apply", "implement", "practical"],
       text: `Add a short practical exercise on ${skillName(g.skillId)} to {code}: students apply it to their existing coursework and explain their choices`,
     };
     let host: string | undefined;
@@ -134,7 +173,10 @@ export function templateLabIdeas(gaps: LecturerInsights["gaps"], modules: Module
     for (const pass of [true, false]) {
       for (const h of lab.hosts) {
         mod = modules.find((m) => m.skills.includes(h) && (!pass || !used.has(m.code)));
-        if (mod) { host = h; break; }
+        if (mod) {
+          host = h;
+          break;
+        }
       }
       if (mod) break;
     }
@@ -142,7 +184,10 @@ export function templateLabIdeas(gaps: LecturerInsights["gaps"], modules: Module
     if (mod) used.add(mod.code);
     const text = mod
       ? lab.text.replace("{code}", mod.title ? `${mod.code} ${mod.title}` : mod.code)
-      : lab.text.replace("the {code} coursework", "an existing module's coursework").replace("one {code} lab", "one existing lab").replace("{code}", "an existing module");
+      : lab.text
+          .replace("the {code} coursework", "an existing module's coursework")
+          .replace("one {code} lab", "one existing lab")
+          .replace("{code}", "an existing module");
     return `${text}${outcomeClause(mod, lab.keywords, host, mod?.code ?? "")}.`;
   });
 }
@@ -190,7 +235,12 @@ export async function loadLecturerContext(programmeId: string) {
     ? {
         covered: new Set(programme.modules.flatMap((m) => m.skills.filter((s) => s.level >= 1).map((s) => s.skillId))),
         unknown: new Set(),
-        modules: programme.modules.map((m) => ({ code: m.code, title: m.title, skills: m.skills.map((s) => s.skillId), learningOutcomes: m.learningOutcomes ?? [] })),
+        modules: programme.modules.map((m) => ({
+          code: m.code,
+          title: m.title,
+          skills: m.skills.map((s) => s.skillId),
+          learningOutcomes: m.learningOutcomes ?? [],
+        })),
         source: "programme",
       }
     : coverageFromMap(refMap);
@@ -200,15 +250,27 @@ export async function loadLecturerContext(programmeId: string) {
 
 export async function buildLecturerInsights(programmeId: string, opts: { demo?: boolean } = {}): Promise<LecturerInsights> {
   const runId = newRunId();
-  emit({ runId, agent: "market", status: "started", message: `Lecturer Insights: reading the ${programmeId} cohort, syllabus and job ads` });
+  emit({
+    runId,
+    agent: "market",
+    status: "started",
+    message: `Lecturer Insights: reading the ${programmeId} cohort, syllabus and job ads`,
+  });
   const { students, demand, coverage } = await loadLecturerContext(programmeId);
   if (students.length < ANONYMITY_MIN) {
-    emit({ runId, agent: "market", status: "done", message: `Only ${students.length} students: below the anonymity threshold of ${ANONYMITY_MIN}, nothing shown` });
+    emit({
+      runId,
+      agent: "market",
+      status: "done",
+      message: `Only ${students.length} students: below the anonymity threshold of ${ANONYMITY_MIN}, nothing shown`,
+    });
     return { gaps: [], labIdeas: [THRESHOLD_MESSAGE] };
   }
   const gaps = computeLecturerGaps({ students, demand, coverage });
   emit({
-    runId, agent: "market", status: "progress",
+    runId,
+    agent: "market",
+    status: "progress",
     message: `Compared ${students.length} students' target roles with ${coverage.modules.length} modules: ${gaps.length} high-demand skills no module covers`,
     data: { cohortSize: students.length, modules: coverage.modules.length, gaps: gaps.length, coverageSource: coverage.source },
   });
@@ -218,7 +280,10 @@ export async function buildLecturerInsights(programmeId: string, opts: { demo?: 
   if (!opts.demo && gaps.length) {
     try {
       const draft = await llmJSON({
-        agent: "market", runId, schemaName: "lab_ideas", temperature: 0.4,
+        agent: "market",
+        runId,
+        schemaName: "lab_ideas",
+        temperature: 0.4,
         cacheKey: `lecturer-labs-${programmeId}-${gaps.map((g) => g.skillId).join("-")}`,
         schema: LabIdeasDraftZ,
         system:
@@ -228,15 +293,29 @@ export async function buildLecturerInsights(programmeId: string, opts: { demo?: 
           "Plain UK English. Never invent module codes. No student names or personal data.",
         user: JSON.stringify({
           gaps: gaps.map((g) => ({ skill: skillName(g.skillId), demandPct: g.demandPct, studentsTargeting: g.studentsTargeting })),
-          modules: coverage.modules.slice(0, 20).map((m) => ({ code: m.code, title: m.title, teaches: m.skills.map(skillName), learningOutcomes: m.learningOutcomes.slice(0, 6) })),
+          modules: coverage.modules.slice(0, 20).map((m) => ({
+            code: m.code,
+            title: m.title,
+            teaches: m.skills.map(skillName),
+            learningOutcomes: m.learningOutcomes.slice(0, 6),
+          })),
         }),
       });
-      const ideas = draft.labIdeas.map((s) => s.trim()).filter(Boolean).slice(0, 3);
+      const ideas = draft.labIdeas
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .slice(0, 3);
       if (ideas.length) labIdeas = ideas;
     } catch {
       // No key / model error: the deterministic templates are already in place.
     }
   }
-  emit({ runId, agent: "market", status: "done", message: `Lecturer Insights ready: ${gaps.length} gaps, ${labIdeas.length} lab ideas`, data: { gaps: gaps.length, labIdeas: labIdeas.length } });
+  emit({
+    runId,
+    agent: "market",
+    status: "done",
+    message: `Lecturer Insights ready: ${gaps.length} gaps, ${labIdeas.length} lab ideas`,
+    data: { gaps: gaps.length, labIdeas: labIdeas.length },
+  });
   return { gaps, labIdeas };
 }

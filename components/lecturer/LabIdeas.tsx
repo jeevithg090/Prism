@@ -34,8 +34,15 @@ function LabCard({ idea, index }: { idea: string; index: number }) {
       <p className="font-mono text-base leading-relaxed font-medium text-foreground">
         {code ? <span>{code}</span> : <span className="sr-only">Lab idea {index + 1}</span>}
       </p>
-      <p id={textId} className="max-w-[68ch] text-base leading-relaxed text-pretty text-foreground">{idea}</p>
-      <Button variant="outline" onClick={copy} aria-describedby={textId} className="justify-self-start focus-visible:outline-ring active:translate-y-px disabled:opacity-55 md:justify-self-end">
+      <p id={textId} className="max-w-[68ch] text-base leading-relaxed text-pretty text-foreground">
+        {idea}
+      </p>
+      <Button
+        variant="outline"
+        onClick={copy}
+        aria-describedby={textId}
+        className="justify-self-start focus-visible:outline-ring active:translate-y-px disabled:opacity-55 md:justify-self-end"
+      >
         {copied ? <Check aria-hidden /> : <ClipboardCopy aria-hidden />}
         {copied ? "Copied" : "Copy to module plan"}
       </Button>

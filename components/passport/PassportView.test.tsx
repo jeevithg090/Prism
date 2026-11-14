@@ -17,20 +17,65 @@ import { VERIFIED_LINE } from "@/components/ladder/ProofLadder";
 
 const open = (rung: 1 | 2 | 3) => ({ rung, label: (["", "Tried it", "Built it", "Can teach it"] as const)[rung], status: "open" as const });
 const docker: SkillLadder = {
-  skillId: "docker", skillName: "Docker", level: 2,
+  skillId: "docker",
+  skillName: "Docker",
+  level: 2,
   rungs: [
-    { rung: 1, label: "Tried it", status: "done", evidence: { id: "e1", source: "micro-challenge", url: "/challenge?skill=docker", quote: "Passed the 20-minute Docker micro-challenge", createdAt: "2026-11-07T10:00:00.000Z" } },
-    { rung: 2, label: "Built it", status: "done", evidence: { id: "e2", source: "keystone-pod", url: "https://github.com/keystone-demo/pod-vision-demo/pull/8", quote: "Merged 'Containerise the captioning API with Docker'", createdAt: "2026-11-07T11:00:00.000Z" } },
+    {
+      rung: 1,
+      label: "Tried it",
+      status: "done",
+      evidence: {
+        id: "e1",
+        source: "micro-challenge",
+        url: "/challenge?skill=docker",
+        quote: "Passed the 20-minute Docker micro-challenge",
+        createdAt: "2026-11-07T10:00:00.000Z",
+      },
+    },
+    {
+      rung: 2,
+      label: "Built it",
+      status: "done",
+      evidence: {
+        id: "e2",
+        source: "keystone-pod",
+        url: "https://github.com/keystone-demo/pod-vision-demo/pull/8",
+        quote: "Merged 'Containerise the captioning API with Docker'",
+        createdAt: "2026-11-07T11:00:00.000Z",
+      },
+    },
     open(3),
   ],
 };
 const python: SkillLadder = {
-  skillId: "python", skillName: "Python", level: 1,
-  rungs: [{ rung: 1, label: "Tried it", status: "done", evidence: { id: "e3", source: "github", url: "/map", quote: "Found in your GitHub repos", createdAt: "2026-11-07T09:00:00.000Z" } }, open(2), open(3)],
+  skillId: "python",
+  skillName: "Python",
+  level: 1,
+  rungs: [
+    {
+      rung: 1,
+      label: "Tried it",
+      status: "done",
+      evidence: { id: "e3", source: "github", url: "/map", quote: "Found in your GitHub repos", createdAt: "2026-11-07T09:00:00.000Z" },
+    },
+    open(2),
+    open(3),
+  ],
 };
 const passport: Passport = {
-  userId: "aisha", name: "Aisha Rahman", programme: "BSc Computer Science, University of Manchester", year: 1, badges: ["new-to-uni", "international"],
-  roleName: "ML engineer", readinessNow: 0.43, readinessProjected: 0.84, isPublic: false, isOwner: true, isDemo: true, skills: [docker, python],
+  userId: "aisha",
+  name: "Aisha Rahman",
+  programme: "BSc Computer Science, University of Manchester",
+  year: 1,
+  badges: ["new-to-uni", "international"],
+  roleName: "ML engineer",
+  readinessNow: 0.43,
+  readinessProjected: 0.84,
+  isPublic: false,
+  isOwner: true,
+  isDemo: true,
+  skills: [docker, python],
 };
 
 let response: { status: number; body: unknown };
@@ -46,11 +91,17 @@ beforeEach(() => {
   writeText.mockClear();
   toast.success.mockClear();
 });
-afterEach(() => { cleanup(); vi.restoreAllMocks(); });
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 
-const renderView = () => render(
-  <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><PassportView userId="aisha" /></QueryClientProvider>,
-);
+const renderView = () =>
+  render(
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <PassportView userId="aisha" />
+    </QueryClientProvider>,
+  );
 
 describe("PassportView", () => {
   it("shows the header, the verified stamp and skills grouped by their highest rung, with evidence links", async () => {
@@ -61,7 +112,10 @@ describe("PassportView", () => {
     expect(screen.getByText("New to UoM")).toBeInTheDocument();
     const built = screen.getByRole("region", { name: /Built it/ });
     expect(within(built).getByText("Docker")).toBeInTheDocument();
-    expect(within(built).getByRole("link", { name: /View proof: Docker, Pod PR/ })).toHaveAttribute("href", "https://github.com/keystone-demo/pod-vision-demo/pull/8");
+    expect(within(built).getByRole("link", { name: /View proof: Docker, Pod PR/ })).toHaveAttribute(
+      "href",
+      "https://github.com/keystone-demo/pod-vision-demo/pull/8",
+    );
     const tried = screen.getByRole("region", { name: /Tried it/ });
     expect(within(tried).getByText("Python")).toBeInTheDocument();
     expect(within(tried).queryByText("Docker")).not.toBeInTheDocument();

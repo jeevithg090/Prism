@@ -25,7 +25,14 @@ export type Persona = { id: string; name: string; firstName: string; year?: numb
 
 type RawProfile = { id: string; name: string; year?: number; badges?: string[]; avatarUrl?: string };
 function toPersona(p: RawProfile): Persona {
-  return { id: p.id, name: p.name, firstName: p.name.split(/\s+/)[0] || p.name, year: p.year, badges: (p.badges ?? []) as BadgeId[], avatarUrl: p.avatarUrl };
+  return {
+    id: p.id,
+    name: p.name,
+    firstName: p.name.split(/\s+/)[0] || p.name,
+    year: p.year,
+    badges: (p.badges ?? []) as BadgeId[],
+    avatarUrl: p.avatarUrl,
+  };
 }
 
 /** Aisha first, then the seeded cast in seed order. */
@@ -38,7 +45,14 @@ export const PERSONAS: Persona[] = (() => {
 })();
 
 export function personaById(id: string): Persona {
-  return PERSONAS.find((p) => p.id === id) ?? { id, name: id[0]?.toUpperCase() + id.slice(1), firstName: id[0]?.toUpperCase() + id.slice(1), badges: [] };
+  return (
+    PERSONAS.find((p) => p.id === id) ?? {
+      id,
+      name: id[0]?.toUpperCase() + id.slice(1),
+      firstName: id[0]?.toUpperCase() + id.slice(1),
+      badges: [],
+    }
+  );
 }
 
 export function PersonaSwitcher({ className }: { className?: string }) {
@@ -68,17 +82,25 @@ export function PersonaSwitcher({ className }: { className?: string }) {
         )}
       >
         <span className="sr-only">Viewing as</span>{" "}
-        <span aria-hidden className="shrink-0"><MemberAvatar member={me} size="sm" /></span>
+        <span aria-hidden className="shrink-0">
+          <MemberAvatar member={me} size="sm" />
+        </span>
         <span className="min-w-0 sm:shrink-0">
           <span className="block truncate text-sm font-semibold text-foreground">
             <span className="sm:hidden">{me.firstName}</span>
             <span className="hidden sm:inline">{me.name}</span>
           </span>{" "}
-          <span className="hidden truncate text-xs text-muted-foreground sm:block">{me.year ? `Year ${me.year}, switch student` : "Switch student"}</span>
+          <span className="hidden truncate text-xs text-muted-foreground sm:block">
+            {me.year ? `Year ${me.year}, switch student` : "Switch student"}
+          </span>
         </span>{" "}
         {me.badges.length > 0 && (
           <span className="hidden shrink-0 items-center gap-1 xl:flex">
-            {me.badges.slice(0, 2).map((b) => <React.Fragment key={b}><BadgePill badge={b} />{" "}</React.Fragment>)}
+            {me.badges.slice(0, 2).map((b) => (
+              <React.Fragment key={b}>
+                <BadgePill badge={b} />{" "}
+              </React.Fragment>
+            ))}
           </span>
         )}
         <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" aria-hidden />
@@ -89,13 +111,19 @@ export function PersonaSwitcher({ className }: { className?: string }) {
           <DropdownMenuRadioGroup value={viewerId} onValueChange={(v) => choose(String(v))}>
             {PERSONAS.map((p) => (
               <DropdownMenuRadioItem key={p.id} value={p.id} className="min-h-11 gap-2.5 rounded-lg py-1.5 pl-2">
-                <span aria-hidden className="shrink-0"><MemberAvatar member={p} size="sm" /></span>
+                <span aria-hidden className="shrink-0">
+                  <MemberAvatar member={p} size="sm" />
+                </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-medium">{p.name}</span>{" "}
                   {(p.year || p.badges.length > 0) && (
                     <span className="mt-0.5 flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
                       {p.year && <span>Year {p.year}</span>}{" "}
-                      {p.badges.map((b) => <React.Fragment key={b}><BadgePill badge={b} />{" "}</React.Fragment>)}
+                      {p.badges.map((b) => (
+                        <React.Fragment key={b}>
+                          <BadgePill badge={b} />{" "}
+                        </React.Fragment>
+                      ))}
                     </span>
                   )}
                 </span>

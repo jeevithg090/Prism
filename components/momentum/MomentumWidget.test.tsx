@@ -5,12 +5,25 @@ import userEvent from "@testing-library/user-event";
 import type { MomentumWeek } from "@/lib/types";
 import { MomentumWidget } from "./MomentumWidget";
 
-afterEach(() => { cleanup(); vi.restoreAllMocks(); });
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 
-const week = (w: number, score: number, changePct: number, breakdown: MomentumWeek["breakdown"] = []): MomentumWeek =>
-  ({ userId: "aisha", week: `2026-W${w}`, score, baseline: 10, changePct, breakdown });
+const week = (w: number, score: number, changePct: number, breakdown: MomentumWeek["breakdown"] = []): MomentumWeek => ({
+  userId: "aisha",
+  week: `2026-W${w}`,
+  score,
+  baseline: 10,
+  changePct,
+  breakdown,
+});
 const WEEKS: MomentumWeek[] = [
-  week(40, 6, 0), week(41, 8, 10), week(42, 10, 12), week(43, 12, 14), week(44, 14, 16),
+  week(40, 6, 0),
+  week(41, 8, 10),
+  week(42, 10, 12),
+  week(43, 12, 14),
+  week(44, 14, 16),
   week(45, 17, 18, [
     { kind: "pr-merged", points: 10, count: 2 },
     { kind: "roadmap-milestone", points: 4, count: 1 },

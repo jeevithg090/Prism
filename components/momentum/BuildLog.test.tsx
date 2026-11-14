@@ -13,12 +13,35 @@ vi.mock("sonner", () => ({ toast: mocks.toast }));
 
 import { BuildLog } from "./BuildLog";
 
-afterEach(() => { cleanup(); vi.restoreAllMocks(); mocks.turnIntoCvBullets.mockReset(); });
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+  mocks.turnIntoCvBullets.mockReset();
+});
 
 const EVENTS: MomentumEvent[] = [
-  { id: "e3", userId: "aisha", kind: "pr-merged", ts: new Date(Date.now() - 2 * 86_400_000).toISOString(), label: "Merged PR #15 in pod-vision-demo: Load the model", url: "https://github.com/keystone-demo/pod-vision-demo/pull/15" },
-  { id: "e2", userId: "aisha", kind: "roadmap-milestone", ts: new Date(Date.now() - 5 * 86_400_000).toISOString(), label: "Completed Week 2: Docker" },
-  { id: "e1", userId: "aisha", kind: "helped-newcomer", ts: new Date(Date.now() - 9 * 86_400_000).toISOString(), label: "Helped a newcomer with Git" },
+  {
+    id: "e3",
+    userId: "aisha",
+    kind: "pr-merged",
+    ts: new Date(Date.now() - 2 * 86_400_000).toISOString(),
+    label: "Merged PR #15 in pod-vision-demo: Load the model",
+    url: "https://github.com/keystone-demo/pod-vision-demo/pull/15",
+  },
+  {
+    id: "e2",
+    userId: "aisha",
+    kind: "roadmap-milestone",
+    ts: new Date(Date.now() - 5 * 86_400_000).toISOString(),
+    label: "Completed Week 2: Docker",
+  },
+  {
+    id: "e1",
+    userId: "aisha",
+    kind: "helped-newcomer",
+    ts: new Date(Date.now() - 9 * 86_400_000).toISOString(),
+    label: "Helped a newcomer with Git",
+  },
 ];
 function mockFetch(body: unknown) {
   return vi.spyOn(globalThis, "fetch").mockResolvedValue({ json: async () => body } as Response);

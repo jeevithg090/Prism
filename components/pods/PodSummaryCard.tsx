@@ -89,9 +89,7 @@ export function PodSummaryCard({ userId }: { userId: string }) {
             <h2 id="pod-summary-empty" className="text-xl font-semibold text-foreground">
               You&apos;re not in a pod yet
             </h2>
-            <p className="mt-1 text-muted-foreground">
-              Learn faster with 2 or 3 students who are strong where you&apos;re stuck.
-            </p>
+            <p className="mt-1 text-muted-foreground">Learn faster with 2 or 3 students who are strong where you&apos;re stuck.</p>
           </div>
         </div>
         <Link href="/pods" className={cn(linkBtn, "mt-5")}>

@@ -11,7 +11,10 @@ import type { ApiResult, GuideSuggestion } from "@/lib/types";
 import { CARD, Region } from "./Region";
 
 export class GuidesError extends Error {
-  constructor(public code: string, message: string) {
+  constructor(
+    public code: string,
+    message: string,
+  ) {
     super(message);
   }
 }
@@ -53,7 +56,9 @@ function GuideCard({ guide, index }: { guide: GuideSuggestion; index: number }) 
     <li className={`flex flex-col gap-4 p-6 ${CARD}`}>
       <div className="flex items-start justify-between gap-3">
         <h3 className="min-w-0 text-lg font-semibold break-words text-foreground">{guide.name}</h3>
-        <span className="inline-flex h-6 shrink-0 items-center rounded-md border px-1.5 text-xs font-medium text-foreground">{guide.source === "github" ? "GitHub" : "Web"}</span>
+        <span className="inline-flex h-6 shrink-0 items-center rounded-md border px-1.5 text-xs font-medium text-foreground">
+          {guide.source === "github" ? "GitHub" : "Web"}
+        </span>
       </div>
       <p className="text-base leading-7 text-pretty text-foreground">{guide.whyRelevant}</p>
       <a
@@ -98,12 +103,14 @@ export function GuidesSection({ viewerId }: { viewerId: string }) {
       id="guides-title"
       title="Learn from practitioners"
       description="People in Manchester who already work with your top gap skill, plus a friendly first message you can send."
-      actions={guides !== null ? (
-        <Button variant="outline" onClick={() => find.mutate(false)} disabled={find.isPending} aria-busy={find.isPending || undefined}>
-          {find.isPending && <Loader2 className="motion-safe:animate-spin" aria-hidden />}
-          Find new guides
-        </Button>
-      ) : undefined}
+      actions={
+        guides !== null ? (
+          <Button variant="outline" onClick={() => find.mutate(false)} disabled={find.isPending} aria-busy={find.isPending || undefined}>
+            {find.isPending && <Loader2 className="motion-safe:animate-spin" aria-hidden />}
+            Find new guides
+          </Button>
+        ) : undefined
+      }
     >
       <p className="mb-4 flex items-center gap-2 text-sm font-medium text-foreground">
         <ShieldCheck className="size-4 shrink-0 text-muted-foreground" aria-hidden />
@@ -115,7 +122,8 @@ export function GuidesSection({ viewerId }: { viewerId: string }) {
       <div>
         {limited && (
           <p role="alert" className="mb-4 rounded-xl bg-muted px-4 py-3 text-sm leading-6 text-foreground">
-            You&apos;ve used today&apos;s 3 drafts. Come back tomorrow for fresh suggestions{guides?.length ? "; today's drafts are still below" : ""}.
+            You&apos;ve used today&apos;s 3 drafts. Come back tomorrow for fresh suggestions
+            {guides?.length ? "; today's drafts are still below" : ""}.
           </p>
         )}
         {find.isPending ? (
@@ -136,14 +144,20 @@ export function GuidesSection({ viewerId }: { viewerId: string }) {
               icon={Compass}
               title="Learn from people who already do this"
               body="Up to 3 drafts a day."
-              action={<Button variant="outline" onClick={() => find.mutate(false)}>Find guides</Button>}
+              action={
+                <Button variant="outline" onClick={() => find.mutate(false)}>
+                  Find guides
+                </Button>
+              }
             />
           )
         ) : guides.length === 0 ? (
           <EmptyState icon={Compass} title="No guides found this time" body="Try again tomorrow, or ask a question in the help feed." />
         ) : (
           <ul aria-label="Suggested guides" className="grid gap-6 md:grid-cols-2">
-            {guides.map((g, i) => <GuideCard key={g.publicUrl} guide={g} index={i} />)}
+            {guides.map((g, i) => (
+              <GuideCard key={g.publicUrl} guide={g} index={i} />
+            ))}
           </ul>
         )}
       </div>

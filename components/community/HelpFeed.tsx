@@ -17,8 +17,7 @@ export const ASK_MESSAGE_ID = "ask-message";
  * Newcomers first: the New to UoM pill takes the proven hue on its icon, tint and edge so those rows
  * read from the back of the room. The label stays ink. Other badges stay neutral.
  */
-export const NEWCOMER_TINT =
-  "inline-flex [&>span]:border-status-proven/40 [&>span]:bg-status-proven/8 [&_svg]:text-status-proven";
+export const NEWCOMER_TINT = "inline-flex [&>span]:border-status-proven/40 [&>span]:bg-status-proven/8 [&_svg]:text-status-proven";
 
 const KIND_ICON: Record<HelpRequest["kind"], LucideIcon> = {
   question: MessageCircleQuestion,
@@ -52,16 +51,27 @@ function HelpCard({ request, profiles, viewerId }: { request: HelpRequest; profi
   return (
     // Your own request sits in a well: the one row on this list that is yours.
     <li className={own ? "bg-muted px-6 py-5 first:rounded-t-2xl last:rounded-b-2xl" : "px-6 py-5"} data-testid="help-card">
-      <article aria-labelledby={headingId} className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-4 sm:grid-cols-[auto_minmax(0,1fr)_auto]">
+      <article
+        aria-labelledby={headingId}
+        className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-4 sm:grid-cols-[auto_minmax(0,1fr)_auto]"
+      >
         <PersonAvatar userId={request.fromUserId} profile={profile} />
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
             <h3 id={headingId} className="text-lg font-semibold text-foreground">
-              {own ? <>{name} <span className="text-primary">(you)</span></> : name}
+              {own ? (
+                <>
+                  {name} <span className="text-primary">(you)</span>
+                </>
+              ) : (
+                name
+              )}
             </h3>
             {profile?.badges.map((b) =>
               b === "new-to-uni" ? (
-                <span key={b} className={NEWCOMER_TINT}><BadgePill badge={b} /></span>
+                <span key={b} className={NEWCOMER_TINT}>
+                  <BadgePill badge={b} />
+                </span>
               ) : (
                 <BadgePill key={b} badge={b} />
               ),
@@ -76,9 +86,13 @@ function HelpCard({ request, profiles, viewerId }: { request: HelpRequest; profi
           </p>
         </div>
         {/* On a phone the message and its action take the full row under the avatar. */}
-        <p className="col-span-2 mt-3 max-w-[68ch] text-base leading-7 text-pretty break-words whitespace-pre-wrap text-foreground sm:col-span-2 sm:col-start-2 sm:row-start-2">{request.message}</p>
+        <p className="col-span-2 mt-3 max-w-[68ch] text-base leading-7 text-pretty break-words whitespace-pre-wrap text-foreground sm:col-span-2 sm:col-start-2 sm:row-start-2">
+          {request.message}
+        </p>
         {own ? (
-          <p className="col-span-2 mt-3 max-w-[68ch] text-sm text-pretty text-muted-foreground sm:col-span-2 sm:col-start-2">This is your request. A helper will pick it up soon.</p>
+          <p className="col-span-2 mt-3 max-w-[68ch] text-sm text-pretty text-muted-foreground sm:col-span-2 sm:col-start-2">
+            This is your request. A helper will pick it up soon.
+          </p>
         ) : (
           <div className="col-span-2 mt-4 sm:col-span-1 sm:col-start-3 sm:row-start-1 sm:mt-0">
             <Button
@@ -99,7 +113,14 @@ function HelpCard({ request, profiles, viewerId }: { request: HelpRequest; profi
 }
 
 export function HelpFeed({
-  requests, profiles, viewerId, isLoading, isError, onRetry, onUseDemo, isDemo = false,
+  requests,
+  profiles,
+  viewerId,
+  isLoading,
+  isError,
+  onRetry,
+  onUseDemo,
+  isDemo = false,
 }: {
   requests: HelpRequest[];
   profiles: ProfilesById;
@@ -122,18 +143,20 @@ export function HelpFeed({
       note={full && isDemo ? <DemoDataNote /> : undefined}
       headWidth="max-w-[34ch]"
       description="Students new to UoM are shown first, so nobody waits alone."
-      actions={full ? (
-        <dl className="flex items-end">
-          <div className="flex flex-col-reverse pr-6">
-            <dt className="text-sm text-muted-foreground">Open requests</dt>
-            <dd className="font-mono text-3xl leading-none font-semibold text-foreground tabular-nums">{others.length}</dd>
-          </div>
-          <div className="flex flex-col-reverse border-l pl-6">
-            <dt className="text-sm text-muted-foreground">New to UoM</dt>
-            <dd className="font-mono text-3xl leading-none font-semibold text-foreground tabular-nums">{newcomers}</dd>
-          </div>
-        </dl>
-      ) : undefined}
+      actions={
+        full ? (
+          <dl className="flex items-end">
+            <div className="flex flex-col-reverse pr-6">
+              <dt className="text-sm text-muted-foreground">Open requests</dt>
+              <dd className="font-mono text-3xl leading-none font-semibold text-foreground tabular-nums">{others.length}</dd>
+            </div>
+            <div className="flex flex-col-reverse border-l pl-6">
+              <dt className="text-sm text-muted-foreground">New to UoM</dt>
+              <dd className="font-mono text-3xl leading-none font-semibold text-foreground tabular-nums">{newcomers}</dd>
+            </div>
+          </dl>
+        ) : undefined
+      }
     >
       {isLoading ? (
         <LoadingSkeleton variant="list" />
@@ -149,11 +172,17 @@ export function HelpFeed({
           icon={HandHeart}
           title="No open requests right now"
           body="Everyone is sorted for the moment. Got a question of your own? Ask it, and a helper will pick it up."
-          action={<Button variant="outline" onClick={() => document.getElementById(ASK_MESSAGE_ID)?.focus()}>Write a request</Button>}
+          action={
+            <Button variant="outline" onClick={() => document.getElementById(ASK_MESSAGE_ID)?.focus()}>
+              Write a request
+            </Button>
+          }
         />
       ) : (
         <ul aria-label="Open help requests" className={`divide-y ${CARD}`}>
-          {requests.map((r) => <HelpCard key={r.id} request={r} profiles={profiles} viewerId={viewerId} />)}
+          {requests.map((r) => (
+            <HelpCard key={r.id} request={r} profiles={profiles} viewerId={viewerId} />
+          ))}
         </ul>
       )}
     </Region>

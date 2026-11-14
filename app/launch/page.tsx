@@ -43,7 +43,9 @@ const LINK =
 function SectionTitle({ id, title, sub }: { id: string; title: string; sub: string }) {
   return (
     <div className="mb-8 max-w-3xl space-y-3 md:mb-10">
-      <h2 id={id} className="text-3xl font-semibold text-balance md:text-4xl xl:text-5xl">{title}</h2>
+      <h2 id={id} className="text-3xl font-semibold text-balance md:text-4xl xl:text-5xl">
+        {title}
+      </h2>
       <p className="max-w-[60ch] text-lg text-muted-foreground">{sub}</p>
     </div>
   );
@@ -69,7 +71,9 @@ export default function LaunchPage() {
             <span className="hidden border-l pl-3 font-medium text-foreground sm:inline">Bridge Week</span>
           </div>
           <LevelChips items={["launch-campaign"]} className="order-last basis-full md:order-none md:ml-auto md:basis-auto" />
-          <Link href="/" className={buttonVariants({ variant: "outline", size: "lg" })}>Try the demo</Link>
+          <Link href="/" className={buttonVariants({ variant: "outline", size: "lg" })}>
+            Try the demo
+          </Link>
         </div>
       </header>
 
@@ -81,16 +85,19 @@ export default function LaunchPage() {
         >
           <div className="min-w-0 space-y-6">
             <h1 id="hero-title" className="text-4xl font-semibold sm:text-5xl xl:text-6xl">
-              <span className="block">Your degree is the foundation.</span>{" "}
-              <span className="block">Build the bridge.</span>
+              <span className="block">Your degree is the foundation.</span> <span className="block">Build the bridge.</span>
             </h1>
             <p className="max-w-[42ch] text-lg text-muted-foreground lg:text-xl">
               Keystone reads your syllabus, live job ads and your code, then gives you a weekly plan, a pod to build with and proof of every
               skill.
             </p>
             <div className="flex flex-col flex-wrap items-start gap-x-6 gap-y-4 pt-2 sm:flex-row sm:items-center">
-              <a href="#waitlist" className={buttonVariants({ size: "lg" })}>Join the waitlist</a>
-              <a href="#ambassadors" className={cn(LINK, "text-sm sm:text-base sm:whitespace-nowrap")}>Seniors: become a Trajectory ambassador</a>
+              <a href="#waitlist" className={buttonVariants({ size: "lg" })}>
+                Join the waitlist
+              </a>
+              <a href="#ambassadors" className={cn(LINK, "text-sm sm:text-base sm:whitespace-nowrap")}>
+                Seniors: become a Trajectory ambassador
+              </a>
             </div>
             <p className="max-w-[60ch] text-lg text-pretty text-ink-2">The pilot starts with 500 students and 100 pods over 6 weeks.</p>
           </div>
@@ -98,7 +105,9 @@ export default function LaunchPage() {
           <figure aria-labelledby="week0-title" className="min-w-0 rounded-2xl border bg-card p-6 shadow-sm md:p-8">
             <figcaption className="flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <h2 id="week0-title" className="text-xl font-semibold">What Aisha saw in week 0</h2>
+                <h2 id="week0-title" className="text-xl font-semibold">
+                  What Aisha saw in week 0
+                </h2>
                 <p className="mt-1 text-sm text-muted-foreground">University of Manchester</p>
               </div>
               <DemoDataNote />
@@ -138,13 +147,20 @@ export default function LaunchPage() {
 
         {/* Posters: the campaign's real artefacts, at the A3 print ratio */}
         <section aria-labelledby="posters-title" className="pt-12">
-          <SectionTitle id="posters-title" title="Three posters for campus noticeboards" sub="Printed at A3 for freshers' fairs, society rooms and the careers service. Each QR code opens the demo." />
+          <SectionTitle
+            id="posters-title"
+            title="Three posters for campus noticeboards"
+            sub="Printed at A3 for freshers' fairs, society rooms and the careers service. Each QR code opens the demo."
+          />
           <ul className="grid gap-6 lg:grid-cols-3">
             {POSTERS.map((p) => {
               const tone = POSTER_TONE[p.tone];
               return (
                 <li key={p.id} className="mx-auto w-full max-w-md min-w-0 lg:max-w-none">
-                  <article aria-labelledby={`poster-${p.id}`} className={cn("flex aspect-[297/420] h-full flex-col rounded-2xl p-6 xl:p-8", tone.card)}>
+                  <article
+                    aria-labelledby={`poster-${p.id}`}
+                    className={cn("flex aspect-[297/420] h-full flex-col rounded-2xl p-6 xl:p-8", tone.card)}
+                  >
                     <h3
                       id={`poster-${p.id}`}
                       className={cn(
@@ -160,7 +176,11 @@ export default function LaunchPage() {
                         <span className="block font-semibold">Keystone Bridge Week</span>
                         Scan to try the demo
                       </p>
-                      <QrCode value={`${DEMO_URL}?ref=poster-${p.id}`} label={`QR code: opens the Keystone demo (${p.headline})`} className="size-24 shrink-0 p-1" />
+                      <QrCode
+                        value={`${DEMO_URL}?ref=poster-${p.id}`}
+                        label={`QR code: opens the Keystone demo (${p.headline})`}
+                        className="size-24 shrink-0 p-1"
+                      />
                     </div>
                   </article>
                 </li>
@@ -171,7 +191,11 @@ export default function LaunchPage() {
 
         {/* Campus tour: hairline rows by country, straight on the paper */}
         <section aria-labelledby="tour-title" className="pt-(--section-gap)">
-          <SectionTitle id="tour-title" title="The tour: 10 campuses, starting in Manchester" sub="Bridge Week follows the same campuses as Reply's Student Tech Clash. Each campus plugs in its own syllabus, so the plan is local from day one." />
+          <SectionTitle
+            id="tour-title"
+            title="The tour: 10 campuses, starting in Manchester"
+            sub="Bridge Week follows the same campuses as Reply's Student Tech Clash. Each campus plugs in its own syllabus, so the plan is local from day one."
+          />
           <div className="border-t">
             {Object.entries(byCountry).map(([country, list]) => (
               <section
@@ -180,7 +204,9 @@ export default function LaunchPage() {
                 className="grid gap-4 border-b py-6 md:grid-cols-[minmax(0,13rem)_minmax(0,1fr)] md:gap-8"
               >
                 <div>
-                  <h3 id={`country-${country}`} className="text-lg font-semibold">{country}</h3>
+                  <h3 id={`country-${country}`} className="text-lg font-semibold">
+                    {country}
+                  </h3>
                   <p className="text-sm text-muted-foreground">
                     <span className="font-mono tabular-nums">{list.length}</span> {list.length === 1 ? "campus" : "campuses"}
                   </p>
@@ -213,7 +239,11 @@ export default function LaunchPage() {
 
         {/* Pilot plan: the three figures, then the six weeks beside how success is measured */}
         <section aria-labelledby="pilot-title" className="pt-(--section-gap)">
-          <SectionTitle id="pilot-title" title="The pilot plan" sub="One programme and one society first, so every pod gets a reviewer who knows the skill and every number can be checked." />
+          <SectionTitle
+            id="pilot-title"
+            title="The pilot plan"
+            sub="One programme and one society first, so every pod gets a reviewer who knows the skill and every number can be checked."
+          />
           <div className="grid rounded-2xl border bg-card shadow-sm sm:grid-cols-3">
             {PILOT.map((p) => (
               <div key={p.label} className="border-t p-6 first:border-t-0 sm:border-t-0 sm:border-l sm:first:border-l-0 md:p-8">
@@ -253,15 +283,19 @@ export default function LaunchPage() {
           <div id="ambassadors" className="mt-6 scroll-mt-6 rounded-xl bg-muted p-6 md:p-8">
             <p className="max-w-[65ch] text-lg text-foreground">
               <span className="font-semibold">Seniors:</span> share how you got where you are as a Trajectory ambassador. You&apos;ll answer
-              newcomers&apos; questions, review pod PRs, and earn the <BadgePill badge="helper" /> badge and a certificate. Tick the ambassador
-              box below.
+              newcomers&apos; questions, review pod PRs, and earn the <BadgePill badge="helper" /> badge and a certificate. Tick the
+              ambassador box below.
             </p>
           </div>
         </section>
 
         {/* Waitlist: one card, the form beside the demo QR code */}
         <section id="waitlist" aria-labelledby="waitlist-title" className="scroll-mt-6 pt-(--section-gap-s)">
-          <SectionTitle id="waitlist-title" title="Join Bridge Week" sub="Pick your campus and we'll keep your place for the pilot. No spam: this demo never sends emails." />
+          <SectionTitle
+            id="waitlist-title"
+            title="Join Bridge Week"
+            sub="Pick your campus and we'll keep your place for the pilot. No spam: this demo never sends emails."
+          />
           <div className="grid rounded-2xl border bg-card shadow-sm lg:grid-cols-[minmax(0,1fr)_20rem]">
             <div className="min-w-0 p-6 md:p-8">
               <WaitlistForm />
@@ -278,21 +312,31 @@ export default function LaunchPage() {
 
         {/* Share kit: the LinkedIn template beside the video voiceover */}
         <section aria-labelledby="share-title" className="pt-(--section-gap)">
-          <SectionTitle id="share-title" title="Share what you built" sub="Every finished pod project is a portfolio piece. Students post it themselves; Keystone never posts for you." />
+          <SectionTitle
+            id="share-title"
+            title="Share what you built"
+            sub="Every finished pod project is a portfolio piece. Students post it themselves; Keystone never posts for you."
+          />
           <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
             <div className="min-w-0 rounded-2xl border bg-card p-6 shadow-sm md:p-8">
               <div className="mb-1 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
                 <h3 className="text-xl font-semibold">LinkedIn post template</h3>
                 <DemoDataNote />
               </div>
-              <p className="mb-5 text-muted-foreground">Aisha&apos;s version, written from her real Keystone proof. Edit it to match yours.</p>
+              <p className="mb-5 text-muted-foreground">
+                Aisha&apos;s version, written from her real Keystone proof. Edit it to match yours.
+              </p>
               <CopyText text={linkedInPost(APP_URL)} label="Post text" />
             </div>
             <div className="min-w-0 rounded-2xl border bg-card p-6 shadow-sm md:p-8">
               <h3 className="mb-1 text-xl font-semibold">30-second video voiceover</h3>
-              <p className="mb-5 text-muted-foreground">For the vertical campus video. Voiced with ElevenLabs when it&apos;s connected, or your browser&apos;s voice.</p>
+              <p className="mb-5 text-muted-foreground">
+                For the vertical campus video. Voiced with ElevenLabs when it&apos;s connected, or your browser&apos;s voice.
+              </p>
               <blockquote className="rounded-xl bg-muted p-5 text-lg leading-8">{VOICEOVER}</blockquote>
-              <div className="mt-5"><ListenButton text={VOICEOVER} /></div>
+              <div className="mt-5">
+                <ListenButton text={VOICEOVER} />
+              </div>
             </div>
           </div>
         </section>

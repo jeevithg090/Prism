@@ -2,8 +2,20 @@ import { describe, expect, it } from "vitest";
 import { GET } from "./route";
 
 const ALL_AGENTS = [
-  "orchestrator", "syllabus", "skillmap", "market", "trends", "evidence", "roadmap",
-  "matchmaker", "architect", "techlead", "trajectories", "guides", "voice", "n8n",
+  "orchestrator",
+  "syllabus",
+  "skillmap",
+  "market",
+  "trends",
+  "evidence",
+  "roadmap",
+  "matchmaker",
+  "architect",
+  "techlead",
+  "trajectories",
+  "guides",
+  "voice",
+  "n8n",
 ];
 
 describe("GET /api/agents/registry", () => {
@@ -25,7 +37,10 @@ describe("GET /api/agents/registry", () => {
   it("matches the P5 harness: architect and techlead are peer-approved, guides is student-sends", async () => {
     const json = await (await GET()).json();
     const by = Object.fromEntries(json.data.map((e: { agent: string }) => [e.agent, e]));
-    expect(by.architect).toMatchObject({ checkpointKind: "peer-approval", humanCheckpoint: "Each issue is reviewed and merged by a podmate, never by the AI" });
+    expect(by.architect).toMatchObject({
+      checkpointKind: "peer-approval",
+      humanCheckpoint: "Each issue is reviewed and merged by a podmate, never by the AI",
+    });
     expect(by.techlead.guardrails).toContain("noFullSolutions");
     expect(by.guides).toMatchObject({ checkpointKind: "student-sends" });
     expect(by.guides.guardrails).toEqual(expect.arrayContaining(["noOutboundMessaging", "piiRedactor"]));

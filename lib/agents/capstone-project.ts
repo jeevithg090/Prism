@@ -4,13 +4,7 @@ import { loadGraph } from "@/lib/graph/build";
 import { getStore } from "@/lib/store";
 import { emit, newRunId } from "@/lib/agents/events";
 import { skillName } from "@/lib/schemas/community";
-import {
-  CapstoneCreateReqZ,
-  CapstoneProjectZ,
-  MilestoneZ,
-  type CapstoneProject,
-  type Milestone,
-} from "@/lib/schemas/capstone";
+import { CapstoneCreateReqZ, CapstoneProjectZ, MilestoneZ, type CapstoneProject, type Milestone } from "@/lib/schemas/capstone";
 import type { AgentName, BridgeMap, SkillId } from "@/lib/types";
 
 // The capstone agent reuses the Architect identity: it designs a project, just for a
@@ -117,8 +111,7 @@ export async function createCapstone(input: {
     userId: input.userId,
     title: input.title.trim() || "My capstone project",
     pitch:
-      input.pitch ??
-      `A solo capstone project to practise ${targetSkills.map(skillName).join(", ")} and show employers what you can build.`,
+      input.pitch ?? `A solo capstone project to practise ${targetSkills.map(skillName).join(", ")} and show employers what you can build.`,
     roleId,
     targetSkills,
     milestones,
@@ -186,19 +179,17 @@ export async function updateCapstone(
   }
 }
 
-export async function toggleMilestone(
-  id: string,
-  userId: string,
-  milestoneId: string,
-  done: boolean,
-): Promise<boolean> {
+export async function toggleMilestone(id: string, userId: string, milestoneId: string, done: boolean): Promise<boolean> {
   try {
     const existing = await getStore().get<CapstoneProject>(COLLECTION, id);
     if (!existing || existing.userId !== userId) return false;
 
     let matched = false;
     const milestones = existing.milestones.map((m) => {
-      if (m.id === milestoneId) { matched = true; return { ...m, done }; }
+      if (m.id === milestoneId) {
+        matched = true;
+        return { ...m, done };
+      }
       return m;
     });
     if (!matched) return false;

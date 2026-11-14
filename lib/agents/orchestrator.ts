@@ -22,8 +22,16 @@ declare global {
 
 /** Optional agent modules, resolved at build time (Turbopack and Vite both support import.meta.glob). */
 const AGENT_MODULES = import.meta.glob([
-  "./syllabus.ts", "./market.ts", "./trends.ts", "./evidence.ts", "./roadmap.ts",
-  "./syllabus/index.ts", "./market/index.ts", "./trends/index.ts", "./evidence/index.ts", "./roadmap/index.ts",
+  "./syllabus.ts",
+  "./market.ts",
+  "./trends.ts",
+  "./evidence.ts",
+  "./roadmap.ts",
+  "./syllabus/index.ts",
+  "./market/index.ts",
+  "./trends/index.ts",
+  "./evidence/index.ts",
+  "./roadmap/index.ts",
 ]);
 
 type Mod = Record<string, unknown>;
@@ -38,14 +46,23 @@ function moduleLoader(name: LiveAgent): AgentLoader {
 }
 
 const DEFAULT_TIMEOUTS: Record<LiveAgent | "skillmap", number> = {
-  syllabus: 60_000, market: 30_000, evidence: 30_000, trends: 15_000, skillmap: 20_000, roadmap: 45_000,
+  syllabus: 60_000,
+  market: 30_000,
+  evidence: 30_000,
+  trends: 15_000,
+  skillmap: 20_000,
+  roadmap: 45_000,
 };
 
 /** Deterministic gaps between replayed events (150–600ms), indexed by event position. */
-export const REPLAY_DELAYS_MS = [150, 250, 300, 200, 450, 400, 450, 550, 350, 300, 400, 500, 300, 450, 600, 300, 450, 550, 300, 500, 300, 350];
+export const REPLAY_DELAYS_MS = [
+  150, 250, 300, 200, 450, 400, 450, 550, 350, 300, 400, 500, 300, 450, 600, 300, 450, 550, 300, 500, 300, 350,
+];
 
 export class ProfileNotFoundError extends Error {
-  constructor(public userId: string) { super(`No profile for ${userId}`); }
+  constructor(public userId: string) {
+    super(`No profile for ${userId}`);
+  }
 }
 
 export interface OnboardOptions {
@@ -80,7 +97,11 @@ export async function runOnboarding(userId: string, opts: OnboardOptions = {}): 
       emit({ runId, agent: "orchestrator", status: "error", message: "Something went wrong on our side. Showing demo data." });
     }
   };
-  const schedule = opts.schedule ?? ((w) => { void w(); });
+  const schedule =
+    opts.schedule ??
+    ((w) => {
+      void w();
+    });
   schedule(work);
   return { runId, mode };
 }
@@ -126,12 +147,21 @@ async function seedDemoResults(profile: Profile): Promise<void> {
       const roadmap = readFixture<Roadmap>(`roadmap.aisha.${roleId}.json`) ?? readFixture<Roadmap>("roadmap.aisha.ml-engineer.json");
       if (roadmap) await store.upsert("roadmaps", profile.id, asDoc({ ...roadmap, userId: profile.id, roleId }), profile.id);
     }
-  } catch { /* demo seeding is best effort */ }
+  } catch {
+    /* demo seeding is best effort */
+  }
 }
 
 const FALLBACK_SAMPLE: AgentEvent[] = [
   { runId: "run_demo", agent: "orchestrator", status: "started", message: "Building Aisha's bridge", ts: "2026-11-07T14:02:00.000Z" },
-  { runId: "run_demo", agent: "orchestrator", status: "done", message: "Bridge ready · 38% → 84%", ts: "2026-11-07T14:02:01.000Z", data: { readinessNow: 0.38, readinessProjected: 0.84 } },
+  {
+    runId: "run_demo",
+    agent: "orchestrator",
+    status: "done",
+    message: "Bridge ready · 38% → 84%",
+    ts: "2026-11-07T14:02:01.000Z",
+    data: { readinessNow: 0.38, readinessProjected: 0.84 },
+  },
 ];
 
 // ---------------------------------------------------------------- live pipeline
@@ -141,8 +171,12 @@ const MISSING = Symbol("missing");
 
 function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
   let t: ReturnType<typeof setTimeout> | undefined;
-  return Promise.race([p, new Promise<never>((_, rej) => { t = setTimeout(() => rej(new TimeoutError(`timed out after ${ms}ms`)), ms); })])
-    .finally(() => clearTimeout(t));
+  return Promise.race([
+    p,
+    new Promise<never>((_, rej) => {
+      t = setTimeout(() => rej(new TimeoutError(`timed out after ${ms}ms`)), ms);
+    }),
+  ]).finally(() => clearTimeout(t));
 }
 
 /**
@@ -150,7 +184,9 @@ function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
  * on the bus with the fallback's numbers, so the panel never goes quiet.
  */
 async function step<T>(o: {
-  runId: string; agent: AgentName; timeoutMs: number;
+  runId: string;
+  agent: AgentName;
+  timeoutMs: number;
   run: () => Promise<T | typeof MISSING>;
   fallback: () => T | null;
   summary: (v: T) => string;
@@ -159,7 +195,13 @@ async function step<T>(o: {
   const fallBack = (status: "done" | "error", why?: string) => {
     const v = o.fallback();
     const lead = why ? `${why}, so used` : "Used";
-    emit({ runId, agent, status, message: v ? `${lead} cached data · ${o.summary(v)}` : `${why ?? "Not available yet"}; no cached data, skipped`, data: { cached: true } });
+    emit({
+      runId,
+      agent,
+      status,
+      message: v ? `${lead} cached data · ${o.summary(v)}` : `${why ?? "Not available yet"}; no cached data, skipped`,
+      data: { cached: true },
+    });
     return v;
   };
   try {
@@ -181,8 +223,12 @@ function fn<A extends unknown[], R>(mod: Mod | null, name: string): ((...a: A) =
 
 export async function runLive(runId: string, profile: Profile, opts: OnboardOptions = {}): Promise<void> {
   const loaders: Record<LiveAgent, AgentLoader> = {
-    syllabus: moduleLoader("syllabus"), market: moduleLoader("market"), trends: moduleLoader("trends"),
-    evidence: moduleLoader("evidence"), roadmap: moduleLoader("roadmap"), ...opts.loaders,
+    syllabus: moduleLoader("syllabus"),
+    market: moduleLoader("market"),
+    trends: moduleLoader("trends"),
+    evidence: moduleLoader("evidence"),
+    roadmap: moduleLoader("roadmap"),
+    ...opts.loaders,
   };
   const timeouts = { ...DEFAULT_TIMEOUTS, ...opts.timeouts };
   const read = (opts.fixtures ?? readFixture) as <T>(file: string) => T | null;
@@ -190,20 +236,33 @@ export async function runLive(runId: string, profile: Profile, opts: OnboardOpti
   const roleId = profile.dna.targetRoles[0] ?? "ml-engineer";
   const store = getStore();
 
-  emit({ runId, agent: "orchestrator", status: "started", message: `Building ${firstName(profile)}'s bridge: syllabus, job ads, GitHub and trends in parallel`, data: { userId, roleId } });
+  emit({
+    runId,
+    agent: "orchestrator",
+    status: "started",
+    message: `Building ${firstName(profile)}'s bridge: syllabus, job ads, GitHub and trends in parallel`,
+    data: { userId, roleId },
+  });
 
   const [programme, roleDemand, evidence, trends] = await Promise.all([
     step<Programme>({
-      runId, agent: "syllabus", timeoutMs: timeouts.syllabus,
+      runId,
+      agent: "syllabus",
+      timeoutMs: timeouts.syllabus,
       run: async () => {
-        const extract = fn<[{ programmeId: string; url?: string; runId?: string }], Programme>(await loaders.syllabus(), "extractProgramme");
+        const extract = fn<[{ programmeId: string; url?: string; runId?: string }], Programme>(
+          await loaders.syllabus(),
+          "extractProgramme",
+        );
         return extract ? extract({ programmeId: profile.programmeId, url: opts.programmeUrl, runId }) : MISSING;
       },
       fallback: () => read<Programme>(`programme.${profile.programmeId}.json`),
       summary: (p) => `${p.modules.length} course units`,
     }),
     step<RoleDemand>({
-      runId, agent: "market", timeoutMs: timeouts.market,
+      runId,
+      agent: "market",
+      timeoutMs: timeouts.market,
       run: async () => {
         const get = fn<[string, { runId?: string }], RoleDemand>(await loaders.market(), "getRoleDemand");
         return get ? get(roleId, { runId }) : MISSING;
@@ -212,16 +271,23 @@ export async function runLive(runId: string, profile: Profile, opts: OnboardOpti
       summary: (d) => `${d.adsAnalysed} ${d.roleName} ads analysed`,
     }),
     step<EvidenceItem[]>({
-      runId, agent: "evidence", timeoutMs: timeouts.evidence,
+      runId,
+      agent: "evidence",
+      timeoutMs: timeouts.evidence,
       run: async () => {
-        const sync = fn<[{ userId: string; githubLogin?: string; leetcodeUser?: string; runId?: string }], EvidenceItem[]>(await loaders.evidence(), "syncEvidence");
+        const sync = fn<[{ userId: string; githubLogin?: string; leetcodeUser?: string; runId?: string }], EvidenceItem[]>(
+          await loaders.evidence(),
+          "syncEvidence",
+        );
         return sync ? sync({ userId, githubLogin: profile.githubLogin, leetcodeUser: profile.leetcodeUser, runId }) : MISSING;
       },
       fallback: () => read<EvidenceItem[]>(`evidence.${userId}.json`),
       summary: (items) => `${new Set(items.map((i) => i.skillId)).size} skills proven from ${items.length} pieces of evidence`,
     }),
     step<TrendSeries[]>({
-      runId, agent: "trends", timeoutMs: timeouts.trends,
+      runId,
+      agent: "trends",
+      timeoutMs: timeouts.trends,
       run: async () => {
         const get = fn<[], TrendSeries[]>(await loaders.trends(), "getTrends");
         return get ? get() : MISSING;
@@ -231,11 +297,18 @@ export async function runLive(runId: string, profile: Profile, opts: OnboardOpti
     }),
   ]);
 
-  emit({ runId, agent: "skillmap", status: "started", message: `Mapping ${programme ? `${programme.modules.length} course units` : "your degree"} and your code onto ${roleDemand ? roleDemand.roleName : roleId} skills` });
+  emit({
+    runId,
+    agent: "skillmap",
+    status: "started",
+    message: `Mapping ${programme ? `${programme.modules.length} course units` : "your degree"} and your code onto ${roleDemand ? roleDemand.roleName : roleId} skills`,
+  });
   let map: BridgeMap | null = null;
   try {
     map = await withTimeout(loadGraph(userId, roleId), timeouts.skillmap);
-  } catch { /* reported below */ }
+  } catch {
+    /* reported below */
+  }
   if (!map) {
     emit({ runId, agent: "skillmap", status: "error", message: "Couldn't build your Bridge Map yet" });
     emit({ runId, agent: "orchestrator", status: "error", message: "Your Bridge Map isn't ready. Showing demo data." });
@@ -243,16 +316,27 @@ export async function runLive(runId: string, profile: Profile, opts: OnboardOpti
   }
   const count = (s: string) => map!.nodes.filter((n) => n.status === s).length;
   emit({
-    runId, agent: "skillmap", status: "done",
+    runId,
+    agent: "skillmap",
+    status: "done",
     message: `${map.nodes.length} skills mapped: ${count("proven")} proven, ${count("degree-done") + count("degree-upcoming")} covered by your degree, ${count("gap")} gaps`,
     data: { nodes: map.nodes.length, readinessNow: map.readinessNow },
   });
-  try { await store.upsert("maps", `${userId}:${roleId}`, asDoc(map), userId); } catch { /* the map still renders from loadGraph */ }
+  try {
+    await store.upsert("maps", `${userId}:${roleId}`, asDoc(map), userId);
+  } catch {
+    /* the map still renders from loadGraph */
+  }
 
   const roadmap = await step<Roadmap>({
-    runId, agent: "roadmap", timeoutMs: timeouts.roadmap,
+    runId,
+    agent: "roadmap",
+    timeoutMs: timeouts.roadmap,
     run: async () => {
-      const generate = fn<[{ profile: Profile; map: BridgeMap; programme: Programme; roleDemand: RoleDemand; trends: TrendSeries[]; runId?: string }], Roadmap>(await loaders.roadmap(), "generateRoadmap");
+      const generate = fn<
+        [{ profile: Profile; map: BridgeMap; programme: Programme; roleDemand: RoleDemand; trends: TrendSeries[]; runId?: string }],
+        Roadmap
+      >(await loaders.roadmap(), "generateRoadmap");
       if (!generate || !programme || !roleDemand) return MISSING;
       return generate({ profile, map: map!, programme, roleDemand, trends: trends ?? [], runId });
     },
@@ -260,13 +344,19 @@ export async function runLive(runId: string, profile: Profile, opts: OnboardOpti
     summary: (r) => `${r.weeks.length} weeks planned, ${r.skipped.length} skills skipped because your degree covers them`,
   });
   if (roadmap) {
-    try { await store.upsert("roadmaps", userId, asDoc(roadmap), userId); } catch { /* best effort */ }
+    try {
+      await store.upsert("roadmaps", userId, asDoc(roadmap), userId);
+    } catch {
+      /* best effort */
+    }
   }
 
   const now = map.readinessNow;
   const projected = roadmap?.readinessProjected ?? map.readinessProjected;
   emit({
-    runId, agent: "orchestrator", status: "done",
+    runId,
+    agent: "orchestrator",
+    status: "done",
     message: `Bridge ready · ${pct(now)} → ${pct(projected)}`,
     data: { readinessNow: now, readinessProjected: projected, roleId, evidence: evidence?.length ?? 0 },
   });

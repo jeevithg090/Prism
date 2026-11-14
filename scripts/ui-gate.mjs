@@ -30,7 +30,14 @@ const VIEWPORTS = [
 const MIN_TEXT_PX = 13;
 
 function parseArgs(argv) {
-  const opts = { base: process.env.UI_GATE_BASE ?? "http://localhost:3000", extra: [], only: false, settle: 900, out: ".ui-gate", shots: true };
+  const opts = {
+    base: process.env.UI_GATE_BASE ?? "http://localhost:3000",
+    extra: [],
+    only: false,
+    settle: 900,
+    out: ".ui-gate",
+    shots: true,
+  };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--base") opts.base = argv[++i];
@@ -54,7 +61,11 @@ function parseArgs(argv) {
 }
 
 function slug(route) {
-  const s = route.replace(/^\//, "").replace(/[?&=#/]+/g, "-").replace(/[^a-zA-Z0-9._-]/g, "").replace(/-+$/, "");
+  const s = route
+    .replace(/^\//, "")
+    .replace(/[?&=#/]+/g, "-")
+    .replace(/[^a-zA-Z0-9._-]/g, "")
+    .replace(/-+$/, "");
   return s || "home";
 }
 
@@ -112,7 +123,11 @@ function inspectPage(minText) {
   function accessibleName(el) {
     const lb = el.getAttribute("aria-labelledby");
     if (lb) {
-      const t = lb.split(/\s+/).map((id) => document.getElementById(id)?.textContent ?? "").join(" ").trim();
+      const t = lb
+        .split(/\s+/)
+        .map((id) => document.getElementById(id)?.textContent ?? "")
+        .join(" ")
+        .trim();
       if (t) return t;
     }
     const al = el.getAttribute("aria-label");
@@ -158,10 +173,14 @@ function inspectPage(minText) {
   }
 
   // 3. Images without alt (decorative images use alt="").
-  const noAlt = [...document.querySelectorAll("img:not([alt])")].filter(isVisible).map((el) => ({ where: describe(el), src: (el.getAttribute("src") ?? "").slice(0, 60) }));
+  const noAlt = [...document.querySelectorAll("img:not([alt])")]
+    .filter(isVisible)
+    .map((el) => ({ where: describe(el), src: (el.getAttribute("src") ?? "").slice(0, 60) }));
 
   // 4. Buttons and links with no accessible name.
-  const controls = [...document.querySelectorAll('button, a[href], [role="button"], [role="link"], [role="tab"], [role="menuitem"]')].filter(isVisible);
+  const controls = [
+    ...document.querySelectorAll('button, a[href], [role="button"], [role="link"], [role="tab"], [role="menuitem"]'),
+  ].filter(isVisible);
   const unnamed = controls.filter((el) => !accessibleName(el)).map((el) => ({ where: describe(el), html: el.outerHTML.slice(0, 120) }));
 
   // 5. Primary-filled buttons above the fold (bg equals the resolved --primary).
@@ -206,7 +225,8 @@ async function checkRoute(browser, opts, route, vp) {
   page.on("pageerror", (e) => consoleErrors.push(`pageerror: ${String(e.message).slice(0, 160)}`));
   const badResponses = [];
   page.on("response", (res) => {
-    if (res.status() >= 400 && res.request().resourceType() !== "document") badResponses.push(`${res.status()} ${res.url().replace(opts.base, "")}`);
+    if (res.status() >= 400 && res.request().resourceType() !== "document")
+      badResponses.push(`${res.status()} ${res.url().replace(opts.base, "")}`);
   });
 
   const r = { route, width: vp.width, fails: [], warns: [], cells: {} };
@@ -239,7 +259,10 @@ async function checkRoute(browser, opts, route, vp) {
     // DOM checks
     const d = await page.evaluate(inspectPage, MIN_TEXT_PX);
     r.cells.overflow = d.overflow ? `+${d.scrollWidth - d.vw}px` : "ok";
-    if (d.overflow) r.fails.push(`horizontal overflow: scrollWidth ${d.scrollWidth} > ${d.vw}; offenders: ${d.overflowers.map((o) => `${o.where} (right ${o.right})`).join(" | ") || "unknown"}`);
+    if (d.overflow)
+      r.fails.push(
+        `horizontal overflow: scrollWidth ${d.scrollWidth} > ${d.vw}; offenders: ${d.overflowers.map((o) => `${o.where} (right ${o.right})`).join(" | ") || "unknown"}`,
+      );
 
     r.cells.text = d.small.length ? `${d.small.length} <${MIN_TEXT_PX}px` : "ok";
     if (d.small.length) {
@@ -248,13 +271,26 @@ async function checkRoute(browser, opts, route, vp) {
     }
 
     r.cells.alt = d.noAlt.length ? `${d.noAlt.length} missing` : "ok";
-    if (d.noAlt.length) r.fails.push(`img without alt x${d.noAlt.length}: ${d.noAlt.slice(0, 3).map((i) => `${i.where} ${i.src}`).join(" | ")}`);
+    if (d.noAlt.length)
+      r.fails.push(
+        `img without alt x${d.noAlt.length}: ${d.noAlt
+          .slice(0, 3)
+          .map((i) => `${i.where} ${i.src}`)
+          .join(" | ")}`,
+      );
 
     r.cells.names = d.unnamed.length ? `${d.unnamed.length} unnamed` : "ok";
-    if (d.unnamed.length) r.fails.push(`button/link without accessible name x${d.unnamed.length}: ${d.unnamed.slice(0, 3).map((u) => `${u.where} ${u.html}`).join(" | ")}`);
+    if (d.unnamed.length)
+      r.fails.push(
+        `button/link without accessible name x${d.unnamed.length}: ${d.unnamed
+          .slice(0, 3)
+          .map((u) => `${u.where} ${u.html}`)
+          .join(" | ")}`,
+      );
 
     r.cells.primary = String(d.primaries.length);
-    if (d.primaries.length > 1) r.warns.push(`${d.primaries.length} primary buttons above the fold (one primary action per screen): ${d.primaries.join(", ")}`);
+    if (d.primaries.length > 1)
+      r.warns.push(`${d.primaries.length} primary buttons above the fold (one primary action per screen): ${d.primaries.join(", ")}`);
     if (d.h1s.length === 0) r.warns.push("no visible <h1> (use PageHeader)");
     if (d.h1s.length > 1) r.warns.push(`${d.h1s.length} visible <h1>s: ${d.h1s.join(" | ")}`);
     const otherErrors = consoleErrors.filter((m) => !m.startsWith("Failed to load resource"));
@@ -298,7 +334,9 @@ async function main() {
   try {
     const probe = await fetch(opts.base, { redirect: "manual" }).catch(() => null);
     if (!probe) {
-      console.error(`ui-gate: nothing is answering at ${opts.base}. Start the app first (npm run dev, or DEMO_MODE=true npx next start -p 3311).`);
+      console.error(
+        `ui-gate: nothing is answering at ${opts.base}. Start the app first (npm run dev, or DEMO_MODE=true npx next start -p 3311).`,
+      );
       process.exit(2);
     }
 
@@ -353,7 +391,9 @@ async function main() {
     }
     if (opts.shots) console.log(`\nScreenshots: ${path.resolve(opts.out)}/ (open them and look: the gate cannot judge taste)`);
     const nFail = results.reduce((n, r) => n + r.fails.length, 0);
-    console.log(`\nUI-GATE: ${nFail ? `FAIL ${nFail}` : "PASS"} (${results.filter((r) => r.result === "PASS").length} pass, ${warning.length} with warnings, ${failing.length} failing of ${results.length})`);
+    console.log(
+      `\nUI-GATE: ${nFail ? `FAIL ${nFail}` : "PASS"} (${results.filter((r) => r.result === "PASS").length} pass, ${warning.length} with warnings, ${failing.length} failing of ${results.length})`,
+    );
     process.exitCode = nFail ? 1 : 0;
   } finally {
     await browser.close();

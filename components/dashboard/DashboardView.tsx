@@ -16,7 +16,8 @@ import { AskKeystoneCard, MarketPulse, SlotBoundary } from "./SideCards";
 import { ThisWeekCard, ThisWeekSkeleton, primaryLink } from "./ThisWeekCard";
 import { InterviewPrepCard } from "@/components/interview-prep/InterviewPrepCard";
 
-const textLink = "font-medium text-primary underline decoration-1 underline-offset-4 outline-none hover:decoration-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
+const textLink =
+  "font-medium text-primary underline decoration-1 underline-offset-4 outline-none hover:decoration-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
 
 function firstName(profile: Profile | null, userId: string) {
   const n = profile?.name?.trim().split(/\s+/)[0];
@@ -62,16 +63,29 @@ function WatchAgentsLink() {
   const { events, setOpen } = useActivity();
   if (events.length === 0) return null;
   return (
-    <button type="button" onClick={() => setOpen(true)} className={cn(textLink, "cursor-pointer text-sm whitespace-nowrap active:translate-y-px disabled:cursor-not-allowed disabled:opacity-55")}>
+    <button
+      type="button"
+      onClick={() => setOpen(true)}
+      className={cn(
+        textLink,
+        "cursor-pointer text-sm whitespace-nowrap active:translate-y-px disabled:cursor-not-allowed disabled:opacity-55",
+      )}
+    >
       Watch the agents build it
     </button>
   );
 }
 
 export function DashboardView({
-  userId, roleId, profile, initialMap,
+  userId,
+  roleId,
+  profile,
+  initialMap,
 }: {
-  userId: string; roleId: string; profile: Profile | null; initialMap?: BridgeMap | null;
+  userId: string;
+  roleId: string;
+  profile: Profile | null;
+  initialMap?: BridgeMap | null;
 }) {
   const graph = useBridgeMap(userId, roleId, initialMap);
   const useDemo = useDemoFallback();
@@ -112,7 +126,11 @@ export function DashboardView({
         icon={Network}
         title="Your Bridge Map isn't built yet"
         body="Tell us about your degree and the role you want. Our agents read your syllabus and real job ads, then plan your first week."
-        action={<Link href="/onboard" className={primaryLink}>Start onboarding</Link>}
+        action={
+          <Link href="/onboard" className={primaryLink}>
+            Start onboarding
+          </Link>
+        }
       />
     );
   } else {

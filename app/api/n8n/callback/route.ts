@@ -22,15 +22,23 @@ async function replanFor(moved: string[], runId: string): Promise<number> {
     if (!skills.some((s) => moved.includes(s))) continue;
     try {
       const r = await fetch(`${app}/api/roadmap/generate`, {
-        method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ userId: p.id, roleId }), signal: AbortSignal.timeout(10_000),
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ userId: p.id, roleId }),
+        signal: AbortSignal.timeout(10_000),
       });
       if (r.ok) n++;
     } catch {
       // one failed re-plan doesn't stop the others
     }
   }
-  emit({ runId, agent: "n8n", status: "done", message: `market moved (${moved.join(", ")}): re-planned ${n} roadmap${n === 1 ? "" : "s"}`, data: { replanned: n } });
+  emit({
+    runId,
+    agent: "n8n",
+    status: "done",
+    message: `market moved (${moved.join(", ")}): re-planned ${n} roadmap${n === 1 ? "" : "s"}`,
+    data: { replanned: n },
+  });
   return n;
 }
 
@@ -40,7 +48,7 @@ export async function POST(req: Request) {
   try {
     body = await req.json();
   } catch {
-    return badRequest("Body must be JSON like {\"workflow\":\"market-refresh\",\"result\":{}}");
+    return badRequest('Body must be JSON like {"workflow":"market-refresh","result":{}}');
   }
   const parsed = CallbackReqZ.safeParse(body);
   if (!parsed.success) return badRequest(parsed.error);
@@ -56,8 +64,12 @@ export async function POST(req: Request) {
       const replanned = moved.success && moved.data.length ? await replanFor(moved.data, runId) : 0;
       return ok({ ok: true, workflow, replanned });
     }
-    if (workflow === "pod-kickoff" && typeof result.podId === "string" && typeof result.discordChannelUrl === "string"
-      && /^https:\/\//.test(result.discordChannelUrl)) {
+    if (
+      workflow === "pod-kickoff" &&
+      typeof result.podId === "string" &&
+      typeof result.discordChannelUrl === "string" &&
+      /^https:\/\//.test(result.discordChannelUrl)
+    ) {
       const pod = await store.get<Pod>("pods", result.podId);
       if (pod) {
         await store.upsert("pods", pod.id, { ...pod, discordChannelUrl: result.discordChannelUrl }, pod.members?.[0]?.userId);

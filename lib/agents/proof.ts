@@ -56,7 +56,11 @@ export async function loadPod(podId: string): Promise<Pod | null> {
 export const repoNameOf = (repoUrl?: string) => repoUrl?.replace(/\/+$/, "").split("/").pop() || undefined;
 
 async function profileOf(userId: string): Promise<Profile | null> {
-  try { return await getStore().get<Profile>("profiles", userId); } catch { return null; }
+  try {
+    return await getStore().get<Profile>("profiles", userId);
+  } catch {
+    return null;
+  }
 }
 const firstName = (p: Profile | null, id: string) => p?.name?.split(" ")[0] || capitalise(id);
 
@@ -65,11 +69,15 @@ async function loadMap(userId: string, role: string): Promise<BridgeMap | null> 
   try {
     const stored = await getStore().get<BridgeMap>("maps", key);
     if (stored && Array.isArray(stored.nodes)) return stored;
-  } catch { /* fall through */ }
+  } catch {
+    /* fall through */
+  }
   try {
     const built = await loadGraph(userId, role);
     if (built && Array.isArray(built.nodes)) return built;
-  } catch { /* fall through */ }
+  } catch {
+    /* fall through */
+  }
   const fx = readFixture<BridgeMap>(`data/fixtures/bridgemap.${userId}.${role}.json`);
   return fx && Array.isArray(fx.nodes) ? fx : null;
 }
@@ -144,7 +152,9 @@ async function doRecord({ podId, issueIndex, prUrl, runId, mergedAt }: RecordMer
   const url = prUrl || issue.githubIssueUrl || repoUrl || "";
 
   emit({
-    runId: rid, agent: "techlead", status: "done",
+    runId: rid,
+    agent: "techlead",
+    status: "done",
     message: `PR merged: '${issue.title}'${hasReviewer ? ` (reviewed by ${reviewer})` : ""}`,
     data: { podId, issueIndex, prUrl: url },
   });
@@ -152,36 +162,67 @@ async function doRecord({ podId, issueIndex, prUrl, runId, mergedAt }: RecordMer
   // 1. Evidence: the learner's skill, and the reviewer's code review (teaching is assessed too).
   const base = `ev_pod_${podId}_${issueIndex}`;
   const learnerEv: EvidenceItem = {
-    id: `${base}_${learnerId}`, userId: learnerId, skillId, level: 2, confidence: 0.9, source: "keystone-pod", url,
-    quote: `Merged '${issue.title}' in ${repo}${hasReviewer ? `, reviewed by ${reviewer}` : ""}`, createdAt: now,
+    id: `${base}_${learnerId}`,
+    userId: learnerId,
+    skillId,
+    level: 2,
+    confidence: 0.9,
+    source: "keystone-pod",
+    url,
+    quote: `Merged '${issue.title}' in ${repo}${hasReviewer ? `, reviewed by ${reviewer}` : ""}`,
+    createdAt: now,
   };
   await store.upsert("evidence", learnerEv.id, learnerEv, learnerId);
   const evidenceIds = [learnerEv.id];
   emit({
-    runId: rid, agent: "evidence", status: "done", message: `${skill} proven for ${learner} · source: Keystone pod`,
+    runId: rid,
+    agent: "evidence",
+    status: "done",
+    message: `${skill} proven for ${learner} · source: Keystone pod`,
     data: { evidenceId: learnerEv.id, userId: learnerId, skillId, level: 2, confidence: 0.9 },
   });
 
   if (hasReviewer) {
     const reviewEv: EvidenceItem = {
-      id: `${base}_${reviewerId}_review`, userId: reviewerId, skillId: "code-review", level: 2, confidence: 0.8,
-      source: "keystone-pod", url, quote: `Reviewed ${learner}'s ${skill} PR`, createdAt: now,
+      id: `${base}_${reviewerId}_review`,
+      userId: reviewerId,
+      skillId: "code-review",
+      level: 2,
+      confidence: 0.8,
+      source: "keystone-pod",
+      url,
+      quote: `Reviewed ${learner}'s ${skill} PR`,
+      createdAt: now,
     };
     await store.upsert("evidence", reviewEv.id, reviewEv, reviewerId);
     evidenceIds.push(reviewEv.id);
     emit({
-      runId: rid, agent: "evidence", status: "done", message: `Code review proven for ${reviewer}`,
+      runId: rid,
+      agent: "evidence",
+      status: "done",
+      message: `Code review proven for ${reviewer}`,
       data: { evidenceId: reviewEv.id, userId: reviewerId, skillId: "code-review", level: 2, confidence: 0.8 },
     });
   }
 
   // 2. Momentum: pr-merged for the learner; helped-newcomer for the reviewer of a 🌱 learner.
-  const merged: MomentumEvent = { id: `pr-merged-${podId}-${issueIndex}`, userId: learnerId, kind: "pr-merged", ts, label: `Merged PR in ${repo}`, url };
+  const merged: MomentumEvent = {
+    id: `pr-merged-${podId}-${issueIndex}`,
+    userId: learnerId,
+    kind: "pr-merged",
+    ts,
+    label: `Merged PR in ${repo}`,
+    url,
+  };
   await store.upsert("momentum_events", merged.id!, merged, learnerId);
   if (hasReviewer && learnerP?.badges?.includes("new-to-uni")) {
     const helped: MomentumEvent = {
-      id: `helped-newcomer-${podId}-${issueIndex}`, userId: reviewerId, kind: "helped-newcomer", ts,
-      label: `Reviewed ${learner}'s first ${skill} PR`, url,
+      id: `helped-newcomer-${podId}-${issueIndex}`,
+      userId: reviewerId,
+      kind: "helped-newcomer",
+      ts,
+      label: `Reviewed ${learner}'s first ${skill} PR`,
+      url,
     };
     await store.upsert("momentum_events", helped.id!, helped, reviewerId);
   }
@@ -200,13 +241,20 @@ async function doRecord({ podId, issueIndex, prUrl, runId, mergedAt }: RecordMer
       statusBefore = node.status;
       const fBefore = readinessFormula(map.nodes);
       const nodes = map.nodes.map((n) =>
-        n.skillId !== skillId ? n : {
-          ...n, status: "proven" as const, level: (Math.max(n.level ?? 0, 2) as BridgeNode["level"]),
-          evidenceIds: [...new Set([...(n.evidenceIds ?? []), learnerEv.id])],
-        });
+        n.skillId !== skillId
+          ? n
+          : {
+              ...n,
+              status: "proven" as const,
+              level: Math.max(n.level ?? 0, 2) as BridgeNode["level"],
+              evidenceIds: [...new Set([...(n.evidenceIds ?? []), learnerEv.id])],
+            },
+      );
       readinessAfter = round2(clamp01(readinessBefore + (readinessFormula(nodes) - fBefore)));
       const updated: BridgeMap & { id?: string } = {
-        ...map, nodes, readinessNow: readinessAfter,
+        ...map,
+        nodes,
+        readinessNow: readinessAfter,
         readinessProjected: Math.max(map.readinessProjected ?? 0, readinessAfter),
       };
       await store.upsert("maps", `${learnerId}:${role}`, updated, learnerId);
@@ -225,9 +273,13 @@ async function doRecord({ podId, issueIndex, prUrl, runId, mergedAt }: RecordMer
       const weeks = roadmap.weeks.map((w) => (w === wk ? { ...w, tasks: w.tasks.map((t) => ({ ...t, done: true })) } : w));
       await store.upsert("roadmaps", learnerId, { ...roadmap, weeks } as Roadmap & { id?: string }, learnerId);
     }
-  } catch { /* the roadmap is P2's; re-planning is best-effort */ }
+  } catch {
+    /* the roadmap is P2's; re-planning is best-effort */
+  }
   emit({
-    runId: rid, agent: "roadmap", status: "done",
+    runId: rid,
+    agent: "roadmap",
+    status: "done",
     message: map
       ? `${learner}'s readiness ${pct(readinessBefore)} → ${pct(readinessAfter)} · re-planning week ${nextWeek}`
       : `${skill} marked proven on ${learner}'s roadmap · re-planning week ${nextWeek}`,
@@ -244,7 +296,9 @@ async function doRecord({ podId, issueIndex, prUrl, runId, mergedAt }: RecordMer
   const progress = (await store.get<ProjectProgress>("pod_progress", podId)) ?? { podId, merged: [] };
   const entry: ProjectProgress["merged"][number] = { issueIndex, userId: learnerId, skillId, mergedAt: ts, ...(url ? { prUrl: url } : {}) };
   const nextProgress: ProjectProgress & { id: string } = {
-    id: podId, podId, merged: [...(progress.merged ?? []).filter((m) => m.issueIndex !== issueIndex), entry],
+    id: podId,
+    podId,
+    merged: [...(progress.merged ?? []).filter((m) => m.issueIndex !== issueIndex), entry],
   };
   await store.upsert("pod_progress", podId, nextProgress, pod.members[0]?.userId);
 
@@ -252,11 +306,22 @@ async function doRecord({ podId, issueIndex, prUrl, runId, mergedAt }: RecordMer
   const message = alreadyProven
     ? `${skill} was already proven on ${learner}'s Bridge Map, and this merged PR adds Built it to the Proof Ladder`
     : map
-    ? `${skill} is now proven on ${learner}'s Bridge Map · readiness ${pct(readinessBefore)} → ${pct(readinessAfter)}`
-    : `${skill} is now proven for ${learner}${hasReviewer ? ` · reviewed by ${reviewer}` : ""}`;
+      ? `${skill} is now proven on ${learner}'s Bridge Map · readiness ${pct(readinessBefore)} → ${pct(readinessAfter)}`
+      : `${skill} is now proven for ${learner}${hasReviewer ? ` · reviewed by ${reviewer}` : ""}`;
   const result: ProofOutcome = {
-    podId, issueIndex, userId: learnerId, skillId, skillName: skill, reviewerUserId: reviewerId,
-    evidenceIds, readinessBefore, readinessAfter, badgesEarned, momentumPoints: PR_MERGED_POINTS, message, runId: rid,
+    podId,
+    issueIndex,
+    userId: learnerId,
+    skillId,
+    skillName: skill,
+    reviewerUserId: reviewerId,
+    evidenceIds,
+    readinessBefore,
+    readinessAfter,
+    badgesEarned,
+    momentumPoints: PR_MERGED_POINTS,
+    message,
+    runId: rid,
     ...(statusBefore ? { statusBefore } : {}),
   };
   await store.upsert("proofs", proofId, { id: proofId, ...result }, learnerId);
@@ -285,7 +350,12 @@ const MergedPREventZ = z.object({
   }),
 });
 
-const normRepo = (u?: string) => (u ?? "").trim().toLowerCase().replace(/\.git$/, "").replace(/\/+$/, "");
+const normRepo = (u?: string) =>
+  (u ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/\.git$/, "")
+    .replace(/\/+$/, "");
 
 /** `Closes #3` / `fixes #3` first, then any `#3`, in the PR title or body. */
 export function referencedIssueNumber(text: string): number | null {
@@ -311,7 +381,9 @@ export async function proofFromPullRequestEvent(event: unknown): Promise<ProofRe
   const e = parsed.data;
   if (e.action !== "closed" || e.pull_request.merged !== true) return null;
 
-  const repoUrl = normRepo(e.repository.html_url ?? `https://github.com/${e.repository.full_name ?? `${e.repository.owner.login}/${e.repository.name}`}`);
+  const repoUrl = normRepo(
+    e.repository.html_url ?? `https://github.com/${e.repository.full_name ?? `${e.repository.owner.login}/${e.repository.name}`}`,
+  );
   const store = getStore();
   const pods = [...(await store.list<Pod>("pods"))];
   const fx = readFixture<Pod>("data/fixtures/pod.aisha.json");
@@ -337,6 +409,9 @@ export async function proofFromPullRequestEvent(event: unknown): Promise<ProofRe
   if (issueIndex === null) return null;
 
   return recordMergedPR({
-    podId: pod.id, issueIndex, prUrl: e.pull_request.html_url, mergedAt: e.pull_request.merged_at ?? undefined,
+    podId: pod.id,
+    issueIndex,
+    prUrl: e.pull_request.html_url,
+    mergedAt: e.pull_request.merged_at ?? undefined,
   });
 }

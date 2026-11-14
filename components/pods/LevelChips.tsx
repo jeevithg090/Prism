@@ -2,19 +2,12 @@
 // Reply level-3 markers: small outline tags judges can tick off on screen.
 import * as React from "react";
 import { Megaphone, Network, Workflow, type LucideIcon } from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 export type LevelItem = "multi-agent" | "knowledge-graph" | "launch-campaign";
 
-export const LEVEL_ITEMS: Record<
-  LevelItem,
-  { icon: LucideIcon; label: string; tip: string }
-> = {
+export const LEVEL_ITEMS: Record<LevelItem, { icon: LucideIcon; label: string; tip: string }> = {
   "multi-agent": {
     icon: Workflow,
     label: "Multi-agent",
@@ -32,19 +25,10 @@ export const LEVEL_ITEMS: Record<
   },
 };
 
-export function LevelChips({
-  items,
-  className,
-}: {
-  items: LevelItem[];
-  className?: string;
-}) {
+export function LevelChips({ items, className }: { items: LevelItem[]; className?: string }) {
   if (items.length === 0) return null;
   return (
-    <ul
-      className={cn("flex flex-wrap items-center gap-1.5", className)}
-      aria-label="Reply level 3 features"
-    >
+    <ul className={cn("flex flex-wrap items-center gap-1.5", className)} aria-label="Reply level 3 features">
       {items.map((id) => {
         const item = LEVEL_ITEMS[id];
         const Icon = item.icon;
@@ -60,15 +44,11 @@ export function LevelChips({
                   />
                 }
               >
-                <span className="border-r border-rule-2 pr-1.5 font-semibold">
-                  L3
-                </span>
+                <span className="border-r border-rule-2 pr-1.5 font-semibold">L3</span>
                 <Icon className="size-3.5 text-muted-foreground" aria-hidden />
                 {item.label}
               </TooltipTrigger>
-              <TooltipContent className="max-w-64 text-pretty">
-                {item.tip}
-              </TooltipContent>
+              <TooltipContent className="max-w-64 text-pretty">{item.tip}</TooltipContent>
             </Tooltip>
           </li>
         );

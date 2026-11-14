@@ -3,7 +3,19 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { AgentName } from "@/lib/types";
-import { AGENT_META, AgentAvatar, BadgePill, DemoDataNote, EmptyState, ErrorState, LoadingSkeleton, ReadinessRing, SkillChip, StatCard, StatusBadge } from "./index";
+import {
+  AGENT_META,
+  AgentAvatar,
+  BadgePill,
+  DemoDataNote,
+  EmptyState,
+  ErrorState,
+  LoadingSkeleton,
+  ReadinessRing,
+  SkillChip,
+  StatCard,
+  StatusBadge,
+} from "./index";
 
 afterEach(cleanup);
 
@@ -28,7 +40,13 @@ describe("AgentAvatar", () => {
   it("has its own icon, colour and name for all 14 agents", () => {
     const agents = Object.keys(AGENT_META) as AgentName[];
     expect(agents).toHaveLength(14);
-    render(<>{agents.map((a) => <AgentAvatar key={a} agent={a} size={40} />)}</>);
+    render(
+      <>
+        {agents.map((a) => (
+          <AgentAvatar key={a} agent={a} size={40} />
+        ))}
+      </>,
+    );
     for (const a of agents) {
       const el = screen.getByRole("img", { name: AGENT_META[a].name });
       expect(el.querySelector("svg")).not.toBeNull();
@@ -40,7 +58,12 @@ describe("AgentAvatar", () => {
 
 describe("StatusBadge and SkillChip", () => {
   it("StatusBadge always pairs an icon with a label; degree-upcoming is dashed", () => {
-    const { container } = render(<><StatusBadge status="gap" /><StatusBadge status="degree-upcoming" /></>);
+    const { container } = render(
+      <>
+        <StatusBadge status="gap" />
+        <StatusBadge status="degree-upcoming" />
+      </>,
+    );
     expect(screen.getByText("Gap").querySelector("svg")).not.toBeNull();
     expect(screen.getByText("Later in your degree")).toHaveClass("border-dashed");
     expect(container.querySelectorAll("svg")).toHaveLength(2);
@@ -88,7 +111,13 @@ describe("StatCard, EmptyState, ErrorState", () => {
   });
 
   it("BadgePill, DemoDataNote and LoadingSkeleton keep their text", () => {
-    render(<><BadgePill badge="new-to-uni" /><DemoDataNote /><LoadingSkeleton variant="list" /></>);
+    render(
+      <>
+        <BadgePill badge="new-to-uni" />
+        <DemoDataNote />
+        <LoadingSkeleton variant="list" />
+      </>,
+    );
     expect(screen.getByText("New to UoM")).toBeInTheDocument();
     expect(screen.getByText("Demo data")).toBeInTheDocument();
     expect(document.querySelector('[aria-busy="true"]')).not.toBeNull();

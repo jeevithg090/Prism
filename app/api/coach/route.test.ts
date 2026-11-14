@@ -7,7 +7,14 @@ vi.mock("@/lib/store", async () => {
   h.api = memoryStore();
   return { getStore: () => h.api!.store };
 });
-vi.mock("@/lib/llm", () => ({ llmJSON: vi.fn(async () => { throw new Error("no_key"); }), embed: vi.fn(), cosine: vi.fn(), LLMError: class extends Error {} }));
+vi.mock("@/lib/llm", () => ({
+  llmJSON: vi.fn(async () => {
+    throw new Error("no_key");
+  }),
+  embed: vi.fn(),
+  cosine: vi.fn(),
+  LLMError: class extends Error {},
+}));
 vi.mock("@/lib/agents/events", () => ({ emit: vi.fn(), newRunId: () => "run_route", subscribe: vi.fn() }));
 vi.mock("@/lib/agents/coach/context", async (orig) => {
   const { CONTEXT } = await import("@/lib/agents/coach/testTools");
@@ -20,22 +27,31 @@ vi.mock("@/lib/agents/tools/registry", async () => {
 });
 vi.mock("@/lib/agents/coach/loop", async (orig) => {
   const real = await orig<typeof import("@/lib/agents/coach/loop")>();
-  return { ...real, runCoach: (...a: Parameters<typeof real.runCoach>) => (h.fail ? Promise.reject(new Error("boom")) : real.runCoach(...a)) };
+  return {
+    ...real,
+    runCoach: (...a: Parameters<typeof real.runCoach>) => (h.fail ? Promise.reject(new Error("boom")) : real.runCoach(...a)),
+  };
 });
 
 import { POST } from "./route";
 
 const post = (body: unknown) =>
-  POST(new Request("http://localhost/api/coach", {
-    method: "POST", headers: { "content-type": "application/json" }, body: typeof body === "string" ? body : JSON.stringify(body),
-  }));
+  POST(
+    new Request("http://localhost/api/coach", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: typeof body === "string" ? body : JSON.stringify(body),
+    }),
+  );
 
 beforeEach(() => {
   h.fail = false;
   h.api!.rows.clear();
   process.env.DEMO_MODE = "true";
 });
-afterEach(() => { delete process.env.DEMO_MODE; });
+afterEach(() => {
+  delete process.env.DEMO_MODE;
+});
 
 describe("POST /api/coach", () => {
   it("returns 200 with a CoachRes (DEMO_MODE: rules planner)", async () => {
@@ -58,7 +74,11 @@ describe("POST /api/coach", () => {
   it("round-trips an approval: pending → approve", async () => {
     const first = (await (await post({ userId: "aisha", message: "Start our project" })).json()).data;
     expect(first.pendingApproval.tool).toBe("start_pod_project");
-    const second = await post({ userId: "aisha", message: "Start our project", approval: { ...first.pendingApproval, decision: "approve" } });
+    const second = await post({
+      userId: "aisha",
+      message: "Start our project",
+      approval: { ...first.pendingApproval, decision: "approve" },
+    });
     expect(second.status).toBe(200);
     const data = (await second.json()).data;
     expect(data.pendingApproval).toBeUndefined();
@@ -66,7 +86,14 @@ describe("POST /api/coach", () => {
   });
 
   it("returns 400 bad_request for invalid input", async () => {
-    for (const b of [{}, { userId: "aisha" }, { userId: "", message: "hi" }, { userId: "aisha", message: "   " }, { userId: "aisha", message: "hi", approval: { tool: "x", decision: "maybe" } }, "not json"]) {
+    for (const b of [
+      {},
+      { userId: "aisha" },
+      { userId: "", message: "hi" },
+      { userId: "aisha", message: "   " },
+      { userId: "aisha", message: "hi", approval: { tool: "x", decision: "maybe" } },
+      "not json",
+    ]) {
       const res = await post(b);
       expect(res.status).toBe(400);
       expect((await res.json()).error.code).toBe("bad_request");

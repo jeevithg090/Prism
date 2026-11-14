@@ -1,0 +1,20 @@
+# Dependencies and build output
+node_modules/
+.next/
+out/
+build/
+coverage/
+playwright-report/
+test-results/
+.ui-gate/
+
+# Data, recorded runs and generated files: kept byte-for-byte
+data/
+n8n/*.json
+package-lock.json
+next-env.d.ts
+
+# Prose and tool-managed files
+*.md
+.claude/
+.hallmark/

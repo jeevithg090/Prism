@@ -10,7 +10,10 @@ export type ToolErrorCode =
   | "failed"; // unexpected failure (already logged); safe to retry
 
 export class ToolError extends Error {
-  constructor(message: string, readonly code: ToolErrorCode = "failed") {
+  constructor(
+    message: string,
+    readonly code: ToolErrorCode = "failed",
+  ) {
     super(message);
     this.name = "ToolError";
   }

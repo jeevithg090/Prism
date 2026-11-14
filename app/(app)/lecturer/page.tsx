@@ -34,7 +34,11 @@ export default function LecturerPage({ searchParams }: { searchParams: SearchPar
       <PageHeader
         title="Lecturer Insights"
         subtitle="Anonymous cohort view for module leads. Groups of 10+ students only."
-        actions={<Suspense fallback={null}><ProgrammePill searchParams={searchParams} /></Suspense>}
+        actions={
+          <Suspense fallback={null}>
+            <ProgrammePill searchParams={searchParams} />
+          </Suspense>
+        }
       />
       <Suspense fallback={<LoadingSkeleton variant="chart" />}>
         <ViewFromParams searchParams={searchParams} />

@@ -46,7 +46,11 @@ function Rail({ current, done, exam }: { current?: boolean; done: boolean; exam:
         <span
           className={cn(
             "absolute top-[2.125rem] left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full",
-            current ? "size-3.5 bg-primary ring-4 ring-signal-soft" : exam ? "size-3 border border-input bg-card" : "size-3 border-2 border-input bg-card",
+            current
+              ? "size-3.5 bg-primary ring-4 ring-signal-soft"
+              : exam
+                ? "size-3 border border-input bg-card"
+                : "size-3 border-2 border-input bg-card",
           )}
         />
       )}
@@ -54,7 +58,21 @@ function Rail({ current, done, exam }: { current?: boolean; done: boolean; exam:
   );
 }
 
-export function WeekCard({ week, skillName, skillStatus, current, thisWeek, defaultExpanded, roleLabel, evidence, podHref, pulse, usualHours, moduleTitles, onToggleTask }: WeekCardProps) {
+export function WeekCard({
+  week,
+  skillName,
+  skillStatus,
+  current,
+  thisWeek,
+  defaultExpanded,
+  roleLabel,
+  evidence,
+  podHref,
+  pulse,
+  usualHours,
+  moduleTitles,
+  onToggleTask,
+}: WeekCardProps) {
   const [open, setOpen] = React.useState(!!defaultExpanded);
   const reduce = useReducedMotion();
   const done = isWeekDone(week);
@@ -86,7 +104,9 @@ export function WeekCard({ week, skillName, skillStatus, current, thisWeek, defa
 
       <div className="grid min-w-0 flex-1 gap-x-4 gap-y-2 border-t py-5 group-first/week:border-t-0 sm:grid-cols-[6.5rem_minmax(0,1fr)]">
         <div className="flex items-baseline gap-x-3 sm:block">
-          <h3 id={headingId} className="text-lg font-semibold">Week {week.week}</h3>
+          <h3 id={headingId} className="text-lg font-semibold">
+            Week {week.week}
+          </h3>
           <p className="text-sm text-muted-foreground tabular-nums">{weekRange(week.startDate)}</p>
         </div>
 
@@ -95,20 +115,31 @@ export function WeekCard({ week, skillName, skillStatus, current, thisWeek, defa
             <div className="flex min-w-0 flex-1 items-start gap-3 md:gap-4">
               <div className="min-w-0 flex-1 space-y-1.5">
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                  <p id={skillId} data-skill={week.focusSkillId} className={cn("text-lg", week.isExamWeek ? "font-medium" : "font-semibold")}>{skillName}</p>
+                  <p
+                    id={skillId}
+                    data-skill={week.focusSkillId}
+                    className={cn("text-lg", week.isExamWeek ? "font-medium" : "font-semibold")}
+                  >
+                    {skillName}
+                  </p>
                   {badge && <StatusBadge status={badge} size="sm" />}
                   {current && <span className={cn(tag, "border-primary/35 bg-signal-soft")}>{thisWeek ? "This week" : "Up next"}</span>}
                   {week.isExamWeek && <span className={cn(tag, "border-dashed border-input bg-card")}>Lighter week: exams</span>}
                   {done && (
                     <span className={cn(tag, "border-status-proven/35 bg-status-proven/10")}>
-                      <CheckCircle2 className="size-3.5 text-status-proven" aria-hidden />Done
+                      <CheckCircle2 className="size-3.5 text-status-proven" aria-hidden />
+                      Done
                     </span>
                   )}
                 </div>
                 {(showHours || showTicks) && (
                   <p className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
                     {showHours && <span className="tabular-nums">{hours}h</span>}
-                    {showTicks && <span className="tabular-nums">{ticked} of {week.tasks.length} done</span>}
+                    {showTicks && (
+                      <span className="tabular-nums">
+                        {ticked} of {week.tasks.length} done
+                      </span>
+                    )}
                   </p>
                 )}
               </div>
@@ -123,8 +154,13 @@ export function WeekCard({ week, skillName, skillStatus, current, thisWeek, defa
                 roleName={roleLabel}
                 evidence={evidence}
                 trigger={
-                  <button type="button" className={cn(buttonVariants({ variant: current ? "outline" : "ghost" }), "h-10 px-3 focus-visible:outline-solid")} aria-label={`Why ${skillName} in week ${week.week}?`}>
-                    <HelpCircle className="size-4" aria-hidden />Why?
+                  <button
+                    type="button"
+                    className={cn(buttonVariants({ variant: current ? "outline" : "ghost" }), "h-10 px-3 focus-visible:outline-solid")}
+                    aria-label={`Why ${skillName} in week ${week.week}?`}
+                  >
+                    <HelpCircle className="size-4" aria-hidden />
+                    Why?
                   </button>
                 }
               />
@@ -136,7 +172,13 @@ export function WeekCard({ week, skillName, skillStatus, current, thisWeek, defa
                 onClick={() => setOpen((o) => !o)}
                 className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "size-10 focus-visible:outline-solid")}
               >
-                <ChevronDown className={cn("size-4 transition-transform duration-(--dur-short) ease-(--ease-in-out) motion-reduce:transition-none", open && "rotate-180")} aria-hidden />
+                <ChevronDown
+                  className={cn(
+                    "size-4 transition-transform duration-(--dur-short) ease-(--ease-in-out) motion-reduce:transition-none",
+                    open && "rotate-180",
+                  )}
+                  aria-hidden
+                />
               </button>
             </div>
           </div>
@@ -159,7 +201,9 @@ export function WeekCard({ week, skillName, skillStatus, current, thisWeek, defa
                 >
                   {week.proof}
                 </Link>
-              ) : week.proof}
+              ) : (
+                week.proof
+              )}
             </span>
           </p>
           {week.degreeLink && (

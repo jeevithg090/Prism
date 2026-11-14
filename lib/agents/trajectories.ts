@@ -83,12 +83,7 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
 
 export type SimilarTrajectory = { trajectory: Trajectory; similarity: number };
 
-export async function similarTrajectories(
-  profile: Profile,
-  all: Trajectory[],
-  limit = 5,
-  runId?: string,
-): Promise<SimilarTrajectory[]> {
+export async function similarTrajectories(profile: Profile, all: Trajectory[], limit = 5, runId?: string): Promise<SimilarTrajectory[]> {
   const targetRole = profile.dna.targetRoles[0];
   const cap = Math.max(0, limit);
   const { output } = await runAgent<SimilarTrajectory[]>({
@@ -133,7 +128,11 @@ export async function similarTrajectories(
       }));
 
       ctx.done(`Found ${top.length} journeys like yours (${bonusCount} reached ${roleName(targetRole) || "your target role"})`, {
-        candidates: all.length, returned: top.length, roleMatches: bonusCount, method, topSimilarity: top[0]?.similarity ?? 0,
+        candidates: all.length,
+        returned: top.length,
+        roleMatches: bonusCount,
+        method,
+        topSimilarity: top[0]?.similarity ?? 0,
       });
       return top;
     },

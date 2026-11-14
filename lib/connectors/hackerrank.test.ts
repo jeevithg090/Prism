@@ -17,7 +17,9 @@ beforeEach(() => {
 });
 afterEach(() => {
   vi.restoreAllMocks();
-  for (const k of ENV) if (saved[k] === undefined) delete process.env[k]; else process.env[k] = saved[k];
+  for (const k of ENV)
+    if (saved[k] === undefined) delete process.env[k];
+    else process.env[k] = saved[k];
 });
 
 // Faithful excerpts of the real server-rendered profile page (www.hackerrank.com/profile/<handle>): one
@@ -38,14 +40,19 @@ ${badge("Problem Solving", "gold", 5)}${badge("Python", "bronze", 1)}${badge("Da
 ${cert("7d0a91fe2fc3", "SQL (Advanced)")}${cert("fcd73a4796ec", "Problem Solving (Intermediate)")}
 ${cert("41587c2ae147", "Software Engineer")}</body></html>`;
 
-const ERROR_HTML = "<html><body><h1>Something went wrong!</h1><p>Some error occured while loading page for you. Please try again.</p></body></html>";
+const ERROR_HTML =
+  "<html><body><h1>Something went wrong!</h1><p>Some error occured while loading page for you. Please try again.</p></body></html>";
 
 describe("parseProfileHtml + looksLikePublicProfile (pure)", () => {
   it("parses badge names with the earned star count and the colour-tier floor when stars are missing", () => {
     const p = parseProfileHtml(PROFILE_HTML);
     expect(p.badges.map((b) => b.name)).toEqual(["Problem Solving", "Python", "Days of Code", "Functional Programming"]);
     expect(p.badges.map((b) => b.stars)).toEqual([5, 1, 2, 3]);
-    expect(parseProfileHtml(PROFILE_HTML.replace(new RegExp('<svg class="badge-star"', "g"), "")).badges.find((b) => b.name === "Problem Solving")?.stars).toBe(5);
+    expect(
+      parseProfileHtml(PROFILE_HTML.replace(new RegExp('<svg class="badge-star"', "g"), "")).badges.find(
+        (b) => b.name === "Problem Solving",
+      )?.stars,
+    ).toBe(5);
     expect(parseProfileHtml(PROFILE_HTML.replace(new RegExp('class="ui-badge', "g"), "")).badges[0].stars).toBe(5);
   });
 
@@ -59,7 +66,7 @@ describe("parseProfileHtml + looksLikePublicProfile (pure)", () => {
     expect(parseProfileHtml(ERROR_HTML)).toEqual({ badges: [], certificates: [] });
     expect(looksLikePublicProfile(PROFILE_HTML)).toBe(true);
     expect(looksLikePublicProfile(ERROR_HTML)).toBe(false);
-    expect(looksLikePublicProfile('<html><body><p>Checking your browser before accessing.</p></body></html>')).toBe(false);
+    expect(looksLikePublicProfile("<html><body><p>Checking your browser before accessing.</p></body></html>")).toBe(false);
   });
 });
 
@@ -69,17 +76,25 @@ describe("pageToEvidence (pure mapper)", () => {
     const bySkill = Object.fromEntries(items.map((e) => [e.skillId, e]));
     expect(Object.keys(bySkill).sort()).toEqual(["algorithms", "data-structures", "python", "sql"]);
     expect(bySkill.python).toMatchObject({
-      id: "ev_hr_user_python_hackerrank", userId: "hr_user", level: 1, confidence: 0.75, source: "hackerrank",
+      id: "ev_hr_user_python_hackerrank",
+      userId: "hr_user",
+      level: 1,
+      confidence: 0.75,
+      source: "hackerrank",
       url: "https://www.hackerrank.com/profile/Pavith_DB",
       quote: "HackerRank Python badge with 1 star and a verified Python (Basic) certificate",
     });
     expect(bySkill["data-structures"]).toMatchObject({
-      id: "ev_hr_user_data-structures_hackerrank", level: 2, confidence: 0.75,
+      id: "ev_hr_user_data-structures_hackerrank",
+      level: 2,
+      confidence: 0.75,
       quote: "HackerRank Problem Solving badge with 5 stars and a verified Problem Solving (Intermediate) certificate",
     });
     expect(bySkill.algorithms).toMatchObject({ level: 2, confidence: 0.75 });
     expect(bySkill.sql).toMatchObject({
-      id: "ev_hr_user_sql_hackerrank", level: 2, confidence: 0.8,
+      id: "ev_hr_user_sql_hackerrank",
+      level: 2,
+      confidence: 0.8,
       quote: "HackerRank verified SQL (Advanced) certificate",
     });
   });
@@ -102,7 +117,11 @@ describe("pageToEvidence (pure mapper)", () => {
   });
 
   it("drops badges whose track has no skill id and never invents ids", () => {
-    const items = pageToEvidence("hr_user", parseProfileHtml('<div class="hacker-badge">' + badge("Functional Programming", "gold", 3)), profileUrl("x"));
+    const items = pageToEvidence(
+      "hr_user",
+      parseProfileHtml('<div class="hacker-badge">' + badge("Functional Programming", "gold", 3)),
+      profileUrl("x"),
+    );
     expect(items).toEqual([]);
   });
 
@@ -129,7 +148,10 @@ describe("syncHackerRankEvidence", () => {
     expect(spy.mock.calls.every((c) => String(c[0]).includes("hackerrank.com/profile"))).toBe(true);
     expect(spy.mock.calls.some((c) => String(c[0]).includes("api.firecrawl.dev"))).toBe(false);
     expect(out.map((e) => e.id).sort()).toEqual([
-      "ev_hr_user_algorithms_hackerrank", "ev_hr_user_data-structures_hackerrank", "ev_hr_user_python_hackerrank", "ev_hr_user_sql_hackerrank",
+      "ev_hr_user_algorithms_hackerrank",
+      "ev_hr_user_data-structures_hackerrank",
+      "ev_hr_user_python_hackerrank",
+      "ev_hr_user_sql_hackerrank",
     ]);
     expect(h.store.dump().get("evidence")?.size).toBe(4);
     expect(out.map((e) => e.skillId)).toContain("python");
@@ -168,7 +190,21 @@ describe("syncHackerRankEvidence", () => {
 
   it("keeps the evidence we already have and emits a kind error when every path is blocked", async () => {
     process.env.FIRECRAWL_API_KEY = "fckey";
-    h.store.upsert("evidence", "ev_hr_user_git_github", { id: "ev_hr_user_git_github", userId: "hr_user", skillId: "git", level: 1, confidence: 0.5, source: "github", url: "https://github.com/x", createdAt: "2026-11-01" }, "hr_user");
+    h.store.upsert(
+      "evidence",
+      "ev_hr_user_git_github",
+      {
+        id: "ev_hr_user_git_github",
+        userId: "hr_user",
+        skillId: "git",
+        level: 1,
+        confidence: 0.5,
+        source: "github",
+        url: "https://github.com/x",
+        createdAt: "2026-11-01",
+      },
+      "hr_user",
+    );
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
       if (String(input).includes("api.firecrawl.dev")) throw new Error("firecrawl down");
       return new Response("Forbidden", { status: 403 });
@@ -177,7 +213,8 @@ describe("syncHackerRankEvidence", () => {
 
     expect(out.map((e) => e.id)).toEqual(["ev_hr_user_git_github"]); // existing evidence kept, nothing invented
     expect(emit.mock.calls.at(-1)?.[0]).toMatchObject({
-      agent: "evidence", status: "error",
+      agent: "evidence",
+      status: "error",
       message: "HackerRank wasn't available just now: keeping the evidence we already have",
       data: { reason: "firecrawl down" },
     });

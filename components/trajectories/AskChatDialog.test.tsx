@@ -5,7 +5,10 @@ import userEvent from "@testing-library/user-event";
 import type { Trajectory } from "@/lib/types";
 
 const { draftMock, apiPostMock, toastSuccess, toastError } = vi.hoisted(() => ({
-  draftMock: vi.fn(), apiPostMock: vi.fn(), toastSuccess: vi.fn(), toastError: vi.fn(),
+  draftMock: vi.fn(),
+  apiPostMock: vi.fn(),
+  toastSuccess: vi.fn(),
+  toastError: vi.fn(),
 }));
 vi.mock("./actions", () => ({ draftChatRequest: draftMock }));
 vi.mock("@/lib/fetcher", () => ({ apiPost: apiPostMock, apiGet: vi.fn() }));
@@ -14,8 +17,15 @@ vi.mock("sonner", () => ({ toast: { success: toastSuccess, error: toastError } }
 import { AskChatDialog } from "./AskChatDialog";
 
 const priya: Trajectory = {
-  id: "traj_priya", userId: "priya", name: "Priya Shah", programmeId: "uom-bsc-cs", outcomeRole: "ML engineer", advice: "Ask early.",
-  isDemo: true, openToChat: true, steps: [{ year: 3, kind: "placement", label: "Year in industry at an ML consultancy" }],
+  id: "traj_priya",
+  userId: "priya",
+  name: "Priya Shah",
+  programmeId: "uom-bsc-cs",
+  outcomeRole: "ML engineer",
+  advice: "Ask early.",
+  isDemo: true,
+  openToChat: true,
+  steps: [{ year: 3, kind: "placement", label: "Year in industry at an ML consultancy" }],
 };
 
 afterEach(cleanup);
@@ -43,9 +53,14 @@ describe("AskChatDialog", () => {
     expect(box).toHaveValue("Hi Priya! How did you find your placement?");
 
     await user.click(screen.getByRole("button", { name: /Send request/ }));
-    await waitFor(() => expect(apiPostMock).toHaveBeenCalledWith("/api/help", {
-      fromUserId: "aisha", toUserId: "priya", kind: "chat-15", message: "Hi Priya! How did you find your placement?",
-    }));
+    await waitFor(() =>
+      expect(apiPostMock).toHaveBeenCalledWith("/api/help", {
+        fromUserId: "aisha",
+        toUserId: "priya",
+        kind: "chat-15",
+        message: "Hi Priya! How did you find your placement?",
+      }),
+    );
     expect(toastSuccess).toHaveBeenCalledWith("Request sent: they'll see it in Community.");
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });

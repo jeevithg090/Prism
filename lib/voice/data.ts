@@ -18,7 +18,13 @@ const ROLE_NAMES: Record<string, string> = {
   "data-analyst": "Data analyst",
 };
 export function roleName(roleId: string): string {
-  return ROLE_NAMES[roleId] ?? roleId.split("-").map((w, i) => (i === 0 ? w[0]?.toUpperCase() + w.slice(1) : w)).join(" ");
+  return (
+    ROLE_NAMES[roleId] ??
+    roleId
+      .split("-")
+      .map((w, i) => (i === 0 ? w[0]?.toUpperCase() + w.slice(1) : w))
+      .join(" ")
+  );
 }
 
 export function readJSON<T>(rel: string): T | null {
@@ -54,32 +60,54 @@ export async function loadMap(userId: string, roleId: string): Promise<BridgeMap
   return fx && Array.isArray(fx.nodes) ? fx : null;
 }
 
-export interface RoleSkill { skillId: string; name: string; share: number }
+export interface RoleSkill {
+  skillId: string;
+  name: string;
+  share: number;
+}
 
 /** The role's most-demanded skills: P1's market fixture if present, else the Bridge Map's demand weights. */
 export async function roleTopSkills(roleId: string, userId = DEFAULT_USER, limit = 5): Promise<RoleSkill[]> {
   const market = readJSON<RoleDemand>(`data/fixtures/market.${roleId}.json`);
   if (market && Array.isArray(market.skills) && market.skills.length) {
-    return [...market.skills].sort((a, b) => b.share - a.share).slice(0, limit)
+    return [...market.skills]
+      .sort((a, b) => b.share - a.share)
+      .slice(0, limit)
       .map((s) => ({ skillId: s.skillId, name: skillName(s.skillId), share: s.share }));
   }
   const map = await loadMap(userId, roleId);
-  return (map?.nodes ?? []).filter((n) => n.demand > 0).sort((a, b) => b.demand - a.demand).slice(0, limit)
+  return (map?.nodes ?? [])
+    .filter((n) => n.demand > 0)
+    .sort((a, b) => b.demand - a.demand)
+    .slice(0, limit)
     .map((n) => ({ skillId: n.skillId, name: n.name || skillName(n.skillId), share: n.demand }));
 }
 
-export interface SkillSplit { proven: RoleSkill[]; gaps: RoleSkill[] }
+export interface SkillSplit {
+  proven: RoleSkill[];
+  gaps: RoleSkill[];
+}
 
 /** Top proven skills and top gaps on the user's Bridge Map, by demand. */
 export async function provenAndGaps(userId: string, roleId: string, limit = 3): Promise<SkillSplit> {
   const map = await loadMap(userId, roleId);
   const nodes = [...(map?.nodes ?? [])].sort((a, b) => b.demand - a.demand);
-  const pick = (status: string) => nodes.filter((n) => n.status === status).slice(0, limit)
-    .map((n) => ({ skillId: n.skillId, name: n.name || skillName(n.skillId), share: n.demand }));
+  const pick = (status: string) =>
+    nodes
+      .filter((n) => n.status === status)
+      .slice(0, limit)
+      .map((n) => ({ skillId: n.skillId, name: n.name || skillName(n.skillId), share: n.demand }));
   return { proven: pick("proven"), gaps: pick("gap") };
 }
 
-export interface CurrentWeek { week: number; focusSkillId: string; focusName: string; tasks: string[]; proof: string; startDate?: string }
+export interface CurrentWeek {
+  week: number;
+  focusSkillId: string;
+  focusName: string;
+  tasks: string[];
+  proof: string;
+  startDate?: string;
+}
 
 /** The roadmap's current week (the first week whose tasks aren't all done). */
 export async function currentRoadmapWeek(userId: string, roleId: string): Promise<CurrentWeek> {
@@ -89,13 +117,26 @@ export async function currentRoadmapWeek(userId: string, roleId: string): Promis
   const wk = weeks.find((w) => !(w.tasks?.length && w.tasks.every((t) => t.done))) ?? weeks[0];
   if (wk) {
     return {
-      week: wk.week, focusSkillId: wk.focusSkillId, focusName: skillName(wk.focusSkillId),
-      tasks: (wk.tasks ?? []).filter((t) => !t.done).slice(0, 3).map((t) => t.title), proof: wk.proof, startDate: wk.startDate,
+      week: wk.week,
+      focusSkillId: wk.focusSkillId,
+      focusName: skillName(wk.focusSkillId),
+      tasks: (wk.tasks ?? [])
+        .filter((t) => !t.done)
+        .slice(0, 3)
+        .map((t) => t.title),
+      proof: wk.proof,
+      startDate: wk.startDate,
     };
   }
   return {
-    week: 1, focusSkillId: "docker", focusName: "Docker",
-    tasks: ["Watch a 20-minute Docker basics primer", "Write a Dockerfile for a small Flask app", "Open your pod PR: Containerise the captioning API"],
+    week: 1,
+    focusSkillId: "docker",
+    focusName: "Docker",
+    tasks: [
+      "Watch a 20-minute Docker basics primer",
+      "Write a Dockerfile for a small Flask app",
+      "Open your pod PR: Containerise the captioning API",
+    ],
     proof: "A merged pod PR: Containerise the captioning API with Docker",
   };
 }
@@ -108,10 +149,18 @@ export async function podsFor(userId: string): Promise<Pod[]> {
 }
 
 export interface PodWork {
-  podId?: string; podName?: string; projectTitle?: string;
-  issueTitle: string; skillId: string; skillName: string;
-  reviewerId?: string; reviewerName?: string;
-  merged: boolean; prUrl?: string; mergedAt?: string; mergedCount: number;
+  podId?: string;
+  podName?: string;
+  projectTitle?: string;
+  issueTitle: string;
+  skillId: string;
+  skillName: string;
+  reviewerId?: string;
+  reviewerName?: string;
+  merged: boolean;
+  prUrl?: string;
+  mergedAt?: string;
+  mergedCount: number;
 }
 
 type Merged = { issueIndex: number; userId: string; skillId: string; mergedAt: string; prUrl?: string };
@@ -139,10 +188,18 @@ export async function latestPodWork(userId: string): Promise<PodWork> {
     const issue = top.pod.project?.issues?.[top.m.issueIndex];
     const skillId = issue?.skillId ?? top.m.skillId;
     return {
-      podId: top.pod.id, podName: top.pod.name, projectTitle: top.pod.project?.title,
-      issueTitle: issue?.title ?? `${skillName(skillId)} pull request`, skillId, skillName: skillName(skillId),
-      reviewerId: issue?.reviewerUserId, reviewerName: await reviewer(issue?.reviewerUserId),
-      merged: true, prUrl: top.m.prUrl, mergedAt: top.m.mergedAt, mergedCount,
+      podId: top.pod.id,
+      podName: top.pod.name,
+      projectTitle: top.pod.project?.title,
+      issueTitle: issue?.title ?? `${skillName(skillId)} pull request`,
+      skillId,
+      skillName: skillName(skillId),
+      reviewerId: issue?.reviewerUserId,
+      reviewerName: await reviewer(issue?.reviewerUserId),
+      merged: true,
+      prUrl: top.m.prUrl,
+      mergedAt: top.m.mergedAt,
+      mergedCount,
     };
   }
 
@@ -155,20 +212,35 @@ export async function latestPodWork(userId: string): Promise<PodWork> {
     const title = e.quote?.match(/Merged '([^']+)'/)?.[1];
     const issue = pod?.project?.issues?.find((i) => i.title === title);
     return {
-      podId: pod?.id, podName: pod?.name, projectTitle: pod?.project?.title,
-      issueTitle: title ?? `${skillName(e.skillId)} pull request`, skillId: e.skillId, skillName: skillName(e.skillId),
-      reviewerId: issue?.reviewerUserId, reviewerName: await reviewer(issue?.reviewerUserId),
-      merged: true, prUrl: e.url || undefined, mergedAt: e.createdAt, mergedCount,
+      podId: pod?.id,
+      podName: pod?.name,
+      projectTitle: pod?.project?.title,
+      issueTitle: title ?? `${skillName(e.skillId)} pull request`,
+      skillId: e.skillId,
+      skillName: skillName(e.skillId),
+      reviewerId: issue?.reviewerUserId,
+      reviewerName: await reviewer(issue?.reviewerUserId),
+      merged: true,
+      prUrl: e.url || undefined,
+      mergedAt: e.createdAt,
+      mergedCount,
     };
   }
 
   const mine = pod?.project?.issues?.find((i) => i.assigneeUserId === userId);
   if (pod && mine) {
     return {
-      podId: pod.id, podName: pod.name, projectTitle: pod.project?.title,
-      issueTitle: mine.title, skillId: mine.skillId, skillName: skillName(mine.skillId),
-      reviewerId: mine.reviewerUserId, reviewerName: await reviewer(mine.reviewerUserId),
-      merged: false, prUrl: mine.githubIssueUrl, mergedCount,
+      podId: pod.id,
+      podName: pod.name,
+      projectTitle: pod.project?.title,
+      issueTitle: mine.title,
+      skillId: mine.skillId,
+      skillName: skillName(mine.skillId),
+      reviewerId: mine.reviewerUserId,
+      reviewerName: await reviewer(mine.reviewerUserId),
+      merged: false,
+      prUrl: mine.githubIssueUrl,
+      mergedCount,
     };
   }
   return { issueTitle: FALLBACK_PR_TITLE, skillId: "docker", skillName: "Docker", merged: false, mergedCount };
@@ -195,19 +267,25 @@ export async function marketMoves(roleId: string, userId: string, limit = 2): Pr
   const trends = readJSON<TrendSeries[]>("data/fixtures/trends.json");
   if (Array.isArray(trends) && trends.length) {
     const ids = new Set(top.map((s) => s.skillId));
-    const moving = trends.filter((t) => ids.has(t.skillId) || t.label === "rising")
-      .sort((a, b) => Math.abs(b.growthPerYear) - Math.abs(a.growthPerYear)).slice(0, limit);
+    const moving = trends
+      .filter((t) => ids.has(t.skillId) || t.label === "rising")
+      .sort((a, b) => Math.abs(b.growthPerYear) - Math.abs(a.growthPerYear))
+      .slice(0, limit);
     if (moving.length) {
       return moving.map((t) => {
         const g = Math.round(t.growthPerYear * 100);
-        return g === 0 ? `${skillName(t.skillId)} steady in hiring threads` : `${skillName(t.skillId)} ${g > 0 ? "up" : "down"} ${Math.abs(g)}% a year`;
+        return g === 0
+          ? `${skillName(t.skillId)} steady in hiring threads`
+          : `${skillName(t.skillId)} ${g > 0 ? "up" : "down"} ${Math.abs(g)}% a year`;
       });
     }
   }
   const map = await loadMap(userId, roleId);
   const rising = (map?.nodes ?? []).filter((n) => n.trend === "rising" && n.demand > 0).sort((a, b) => b.demand - a.demand);
   if (rising.length) {
-    return rising.slice(0, limit).map((n) => `${n.name || skillName(n.skillId)} is rising, in ${Math.round(n.demand * 100)}% of ${role} ads`);
+    return rising
+      .slice(0, limit)
+      .map((n) => `${n.name || skillName(n.skillId)} is rising, in ${Math.round(n.demand * 100)}% of ${role} ads`);
   }
   return top.slice(0, limit).map((s) => `${s.name} in ${Math.round(s.share * 100)}% of ${role} ads`);
 }

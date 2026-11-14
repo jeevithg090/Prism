@@ -8,7 +8,7 @@ export const CV_SYSTEM_PROMPT = [
   "You turn a university student's verified learning events into CV bullet points.",
   "Write exactly 3 bullet points in STAR style (situation, task, action, result), one sentence each, under 30 words.",
   "UK English. Start each with a past-tense verb. Use only facts that appear in the events: never invent numbers, employers, users or outcomes.",
-  "Output only the 3 bullets, one per line, each starting with \"- \".",
+  'Output only the 3 bullets, one per line, each starting with "- ".',
 ].join("\n");
 
 export function cvUserPrompt(events: MomentumEvent[]): string {
@@ -20,7 +20,12 @@ export function cvUserPrompt(events: MomentumEvent[]): string {
 export function parseBullets(text: string): string[] {
   return text
     .split(/\r?\n/)
-    .map((l) => l.trim().replace(/^(?:[-*•]|\d+[.)])\s*/, "").trim())
+    .map((l) =>
+      l
+        .trim()
+        .replace(/^(?:[-*•]|\d+[.)])\s*/, "")
+        .trim(),
+    )
     .filter((l) => l.length > 0 && !l.endsWith(":"));
 }
 
@@ -50,19 +55,30 @@ export function templateBullets(events: MomentumEvent[]): string[] {
       case "pr-merged": {
         const repo = repoName(list);
         const title = list.map((e) => e.label?.split(": ").slice(1).join(": ")).find(Boolean);
-        bullets.push(`Collaborated in a peer-learning pod on ${repo ?? "a team project"}, picking up issues and merging ${n} pull request${s(n)} after peer code review${title ? `, including “${title}”` : ""}.`);
+        bullets.push(
+          `Collaborated in a peer-learning pod on ${repo ?? "a team project"}, picking up issues and merging ${n} pull request${s(n)} after peer code review${title ? `, including “${title}”` : ""}.`,
+        );
         break;
       }
       case "roadmap-milestone": {
-        const topics = list.map((e) => e.label?.match(/^Completed Week \d+:\s*(.+)$/)?.[1]).filter((t): t is string => !!t).reverse();
-        bullets.push(`Followed a self-directed learning plan alongside my degree and completed ${n} milestone${s(n)}${topics.length ? ` (${joinAnd(topics)})` : ""}, each finished with a hands-on proof task.`);
+        const topics = list
+          .map((e) => e.label?.match(/^Completed Week \d+:\s*(.+)$/)?.[1])
+          .filter((t): t is string => !!t)
+          .reverse();
+        bullets.push(
+          `Followed a self-directed learning plan alongside my degree and completed ${n} milestone${s(n)}${topics.length ? ` (${joinAnd(topics)})` : ""}, each finished with a hands-on proof task.`,
+        );
         break;
       }
       case "helped-newcomer":
-        bullets.push(`Volunteered as a near-peer mentor and helped ${n} newer student${s(n)} get unstuck, explaining technical ideas in plain language.`);
+        bullets.push(
+          `Volunteered as a near-peer mentor and helped ${n} newer student${s(n)} get unstuck, explaining technical ideas in plain language.`,
+        );
         break;
       case "mock-interview":
-        bullets.push(`Prepared for technical interviews with ${n} mock interview${s(n)}, acting on structured feedback about content, structure and clarity.`);
+        bullets.push(
+          `Prepared for technical interviews with ${n} mock interview${s(n)}, acting on structured feedback about content, structure and clarity.`,
+        );
         break;
       case "problem-solved":
         bullets.push(`Strengthened problem-solving fundamentals by solving ${n} coding problem${s(n)} on top of coursework.`);

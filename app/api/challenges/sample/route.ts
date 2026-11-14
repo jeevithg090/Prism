@@ -6,7 +6,11 @@ import { badRequest, fail, internal, ok } from "@/lib/schemas/community";
 
 export async function POST(req: Request) {
   let body: unknown;
-  try { body = await req.json(); } catch { return badRequest("Body must be JSON like {\"challengeId\":\"ch_docker_01\"}"); }
+  try {
+    body = await req.json();
+  } catch {
+    return badRequest('Body must be JSON like {"challengeId":"ch_docker_01"}');
+  }
   const parsed = ChallengeSampleReqZ.safeParse(body);
   if (!parsed.success) return badRequest(parsed.error);
   try {

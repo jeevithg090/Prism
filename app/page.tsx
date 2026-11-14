@@ -39,7 +39,9 @@ const iReview = aishaPod.project.issues.find((i) => i.reviewerUserId === "aisha"
 const podLine = [
   myIssue && `${cap(myIssue.reviewerUserId)} reviews her Docker PR`,
   iReview && `she reviews ${cap(iReview.assigneeUserId)}'s ${iReview.skillId === "python" ? "Python" : iReview.skillId}`,
-].filter(Boolean).join(", and ");
+]
+  .filter(Boolean)
+  .join(", and ");
 
 /** One container for every band: capped and centred, so at 1920 the gutters grow and the grids hold. */
 const CONTAINER = "mx-auto w-full max-w-7xl px-4 md:px-8";
@@ -96,15 +98,29 @@ function ReadinessPreview({ caption }: { caption?: React.ReactNode }) {
           </div>
         )}
       </div>
-      {caption && <figcaption className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted-foreground">{caption}</figcaption>}
+      {caption && (
+        <figcaption className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted-foreground">{caption}</figcaption>
+      )}
     </figure>
   );
 }
 
 const PILLARS: { icon: LucideIcon; title: string; line: string }[] = [
-  { icon: Route, title: "Learning", line: "A week-by-week roadmap that skips what your modules already teach, with a Why? receipt on every step." },
-  { icon: ClipboardCheck, title: "Assessment", line: "Skills count when there's proof: a merged PR, a micro-challenge or a mock interview. Never a self-rating." },
-  { icon: Presentation, title: "Teaching", line: "You teach a pod-mate what you know. Lecturers see anonymous cohort gaps and lab ideas for groups of 10 or more." },
+  {
+    icon: Route,
+    title: "Learning",
+    line: "A week-by-week roadmap that skips what your modules already teach, with a Why? receipt on every step.",
+  },
+  {
+    icon: ClipboardCheck,
+    title: "Assessment",
+    line: "Skills count when there's proof: a merged PR, a micro-challenge or a mock interview. Never a self-rating.",
+  },
+  {
+    icon: Presentation,
+    title: "Teaching",
+    line: "You teach a pod-mate what you know. Lecturers see anonymous cohort gaps and lab ideas for groups of 10 or more.",
+  },
 ];
 
 const STEPS: { title: string; href: string; body: string }[] = [
@@ -144,7 +160,12 @@ const STEP_VISUALS: Record<string, React.ReactNode> = {
       alt="Aisha's roadmap in Keystone: week 1 is Docker, with a learn, practise and build task and her proof for the week, then week 2, PyTorch"
       caption={
         <span>
-          Skipped: {later.slice(0, 3).map((n) => n.name).join(", ")} and {later.length - 3} more. Her degree teaches them later.
+          Skipped:{" "}
+          {later
+            .slice(0, 3)
+            .map((n) => n.name)
+            .join(", ")}{" "}
+          and {later.length - 3} more. Her degree teaches them later.
         </span>
       }
     />
@@ -177,9 +198,18 @@ const LADDER: { icon: LucideIcon; rung: string; how: string }[] = [
 const RUNG_STEP = ["", "sm:mb-14", "sm:mb-28"];
 
 const FAQ: { q: string; a: string }[] = [
-  { q: "Does Keystone grade me?", a: "No. Agents propose and you decide. A skill counts only when there's proof you chose to share, and every recommendation explains where it came from." },
-  { q: "What does it read?", a: "Your programme's public syllabus, job ads, and public work you link, like your GitHub. Nothing is posted anywhere on your behalf." },
-  { q: "How are pods matched?", a: "On skills, interests and availability. Never on personal characteristics. Badges like New to UoM are optional and only send help your way." },
+  {
+    q: "Does Keystone grade me?",
+    a: "No. Agents propose and you decide. A skill counts only when there's proof you chose to share, and every recommendation explains where it came from.",
+  },
+  {
+    q: "What does it read?",
+    a: "Your programme's public syllabus, job ads, and public work you link, like your GitHub. Nothing is posted anywhere on your behalf.",
+  },
+  {
+    q: "How are pods matched?",
+    a: "On skills, interests and availability. Never on personal characteristics. Badges like New to UoM are optional and only send help your way.",
+  },
 ];
 
 export default function Landing() {
@@ -208,14 +238,20 @@ export default function Landing() {
       <main id="main" className="flex-1">
         {/* Hero, Stage posture: the head on the narrow track, Aisha's live readiness on the wide one. */}
         <section aria-labelledby="hero-title">
-          <div className={cn(CONTAINER, "grid gap-10 pt-8 pb-16 md:pt-12 lg:min-h-[calc(100svh-4rem)] lg:grid-cols-[minmax(0,5fr)_minmax(0,8fr)] lg:items-center lg:gap-14 lg:pt-14 lg:pb-24")}>
+          <div
+            className={cn(
+              CONTAINER,
+              "grid gap-10 pt-8 pb-16 md:pt-12 lg:min-h-[calc(100svh-4rem)] lg:grid-cols-[minmax(0,5fr)_minmax(0,8fr)] lg:items-center lg:gap-14 lg:pt-14 lg:pb-24",
+            )}
+          >
             <div className="min-w-0">
               <h1 id="hero-title" className="text-4xl font-semibold tracking-tight sm:text-5xl xl:text-6xl">
                 <span className="block">Your degree is the foundation.</span>
                 <span className="block">Keystone builds the bridge.</span>
               </h1>
               <p className="mt-6 max-w-md text-lg text-muted-foreground">
-                Agents read your syllabus, real job ads and your public work, then plan only what your degree doesn&apos;t teach yet, with a pod of students to build it with.
+                Agents read your syllabus, real job ads and your public work, then plan only what your degree doesn&apos;t teach yet, with a
+                pod of students to build it with.
               </p>
               <div className="mt-8">
                 <Ctas />
@@ -224,7 +260,9 @@ export default function Landing() {
             <ReadinessPreview
               caption={
                 <>
-                  <span>The demo follows Aisha, a first-year Computer Science student at Manchester who wants to become an ML engineer.</span>
+                  <span>
+                    The demo follows Aisha, a first-year Computer Science student at Manchester who wants to become an ML engineer.
+                  </span>
                   <DemoDataNote />
                 </>
               }
@@ -239,7 +277,10 @@ export default function Landing() {
             </h2>
             <ul className="mt-14 border-b">
               {PILLARS.map((p) => (
-                <li key={p.title} className="grid gap-3 border-t py-8 md:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] md:items-baseline md:gap-8">
+                <li
+                  key={p.title}
+                  className="grid gap-3 border-t py-8 md:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] md:items-baseline md:gap-8"
+                >
                   <h3 className="flex items-center gap-3 text-2xl font-semibold tracking-tight">
                     <p.icon className="size-6 shrink-0 text-muted-foreground" aria-hidden />
                     {p.title}
@@ -254,8 +295,12 @@ export default function Landing() {
         <section id="how" aria-labelledby="how-title" className="scroll-mt-6 border-t bg-sidebar">
           <div className={cn(CONTAINER, "py-24 lg:py-36")}>
             <div className="max-w-2xl">
-              <h2 id="how-title" className={SECTION_HEAD}>How it works</h2>
-              <p className="mt-4 text-lg text-muted-foreground">Four steps, each one a page in the demo. Every step has a Why? so you can see the numbers behind it.</p>
+              <h2 id="how-title" className={SECTION_HEAD}>
+                How it works
+              </h2>
+              <p className="mt-4 text-lg text-muted-foreground">
+                Four steps, each one a page in the demo. Every step has a Why? so you can see the numbers behind it.
+              </p>
             </div>
             <ol className="mt-16 space-y-16 lg:space-y-20">
               {STEPS.map((s, i) => (
@@ -282,9 +327,12 @@ export default function Landing() {
         <section aria-labelledby="ladder-title" className="border-t">
           <div className={cn(CONTAINER, "grid gap-12 py-24 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:items-end lg:py-36")}>
             <div className="min-w-0 lg:pb-2">
-              <h2 id="ladder-title" className={SECTION_HEAD}>Proof climbs a ladder</h2>
+              <h2 id="ladder-title" className={SECTION_HEAD}>
+                Proof climbs a ladder
+              </h2>
               <p className="mt-4 max-w-md text-lg text-muted-foreground">
-                Keystone turns what you&apos;re taught into what you can prove. Each skill on your passport sits on one rung, and only real work moves it up.
+                Keystone turns what you&apos;re taught into what you can prove. Each skill on your passport sits on one rung, and only real
+                work moves it up.
               </p>
             </div>
             <ol className="grid gap-4 sm:grid-cols-3 sm:items-end" aria-label="The proof ladder, from first try to teaching">
@@ -303,7 +351,9 @@ export default function Landing() {
 
         <section aria-labelledby="faq-title" className="border-t">
           <div className={cn(CONTAINER, "grid gap-10 py-24 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:py-30")}>
-            <h2 id="faq-title" className={SECTION_HEAD}>Questions students ask first</h2>
+            <h2 id="faq-title" className={SECTION_HEAD}>
+              Questions students ask first
+            </h2>
             <dl className="border-b">
               {FAQ.map((f) => (
                 <div key={f.q} className="grid gap-2 border-t py-8 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] md:gap-8">
@@ -318,9 +368,12 @@ export default function Landing() {
         <section aria-labelledby="reply-title" className="border-t bg-card">
           <div className={cn(CONTAINER, "flex flex-col gap-8 py-20 lg:flex-row lg:items-center lg:justify-between lg:py-24")}>
             <div className="min-w-0">
-              <h2 id="reply-title" className={SECTION_HEAD}>Built for Reply&apos;s AI on Campus</h2>
+              <h2 id="reply-title" className={SECTION_HEAD}>
+                Built for Reply&apos;s AI on Campus
+              </h2>
               <p className="mt-4 max-w-xl text-lg text-muted-foreground">
-                Specialist agents hand work to each other, one knowledge graph joins modules, job ads and people, and Bridge Week takes it to campus.
+                Specialist agents hand work to each other, one knowledge graph joins modules, job ads and people, and Bridge Week takes it
+                to campus.
               </p>
               <LevelChips
                 items={["multi-agent", "knowledge-graph", "launch-campaign"]}
@@ -335,7 +388,9 @@ export default function Landing() {
       </main>
 
       <footer className="border-t">
-        <div className={cn(CONTAINER, "flex flex-col gap-2 py-8 text-sm text-muted-foreground md:flex-row md:items-center md:justify-between")}>
+        <div
+          className={cn(CONTAINER, "flex flex-col gap-2 py-8 text-sm text-muted-foreground md:flex-row md:items-center md:justify-between")}
+        >
           <p>Keystone, GreatUniHack 2026</p>
           <p>Seeded demo data is labelled &ldquo;Demo data&rdquo; wherever it appears.</p>
         </div>

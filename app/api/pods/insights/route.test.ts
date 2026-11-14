@@ -8,7 +8,12 @@ import { GET } from "./route";
 
 const cohort = (n: number) => ({
   profiles: Array.from({ length: n }, (_, i) => ({ id: `stu_${i}`, programmeId: "uom-bsc-cs" })),
-  skills: Object.fromEntries(Array.from({ length: n }, (_, i) => [`stu_${i}`, i === 0 ? { proven: ["docker"], gaps: [] } : { proven: [], gaps: ["docker", "mlops"] }])),
+  skills: Object.fromEntries(
+    Array.from({ length: n }, (_, i) => [
+      `stu_${i}`,
+      i === 0 ? { proven: ["docker"], gaps: [] } : { proven: [], gaps: ["docker", "mlops"] },
+    ]),
+  ),
 });
 
 beforeEach(() => {

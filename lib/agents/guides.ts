@@ -19,16 +19,38 @@ import type { BridgeMap, BridgeNode, GuideSuggestion, Profile } from "@/lib/type
 const MAX_GUIDES = 4;
 const PYTHON_CATEGORIES = new Set(["ml-ai", "data"]);
 const PYTHON_SKILLS = new Set([
-  "python", "pandas", "numpy", "statistics", "linear-algebra", "machine-learning", "deep-learning", "pytorch",
-  "tensorflow", "scikit-learn", "data-visualisation", "llm-apps", "llm-evaluation", "vector-databases", "mlops",
+  "python",
+  "pandas",
+  "numpy",
+  "statistics",
+  "linear-algebra",
+  "machine-learning",
+  "deep-learning",
+  "pytorch",
+  "tensorflow",
+  "scikit-learn",
+  "data-visualisation",
+  "llm-apps",
+  "llm-evaluation",
+  "vector-databases",
+  "mlops",
 ]);
 const ROLE_NAMES: Record<string, string> = {
-  "ml-engineer": "ML engineer", "software-engineer": "software engineer", "data-analyst": "data analyst",
+  "ml-engineer": "ML engineer",
+  "software-engineer": "software engineer",
+  "data-analyst": "data analyst",
 };
 const YEAR_WORDS: Record<number, string> = { 1: "first-year", 2: "second-year", 3: "third-year", 4: "final-year" };
 
 type Candidate = { name: string; publicUrl: string; source: GuideSuggestion["source"]; context: string };
-type DraftCtx = { skill: string; demandPct: number; roleName: string; language: "python" | "typescript"; studentFirst: string; studentIntro: string };
+type DraftCtx = {
+  skill: string;
+  demandPct: number;
+  roleName: string;
+  language: "python" | "typescript";
+  studentFirst: string;
+  studentIntro: string;
+};
 
 /** The student's top gap: gap nodes sorted by demand (highest first). */
 export function topGap(map: BridgeMap): BridgeNode | undefined {
@@ -75,7 +97,9 @@ async function searchGitHub(language: string, report: AgentCtx["emit"]): Promise
           .map((i) => ({ login: i.login as string, html_url: i.html_url as string }));
       },
       {
-        loose: false, quietErrors: true, meta: { kind: "github-search", label: url },
+        loose: false,
+        quietErrors: true,
+        meta: { kind: "github-search", label: url },
         validate: (v) => Array.isArray(v) && v.every((i) => isHttpUrl((i as { html_url?: unknown })?.html_url)),
         shouldRecord: (v) => v.length > 0,
       },
@@ -92,7 +116,11 @@ async function searchGitHub(language: string, report: AgentCtx["emit"]): Promise
 }
 
 function cleanTitle(title: string | undefined): string {
-  return (title ?? "").replace(/\s+/g, " ").split(/\s[|·–-]\s/)[0].trim().slice(0, 80);
+  return (title ?? "")
+    .replace(/\s+/g, " ")
+    .split(/\s[|·–-]\s/)[0]
+    .trim()
+    .slice(0, 80);
 }
 
 async function searchWeb(skill: string): Promise<Candidate[]> {
@@ -117,7 +145,10 @@ function pick(github: Candidate[], web: Candidate[]): Candidate[] {
   const seen = new Set<string>();
   for (let i = 0; out.length < MAX_GUIDES && (i < github.length || i < web.length); i++) {
     for (const c of [github[i], web[i]]) {
-      if (c && !seen.has(c.publicUrl) && out.length < MAX_GUIDES) { seen.add(c.publicUrl); out.push(c); }
+      if (c && !seen.has(c.publicUrl) && out.length < MAX_GUIDES) {
+        seen.add(c.publicUrl);
+        out.push(c);
+      }
     }
   }
   return out;
@@ -125,9 +156,10 @@ function pick(github: Candidate[], web: Candidate[]): Candidate[] {
 
 function templateFor(c: Candidate, ctx: DraftCtx): Omit<GuideSuggestion, "name" | "publicUrl" | "source"> {
   const gapLine = `${ctx.skill} is your top gap: it shows up in ${ctx.demandPct}% of ${ctx.roleName} ads.`;
-  const whyRelevant = c.source === "github"
-    ? `${c.name} is a Manchester developer on GitHub who writes ${ctx.language === "python" ? "Python" : "TypeScript"} and has more than 20 followers. ${gapLine}`
-    : `They speak or organise around ${ctx.skill} in Manchester ("${c.name}"). ${gapLine}`;
+  const whyRelevant =
+    c.source === "github"
+      ? `${c.name} is a Manchester developer on GitHub who writes ${ctx.language === "python" ? "Python" : "TypeScript"} and has more than 20 followers. ${gapLine}`
+      : `They speak or organise around ${ctx.skill} in Manchester ("${c.name}"). ${gapLine}`;
   const suggestedQuestion = `What's one small ${ctx.skill} project you'd recommend to someone just starting out?`;
   const found = c.source === "github" ? "your GitHub profile" : `"${c.name}"`;
   const greeting = c.source === "github" ? `Hi ${c.name},` : "Hi there,";
@@ -138,12 +170,14 @@ function templateFor(c: Candidate, ctx: DraftCtx): Omit<GuideSuggestion, "name" 
 }
 
 const DraftsZ = z.object({
-  guides: z.array(z.object({
-    publicUrl: z.string(),
-    whyRelevant: z.string(),
-    suggestedQuestion: z.string(),
-    draftMessage: z.string(),
-  })),
+  guides: z.array(
+    z.object({
+      publicUrl: z.string(),
+      whyRelevant: z.string(),
+      suggestedQuestion: z.string(),
+      draftMessage: z.string(),
+    }),
+  ),
 });
 
 const SYSTEM = [
@@ -201,20 +235,34 @@ export async function findGuides(profile: Profile, map: BridgeMap): Promise<Guid
       let drafts: z.infer<typeof DraftsZ>["guides"] = [];
       try {
         // PII guardrail on the LLM input: emails and phone numbers in scraped context never reach the model.
-        const payload = redactForLLM(ctx, {
-          student: { firstName: studentFirst, intro: tpl.studentIntro, interests: profile.interests, targetRole: tpl.roleName },
-          topGap: { skill, demandPct: tpl.demandPct },
-          people: people.map(({ name, publicUrl, source, context }) => ({ name, publicUrl, source, context: wrapUntrusted(`${source}:${publicUrl}`, context, 400) })),
-        }, ["publicUrl"]);
-        const out = await ctx.step("draft messages", () => llmJSON({
-          agent: "guides",
-          runId,
-          system: SYSTEM,
-          user: JSON.stringify(payload),
-          schema: DraftsZ,
-          schemaName: "guide_drafts",
-          temperature: 0.4,
-        }), (o) => `Drafted ${o.guides.length} first messages`);
+        const payload = redactForLLM(
+          ctx,
+          {
+            student: { firstName: studentFirst, intro: tpl.studentIntro, interests: profile.interests, targetRole: tpl.roleName },
+            topGap: { skill, demandPct: tpl.demandPct },
+            people: people.map(({ name, publicUrl, source, context }) => ({
+              name,
+              publicUrl,
+              source,
+              context: wrapUntrusted(`${source}:${publicUrl}`, context, 400),
+            })),
+          },
+          ["publicUrl"],
+        );
+        const out = await ctx.step(
+          "draft messages",
+          () =>
+            llmJSON({
+              agent: "guides",
+              runId,
+              system: SYSTEM,
+              user: JSON.stringify(payload),
+              schema: DraftsZ,
+              schemaName: "guide_drafts",
+              temperature: 0.4,
+            }),
+          (o) => `Drafted ${o.guides.length} first messages`,
+        );
         drafts = out.guides;
       } catch {
         ctx.degraded("AI writer unavailable: template drafts");
@@ -223,21 +271,30 @@ export async function findGuides(profile: Profile, map: BridgeMap): Promise<Guid
 
       // A scraped page or bio that tries to instruct the AI gets the deterministic template, never the model's draft.
       const flagged = new Set(people.filter((c) => scanForInjection(`${c.name}\n${c.context}`).risk === "high").map((c) => c.publicUrl));
-      if (flagged.size) ctx.emit("progress", `${flagged.size === 1 ? "1 page" : `${flagged.size} pages`} contained text aimed at an AI, so a safe template wrote ${flagged.size === 1 ? "that draft" : "those drafts"}`);
-      const suggestions = people.flatMap((c, i) => {
-        const t = templateFor(c, tpl);
-        const d = flagged.has(c.publicUrl) ? undefined : drafts.find((x) => x.publicUrl === c.publicUrl) ?? (drafts.length === people.length ? drafts[i] : undefined);
-        const pickText = (v: string | undefined, fallback: string, max: number) => (v?.trim() ? guardOutput(v.trim()).slice(0, max) : fallback);
-        const parsed = GuideSuggestionZ.safeParse({
-          name: c.name,
-          publicUrl: c.publicUrl,
-          source: c.source,
-          whyRelevant: pickText(d?.whyRelevant, t.whyRelevant, 400),
-          suggestedQuestion: pickText(d?.suggestedQuestion, t.suggestedQuestion, 300),
-          draftMessage: pickText(d?.draftMessage, t.draftMessage, 1200),
-        });
-        return parsed.success ? [parsed.data] : [];
-      }).slice(0, MAX_GUIDES);
+      if (flagged.size)
+        ctx.emit(
+          "progress",
+          `${flagged.size === 1 ? "1 page" : `${flagged.size} pages`} contained text aimed at an AI, so a safe template wrote ${flagged.size === 1 ? "that draft" : "those drafts"}`,
+        );
+      const suggestions = people
+        .flatMap((c, i) => {
+          const t = templateFor(c, tpl);
+          const d = flagged.has(c.publicUrl)
+            ? undefined
+            : (drafts.find((x) => x.publicUrl === c.publicUrl) ?? (drafts.length === people.length ? drafts[i] : undefined));
+          const pickText = (v: string | undefined, fallback: string, max: number) =>
+            v?.trim() ? guardOutput(v.trim()).slice(0, max) : fallback;
+          const parsed = GuideSuggestionZ.safeParse({
+            name: c.name,
+            publicUrl: c.publicUrl,
+            source: c.source,
+            whyRelevant: pickText(d?.whyRelevant, t.whyRelevant, 400),
+            suggestedQuestion: pickText(d?.suggestedQuestion, t.suggestedQuestion, 300),
+            draftMessage: pickText(d?.draftMessage, t.draftMessage, 1200),
+          });
+          return parsed.success ? [parsed.data] : [];
+        })
+        .slice(0, MAX_GUIDES);
 
       ctx.done(`${suggestions.length} guides ready. You send the messages yourself.`, { count: suggestions.length, skillId });
       return suggestions;

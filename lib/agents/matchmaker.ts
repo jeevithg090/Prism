@@ -53,7 +53,7 @@ const MAX_POD = 4;
 const EPS = 1e-9;
 
 // ---------- small helpers ----------
-const uniq = <T,>(xs: T[]): T[] => [...new Set(xs)];
+const uniq = <T>(xs: T[]): T[] => [...new Set(xs)];
 const mean = (xs: number[]): number => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
 const clamp01 = (x: number): number => Math.min(1, Math.max(0, x));
 const round2 = (x: number): number => Math.round((x + Number.EPSILON) * 100) / 100;
@@ -74,7 +74,11 @@ function pairs<T>(xs: T[]): [T, T][] {
   return out;
 }
 
-const interestWords = (interests: string[]): string[] => interests.join(" ").toLowerCase().match(/[a-z0-9]+/g) ?? [];
+const interestWords = (interests: string[]): string[] =>
+  interests
+    .join(" ")
+    .toLowerCase()
+    .match(/[a-z0-9]+/g) ?? [];
 
 /** Jaccard of the lowercase interest word sets (DEMO_MODE / embedding fallback). */
 export const interestJaccard: InterestSim = (a, b) => jaccard(interestWords(a.interests), interestWords(b.interests));
@@ -150,7 +154,9 @@ export function learnsTeaches(team: CandidateSkills[]): MemberSkills[] {
   return team.map((m, i) => {
     const others = team.filter((_, j) => j !== i);
     const othersProven = new Set(others.flatMap((o) => o.proven));
-    const learns = uniq(m.gaps).filter((g) => othersProven.has(g)).slice(0, TOP_N);
+    const learns = uniq(m.gaps)
+      .filter((g) => othersProven.has(g))
+      .slice(0, TOP_N);
     const need = (s: SkillId) => others.filter((o) => o.gaps.includes(s)).length;
     const teaches = uniq(m.proven)
       .map((s, idx) => ({ s, idx, n: need(s) }))
@@ -449,9 +455,15 @@ async function runMatch(userId: string, ctx: AgentCtx, demo: boolean): Promise<P
 
   const partner = team[1];
   const fills = user.gaps.filter((g) => partner.proven.includes(g)).slice(0, TOP_N);
-  ctx.emit("progress", `best partner: ${firstName(partner.userId, names)}${fills.length ? ` (fills ${fills.map(skillName).join(", ")})` : ""}`, {
-    partnerId: partner.userId, fills, pairScore: scoreTeam([user, partner], opts),
-  });
+  ctx.emit(
+    "progress",
+    `best partner: ${firstName(partner.userId, names)}${fills.length ? ` (fills ${fills.map(skillName).join(", ")})` : ""}`,
+    {
+      partnerId: partner.userId,
+      fills,
+      pairScore: scoreTeam([user, partner], opts),
+    },
+  );
 
   const score = scoreTeam(team, opts);
   ctx.emit("progress", `pod score ${score.toFixed(2)}`, { score, size: team.length, parts: scoreParts(team, opts) });
@@ -473,7 +485,9 @@ async function runMatch(userId: string, ctx: AgentCtx, demo: boolean): Promise<P
       // Record that this user has joined the demo pod, so it shows up as *their* pod from now on.
       await store.upsert("pod_claims", `${userId}:${fixture.id}`, { id: `${userId}:${fixture.id}`, userId, podId: fixture.id }, userId);
       ctx.done(`${fixture.name} is ready: ${team.map((t) => firstName(t.userId, names)).join(", ")}`, {
-        podId: fixture.id, score: fixture.score, memberIds: team.map((t) => t.userId),
+        podId: fixture.id,
+        score: fixture.score,
+        memberIds: team.map((t) => t.userId),
       });
       return pod;
     }
@@ -495,7 +509,9 @@ async function runMatch(userId: string, ctx: AgentCtx, demo: boolean): Promise<P
   await store.upsert("pods", pod.id, pod, userId);
 
   ctx.done(`${pod.name} is ready: ${team.map((t) => firstName(t.userId, names)).join(", ")}`, {
-    podId: pod.id, score, memberIds: team.map((t) => t.userId),
+    podId: pod.id,
+    score,
+    memberIds: team.map((t) => t.userId),
   });
   return pod;
 }

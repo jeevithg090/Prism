@@ -8,7 +8,11 @@ import "./coach.css";
 export const metadata: Metadata = { title: "Coach · Keystone" };
 
 const LOOP = [
-  { icon: Brain, name: "Perceive", text: "Reads a short brief: your readiness, top gaps, this week's focus, your pod and what it remembers." },
+  {
+    icon: Brain,
+    name: "Perceive",
+    text: "Reads a short brief: your readiness, top gaps, this week's focus, your pod and what it remembers.",
+  },
   { icon: ListChecks, name: "Plan", text: "Writes down which Keystone agents to ask before doing anything." },
   { icon: Wrench, name: "Act", text: "Calls specialist agents as tools: Roadmap, Matchmaker, Architect, Tech Lead, Trajectories, Guides." },
   { icon: Eye, name: "Observe", text: "Reads a short summary of each result, never raw data dumps." },
@@ -50,12 +54,14 @@ export default function CoachPage() {
               ))}
             </ol>
             <p className="mt-6 rounded-xl bg-muted p-4 text-sm text-pretty text-muted-foreground">
-              It keeps five principles: an explicit plan, typed tools with declared effects, human approval, a grounding check, and
-              visible, deletable memory. Without an AI key it runs on Keystone&apos;s deterministic rules, and it says so.
+              It keeps five principles: an explicit plan, typed tools with declared effects, human approval, a grounding check, and visible,
+              deletable memory. Without an AI key it runs on Keystone&apos;s deterministic rules, and it says so.
             </p>
           </SectionCard>
           <section aria-labelledby="coach-memory-title">
-            <h2 id="coach-memory-title" className="text-xl font-semibold text-foreground">What the Coach remembers</h2>
+            <h2 id="coach-memory-title" className="text-xl font-semibold text-foreground">
+              What the Coach remembers
+            </h2>
             <p className="mt-1 text-sm text-muted-foreground">Opt-in notes from your chats. Delete any of them.</p>
             <div className="mt-4">
               <CoachMemory />

@@ -5,9 +5,19 @@ import { getStore } from "@/lib/store";
 import type { Profile, Trajectory, TrajectoryStep } from "@/lib/types";
 
 const ROLE_NAMES: Record<string, string> = {
-  "ml-engineer": "ML engineer", "software-engineer": "software engineer", "data-analyst": "data analyst",
+  "ml-engineer": "ML engineer",
+  "software-engineer": "software engineer",
+  "data-analyst": "data analyst",
 };
-const STEP_PRIORITY: TrajectoryStep["kind"][] = ["placement", "internship", "project", "hackathon", "society", "module-choice", "first-role"];
+const STEP_PRIORITY: TrajectoryStep["kind"][] = [
+  "placement",
+  "internship",
+  "project",
+  "hackathon",
+  "society",
+  "module-choice",
+  "first-role",
+];
 const MAX_WORDS = 60;
 
 /** The most concrete, ask-about-able step of a journey (placements and projects before societies). */
@@ -27,7 +37,7 @@ const wordCount = (s: string) => s.trim().split(/\s+/).filter(Boolean).length;
 /** Deterministic fallback draft (≤ 60 words) that names one concrete step from their journey. */
 export async function templateDraft(trajectory: Trajectory, viewer?: Pick<Profile, "year" | "dna"> | null): Promise<string> {
   const step = concreteStep(trajectory);
-  const yearWord = viewer ? ["first", "second", "third", "fourth"][viewer.year - 1] ?? "first" : "first";
+  const yearWord = viewer ? (["first", "second", "third", "fourth"][viewer.year - 1] ?? "first") : "first";
   const role = viewer ? ROLE_NAMES[viewer.dna.targetRoles[0] ?? ""] : undefined;
   const hope = role ? ` hoping to become ${withArticle(role)}` : "";
   const label = step ? step.label.split(/\s+/).slice(0, 10).join(" ") : "";
@@ -39,7 +49,10 @@ export async function templateDraft(trajectory: Trajectory, viewer?: Pick<Profil
 }
 
 /** Draft the request with the LLM; on any failure, return the template draft. */
-export async function draftChatRequest(input: { viewerId: string; trajectory: Trajectory }): Promise<{ draft: string; source: "llm" | "template" }> {
+export async function draftChatRequest(input: {
+  viewerId: string;
+  trajectory: Trajectory;
+}): Promise<{ draft: string; source: "llm" | "template" }> {
   const { viewerId, trajectory } = input;
   let viewer: Profile | null = null;
   try {
@@ -48,7 +61,7 @@ export async function draftChatRequest(input: { viewerId: string; trajectory: Tr
     viewer = null;
   }
   const path = trajectory.steps.map((s) => `Y${s.year} ${s.kind}: ${s.label}`).join("; ");
-  const yearWord = viewer ? ["first", "second", "third", "fourth"][viewer.year - 1] ?? "first" : "first";
+  const yearWord = viewer ? (["first", "second", "third", "fourth"][viewer.year - 1] ?? "first") : "first";
   try {
     const text = await llmText({
       agent: "trajectories",
@@ -59,7 +72,9 @@ export async function draftChatRequest(input: { viewerId: string; trajectory: Tr
         `Draft a short, specific, polite message from a ${yearWord}-year asking a senior for a 15-minute chat about their path ` +
         `(${path}; now: ${trajectory.outcomeRole}); ≤ 60 words; mention one concrete step from their journey. ` +
         `The senior's first name is ${firstName(trajectory.name)}.` +
-        (viewer?.dna.targetRoles[0] ? ` The student hopes to become ${withArticle(ROLE_NAMES[viewer.dna.targetRoles[0]] ?? viewer.dna.targetRoles[0])}.` : ""),
+        (viewer?.dna.targetRoles[0]
+          ? ` The student hopes to become ${withArticle(ROLE_NAMES[viewer.dna.targetRoles[0]] ?? viewer.dna.targetRoles[0])}.`
+          : ""),
     });
     const draft = text.trim().replace(/^["']|["']$/g, "");
     if (!draft || wordCount(draft) > MAX_WORDS) throw new Error("draft too long or empty");

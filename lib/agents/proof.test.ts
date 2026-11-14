@@ -17,9 +17,17 @@ vi.mock("@/lib/store", () => ({
   getStore: () => ({
     get: async (c: string, id: string) => structuredClone(h.docs.get(`${c}/${id}`)?.doc ?? null),
     list: async (c: string, f?: { userId?: string }) =>
-      [...h.docs.entries()].filter(([k, r]) => k.startsWith(`${c}/`) && (!f?.userId || r.userId === f.userId)).map(([, r]) => structuredClone(r.doc)),
-    upsert: async (c: string, id: string, doc: unknown, userId?: string) => { h.upsert(c, id, doc, userId); h.docs.set(`${c}/${id}`, { doc: structuredClone(doc), userId }); return doc; },
-    remove: async (c: string, id: string) => { h.docs.delete(`${c}/${id}`); },
+      [...h.docs.entries()]
+        .filter(([k, r]) => k.startsWith(`${c}/`) && (!f?.userId || r.userId === f.userId))
+        .map(([, r]) => structuredClone(r.doc)),
+    upsert: async (c: string, id: string, doc: unknown, userId?: string) => {
+      h.upsert(c, id, doc, userId);
+      h.docs.set(`${c}/${id}`, { doc: structuredClone(doc), userId });
+      return doc;
+    },
+    remove: async (c: string, id: string) => {
+      h.docs.delete(`${c}/${id}`);
+    },
   }),
 }));
 
@@ -34,7 +42,7 @@ const profiles: Profile[] = [
 ];
 const pod = podFixture as Pod;
 const upserts = (c: string) => h.upsert.mock.calls.filter((x) => x[0] === c);
-const doc = <T,>(c: string, id: string) => h.docs.get(`${c}/${id}`)?.doc as T | undefined;
+const doc = <T>(c: string, id: string) => h.docs.get(`${c}/${id}`)?.doc as T | undefined;
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -42,24 +50,47 @@ beforeEach(() => {
   for (const p of profiles) h.docs.set(`profiles/${p.id}`, { doc: structuredClone(p), userId: p.id });
   h.docs.set(`pods/${pod.id}`, { doc: structuredClone(pod), userId: "aisha" });
   h.loadGraph.mockImplementation(async (userId: string, roleId: string) =>
-    userId === "aisha" && roleId === "ml-engineer" ? structuredClone(mapFixture as BridgeMap) : null);
+    userId === "aisha" && roleId === "ml-engineer" ? structuredClone(mapFixture as BridgeMap) : null,
+  );
 });
 
 describe("recordMergedPR", () => {
   it("writes evidence for the learner AND the reviewer (teaching is assessed too)", async () => {
-    const out = await recordMergedPR({ podId: "pod_demo01", issueIndex: 0, prUrl: "https://github.com/keystone-demo/pod-vision-demo/pull/8" });
+    const out = await recordMergedPR({
+      podId: "pod_demo01",
+      issueIndex: 0,
+      prUrl: "https://github.com/keystone-demo/pod-vision-demo/pull/8",
+    });
     expect(ProofResultZ.safeParse(out).success).toBe(true);
-    expect(out).toMatchObject({ userId: "aisha", reviewerUserId: "priya", skillId: "docker", skillName: "Docker", momentumPoints: 5, runId: "run_proof" });
+    expect(out).toMatchObject({
+      userId: "aisha",
+      reviewerUserId: "priya",
+      skillId: "docker",
+      skillName: "Docker",
+      momentumPoints: 5,
+      runId: "run_proof",
+    });
     const evs = upserts("evidence");
     expect(evs).toHaveLength(2);
     const [learnerEv, reviewerEv] = evs.map((c) => c[2] as EvidenceItem);
     expect(learnerEv).toMatchObject({
-      userId: "aisha", skillId: "docker", level: 2, confidence: 0.9, source: "keystone-pod",
+      userId: "aisha",
+      skillId: "docker",
+      level: 2,
+      confidence: 0.9,
+      source: "keystone-pod",
       url: "https://github.com/keystone-demo/pod-vision-demo/pull/8",
       quote: "Merged 'Containerise the captioning API with Docker' in pod-vision-demo, reviewed by Priya",
     });
     expect(evs[0][3]).toBe("aisha");
-    expect(reviewerEv).toMatchObject({ userId: "priya", skillId: "code-review", level: 2, confidence: 0.8, source: "keystone-pod", quote: "Reviewed Aisha's Docker PR" });
+    expect(reviewerEv).toMatchObject({
+      userId: "priya",
+      skillId: "code-review",
+      level: 2,
+      confidence: 0.8,
+      source: "keystone-pod",
+      quote: "Reviewed Aisha's Docker PR",
+    });
     expect(evs[1][3]).toBe("priya");
     expect(out.evidenceIds).toEqual([learnerEv.id, reviewerEv.id]);
   });
@@ -100,7 +131,10 @@ describe("recordMergedPR", () => {
     const second = await recordMergedPR({ podId: "pod_demo01", issueIndex: 4 });
     expect(second.badgesEarned).toEqual([]);
     const progress = doc<{ merged: { issueIndex: number; userId: string; skillId: string }[] }>("pod_progress", "pod_demo01")!;
-    expect(progress.merged.map((m) => [m.issueIndex, m.userId, m.skillId])).toEqual([[0, "aisha", "docker"], [4, "aisha", "pytorch"]]);
+    expect(progress.merged.map((m) => [m.issueIndex, m.userId, m.skillId])).toEqual([
+      [0, "aisha", "docker"],
+      [4, "aisha", "pytorch"],
+    ]);
   });
 
   it("is idempotent per (podId, issueIndex): same result, nothing new written", async () => {
@@ -111,7 +145,10 @@ describe("recordMergedPR", () => {
     expect(h.upsert.mock.calls.length).toBe(writes);
     // concurrent double-click also writes once
     h.upsert.mockClear();
-    const [a, b] = await Promise.all([recordMergedPR({ podId: "pod_demo01", issueIndex: 1 }), recordMergedPR({ podId: "pod_demo01", issueIndex: 1 })]);
+    const [a, b] = await Promise.all([
+      recordMergedPR({ podId: "pod_demo01", issueIndex: 1 }),
+      recordMergedPR({ podId: "pod_demo01", issueIndex: 1 }),
+    ]);
     expect(a).toEqual(b);
     expect(upserts("pod_progress")).toHaveLength(1);
   });
@@ -172,8 +209,22 @@ describe("recordMergedPR", () => {
 describe("proofFromPullRequestEvent", () => {
   const event = (pr: Record<string, unknown>, repo = "https://github.com/keystone-demo/pod-vision-demo", action = "closed") => ({
     action,
-    pull_request: { number: 9, title: "Dockerise", body: "", html_url: `${repo}/pull/9`, merged: true, merged_at: "2026-11-07T15:30:00Z", user: { login: "someone" }, ...pr },
-    repository: { name: repo.split("/").pop(), full_name: repo.replace("https://github.com/", ""), html_url: repo, owner: { login: "keystone-demo" } },
+    pull_request: {
+      number: 9,
+      title: "Dockerise",
+      body: "",
+      html_url: `${repo}/pull/9`,
+      merged: true,
+      merged_at: "2026-11-07T15:30:00Z",
+      user: { login: "someone" },
+      ...pr,
+    },
+    repository: {
+      name: repo.split("/").pop(),
+      full_name: repo.replace("https://github.com/", ""),
+      html_url: repo,
+      owner: { login: "keystone-demo" },
+    },
   });
 
   it("parses 'Closes #n' before any other #n", () => {

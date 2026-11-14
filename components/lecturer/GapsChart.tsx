@@ -34,7 +34,12 @@ export function gapsSummary(gaps: Gap[], roleName: string): string {
 
 export function NoModuleBadge({ className }: { className?: string }) {
   return (
-    <span className={cn("inline-flex h-7 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border border-status-gap/35 bg-status-gap/10 px-2.5 text-sm font-medium text-foreground", className)}>
+    <span
+      className={cn(
+        "inline-flex h-7 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border border-status-gap/35 bg-status-gap/10 px-2.5 text-sm font-medium text-foreground",
+        className,
+      )}
+    >
       <Target className="size-4 text-status-gap" aria-hidden />
       No module covers it
     </span>
@@ -61,17 +66,25 @@ export function GapsChart({ gaps, roleName }: { gaps: Gap[]; roleName: string })
           </colgroup>
           <thead>
             <tr className="text-left text-sm text-muted-foreground">
-              <th scope="col" className="pb-3 font-medium">Skill</th>
-              <th scope="col" className="pb-3 font-medium">Share of ads</th>
+              <th scope="col" className="pb-3 font-medium">
+                Skill
+              </th>
+              <th scope="col" className="pb-3 font-medium">
+                Share of ads
+              </th>
             </tr>
           </thead>
           <tbody>
             {rows.map((r, i) => (
               <tr key={r.name} className="border-t last:border-b">
                 <th scope="row" className="py-3 pr-3 text-left align-middle font-normal">
-                  <span className={cn("block truncate text-base text-foreground", i === 0 ? "font-semibold" : "font-medium")}>{r.name}</span>
+                  <span className={cn("block truncate text-base text-foreground", i === 0 ? "font-semibold" : "font-medium")}>
+                    {r.name}
+                  </span>
                   {/* Sighted readers get the need right under the skill; screen readers hear it in the share cell, so the row header's name stays the skill. */}
-                  <span className="block font-mono text-sm text-ink-2 tabular-nums" aria-hidden>{students(r.students)}</span>
+                  <span className="block font-mono text-sm text-ink-2 tabular-nums" aria-hidden>
+                    {students(r.students)}
+                  </span>
                 </th>
                 <td className="py-3">
                   <span className="flex items-center gap-2 sm:gap-3">
@@ -81,7 +94,14 @@ export function GapsChart({ gaps, roleName }: { gaps: Gap[]; roleName: string })
                         style={{ width: `${(r.demandPct / max) * 100}%` }}
                       />
                     </span>
-                    <span className={cn("w-12 shrink-0 font-mono text-base text-foreground tabular-nums sm:w-14 sm:text-lg", i === 0 ? "font-semibold" : "font-medium")}>{r.label}</span>
+                    <span
+                      className={cn(
+                        "w-12 shrink-0 font-mono text-base text-foreground tabular-nums sm:w-14 sm:text-lg",
+                        i === 0 ? "font-semibold" : "font-medium",
+                      )}
+                    >
+                      {r.label}
+                    </span>
                     <span className="sr-only">, {students(r.students)} need it</span>
                   </span>
                 </td>

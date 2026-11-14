@@ -33,7 +33,9 @@ beforeEach(() => {
   h.llmJSON.mockRejectedValue(new Error("no_key"));
   delete process.env.DEMO_MODE;
 });
-afterEach(() => { delete process.env.DEMO_MODE; });
+afterEach(() => {
+  delete process.env.DEMO_MODE;
+});
 
 describe("runCoach · rules planner", () => {
   it("perceives, plans, calls tools, observes, reflects and answers with a receipt", async () => {
@@ -46,7 +48,10 @@ describe("runCoach · rules planner", () => {
     expect(r.answer).toContain("Receipt · Docker: 41% of ML engineer ads; no module covers it");
     expect(r.answer.split(/\s+/).length).toBeLessThanOrEqual(120);
     expect(r.suggestions).toEqual(["Why Docker?", "Start our project", "Who's been where I want to go?"]);
-    expect(fakes.get_week_plan.run).toHaveBeenCalledWith({}, expect.objectContaining({ userId: "aisha", runId: "run_test", approved: false }));
+    expect(fakes.get_week_plan.run).toHaveBeenCalledWith(
+      {},
+      expect.objectContaining({ userId: "aisha", runId: "run_test", approved: false }),
+    );
   });
 
   it("feeds back tool.summarize(output), never the raw output", async () => {
@@ -85,8 +90,12 @@ describe("runCoach · human in the loop", () => {
     const r = await coach("Start our project");
     expect(fakes.start_pod_project.run).not.toHaveBeenCalled();
     expect(r.pendingApproval).toEqual({
-      tool: "start_pod_project", title: "Start your pod project", args: { podId: "pod_1" }, effect: "external",
-      reason: "This creates a public GitHub repo in keystone-demo and opens 6 to 8 issues for Pod Orbit, each assigned to a learner with a teammate as reviewer.",
+      tool: "start_pod_project",
+      title: "Start your pod project",
+      args: { podId: "pod_1" },
+      effect: "external",
+      reason:
+        "This creates a public GitHub repo in keystone-demo and opens 6 to 8 issues for Pod Orbit, each assigned to a learner with a teammate as reviewer.",
     });
     expect(r.steps.find((s) => s.kind === "approval_request")).toMatchObject({ status: "needs_approval", tool: "start_pod_project" });
     expect(r.answer).toMatch(/You decide/);
@@ -118,7 +127,9 @@ describe("runCoach · human in the loop", () => {
       .mockResolvedValueOnce({ thought: "Same call again", action: { tool: "start_pod_project", args: { podId: "A" } }, answer: null })
       .mockResolvedValueOnce({ thought: "Now the other pod", action: { tool: "start_pod_project", args: { podId: "B" } }, answer: null });
     const r = await runCoach({
-      userId: "aisha", message: "Start projects for both pods", tools: tools(),
+      userId: "aisha",
+      message: "Start projects for both pods",
+      tools: tools(),
       approval: { tool: "start_pod_project", args: { podId: "A" }, decision: "approve" },
     });
     expect(fakes.start_pod_project.run).toHaveBeenCalledTimes(1);
@@ -148,7 +159,9 @@ describe("runCoach · escalation", () => {
 
   it("without an ask_for_help tool it still stops and points to a person", async () => {
     const r = await runCoach({
-      userId: "aisha", message: "What should I do this week?", planner: "rules",
+      userId: "aisha",
+      message: "What should I do this week?",
+      planner: "rules",
       tools: [fakeTool("get_week_plan", { fail: "x" }), fakeTool("get_bridge_map", { fail: "y" })],
     });
     expect(r.pendingApproval).toBeUndefined();
@@ -159,7 +172,8 @@ describe("runCoach · escalation", () => {
 describe("runCoach · reflection and memory", () => {
   it("the grounding check removes an invented number and records a guardrail step", async () => {
     h.llmJSON.mockResolvedValueOnce({
-      thought: "I know this already", action: null,
+      thought: "I know this already",
+      action: null,
       answer: "Docker appears in 73% of ML engineer ads. Your readiness is 38% now.",
     });
     const r = await runCoach({ userId: "aisha", message: "Why Docker?", tools: tools() });
@@ -184,8 +198,17 @@ describe("runCoach · LLM planner (ReAct)", () => {
   it("calls a tool, observes the summary as untrusted data, then answers", async () => {
     h.llmJSON
       .mockResolvedValueOnce({ thought: "Check this week's plan first.", action: { tool: "get_week_plan", args: {} }, answer: null })
-      .mockResolvedValueOnce({ thought: "I have what I need.", action: null, answer: "Focus on Docker this week. Docker: 41% of ML engineer ads; no module covers it." });
-    const r = await runCoach({ userId: "aisha", message: "What should I do this week?", tools: tools(), history: [{ role: "user", content: "hi" }] });
+      .mockResolvedValueOnce({
+        thought: "I have what I need.",
+        action: null,
+        answer: "Focus on Docker this week. Docker: 41% of ML engineer ads; no module covers it.",
+      });
+    const r = await runCoach({
+      userId: "aisha",
+      message: "What should I do this week?",
+      tools: tools(),
+      history: [{ role: "user", content: "hi" }],
+    });
     expect(r.planner).toBe("llm");
     expect(fakes.get_week_plan.run).toHaveBeenCalledTimes(1);
     expect(kinds(r)).toEqual(["context", "plan", "tool_call", "observation", "plan", "reflection", "answer"]);
@@ -199,7 +222,9 @@ describe("runCoach · LLM planner (ReAct)", () => {
     expect(first.system).toContain(CONTEXT.text);
     expect(first.user).toContain("CONVERSATION SO FAR:\nuser: hi");
     expect(second.user).toContain("Action: get_week_plan({})");
-    expect(second.user).toContain("Observation: <untrusted>Week 1: focus Docker. Proof: Merge a PR that adds Docker to your pod repo.</untrusted>");
+    expect(second.user).toContain(
+      "Observation: <untrusted>Week 1: focus Docker. Proof: Merge a PR that adds Docker to your pod repo.</untrusted>",
+    );
     expect(second.user).not.toContain("RAW_get_week_plan");
   });
 

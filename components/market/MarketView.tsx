@@ -18,7 +18,16 @@ import { RisingCovered } from "./RisingCovered";
 import { RoleSwitcher } from "./RoleSwitcher";
 import { SampleAds } from "./SampleAds";
 import { SkillDemandChart } from "./SkillDemandChart";
-import { defaultPicks, monthLabel, risingForRole, roleInSentence, ROLES, subtitleFor, type RoadmapWeeks, type StatusBySkill } from "./summaries";
+import {
+  defaultPicks,
+  monthLabel,
+  risingForRole,
+  roleInSentence,
+  ROLES,
+  subtitleFor,
+  type RoadmapWeeks,
+  type StatusBySkill,
+} from "./summaries";
 import { MAX_PICKS, TrendChart } from "./TrendChart";
 
 export type MarketViewProps = {
@@ -32,7 +41,14 @@ export type MarketViewProps = {
 
 const newRunId = () => `run_${Math.random().toString(36).slice(2, 10)}`;
 
-export function MarketView({ initialRole, primaryRole, statusBySkill: known, fallbackStatus, roadmapWeeks, initialDemo = false }: MarketViewProps) {
+export function MarketView({
+  initialRole,
+  primaryRole,
+  statusBySkill: known,
+  fallbackStatus,
+  roadmapWeeks,
+  initialDemo = false,
+}: MarketViewProps) {
   const [roleId, setRoleId] = React.useState(initialRole);
   const [demo, setDemo] = React.useState(initialDemo);
   const [picks, setPicks] = React.useState<Record<string, SkillId[]>>({});
@@ -71,7 +87,9 @@ export function MarketView({ initialRole, primaryRole, statusBySkill: known, fal
   const toggle = (id: SkillId) => {
     if (picked.includes(id)) return setPicked(picked.filter((x) => x !== id));
     if (!trendList.some((t) => t.skillId === id)) {
-      toast.info(`No hiring history for ${skillName(id)} yet`, { description: "We only chart skills with at least 6 months of Hacker News posts." });
+      toast.info(`No hiring history for ${skillName(id)} yet`, {
+        description: "We only chart skills with at least 6 months of Hacker News posts.",
+      });
       return;
     }
     setPicked([...(picked.length >= MAX_PICKS ? picked.slice(1) : picked), id]);
@@ -84,7 +102,10 @@ export function MarketView({ initialRole, primaryRole, statusBySkill: known, fal
     try {
       const d = await apiGet<RoleDemand>(`/api/market/${roleId}?refresh=1&runId=${runId}${demo ? "&demo=1" : ""}`);
       qc.setQueryData(["market", roleId, demo], d);
-      if (d.source === "cache") toast("Showing the saved snapshot", { description: `No live job board is connected, so these are the ${d.adsAnalysed} ads saved on ${new Date(d.snapshotAt).getUTCDate()} ${monthLabel(d.snapshotAt.slice(0, 7))}.` });
+      if (d.source === "cache")
+        toast("Showing the saved snapshot", {
+          description: `No live job board is connected, so these are the ${d.adsAnalysed} ads saved on ${new Date(d.snapshotAt).getUTCDate()} ${monthLabel(d.snapshotAt.slice(0, 7))}.`,
+        });
       else toast.success("Updated with today's ads", { description: `${d.adsAnalysed} ${role.name} ads analysed.` });
     } catch {
       toast.error("We couldn't refresh the job data", { description: "That's on us, not you. The numbers below are unchanged." });
@@ -114,7 +135,12 @@ export function MarketView({ initialRole, primaryRole, statusBySkill: known, fal
       <div className="space-y-6">
         {header}
         {switcher}
-        <ErrorState title="We couldn't load job data" body="That's on us, not you. Try again, or look at the saved demo snapshot." onRetry={() => market.refetch()} onUseDemo={useDemo} />
+        <ErrorState
+          title="We couldn't load job data"
+          body="That's on us, not you. Try again, or look at the saved demo snapshot."
+          onRetry={() => market.refetch()}
+          onUseDemo={useDemo}
+        />
       </div>
     );
   }
@@ -124,7 +150,16 @@ export function MarketView({ initialRole, primaryRole, statusBySkill: known, fal
       <div className="space-y-6">
         {header}
         {switcher}
-        <EmptyState icon={SearchX} title="No ads found for this role yet" body="Try another role, or refresh to read today's ads." action={<Button variant="outline" onClick={refresh}>Refresh job data</Button>} />
+        <EmptyState
+          icon={SearchX}
+          title="No ads found for this role yet"
+          body="Try another role, or refresh to read today's ads."
+          action={
+            <Button variant="outline" onClick={refresh}>
+              Refresh job data
+            </Button>
+          }
+        />
       </div>
     );
   }
@@ -145,18 +180,41 @@ export function MarketView({ initialRole, primaryRole, statusBySkill: known, fal
       <MarketStats demand={d} />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,6fr)_minmax(0,6fr)] lg:items-start">
-        <SectionCard title="What employers ask for" description={`Share of ${d.adsAnalysed} ${roleLabel} ads that mention each skill, tagged against your Bridge Map.`} actions={cached ? <span className="shrink-0 whitespace-nowrap"><DemoDataNote /></span> : undefined}>
+        <SectionCard
+          title="What employers ask for"
+          description={`Share of ${d.adsAnalysed} ${roleLabel} ads that mention each skill, tagged against your Bridge Map.`}
+          actions={
+            cached ? (
+              <span className="shrink-0 whitespace-nowrap">
+                <DemoDataNote />
+              </span>
+            ) : undefined
+          }
+        >
           <SkillDemandChart demand={d} statusBySkill={statusBySkill} picked={picked} onPick={toggle} />
         </SectionCard>
 
         {trends.isError ? (
-          <ErrorState title="We couldn't load the trends" body="The job ads on this page are still accurate. Try again, or use the demo history." onRetry={() => trends.refetch()} onUseDemo={useDemo} />
+          <ErrorState
+            title="We couldn't load the trends"
+            body="The job ads on this page are still accurate. Try again, or use the demo history."
+            onRetry={() => trends.refetch()}
+            onUseDemo={useDemo}
+          />
         ) : (
-          <SectionCard className="lg:sticky lg:top-[calc(var(--topbar-height)+1.5rem)]" title="Where skills are heading" description="Share of Hacker News “Who is hiring?” posts that mention each skill, with a 12-month projection.">
+          <SectionCard
+            className="lg:sticky lg:top-[calc(var(--topbar-height)+1.5rem)]"
+            title="Where skills are heading"
+            description="Share of Hacker News “Who is hiring?” posts that mention each skill, with a 12-month projection."
+          >
             {trends.isPending ? (
               <div className="space-y-5" aria-busy="true">
                 <span className="sr-only">Loading trends…</span>
-                <div className="flex flex-wrap gap-2">{[0, 1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-9 w-24 rounded-lg" />)}</div>
+                <div className="flex flex-wrap gap-2">
+                  {[0, 1, 2, 3, 4, 5].map((i) => (
+                    <Skeleton key={i} className="h-9 w-24 rounded-lg" />
+                  ))}
+                </div>
                 <Skeleton className="h-[280px] w-full rounded-xl md:h-[26rem] lg:h-80" />
               </div>
             ) : (
@@ -171,13 +229,19 @@ export function MarketView({ initialRole, primaryRole, statusBySkill: known, fal
           <span className="sr-only">Loading rising skills…</span>
           <Skeleton className="h-7 w-1/2 rounded-lg" />
           <Skeleton className="h-4 w-3/4" />
-          {[0, 1, 2].map((i) => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-16 w-full rounded-xl" />
+          ))}
         </div>
       )}
       {trends.isSuccess && (
         <SectionCard
           title={anyCovered ? "Rising skills your roadmap already covers" : "Rising skills to plan next"}
-          description={anyCovered ? "Fast-growing skills employers ask for, and the week your plan gets you there." : "Fast-growing skills employers ask for that aren't in a plan yet."}
+          description={
+            anyCovered
+              ? "Fast-growing skills employers ask for, and the week your plan gets you there."
+              : "Fast-growing skills employers ask for that aren't in a plan yet."
+          }
         >
           <RisingCovered items={rising} roleLabel={roleLabel} hasRoadmap={roadmapWeeks !== null} />
         </SectionCard>
@@ -189,8 +253,13 @@ export function MarketView({ initialRole, primaryRole, statusBySkill: known, fal
 
       <footer className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t pt-4 text-sm text-pretty text-muted-foreground">
         <span className="max-w-[110ch]">
-          Job ads: {cached ? `Adzuna, saved snapshot from ${new Date(d.snapshotAt).getUTCDate()} ${monthLabel(d.snapshotAt.slice(0, 7))}` : `${d.source === "reed" ? "Reed" : "Adzuna"}, read live`}.
-          {" "}Trends: Hacker News “Who is hiring?” posts{months?.length ? `, ${monthLabel(months[0].month)} to ${monthLabel(months[months.length - 1].month)}` : ""}, fitted with a straight-line trend on the log-odds of each skill&apos;s share.
+          Job ads:{" "}
+          {cached
+            ? `Adzuna, saved snapshot from ${new Date(d.snapshotAt).getUTCDate()} ${monthLabel(d.snapshotAt.slice(0, 7))}`
+            : `${d.source === "reed" ? "Reed" : "Adzuna"}, read live`}
+          . Trends: Hacker News “Who is hiring?” posts
+          {months?.length ? `, ${monthLabel(months[0].month)} to ${monthLabel(months[months.length - 1].month)}` : ""}, fitted with a
+          straight-line trend on the log-odds of each skill&apos;s share.
         </span>
         {cached && <DemoDataNote />}
       </footer>

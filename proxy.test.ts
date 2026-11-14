@@ -21,7 +21,19 @@ describe("decide (pure proxy policy)", () => {
   });
 
   it("never redirects the open pages, the API or static files", () => {
-    for (const p of ["/", "/onboard", "/onboard/step-2", "/launch", "/lecturer", "/governance", "/profile/aisha", "/api/graph/aisha", "/favicon.ico", "/_next/static/chunks/a.js", "/logo.svg"]) {
+    for (const p of [
+      "/",
+      "/onboard",
+      "/onboard/step-2",
+      "/launch",
+      "/lecturer",
+      "/governance",
+      "/profile/aisha",
+      "/api/graph/aisha",
+      "/favicon.ico",
+      "/_next/static/chunks/a.js",
+      "/logo.svg",
+    ]) {
       expect(isOpenPath(p)).toBe(true);
       expect(decide({ pathname: p, demo: null, uid: undefined })).toEqual({ kind: "next" });
     }

@@ -5,7 +5,11 @@ import { Button } from "@/components/ui/button";
 const POINTS: { icon: LucideIcon; title: string; body: string }[] = [
   { icon: Users, title: "2 to 3 students who fill your gaps", body: "Strong where you're stuck, and keen on what you know." },
   { icon: ArrowLeftRight, title: "Learn by teaching", body: "Everyone reviews someone else's work in a skill they already have." },
-  { icon: GitPullRequest, title: "A real project on GitHub", body: "Issues for each of you, and merged PRs become proof on your passport." },
+  {
+    icon: GitPullRequest,
+    title: "A real project on GitHub",
+    body: "Issues for each of you, and merged PRs become proof on your passport.",
+  },
 ];
 
 /** Empty state for /pods: invite the student to be matched. */

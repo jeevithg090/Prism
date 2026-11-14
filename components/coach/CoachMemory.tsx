@@ -33,7 +33,13 @@ export function CoachMemory({ userId: userIdProp }: { userId?: string }) {
   if (q.isError) return <ErrorState title="Couldn't load your memory notes" onRetry={() => void q.refetch()} />;
   const notes = q.data ?? [];
   if (!notes.length) {
-    return <EmptyState icon={BookmarkPlus} title="Nothing remembered yet" body={'Tell the Coach things like "I prefer project-based learning" and it will note them here.'} />;
+    return (
+      <EmptyState
+        icon={BookmarkPlus}
+        title="Nothing remembered yet"
+        body={'Tell the Coach things like "I prefer project-based learning" and it will note them here.'}
+      />
+    );
   }
   return (
     // One card, rows split by hairlines: the states above replace the card, so nothing nests.
@@ -41,7 +47,9 @@ export function CoachMemory({ userId: userIdProp }: { userId?: string }) {
       {notes.map((n) => (
         <li key={n.id} className="flex items-start justify-between gap-3 py-3">
           <div className="min-w-0 pt-1 text-base text-pretty text-foreground">
-            <span className="mr-2 inline-flex h-6 items-center rounded-md border bg-muted px-1.5 text-xs font-medium text-muted-foreground">{n.kind}</span>
+            <span className="mr-2 inline-flex h-6 items-center rounded-md border bg-muted px-1.5 text-xs font-medium text-muted-foreground">
+              {n.kind}
+            </span>
             {n.text}
           </div>
           <Button variant="ghost" size="icon-sm" aria-label={`Forget: ${n.text}`} onClick={() => void remove(n.id)}>

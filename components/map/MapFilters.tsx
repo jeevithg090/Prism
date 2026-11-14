@@ -9,21 +9,38 @@ import { FOCUS, STATUS_META, STATUS_ORDER } from "./mapUtils";
 export type MapView = "graph" | "list";
 
 const TONE: Record<SkillStatus, string> = {
-  proven: "text-status-proven", "degree-done": "text-status-degree", "degree-upcoming": "text-status-degree", gap: "text-status-gap",
+  proven: "text-status-proven",
+  "degree-done": "text-status-degree",
+  "degree-upcoming": "text-status-degree",
+  gap: "text-status-gap",
 };
 
 export function MapFilters({
-  counts, active, onToggle, view, onView,
+  counts,
+  active,
+  onToggle,
+  view,
+  onView,
 }: {
-  counts: Record<SkillStatus, number>; active: Set<SkillStatus>; onToggle: (s: SkillStatus) => void;
-  view: MapView; onView: (v: MapView) => void;
+  counts: Record<SkillStatus, number>;
+  active: Set<SkillStatus>;
+  onToggle: (s: SkillStatus) => void;
+  view: MapView;
+  onView: (v: MapView) => void;
 }) {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 id="graph-h" className="text-xl font-semibold text-foreground">{view === "graph" ? "Skills graph" : "Skills table"}</h2>
+        <h2 id="graph-h" className="text-xl font-semibold text-foreground">
+          {view === "graph" ? "Skills graph" : "Skills table"}
+        </h2>
         <div role="group" aria-label="Map view" className="inline-flex rounded-xl bg-muted p-1">
-          {([["graph", "Graph", Network], ["list", "View as list", List]] as const).map(([v, label, Icon]) => (
+          {(
+            [
+              ["graph", "Graph", Network],
+              ["list", "View as list", List],
+            ] as const
+          ).map(([v, label, Icon]) => (
             <button
               key={v}
               type="button"

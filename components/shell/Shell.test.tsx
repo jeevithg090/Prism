@@ -46,7 +46,19 @@ describe("Sidebar", () => {
 
   it("lists every page, the staff group, and the viewer's own passport", () => {
     render(<SidebarView pathname="/dashboard" viewerId="priya" />);
-    for (const label of ["Dashboard", "Bridge Map", "Roadmap", "Industry Radar", "Pods", "Trajectories", "Community", "Coach", "Interview", "Lecturer Insights", "Agents & governance"]) {
+    for (const label of [
+      "Dashboard",
+      "Bridge Map",
+      "Roadmap",
+      "Industry Radar",
+      "Pods",
+      "Trajectories",
+      "Community",
+      "Coach",
+      "Interview",
+      "Lecturer Insights",
+      "Agents & governance",
+    ]) {
       expect(screen.getByRole("link", { name: label })).toBeInTheDocument();
     }
     expect(screen.getByRole("link", { name: "Passport" })).toHaveAttribute("href", "/profile/priya");
@@ -116,7 +128,9 @@ describe("ThemeToggle", () => {
   });
 
   it("survives a localStorage that throws", async () => {
-    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("private mode"); });
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("private mode");
+    });
     render(<ThemeToggle />);
     await userEvent.click(screen.getByRole("button", { name: "Switch to dark mode" }));
     expect(document.documentElement).toHaveClass("dark");
@@ -124,7 +138,15 @@ describe("ThemeToggle", () => {
 });
 
 describe("TopBar pieces", () => {
-  const map = { userId: "aisha", roleId: "ml-engineer", nodes: [], edges: [], readinessNow: 0.38, readinessProjected: 0.84, generatedAt: "2026-11-07T10:00:00Z" } as BridgeMap;
+  const map = {
+    userId: "aisha",
+    roleId: "ml-engineer",
+    nodes: [],
+    edges: [],
+    readinessNow: 0.38,
+    readinessProjected: 0.84,
+    generatedAt: "2026-11-07T10:00:00Z",
+  } as BridgeMap;
 
   it("readiness pill shows 'ML engineer · 38%' from the server map and links to the map", () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("Not found", { status: 404 }));

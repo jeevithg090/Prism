@@ -8,7 +8,7 @@ import type { BridgeMap, RoleDemand, TrendSeries } from "@/lib/types";
 import { ProgrammeZ, RoleDemandZ, SkillZ, TrendSeriesZ } from "./data";
 import { getSkills } from "@/lib/agents/skillmap";
 
-const read = <T,>(rel: string): T => JSON.parse(fs.readFileSync(path.join(process.cwd(), rel), "utf8")) as T;
+const read = <T>(rel: string): T => JSON.parse(fs.readFileSync(path.join(process.cwd(), rel), "utf8")) as T;
 const ROLES = ["ml-engineer", "software-engineer", "data-analyst"];
 const ids = new Set(getSkills().map((s) => s.id));
 
@@ -37,7 +37,14 @@ describe("P1 fixtures", () => {
     const d = read<RoleDemand>("data/fixtures/market.ml-engineer.json");
     expect(d.adsAnalysed).toBe(214);
     expect(d.salary!.median).toBe(52000);
-    expect(d.skills.slice(0, 6).map((s) => [s.skillId, s.share])).toEqual([["python", 0.62], ["machine-learning", 0.55], ["docker", 0.41], ["pytorch", 0.38], ["sql", 0.35], ["pandas", 0.34]]);
+    expect(d.skills.slice(0, 6).map((s) => [s.skillId, s.share])).toEqual([
+      ["python", 0.62],
+      ["machine-learning", 0.55],
+      ["docker", 0.41],
+      ["pytorch", 0.38],
+      ["sql", 0.35],
+      ["pandas", 0.34],
+    ]);
     const map = read<BridgeMap>("data/fixtures/bridgemap.aisha.ml-engineer.json");
     const share = new Map(d.skills.map((s) => [s.skillId, s.share]));
     for (const n of map.nodes) expect(share.get(n.skillId), n.skillId).toBe(n.demand);
@@ -57,7 +64,13 @@ describe("P1 fixtures", () => {
       expect(forecast(s.history)).toEqual({ projection: s.projection, growthPerYear: s.growthPerYear, label: s.label });
     }
     const label = Object.fromEntries(all.map((s) => [s.skillId, s.label]));
-    expect(label).toMatchObject({ "llm-evaluation": "rising", "llm-apps": "rising", docker: "rising", tensorflow: "declining", python: "stable" });
+    expect(label).toMatchObject({
+      "llm-evaluation": "rising",
+      "llm-apps": "rising",
+      docker: "rising",
+      tensorflow: "declining",
+      python: "stable",
+    });
     const g = Object.fromEntries(all.map((s) => [s.skillId, s.growthPerYear]));
     expect(g["llm-evaluation"]).toBeGreaterThan(0.5);
     expect(g["llm-evaluation"]).toBe(Math.max(...Object.values(g)));

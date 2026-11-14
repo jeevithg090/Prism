@@ -10,18 +10,28 @@ const h = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/llm", () => ({
-  llmJSON: vi.fn(async () => { throw new Error("no_key"); }),
+  llmJSON: vi.fn(async () => {
+    throw new Error("no_key");
+  }),
   llmText: vi.fn(),
   LLMError: class extends Error {},
 }));
 vi.mock("@/lib/n8n", () => ({ triggerWorkflow: h.triggerWorkflow }));
 vi.mock("@/lib/agents/events", () => ({ emit: vi.fn(), newRunId: () => "run_route", subscribe: vi.fn() }));
-vi.mock("octokit", () => ({ Octokit: class { request = h.request; } }));
+vi.mock("octokit", () => ({
+  Octokit: class {
+    request = h.request;
+  },
+}));
 vi.mock("@/lib/store", () => ({
   getStore: () => ({
     get: async (c: string, id: string) => h.docs.get(`${c}/${id}`) ?? null,
     list: async () => [],
-    upsert: async (c: string, id: string, doc: unknown, userId?: string) => { h.upsert(c, id, doc, userId); h.docs.set(`${c}/${id}`, doc); return doc; },
+    upsert: async (c: string, id: string, doc: unknown, userId?: string) => {
+      h.upsert(c, id, doc, userId);
+      h.docs.set(`${c}/${id}`, doc);
+      return doc;
+    },
     remove: async () => {},
   }),
 }));
@@ -29,7 +39,11 @@ vi.mock("@/lib/store", () => ({
 import { POST } from "./route";
 
 const pod: Pod = {
-  id: "pod_r1", name: "Pod Nova", score: 0.7, createdAt: "2026-11-07T12:00:00Z", explanations: [],
+  id: "pod_r1",
+  name: "Pod Nova",
+  score: 0.7,
+  createdAt: "2026-11-07T12:00:00Z",
+  explanations: [],
   members: [
     { userId: "zara", learns: ["docker", "pytorch"], teaches: ["python"], role: "ML" },
     { userId: "ben", learns: ["sql"], teaches: ["docker", "pytorch"], role: "Infra" },
@@ -38,16 +52,22 @@ const pod: Pod = {
 };
 
 const post = (body: unknown) =>
-  POST(new Request("http://localhost/api/projects/create", {
-    method: "POST", headers: { "content-type": "application/json" }, body: typeof body === "string" ? body : JSON.stringify(body),
-  }));
+  POST(
+    new Request("http://localhost/api/projects/create", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: typeof body === "string" ? body : JSON.stringify(body),
+    }),
+  );
 
 beforeEach(() => {
   vi.clearAllMocks();
   h.docs.clear();
   process.env.DEMO_MODE = "true";
 });
-afterEach(() => { delete process.env.DEMO_MODE; });
+afterEach(() => {
+  delete process.env.DEMO_MODE;
+});
 
 describe("POST /api/projects/create", () => {
   it("returns 404 not_found for a missing pod", async () => {
@@ -74,12 +94,23 @@ describe("POST /api/projects/create", () => {
     expect(json.data.issues.every((i: { githubIssueUrl?: string }) => i.githubIssueUrl)).toBe(true);
     expect(json.data.runId).toBe("run_route");
     expect(h.request).not.toHaveBeenCalled();
-    expect(h.upsert).toHaveBeenCalledWith("pods", "pod_r1", expect.objectContaining({ project: expect.objectContaining({ repoUrl: json.data.repoUrl }) }), "zara");
+    expect(h.upsert).toHaveBeenCalledWith(
+      "pods",
+      "pod_r1",
+      expect.objectContaining({ project: expect.objectContaining({ repoUrl: json.data.repoUrl }) }),
+      "zara",
+    );
     expect(h.triggerWorkflow).toHaveBeenCalledTimes(1);
   });
 
   it("is idempotent when the pod already has a repo", async () => {
-    const project = { title: "Existing", pitch: "Already made.", milestones: ["A", "B", "C"], issues: [], repoUrl: "https://github.com/keystone-demo/pod-existing-ab12" };
+    const project = {
+      title: "Existing",
+      pitch: "Already made.",
+      milestones: ["A", "B", "C"],
+      issues: [],
+      repoUrl: "https://github.com/keystone-demo/pod-existing-ab12",
+    };
     h.docs.set("pods/pod_r1", { ...pod, project });
     const res = await post({ podId: "pod_r1" });
     expect(res.status).toBe(200);

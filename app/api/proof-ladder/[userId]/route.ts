@@ -3,7 +3,10 @@ import { z } from "zod";
 import { getProofLadder } from "@/lib/agents/ladder";
 import { badRequest, internal, ok, UserIdParamZ } from "@/lib/schemas/community";
 
-const SkillQueryZ = z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "skillId must be a kebab-case skill id").optional();
+const SkillQueryZ = z
+  .string()
+  .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "skillId must be a kebab-case skill id")
+  .optional();
 
 export async function GET(req: Request, ctx: { params: Promise<{ userId: string }> }) {
   try {

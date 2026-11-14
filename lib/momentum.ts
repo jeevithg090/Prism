@@ -55,9 +55,10 @@ export function scoreWeek(kinds: string[]): { score: number; breakdown: Momentum
   for (const kind of MOMENTUM_KINDS) {
     const count = counts.get(kind) ?? 0;
     if (!count) continue;
-    const points = kind === "problem-solved"
-      ? Math.min(count * POINTS[kind], PROBLEM_SOLVED_WEEKLY_CAP)
-      : Math.min(count, MAX_EVENTS_PER_KIND) * POINTS[kind];
+    const points =
+      kind === "problem-solved"
+        ? Math.min(count * POINTS[kind], PROBLEM_SOLVED_WEEKLY_CAP)
+        : Math.min(count, MAX_EVENTS_PER_KIND) * POINTS[kind];
     breakdown.push({ kind, points, count });
   }
   return { score: breakdown.reduce((s, b) => s + b.points, 0), breakdown };
@@ -110,18 +111,27 @@ const plural = (n: number, one: string, many = `${one}s`) => (n === 1 ? one : ma
 /** One breakdown entry in plain English, e.g. "2 merged PRs", "helped 1 newcomer". */
 export function describeKind(kind: string, count: number): string {
   switch (kind) {
-    case "pr-merged": return `${count} merged ${plural(count, "PR")}`;
-    case "roadmap-milestone": return `${count} ${plural(count, "milestone")}`;
-    case "helped-newcomer": return `helped ${count} ${plural(count, "newcomer")}`;
-    case "mock-interview": return `${count} mock ${plural(count, "interview")}`;
-    case "problem-solved": return `${count} ${plural(count, "problem")} solved`;
-    default: return `${count} × ${kind}`;
+    case "pr-merged":
+      return `${count} merged ${plural(count, "PR")}`;
+    case "roadmap-milestone":
+      return `${count} ${plural(count, "milestone")}`;
+    case "helped-newcomer":
+      return `helped ${count} ${plural(count, "newcomer")}`;
+    case "mock-interview":
+      return `${count} mock ${plural(count, "interview")}`;
+    case "problem-solved":
+      return `${count} ${plural(count, "problem")} solved`;
+    default:
+      return `${count} × ${kind}`;
   }
 }
 
 /** "2 merged PRs · 1 milestone · helped 1 newcomer" ("" when there's nothing yet). */
 export function describeBreakdown(breakdown: MomentumWeek["breakdown"]): string {
-  return breakdown.filter((b) => b.count > 0).map((b) => describeKind(b.kind, b.count)).join(" · ");
+  return breakdown
+    .filter((b) => b.count > 0)
+    .map((b) => describeKind(b.kind, b.count))
+    .join(" · ");
 }
 
 /** "+18%", "0%", "−12%" (typographic minus). */
@@ -145,7 +155,10 @@ export function dedupeEvents<E extends { kind: string; ts: string }>(events: E[]
 
 /** Newest first (unparseable dates last). */
 export function newestFirst<E extends { ts: string }>(events: E[]): E[] {
-  const t = (e: E) => { const n = Date.parse(e.ts); return Number.isNaN(n) ? -Infinity : n; };
+  const t = (e: E) => {
+    const n = Date.parse(e.ts);
+    return Number.isNaN(n) ? -Infinity : n;
+  };
   return [...events].sort((a, b) => t(b) - t(a));
 }
 

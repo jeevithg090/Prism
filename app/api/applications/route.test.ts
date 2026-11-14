@@ -5,16 +5,26 @@ type Row = { doc: unknown; userId?: string };
 const db = new Map<string, Map<string, Row>>();
 const col = (c: string) => {
   let m = db.get(c);
-  if (!m) { m = new Map(); db.set(c, m); }
+  if (!m) {
+    m = new Map();
+    db.set(c, m);
+  }
   return m;
 };
 
 const store = {
-  get: vi.fn(async (c: string, id: string) => (col(c).get(id)?.doc ?? null)),
+  get: vi.fn(async (c: string, id: string) => col(c).get(id)?.doc ?? null),
   list: vi.fn(async (c: string, f?: { userId?: string }) =>
-    [...col(c).values()].filter((r) => !f?.userId || r.userId === f.userId).map((r) => r.doc as Application)),
-  upsert: vi.fn(async (c: string, id: string, doc: unknown, userId?: string) => { col(c).set(id, { doc, userId }); return doc; }),
-  remove: vi.fn(async (c: string, id: string) => { col(c).delete(id); return undefined; }),
+    [...col(c).values()].filter((r) => !f?.userId || r.userId === f.userId).map((r) => r.doc as Application),
+  ),
+  upsert: vi.fn(async (c: string, id: string, doc: unknown, userId?: string) => {
+    col(c).set(id, { doc, userId });
+    return doc;
+  }),
+  remove: vi.fn(async (c: string, id: string) => {
+    col(c).delete(id);
+    return undefined;
+  }),
 };
 
 vi.mock("@/lib/store", () => ({ getStore: () => store }));
@@ -22,26 +32,66 @@ vi.mock("@/lib/store", () => ({ getStore: () => store }));
 import { DELETE, GET, PATCH, POST } from "./route";
 
 const post = (body: unknown) =>
-  POST(new Request("http://test/api/applications", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }));
+  POST(
+    new Request("http://test/api/applications", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    }),
+  );
 const patch = (body: unknown) =>
-  PATCH(new Request("http://test/api/applications", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }));
+  PATCH(
+    new Request("http://test/api/applications", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    }),
+  );
 
 const seed: Application[] = [
   {
-    id: "app_01", userId: "aisha", company: "Arm", roleTitle: "ML Engineer", roleUrl: "https://example.com/arm-ml",
-    status: "applied", appliedAt: "2026-11-01T09:00:00Z", source: "adzuna",
-    notes: "Python and PyTorch", matchedSkills: ["python", "pytorch"], matchScore: 0.67,
-    createdAt: "2026-11-01T09:00:00Z", updatedAt: "2026-11-01T09:00:00Z",
+    id: "app_01",
+    userId: "aisha",
+    company: "Arm",
+    roleTitle: "ML Engineer",
+    roleUrl: "https://example.com/arm-ml",
+    status: "applied",
+    appliedAt: "2026-11-01T09:00:00Z",
+    source: "adzuna",
+    notes: "Python and PyTorch",
+    matchedSkills: ["python", "pytorch"],
+    matchScore: 0.67,
+    createdAt: "2026-11-01T09:00:00Z",
+    updatedAt: "2026-11-01T09:00:00Z",
   },
   {
-    id: "app_02", userId: "aisha", company: "Ocado", roleTitle: "Data Analyst",
-    status: "interviewing", appliedAt: "2026-11-03T09:00:00Z", source: "reed",
-    notes: "SQL", matchedSkills: ["sql"], matchScore: 0.25,
-    createdAt: "2026-11-03T09:00:00Z", updatedAt: "2026-11-03T09:00:00Z",
+    id: "app_02",
+    userId: "aisha",
+    company: "Ocado",
+    roleTitle: "Data Analyst",
+    status: "interviewing",
+    appliedAt: "2026-11-03T09:00:00Z",
+    source: "reed",
+    notes: "SQL",
+    matchedSkills: ["sql"],
+    matchScore: 0.25,
+    createdAt: "2026-11-03T09:00:00Z",
+    updatedAt: "2026-11-03T09:00:00Z",
   },
-  { id: "app_03", userId: "tom", company: "BBC", roleTitle: "Java Developer", status: "rejected",
-    appliedAt: "2026-11-02T09:00:00Z", source: "reed", notes: "Java", matchedSkills: ["java"], matchScore: 1,
-    createdAt: "2026-11-02T09:00:00Z", updatedAt: "2026-11-02T09:00:00Z" },
+  {
+    id: "app_03",
+    userId: "tom",
+    company: "BBC",
+    roleTitle: "Java Developer",
+    status: "rejected",
+    appliedAt: "2026-11-02T09:00:00Z",
+    source: "reed",
+    notes: "Java",
+    matchedSkills: ["java"],
+    matchScore: 1,
+    createdAt: "2026-11-02T09:00:00Z",
+    updatedAt: "2026-11-02T09:00:00Z",
+  },
 ];
 
 beforeEach(() => {

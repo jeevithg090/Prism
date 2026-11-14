@@ -15,7 +15,13 @@ export const MCP_INSTRUCTIONS =
   "Keystone helps university students learn what matters next: a degree-aware plan, study pods, and proof of skill. Start with get_student_snapshot.";
 export const APPROVAL_TEXT = "This action needs your approval inside Keystone (human-in-the-loop). Open /coach to approve it.";
 
-export const RPC = { PARSE_ERROR: -32700, INVALID_REQUEST: -32600, METHOD_NOT_FOUND: -32601, INVALID_PARAMS: -32602, INTERNAL_ERROR: -32603 } as const;
+export const RPC = {
+  PARSE_ERROR: -32700,
+  INVALID_REQUEST: -32600,
+  METHOD_NOT_FOUND: -32601,
+  INVALID_PARAMS: -32602,
+  INTERNAL_ERROR: -32603,
+} as const;
 
 export type JsonRpcId = string | number | null;
 export type JsonRpcResponse =
@@ -23,7 +29,9 @@ export type JsonRpcResponse =
   | { jsonrpc: "2.0"; id: JsonRpcId; error: { code: number; message: string; data?: unknown } };
 
 export const rpcError = (id: JsonRpcId, code: number, message: string, data?: unknown): JsonRpcResponse => ({
-  jsonrpc: "2.0", id, error: { code, message, ...(data === undefined ? {} : { data }) },
+  jsonrpc: "2.0",
+  id,
+  error: { code, message, ...(data === undefined ? {} : { data }) },
 });
 const rpcResult = (id: JsonRpcId, result: unknown): JsonRpcResponse => ({ jsonrpc: "2.0", id, result });
 
@@ -47,7 +55,10 @@ function withUserId(schema: JsonSchema): JsonSchema {
     ...schema,
     properties: {
       ...(schema.properties ?? {}),
-      userId: { type: "string", description: "Keystone user id to act for. Defaults to the x-keystone-user header (\"aisha\" in demo mode)." },
+      userId: {
+        type: "string",
+        description: 'Keystone user id to act for. Defaults to the x-keystone-user header ("aisha" in demo mode).',
+      },
     },
   };
 }
@@ -75,14 +86,17 @@ const CallParamsZ = z.object({ name: z.string().min(1), arguments: z.record(z.st
 
 type CallResult = { content: { type: "text"; text: string }[]; structuredContent?: Record<string, unknown>; isError: boolean };
 const textResult = (text: string, isError: boolean, structuredContent?: Record<string, unknown>): CallResult => ({
-  content: [{ type: "text", text }], ...(structuredContent ? { structuredContent } : {}), isError,
+  content: [{ type: "text", text }],
+  ...(structuredContent ? { structuredContent } : {}),
+  isError,
 });
 
 async function callTool(id: JsonRpcId, params: unknown, ctx: McpContext): Promise<JsonRpcResponse> {
   const p = CallParamsZ.safeParse(params ?? {});
   if (!p.success) return rpcError(id, RPC.INVALID_PARAMS, `Invalid tools/call params: ${formatIssues(p.error)}`);
   const tool = getTool(p.data.name);
-  if (!tool) return rpcError(id, RPC.INVALID_PARAMS, `Unknown tool: ${p.data.name}. Call tools/list for the ${TOOLS.length} Keystone tools.`);
+  if (!tool)
+    return rpcError(id, RPC.INVALID_PARAMS, `Unknown tool: ${p.data.name}. Call tools/list for the ${TOOLS.length} Keystone tools.`);
 
   const { userId: argUser, ...args } = p.data.arguments ?? {};
   const userId = typeof argUser === "string" && argUser ? argUser : ctx.defaultUserId;
@@ -98,7 +112,8 @@ async function callTool(id: JsonRpcId, params: unknown, ctx: McpContext): Promis
 
   try {
     const { output, observation } = await runTool(tool.name, parsed.data, { userId, runId: newRunId(), approved: false });
-    const structured = output && typeof output === "object" && !Array.isArray(output) ? (output as Record<string, unknown>) : { result: output };
+    const structured =
+      output && typeof output === "object" && !Array.isArray(output) ? (output as Record<string, unknown>) : { result: output };
     return rpcResult(id, textResult(observation, false, JSON.parse(JSON.stringify(structured)) as Record<string, unknown>));
   } catch (e) {
     const message = e instanceof ToolError ? e.message : `${tool.title} failed unexpectedly. Try again in a moment.`;
@@ -110,13 +125,14 @@ const isId = (x: unknown): x is string | number => typeof x === "string" || (typ
 
 /** Handles one JSON-RPC message. Returns null for notifications and client responses (HTTP 202, no body). */
 export async function handleMessage(msg: unknown, ctx: McpContext): Promise<JsonRpcResponse | null> {
-  if (!msg || typeof msg !== "object" || Array.isArray(msg)) return rpcError(null, RPC.INVALID_REQUEST, "Invalid Request: expected a JSON-RPC 2.0 object.");
+  if (!msg || typeof msg !== "object" || Array.isArray(msg))
+    return rpcError(null, RPC.INVALID_REQUEST, "Invalid Request: expected a JSON-RPC 2.0 object.");
   const m = msg as Record<string, unknown>;
   const hasId = "id" in m && m.id !== undefined;
   // A response from the client (e.g. to a server request): accepted, nothing to answer.
   if (!("method" in m) && ("result" in m || "error" in m)) return null;
   if (m.jsonrpc !== "2.0" || typeof m.method !== "string") {
-    return rpcError(hasId && isId(m.id) ? m.id : null, RPC.INVALID_REQUEST, "Invalid Request: needs jsonrpc \"2.0\" and a string method.");
+    return rpcError(hasId && isId(m.id) ? m.id : null, RPC.INVALID_REQUEST, 'Invalid Request: needs jsonrpc "2.0" and a string method.');
   }
   if (!hasId) return null; // notification (notifications/initialized, notifications/cancelled, …)
   if (!isId(m.id)) return rpcError(null, RPC.INVALID_REQUEST, "Invalid Request: id must be a string or a number.");

@@ -12,7 +12,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ workflow: stri
     const text = await req.text();
     body = text.trim() ? JSON.parse(text) : {};
   } catch {
-    return badRequest("Body must be JSON like {\"payload\":{}}");
+    return badRequest('Body must be JSON like {"payload":{}}');
   }
   const parsed = TriggerReqZ.safeParse(body);
   if (!parsed.success) return badRequest(parsed.error);

@@ -15,7 +15,13 @@ export const ROLES = [
 ];
 
 export function PreCallCard({
-  vars, roleId, onRoleChange, onStart, mode, isDemo, starting,
+  vars,
+  roleId,
+  onRoleChange,
+  onStart,
+  mode,
+  isDemo,
+  starting,
 }: {
   vars: Record<string, string>;
   roleId: string;
@@ -30,7 +36,9 @@ export function PreCallCard({
     <section aria-labelledby="precall-title" className="rounded-2xl border bg-card shadow-sm">
       <div className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between md:px-8 md:pt-8">
         <div className="flex flex-wrap items-center gap-3">
-          <h2 id="precall-title" className="text-xl font-semibold text-foreground">Your mock interview</h2>
+          <h2 id="precall-title" className="text-xl font-semibold text-foreground">
+            Your mock interview
+          </h2>
           {isDemo && <DemoDataNote />}
         </div>
         <div className="flex items-center gap-3 sm:w-auto">
@@ -41,7 +49,11 @@ export function PreCallCard({
             onChange={(e) => onRoleChange(e.target.value)}
             className="h-10 w-56 min-w-0 cursor-pointer rounded-lg border border-input bg-transparent pr-8 pl-3 text-base text-foreground outline-2 -outline-offset-2 outline-transparent transition-[background-color,color] duration-(--dur-short) hover:bg-muted focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-55"
           >
-            {ROLES.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+            {ROLES.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.name}
+              </option>
+            ))}
           </select>
         </div>
       </div>
@@ -77,7 +89,6 @@ export function PreCallCard({
         </Button>
         <p className="mt-3 text-sm text-muted-foreground">{PRACTICE_QUESTION_COUNT} questions, about 5 minutes, feedback at the end.</p>
 
-
         <ul className="mt-8 grid gap-5 md:grid-cols-2 md:gap-x-8">
           <li className="flex gap-3">
             <Mic className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden />
@@ -101,12 +112,13 @@ export function PreCallCard({
             <Keyboard className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden />
             <div>
               <p className="font-medium text-foreground">No microphone? Type instead</p>
-              <p className="mt-1 text-sm text-muted-foreground">Every question has a text box, so you can answer by typing or use a sample answer.</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Every question has a text box, so you can answer by typing or use a sample answer.
+              </p>
             </div>
           </li>
         </ul>
       </div>
-
     </section>
   );
 }

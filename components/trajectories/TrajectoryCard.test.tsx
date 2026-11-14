@@ -6,8 +6,14 @@ import type { Trajectory } from "@/lib/types";
 import { TrajectoryCard } from "./TrajectoryCard";
 
 const base: Trajectory = {
-  id: "traj_priya", userId: "priya", name: "Priya Shah", programmeId: "uom-bsc-cs",
-  outcomeRole: "ML engineer at a Manchester health-tech startup", advice: "Ship one small thing every month.", isDemo: true, openToChat: true,
+  id: "traj_priya",
+  userId: "priya",
+  name: "Priya Shah",
+  programmeId: "uom-bsc-cs",
+  outcomeRole: "ML engineer at a Manchester health-tech startup",
+  advice: "Ship one small thing every month.",
+  isDemo: true,
+  openToChat: true,
   steps: [
     { year: 1, kind: "society", label: "Joined the robotics society" },
     { year: 3, kind: "placement", label: "Year in industry at an ML consultancy" },

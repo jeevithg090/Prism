@@ -48,7 +48,11 @@ function rewriteWithout(sentence: string, token: string): string | null {
   else rules.push({ re: new RegExp(`${QUAL}${t} ([a-z]+s)\\b`, "i"), rep: (_m, noun) => `several ${noun}` });
   for (const { re, rep } of rules) {
     if (re.test(sentence)) {
-      const out = sentence.replace(re, rep).replace(/\s{2,}/g, " ").replace(/\s+([,.;:!?])/g, "$1").trim();
+      const out = sentence
+        .replace(re, rep)
+        .replace(/\s{2,}/g, " ")
+        .replace(/\s+([,.;:!?])/g, "$1")
+        .trim();
       if (!numbersIn(out).some((x) => x === token) && out.replace(/[^a-z]/gi, "").length > 12) return out;
     }
   }

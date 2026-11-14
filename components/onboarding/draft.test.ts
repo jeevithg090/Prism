@@ -2,12 +2,23 @@ import { describe, expect, it } from "vitest";
 import { ProfileZ } from "@/lib/schemas/community";
 import { DEFAULT_DRAFT, programmeIdFromUrl, theorySentence, toProfileInput, UOM_CS_URL, validateStep, type OnboardDraft } from "./draft";
 
-const filled: OnboardDraft = { ...DEFAULT_DRAFT, name: "Aisha Rahman", roleId: "ml-engineer", timeline: "placement-2027", hoursPerWeek: 8, theoryPractice: 70, badges: ["new-to-uni"], githubLogin: "aisha-r" };
+const filled: OnboardDraft = {
+  ...DEFAULT_DRAFT,
+  name: "Aisha Rahman",
+  roleId: "ml-engineer",
+  timeline: "placement-2027",
+  hoursPerWeek: 8,
+  theoryPractice: 70,
+  badges: ["new-to-uni"],
+  githubLogin: "aisha-r",
+};
 
 describe("onboarding draft", () => {
   it("validates each step", () => {
     expect(validateStep(0, DEFAULT_DRAFT)).toEqual({ name: expect.stringMatching(/Add your name/) });
-    expect(validateStep(0, { ...DEFAULT_DRAFT, name: "Aisha", programmeUrl: "manchester" })).toEqual({ programmeUrl: expect.stringMatching(/https:\/\//) });
+    expect(validateStep(0, { ...DEFAULT_DRAFT, name: "Aisha", programmeUrl: "manchester" })).toEqual({
+      programmeUrl: expect.stringMatching(/https:\/\//),
+    });
     expect(validateStep(0, filled)).toEqual({});
     expect(Object.keys(validateStep(1, DEFAULT_DRAFT)).sort()).toEqual(["roleId", "timeline"]);
     expect(validateStep(1, filled)).toEqual({});
@@ -32,8 +43,21 @@ describe("onboarding draft", () => {
     const p = toProfileInput(filled);
     expect(ProfileZ.omit({ id: true }).parse(p)).toEqual(p);
     expect(p).toMatchObject({
-      name: "Aisha Rahman", programmeId: "uom-bsc-cs", year: 1, startedAt: "2026-09-21", githubLogin: "aisha-r", badges: ["new-to-uni"],
-      dna: { targetRoles: ["ml-engineer"], timelineLabel: "Placement applications Sept 2027", targetDate: "2027-09-01", hoursPerWeek: 8, theoryPractice: 70, budget: "free", language: "en" },
+      name: "Aisha Rahman",
+      programmeId: "uom-bsc-cs",
+      year: 1,
+      startedAt: "2026-09-21",
+      githubLogin: "aisha-r",
+      badges: ["new-to-uni"],
+      dna: {
+        targetRoles: ["ml-engineer"],
+        timelineLabel: "Placement applications Sept 2027",
+        targetDate: "2027-09-01",
+        hoursPerWeek: 8,
+        theoryPractice: 70,
+        budget: "free",
+        language: "en",
+      },
     });
     expect(toProfileInput({ ...filled, githubLogin: "" })).not.toHaveProperty("githubLogin");
     expect(toProfileInput({ ...filled, year: 3 }).startedAt).toBe("2024-09-21");

@@ -4,7 +4,10 @@ import type { Roadmap, RoadmapWeek } from "@/lib/types";
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const at = (iso: string) => new Date(`${iso.slice(0, 10)}T00:00:00Z`);
 
-export const dayMonth = (iso: string) => { const d = at(iso); return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`; };
+export const dayMonth = (iso: string) => {
+  const d = at(iso);
+  return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`;
+};
 
 /** "9–15 Nov" or "28 Dec – 3 Jan". */
 export function weekRange(startIso: string): string {
@@ -26,7 +29,12 @@ export function currentWeekIndex(rm: Roadmap): number {
 
 export function withTaskDone(rm: Roadmap | undefined, taskId: string, done: boolean): Roadmap | undefined {
   if (!rm) return rm;
-  return { ...rm, weeks: rm.weeks.map((w) => (w.tasks.some((t) => t.id === taskId) ? { ...w, tasks: w.tasks.map((t) => (t.id === taskId ? { ...t, done } : t)) } : w)) };
+  return {
+    ...rm,
+    weeks: rm.weeks.map((w) =>
+      w.tasks.some((t) => t.id === taskId) ? { ...w, tasks: w.tasks.map((t) => (t.id === taskId ? { ...t, done } : t)) } : w,
+    ),
+  };
 }
 
 /** Is `today` (YYYY-MM-DD) inside the week starting `startIso`? */

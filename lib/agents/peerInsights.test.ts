@@ -55,7 +55,8 @@ describe("computePodInsights", () => {
 
   it("keeps the top 8 teachable skills, sorted by learners", () => {
     const skills: Record<string, SkillSets> = { s1: { proven: Array.from({ length: 12 }, (_, i) => `skill-${i}`), gaps: [] } };
-    for (let i = 2; i <= 10; i++) skills[`s${i}`] = { proven: [], gaps: Array.from({ length: Math.min(12, i + 2) }, (_, k) => `skill-${k}`) };
+    for (let i = 2; i <= 10; i++)
+      skills[`s${i}`] = { proven: [], gaps: Array.from({ length: Math.min(12, i + 2) }, (_, k) => `skill-${k}`) };
     const r = computePodInsights({ programmeId: P, profiles: people(10), skills, podsCount: 0 });
     expect(r.peerTeachable).toHaveLength(8);
     const learners = r.peerTeachable.map((x) => x.learners);

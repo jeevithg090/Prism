@@ -17,8 +17,15 @@ import type { Module, Programme, SkillId } from "@/lib/types";
 export class SyllabusError extends Error {}
 
 export type RawUnit = {
-  code?: string; title: string; year?: number; semester?: string; credits?: number; compulsory?: boolean;
-  topics?: string[]; learning_outcomes?: string[]; assessment?: string;
+  code?: string;
+  title: string;
+  year?: number;
+  semester?: string;
+  credits?: number;
+  compulsory?: boolean;
+  topics?: string[];
+  learning_outcomes?: string[];
+  assessment?: string;
 };
 
 // ---------- pure helpers ----------
@@ -59,29 +66,58 @@ export function parseUnitsFromText(text: string): RawUnit[] {
   let cur: RawUnit | null = null;
   let mode: "topics" | "outcomes" = "topics";
   for (const rawLine of text.split(/\r?\n/)) {
-    const line = rawLine.replace(/^#+\s*/, "").replace(/\*\*/g, "").trim();
+    const line = rawLine
+      .replace(/^#+\s*/, "")
+      .replace(/\*\*/g, "")
+      .trim();
     if (!line) continue;
     const code = line.match(CODE_RE);
     if (code && line.length < 160) {
       // Markdown table rows ("| COMP10120 | First Year Team Project | | 20 | Mandatory |") are split into cells,
       // so the title is the name cell only and credits / compulsory come from their own cells.
-      const cells = line.includes("|") ? line.split("|").map((c) => c.trim()).filter(Boolean) : [];
-      const nameCell = cells.find((c) => !CODE_RE.test(c) && !/^\d{1,3}$/.test(c) && !/^(mandatory|compulsory|optional|core|elective)$/i.test(c));
+      const cells = line.includes("|")
+        ? line
+            .split("|")
+            .map((c) => c.trim())
+            .filter(Boolean)
+        : [];
+      const nameCell = cells.find(
+        (c) => !CODE_RE.test(c) && !/^\d{1,3}$/.test(c) && !/^(mandatory|compulsory|optional|core|elective)$/i.test(c),
+      );
       const title = (nameCell ?? line.replace(code[0], "").replace(/^[\s:–—|-]+|[\s:–—|-]+$/g, "")).replace(/\(.*?credits?\)/i, "").trim();
       const credits = line.match(/(\d{2})\s*credits?/i) ?? (cells.find((c) => /^(10|15|20|30|40|60)$/.test(c)) ?? "").match(/(\d{2})/);
       const status = cells.find((c) => /^(mandatory|compulsory|core|optional|elective)$/i.test(c));
       const sem = line.match(/(semester\s*\d|full[-\s]?year|semesters?\s*1\s*(?:and|&)\s*2)/i);
-      cur = { code: code[1], title: title || code[1], credits: credits ? Number(credits[1]) : undefined, semester: sem?.[1], topics: [], learning_outcomes: [],
-        ...(status ? { compulsory: /mandatory|compulsory|core/i.test(status) } : {}) };
+      cur = {
+        code: code[1],
+        title: title || code[1],
+        credits: credits ? Number(credits[1]) : undefined,
+        semester: sem?.[1],
+        topics: [],
+        learning_outcomes: [],
+        ...(status ? { compulsory: /mandatory|compulsory|core/i.test(status) } : {}),
+      };
       units.push(cur);
       mode = "topics";
       continue;
     }
     if (!cur) continue;
-    if (/learning outcomes?|by the end of (this|the) (unit|module)|students will be able to/i.test(line)) { mode = "outcomes"; continue; }
-    if (/^(topics|syllabus|content|overview)\b/i.test(line)) { mode = "topics"; continue; }
-    if (/^semester\s*\d|full[-\s]?year/i.test(line) && !cur.semester) { cur.semester = line; continue; }
-    if (/^assessment/i.test(line)) { cur.assessment = line.replace(/^assessment[:\s]*/i, ""); continue; }
+    if (/learning outcomes?|by the end of (this|the) (unit|module)|students will be able to/i.test(line)) {
+      mode = "outcomes";
+      continue;
+    }
+    if (/^(topics|syllabus|content|overview)\b/i.test(line)) {
+      mode = "topics";
+      continue;
+    }
+    if (/^semester\s*\d|full[-\s]?year/i.test(line) && !cur.semester) {
+      cur.semester = line;
+      continue;
+    }
+    if (/^assessment/i.test(line)) {
+      cur.assessment = line.replace(/^assessment[:\s]*/i, "");
+      continue;
+    }
     const item = line.replace(/^([-*•·]|\d+[.)])\s*/, "").trim();
     if (item.length < 4 || item.length > 220) continue;
     (mode === "outcomes" ? cur.learning_outcomes! : cur.topics!).push(item.replace(/[.;]$/, ""));
@@ -114,11 +150,19 @@ export function templateNote(skills: { skillId: SkillId; level: number }[]): str
 }
 
 export function toModule(u: RawUnit, skills: Module["skills"], note?: string): Module {
-  const year = (u.year && u.year >= 1 && u.year <= 4 ? u.year : yearFromCode(u.code) ?? 1) as Module["year"];
+  const year = (u.year && u.year >= 1 && u.year <= 4 ? u.year : (yearFromCode(u.code) ?? 1)) as Module["year"];
   return {
-    code: u.code || u.title.slice(0, 24), title: u.title, year, semester: normaliseSemester(u.semester),
-    credits: u.credits, compulsory: u.compulsory ?? true, topics: u.topics ?? [], learningOutcomes: u.learning_outcomes ?? [],
-    assessment: u.assessment, skills, industryNote: note ?? templateNote(skills),
+    code: u.code || u.title.slice(0, 24),
+    title: u.title,
+    year,
+    semester: normaliseSemester(u.semester),
+    credits: u.credits,
+    compulsory: u.compulsory ?? true,
+    topics: u.topics ?? [],
+    learningOutcomes: u.learning_outcomes ?? [],
+    assessment: u.assessment,
+    skills,
+    industryNote: note ?? templateNote(skills),
   };
 }
 
@@ -152,11 +196,19 @@ async function fcScrapeMarkdown(url: string): Promise<string> {
 }
 
 const UnitsZ = z.object({
-  units: z.array(z.object({
-    code: z.string().optional(), title: z.string(), year: z.number().optional(), semester: z.string().optional(),
-    credits: z.number().optional(), compulsory: z.boolean().optional(), topics: z.array(z.string()).optional(),
-    learning_outcomes: z.array(z.string()).optional(), assessment: z.string().optional(),
-  })),
+  units: z.array(
+    z.object({
+      code: z.string().optional(),
+      title: z.string(),
+      year: z.number().optional(),
+      semester: z.string().optional(),
+      credits: z.number().optional(),
+      compulsory: z.boolean().optional(),
+      topics: z.array(z.string()).optional(),
+      learning_outcomes: z.array(z.string()).optional(),
+      assessment: z.string().optional(),
+    }),
+  ),
 });
 const NotesZ = z.object({ notes: z.array(z.object({ code: z.string(), note: z.string() })) });
 
@@ -165,7 +217,10 @@ async function unitsFrom(text: string, runId: string | undefined, useLLM: boolea
   if (parsed.length >= 3 || !useLLM) return parsed;
   try {
     const out = await llmJSON({
-      agent: "syllabus", runId, schemaName: "course_units", schema: UnitsZ,
+      agent: "syllabus",
+      runId,
+      schemaName: "course_units",
+      schema: UnitsZ,
       system:
         "Extract every course unit/module in this text with its code, title, year of study, semester (1, 2 or full-year), credits, " +
         "whether compulsory, the list of topics, the learning outcomes and the assessment type. Return an empty list if none. " +
@@ -197,7 +252,13 @@ export function getProgramme(id: string): Programme | null {
   return null;
 }
 
-export async function extractProgramme(input: { url?: string; text?: string; programmeId: string; runId?: string; demo?: boolean }): Promise<Programme> {
+export async function extractProgramme(input: {
+  url?: string;
+  text?: string;
+  programmeId: string;
+  runId?: string;
+  demo?: boolean;
+}): Promise<Programme> {
   const { programmeId, runId } = input;
   const say = (status: "started" | "progress" | "done" | "error", message: string, data?: Record<string, unknown>) => {
     if (runId) emit({ runId, agent: "syllabus", status, message, data });
@@ -207,7 +268,10 @@ export async function extractProgramme(input: { url?: string; text?: string; pro
   const cachedOr = (why: string): Programme => {
     const p = getProgramme(programmeId);
     if (!p) throw new SyllabusError(why);
-    say("progress", `Syllabus Agent: using the saved syllabus (${p.modules.length} course units)`, { modules: p.modules.length, source: p.source });
+    say("progress", `Syllabus Agent: using the saved syllabus (${p.modules.length} course units)`, {
+      modules: p.modules.length,
+      source: p.source,
+    });
     return p;
   };
 
@@ -241,36 +305,56 @@ export async function extractProgramme(input: { url?: string; text?: string; pro
       throw new SyllabusError("no_units");
     }
     const mapped = await Promise.all(
-      units.map(async (u) => ({ u, skills: (await mapTextToSkills([u.title, ...(u.topics ?? []), ...(u.learning_outcomes ?? [])].join(". "), { useLLM })).skills })),
+      units.map(async (u) => ({
+        u,
+        skills: (await mapTextToSkills([u.title, ...(u.topics ?? []), ...(u.learning_outcomes ?? [])].join(". "), { useLLM })).skills,
+      })),
     );
     let notes = new Map<string, string>();
     if (useLLM) {
       try {
         const out = await llmJSON({
-          agent: "syllabus", runId, schemaName: "industry_notes", schema: NotesZ,
-          system: "For each course unit write one note of at most 14 words on where industry uses what it teaches. Plain UK English, no hype.",
+          agent: "syllabus",
+          runId,
+          schemaName: "industry_notes",
+          schema: NotesZ,
+          system:
+            "For each course unit write one note of at most 14 words on where industry uses what it teaches. Plain UK English, no hype.",
           user: JSON.stringify(mapped.map(({ u }) => ({ code: u.code ?? u.title, title: u.title, topics: (u.topics ?? []).slice(0, 6) }))),
         });
         notes = new Map(out.notes.map((n) => [n.code, n.note]));
-      } catch { /* deterministic notes below */ }
+      } catch {
+        /* deterministic notes below */
+      }
     }
     const modules = mapped.map(({ u, skills }) => toModule(u, skills, notes.get(u.code ?? u.title)));
     const skillCount = new Set(modules.flatMap((m) => m.skills.map((s) => s.skillId))).size;
-    say("progress", `Syllabus Agent: mapped ${skillCount} skills across ${modules.length} modules`, { skills: skillCount, modules: modules.length });
+    say("progress", `Syllabus Agent: mapped ${skillCount} skills across ${modules.length} modules`, {
+      skills: skillCount,
+      modules: modules.length,
+    });
     const existing = getProgramme(programmeId);
     return {
-      id: programmeId, university: existing?.university ?? (input.url ? new URL(input.url).hostname : "Your university"),
-      name: existing?.name ?? programmeId, url: input.url ?? existing?.url ?? "", modules,
-      extractedAt: new Date().toISOString(), source,
+      id: programmeId,
+      university: existing?.university ?? (input.url ? new URL(input.url).hostname : "Your university"),
+      name: existing?.name ?? programmeId,
+      url: input.url ?? existing?.url ?? "",
+      modules,
+      extractedAt: new Date().toISOString(),
+      source,
     };
   };
 
   // Pasted text is always read fresh (no key needed); URLs go through the cache (instant in DEMO_MODE).
-  const programme = input.demo && !input.text
-    ? cachedOr("no_fixture")
-    : input.text
-      ? await run()
-      : await withCache(`syllabus-${programmeId}`, run, { fixture: `programme.${programmeId}.json` });
-  say("done", `Syllabus Agent: ${programme.modules.length} course units ready${programme.source === "cache" ? " (saved syllabus)" : ""}`, { modules: programme.modules.length, source: programme.source });
+  const programme =
+    input.demo && !input.text
+      ? cachedOr("no_fixture")
+      : input.text
+        ? await run()
+        : await withCache(`syllabus-${programmeId}`, run, { fixture: `programme.${programmeId}.json` });
+  say("done", `Syllabus Agent: ${programme.modules.length} course units ready${programme.source === "cache" ? " (saved syllabus)" : ""}`, {
+    modules: programme.modules.length,
+    source: programme.source,
+  });
   return programme;
 }

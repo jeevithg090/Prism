@@ -12,7 +12,9 @@ const RUN_ID = /^[A-Za-z0-9_-]{1,64}$/;
 // Onboarding (and proof) runs end with the orchestrator's done/error. Runs without an orchestrator
 // (a pod match, a PR review) end when the agent that started them reports done.
 const isRunEnd = (e: AgentEvent, lead: AgentEvent) =>
-  e.agent === "orchestrator" ? e.status === "done" || e.status === "error" : lead.agent !== "orchestrator" && e.agent === lead.agent && e.status === "done";
+  e.agent === "orchestrator"
+    ? e.status === "done" || e.status === "error"
+    : lead.agent !== "orchestrator" && e.agent === lead.agent && e.status === "done";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -47,11 +49,19 @@ export async function GET(req: Request) {
         clearTimeout(cap);
         unsubscribe?.();
         req.signal.removeEventListener("abort", close);
-        try { controller.close(); } catch { /* already closed by the client */ }
+        try {
+          controller.close();
+        } catch {
+          /* already closed by the client */
+        }
       };
       const send = (chunk: string) => {
         if (closed) return;
-        try { controller.enqueue(encoder.encode(chunk)); } catch { close(); }
+        try {
+          controller.enqueue(encoder.encode(chunk));
+        } catch {
+          close();
+        }
       };
       stop = close;
 
@@ -70,7 +80,9 @@ export async function GET(req: Request) {
           if (isRunEnd(ev, lead)) close();
         });
       } catch {
-        send(`event: agent\ndata: ${JSON.stringify({ runId, agent: "orchestrator", status: "error", message: "We lost the agent stream. Showing demo data.", ts: new Date().toISOString() } satisfies AgentEvent)}\n\n`);
+        send(
+          `event: agent\ndata: ${JSON.stringify({ runId, agent: "orchestrator", status: "error", message: "We lost the agent stream. Showing demo data.", ts: new Date().toISOString() } satisfies AgentEvent)}\n\n`,
+        );
         close();
       }
       // The run may already have finished during the replay above.

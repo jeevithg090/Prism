@@ -6,12 +6,7 @@
 // POST/PATCH/DELETE are wrapped with withReplayInfo for replay provenance.
 import { z } from "zod";
 import { withReplayInfo } from "@/lib/replay";
-import {
-  ApplicationCreateReqZ,
-  ApplicationListQueryZ,
-  ApplicationUpdateReqZ,
-  ApplicationZ,
-} from "@/lib/schemas/application";
+import { ApplicationCreateReqZ, ApplicationListQueryZ, ApplicationUpdateReqZ, ApplicationZ } from "@/lib/schemas/application";
 import { badRequest, fail, internal, ok } from "@/lib/schemas/community";
 import { createApplication, listApplications, removeApplication, updateApplication } from "@/lib/agents/application-tracker";
 

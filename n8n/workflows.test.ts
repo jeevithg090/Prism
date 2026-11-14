@@ -5,7 +5,10 @@ import { WORKFLOWS } from "@/lib/voice/schemas";
 
 type Node = { name: string; type: string; parameters: Record<string, unknown>; credentials?: Record<string, { id: string }> };
 const dir = path.join(process.cwd(), "n8n");
-const files = fs.readdirSync(dir).filter((f) => f.endsWith(".json")).sort();
+const files = fs
+  .readdirSync(dir)
+  .filter((f) => f.endsWith(".json"))
+  .sort();
 
 describe("n8n workflow exports", () => {
   it("has W1…W6, one per Keystone workflow name", () => {
@@ -15,7 +18,11 @@ describe("n8n workflow exports", () => {
 
   for (const f of files) {
     it(`${f} is importable: unique nodes, valid connections, webhook path, placeholder credentials only`, () => {
-      const wf = JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")) as { name: string; nodes: Node[]; connections: Record<string, { main: { node: string }[][] }> };
+      const wf = JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")) as {
+        name: string;
+        nodes: Node[];
+        connections: Record<string, { main: { node: string }[][] }>;
+      };
       expect(wf.name).toMatch(/^Keystone W\d/);
       const names = wf.nodes.map((n) => n.name);
       expect(new Set(names).size).toBe(names.length);

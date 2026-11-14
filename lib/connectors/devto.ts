@@ -12,21 +12,51 @@ import type { EvidenceItem, SkillId } from "@/lib/types";
 export const ARTICLE_CONFIDENCE = 0.5;
 
 export type DevArticle = {
-  id?: number; title?: string; url?: string; published_at?: string; published_timestamp?: string;
-  tag_list?: string[]; tags?: string;
+  id?: number;
+  title?: string;
+  url?: string;
+  published_at?: string;
+  published_timestamp?: string;
+  tag_list?: string[];
+  tags?: string;
 };
 
 /** DEV article tags that name a taxonomy skill (verified against dev.to/api tag names). Others are skipped. */
 export const TAG_TO_SKILL: Record<string, SkillId> = {
-  python: "python", java: "java", javascript: "javascript", typescript: "typescript",
-  cpp: "cpp", sql: "sql", postgresql: "postgresql", html: "html-css", css: "html-css",
-  react: "react", node: "nodejs", nodejs: "nodejs", express: "nodejs", docker: "docker",
-  kubernetes: "kubernetes", git: "git", github: "git", linux: "linux", aws: "aws",
-  testing: "testing", unittesting: "testing", security: "security-basics",
-  algorithms: "algorithms", machinelearning: "machine-learning", "machine-learning": "machine-learning",
-  "deep-learning": "deep-learning", deeplearning: "deep-learning", pytorch: "pytorch",
-  tensorflow: "tensorflow", sklearn: "scikit-learn", "scikit-learn": "scikit-learn",
-  pandas: "pandas", numpy: "numpy", statistics: "statistics",
+  python: "python",
+  java: "java",
+  javascript: "javascript",
+  typescript: "typescript",
+  cpp: "cpp",
+  sql: "sql",
+  postgresql: "postgresql",
+  html: "html-css",
+  css: "html-css",
+  react: "react",
+  node: "nodejs",
+  nodejs: "nodejs",
+  express: "nodejs",
+  docker: "docker",
+  kubernetes: "kubernetes",
+  git: "git",
+  github: "git",
+  linux: "linux",
+  aws: "aws",
+  testing: "testing",
+  unittesting: "testing",
+  security: "security-basics",
+  algorithms: "algorithms",
+  machinelearning: "machine-learning",
+  "machine-learning": "machine-learning",
+  "deep-learning": "deep-learning",
+  deeplearning: "deep-learning",
+  pytorch: "pytorch",
+  tensorflow: "tensorflow",
+  sklearn: "scikit-learn",
+  "scikit-learn": "scikit-learn",
+  pandas: "pandas",
+  numpy: "numpy",
+  statistics: "statistics",
 };
 
 const PER_PAGE = 30;
@@ -57,7 +87,14 @@ async function articlesFor(handle: string): Promise<DevArticle[]> {
 
 const publishedOf = (a: DevArticle): string => a.published_at ?? a.published_timestamp ?? "";
 const articleTags = (a: DevArticle): string[] =>
-  Array.isArray(a.tag_list) ? a.tag_list : typeof a.tags === "string" ? a.tags.split(",").map((t) => t.trim()).filter(Boolean) : [];
+  Array.isArray(a.tag_list)
+    ? a.tag_list
+    : typeof a.tags === "string"
+      ? a.tags
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean)
+      : [];
 
 /**
  * Articles → skills: one item per distinct skill, sourced from and linked to its newest article. Zero articles
@@ -77,8 +114,14 @@ export function articlesToEvidence(userId: string, handle: string, articles: Dev
       if (!skillId || seen.has(skillId)) continue;
       seen.add(skillId);
       items.push({
-        id: `ev_${userId}_${skillId}_devto`, userId, skillId, level: 1, confidence: ARTICLE_CONFIDENCE,
-        source: "devto" as const, url: a.url?.trim() || `https://dev.to/${handle}`, quote,
+        id: `ev_${userId}_${skillId}_devto`,
+        userId,
+        skillId,
+        level: 1,
+        confidence: ARTICLE_CONFIDENCE,
+        source: "devto" as const,
+        url: a.url?.trim() || `https://dev.to/${handle}`,
+        quote,
         createdAt: now.toISOString(),
       });
     }
@@ -102,15 +145,22 @@ export async function syncDevtoEvidence(input: { userId: string; handle: string;
     const tags = new Set(articles.flatMap(articleTags)).size;
     const mappable = new Set(articles.flatMap(articleTags).filter((t) => TAG_TO_SKILL[t.trim().toLowerCase().replace(/\s+/g, "")])).size;
     say("progress", `read ${articles.length} article${articles.length === 1 ? "" : "s"} · ${mappable} of ${tags} tags map to your skills`, {
-      articles: articles.length, tags, mappable,
+      articles: articles.length,
+      tags,
+      mappable,
     });
     const items = articlesToEvidence(userId, handle, articles);
     const store = getStore();
     await Promise.all(items.map((e) => store.upsert("evidence", e.id, e, userId)));
-    say("done", `found ${items.length} skills in ${articles.length} DEV article${articles.length === 1 ? "" : "s"}`, { skills: items.length, articles: articles.length });
+    say("done", `found ${items.length} skills in ${articles.length} DEV article${articles.length === 1 ? "" : "s"}`, {
+      skills: items.length,
+      articles: articles.length,
+    });
     return listEvidence(userId);
   } catch (err) {
-    say("error", "DEV wasn't available just now: keeping the evidence we already have", { reason: err instanceof Error ? err.message : "unknown" });
+    say("error", "DEV wasn't available just now: keeping the evidence we already have", {
+      reason: err instanceof Error ? err.message : "unknown",
+    });
     return listEvidence(userId);
   }
 }

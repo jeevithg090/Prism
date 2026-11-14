@@ -10,24 +10,48 @@ const h = vi.hoisted(() => ({
 
 vi.mock("@/lib/llm", () => ({ llmText: h.llmText, llmJSON: vi.fn(), LLMError: class extends Error {} }));
 vi.mock("@/lib/agents/events", () => ({ emit: vi.fn(), newRunId: () => "run_tl", subscribe: vi.fn() }));
-vi.mock("octokit", () => ({ Octokit: class { request = h.request; } }));
+vi.mock("octokit", () => ({
+  Octokit: class {
+    request = h.request;
+  },
+}));
 vi.mock("@/lib/store", () => ({
   getStore: () => ({
     get: async () => null,
     list: async () => h.profiles,
-    upsert: async (...args: unknown[]) => { h.upsert(...args); return args[2]; },
+    upsert: async (...args: unknown[]) => {
+      h.upsert(...args);
+      return args[2];
+    },
     remove: async () => {},
   }),
 }));
 
-import { DEMO_HINTS, MAX_DIFF_CHARS, SAMPLE_PR, extractHints, parseRepo, reviewNow, reviewPullRequest, stripLongCodeBlocks, verifySignature } from "./techlead";
+import {
+  DEMO_HINTS,
+  MAX_DIFF_CHARS,
+  SAMPLE_PR,
+  extractHints,
+  parseRepo,
+  reviewNow,
+  reviewPullRequest,
+  stripLongCodeBlocks,
+  verifySignature,
+} from "./techlead";
 
 const SECRET = "s3cret";
 const sign = (body: string, secret = SECRET) => `sha256=${createHmac("sha256", secret).update(body).digest("hex")}`;
 
 const prEvent = (action: string, extra: Record<string, unknown> = {}) => ({
   action,
-  pull_request: { number: 3, title: "Add Dockerfile", body: "", html_url: "https://github.com/keystone-demo/pod-x/pull/3", user: { login: "Priya-Real" }, ...extra },
+  pull_request: {
+    number: 3,
+    title: "Add Dockerfile",
+    body: "",
+    html_url: "https://github.com/keystone-demo/pod-x/pull/3",
+    user: { login: "Priya-Real" },
+    ...extra,
+  },
   repository: { name: "pod-x", full_name: "keystone-demo/pod-x", owner: { login: "keystone-demo" } },
 });
 
@@ -45,7 +69,10 @@ beforeEach(() => {
   h.profiles = [];
   process.env.GITHUB_TOKEN = "t";
 });
-afterEach(() => { delete process.env.GITHUB_TOKEN; delete process.env.DEMO_MODE; });
+afterEach(() => {
+  delete process.env.GITHUB_TOKEN;
+  delete process.env.DEMO_MODE;
+});
 
 describe("verifySignature", () => {
   const body = JSON.stringify({ action: "opened" });
@@ -86,7 +113,9 @@ describe("reviewPullRequest", () => {
   it("posts a Socratic comment with no fenced code block longer than 5 lines", async () => {
     const hugeDiff = "d".repeat(MAX_DIFF_CHARS + 500);
     h.request.mockImplementation(async (route: string) => (route.startsWith("GET") ? { data: hugeDiff } : { data: { id: 1 } }));
-    h.llmText.mockResolvedValueOnce(`- What happens if the image is missing?\n${block(12)}\n- Which docs explain layer caching?\n${block(2)}`);
+    h.llmText.mockResolvedValueOnce(
+      `- What happens if the image is missing?\n${block(12)}\n- Which docs explain layer caching?\n${block(2)}`,
+    );
     expect(await reviewPullRequest(prEvent("opened"))).toEqual({ reviewed: true });
 
     const [getRoute, getParams] = h.request.mock.calls[0];
@@ -118,14 +147,24 @@ describe("reviewPullRequest", () => {
   });
 
   it("records a pr-merged momentum event for the member with that GitHub login", async () => {
-    h.profiles = [{ id: "tom", githubLogin: "tom-o" }, { id: "priya", githubLogin: "priya-real" }];
+    h.profiles = [
+      { id: "tom", githubLogin: "tom-o" },
+      { id: "priya", githubLogin: "priya-real" },
+    ];
     const out = await reviewPullRequest(prEvent("closed", { merged: true, merged_at: "2026-11-07T15:00:00Z" }));
     expect(out).toEqual({ reviewed: false });
     expect(h.upsert).toHaveBeenCalledTimes(1);
     const [collection, id, doc, userId] = h.upsert.mock.calls[0];
     expect(collection).toBe("momentum_events");
     expect(userId).toBe("priya");
-    expect(doc).toEqual({ id, userId: "priya", kind: "pr-merged", ts: "2026-11-07T15:00:00Z", label: "Merged PR in pod-x", url: "https://github.com/keystone-demo/pod-x/pull/3" });
+    expect(doc).toEqual({
+      id,
+      userId: "priya",
+      kind: "pr-merged",
+      ts: "2026-11-07T15:00:00Z",
+      label: "Merged PR in pod-x",
+      url: "https://github.com/keystone-demo/pod-x/pull/3",
+    });
     expect(h.llmText).not.toHaveBeenCalled();
   });
 

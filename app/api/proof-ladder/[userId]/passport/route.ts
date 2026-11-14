@@ -26,7 +26,11 @@ export async function PUT(req: Request, ctx: Ctx) {
   const params = UserIdParamZ.safeParse(await ctx.params);
   if (!params.success) return badRequest(params.error);
   let body: unknown;
-  try { body = await req.json(); } catch { return badRequest("Body must be JSON like {\"public\":true}"); }
+  try {
+    body = await req.json();
+  } catch {
+    return badRequest('Body must be JSON like {"public":true}');
+  }
   const parsed = PassportVisibilityReqZ.safeParse(body);
   if (!parsed.success) return badRequest(parsed.error);
   try {

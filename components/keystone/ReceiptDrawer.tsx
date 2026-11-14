@@ -27,9 +27,17 @@ export interface ReceiptDrawerProps {
 }
 
 const SOURCE_LABEL: Record<EvidenceItem["source"], string> = {
-  github: "GitHub", leetcode: "LeetCode", hackerrank: "HackerRank", codeforces: "Codeforces",
-  stackoverflow: "Stack Overflow", kaggle: "Kaggle", devto: "DEV",
-  "linkedin-pdf": "LinkedIn", certificate: "Certificate", "keystone-pod": "Pod PR", "keystone-interview": "Mock interview",
+  github: "GitHub",
+  leetcode: "LeetCode",
+  hackerrank: "HackerRank",
+  codeforces: "Codeforces",
+  stackoverflow: "Stack Overflow",
+  kaggle: "Kaggle",
+  devto: "DEV",
+  "linkedin-pdf": "LinkedIn",
+  certificate: "Certificate",
+  "keystone-pod": "Pod PR",
+  "keystone-interview": "Mock interview",
   "micro-challenge": "Challenge",
 };
 
@@ -53,7 +61,15 @@ function Row({ icon: Icon, label, children, tone }: { icon: typeof BarChart3; la
 }
 
 export function ReceiptDrawer({
-  receipt, title, open, onOpenChange, trigger, roleName = "your target role's", evidence, moduleLabel, agent = "roadmap",
+  receipt,
+  title,
+  open,
+  onOpenChange,
+  trigger,
+  roleName = "your target role's",
+  evidence,
+  moduleLabel,
+  agent = "roadmap",
 }: ReceiptDrawerProps) {
   const ids = receipt.evidenceIds ?? [];
   const linked = (evidence ?? []).filter((e) => ids.includes(e.id));
@@ -62,16 +78,7 @@ export function ReceiptDrawer({
   return (
     <Sheet {...(controlled ? { open, onOpenChange: (o: boolean) => onOpenChange?.(o) } : {})}>
       {!controlled && (
-        <SheetTrigger
-          render={
-            trigger ?? (
-              <button
-                type="button"
-                className={cn(buttonVariants({ variant: "outline" }), "h-10 px-4")}
-              />
-            )
-          }
-        >
+        <SheetTrigger render={trigger ?? <button type="button" className={cn(buttonVariants({ variant: "outline" }), "h-10 px-4")} />}>
           {trigger ? (trigger.props as { children?: React.ReactNode }).children : "Why?"}
         </SheetTrigger>
       )}
@@ -92,7 +99,12 @@ export function ReceiptDrawer({
                   <span className={cn("inline-flex [&>span]:text-foreground", receipt.trend === "rising" && "[&_svg]:text-status-rising")}>
                     <StatusBadge status={receipt.trend} />
                   </span>
-                  {growth !== null && <span className="font-mono tabular-nums">{growth > 0 ? "+" : ""}{growth}% a year</span>}
+                  {growth !== null && (
+                    <span className="font-mono tabular-nums">
+                      {growth > 0 ? "+" : ""}
+                      {growth}% a year
+                    </span>
+                  )}
                 </span>
               ) : (
                 <span className="text-muted-foreground">No trend data for this skill yet.</span>
@@ -112,7 +124,10 @@ export function ReceiptDrawer({
                         rel="noreferrer"
                         className="inline-flex items-start gap-1.5 rounded-md text-primary underline decoration-1 underline-offset-4 hover:decoration-2"
                       >
-                        <span>{SOURCE_LABEL[e.source]}{e.quote ? `: ${e.quote}` : ""}</span>
+                        <span>
+                          {SOURCE_LABEL[e.source]}
+                          {e.quote ? `: ${e.quote}` : ""}
+                        </span>
                         <ExternalLink className="mt-1 size-3.5 shrink-0" aria-hidden />
                         <span className="sr-only">(opens in a new tab)</span>
                       </a>

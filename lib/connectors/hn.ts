@@ -9,7 +9,18 @@ export class HNError extends Error {}
 
 export type HiringThread = { id: string; month: string /* YYYY-MM */; title: string };
 
-const ENTITIES: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ", "#39": "'", "#x27": "'", "#x2F": "/", "#47": "/" };
+const ENTITIES: Record<string, string> = {
+  amp: "&",
+  lt: "<",
+  gt: ">",
+  quot: '"',
+  apos: "'",
+  nbsp: " ",
+  "#39": "'",
+  "#x27": "'",
+  "#x2F": "/",
+  "#47": "/",
+};
 
 /** HN comment HTML → plain text: tags removed, entities decoded, whitespace collapsed. */
 export function stripHtml(html: string): string {

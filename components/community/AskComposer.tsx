@@ -60,12 +60,18 @@ export function AskComposer({ viewerId, newcomer }: { viewerId: string; newcomer
             }}
             placeholder="e.g. I don’t get Python list comprehensions yet. Could someone walk me through one?"
             aria-invalid={needsText || undefined}
-            aria-describedby={[needsText ? "ask-empty-note" : "", newcomer ? "ask-newcomer-note" : ""].filter(Boolean).join(" ") || undefined}
+            aria-describedby={
+              [needsText ? "ask-empty-note" : "", newcomer ? "ask-newcomer-note" : ""].filter(Boolean).join(" ") || undefined
+            }
             className="min-h-28 md:text-base"
           />
           <div className="flex items-start justify-between gap-3">
-            <p id="ask-empty-note" className="text-sm text-muted-foreground" aria-live="polite">{needsText ? "Write a sentence first." : ""}</p>
-            <p className="ml-auto font-mono text-xs text-muted-foreground tabular-nums" aria-live="polite">{message.length}/{MAX}</p>
+            <p id="ask-empty-note" className="text-sm text-muted-foreground" aria-live="polite">
+              {needsText ? "Write a sentence first." : ""}
+            </p>
+            <p className="ml-auto font-mono text-xs text-muted-foreground tabular-nums" aria-live="polite">
+              {message.length}/{MAX}
+            </p>
           </div>
         </div>
         <div className="space-y-2">
@@ -76,7 +82,11 @@ export function AskComposer({ viewerId, newcomer }: { viewerId: string; newcomer
             onChange={(e) => setKind(e.target.value as HelpRequest["kind"])}
             className="h-10 w-full cursor-pointer rounded-lg border border-input bg-card px-3 text-base text-foreground transition-[background-color,color] duration-(--dur-short) outline-2 -outline-offset-2 outline-transparent hover:bg-paper-2 focus-visible:outline-ring active:bg-paper-3 disabled:cursor-not-allowed disabled:opacity-55"
           >
-            {KIND_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            {KIND_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
           </select>
         </div>
         {newcomer && (

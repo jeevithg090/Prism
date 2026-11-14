@@ -23,9 +23,24 @@ import type { PRReview, ProofResult } from "@/lib/schemas/studio";
 import type { BadgeId, GuideSuggestion, HelpRequest, MomentumWeek, Receipt, SkillId } from "@/lib/types";
 import { ToolError } from "./errors";
 import {
-  compactPod, degreeCoverage, displayRole, gapNodes, latestEvidence, loadBridgeMap, loadWeekPlan,
-  nextIssueFor, nodesWithStatus, pct, primaryRole, receiptFor, requireBridgeMap, requirePod, requireProfile, resolvePod,
-  type CompactPod, type WeekPlan,
+  compactPod,
+  degreeCoverage,
+  displayRole,
+  gapNodes,
+  latestEvidence,
+  loadBridgeMap,
+  loadWeekPlan,
+  nextIssueFor,
+  nodesWithStatus,
+  pct,
+  primaryRole,
+  receiptFor,
+  requireBridgeMap,
+  requirePod,
+  requireProfile,
+  resolvePod,
+  type CompactPod,
+  type WeekPlan,
 } from "./loaders";
 import type { AnyTool, KeystoneTool, ToolContext } from "./types";
 
@@ -52,7 +67,10 @@ function defineTool<I extends z.ZodTypeAny, O>(t: KeystoneTool<I, O>): AnyTool {
     ...t,
     async run(input, ctx) {
       if (t.requiresApproval && !ctx.approved) {
-        throw new ToolError(`${t.title} needs the student's approval first (human-in-the-loop). Ask them, then call it again once approved.`, "needs_approval");
+        throw new ToolError(
+          `${t.title} needs the student's approval first (human-in-the-loop). Ask them, then call it again once approved.`,
+          "needs_approval",
+        );
       }
       return t.run(input, ctx);
     },
@@ -62,7 +80,7 @@ function defineTool<I extends z.ZodTypeAny, O>(t: KeystoneTool<I, O>): AnyTool {
 }
 
 const NoInputZ = z.object({});
-const PodIdZ = z.string().min(1).max(64).describe("Pod id, e.g. \"pod_demo01\". Omit to use the student's newest pod.");
+const PodIdZ = z.string().min(1).max(64).describe('Pod id, e.g. "pod_demo01". Omit to use the student\'s newest pod.');
 
 // ---------- 1. get_student_snapshot ----------
 
@@ -100,17 +118,39 @@ const getStudentSnapshot = defineTool({
       role: displayRole(roleId),
       readinessNow: map ? map.readinessNow : null,
       readinessProjected: map ? map.readinessProjected : null,
-      topGaps: map ? gapNodes(map).slice(0, 3).map((n) => ({ skillId: n.skillId, name: n.name || skillName(n.skillId), demandPct: pct(n.demand) })) : [],
-      week: week ? { week: week.week, focusSkillId: week.focusSkillId, focusSkillName: week.focusSkillName, proof: week.proof, source: week.source } : null,
-      pod: cpod
-        ? { id: cpod.id, name: cpod.name, members: cpod.members.length, project: cpod.project?.title ?? null, merged: cpod.project?.merged ?? 0, total: cpod.project?.total ?? 0 }
+      topGaps: map
+        ? gapNodes(map)
+            .slice(0, 3)
+            .map((n) => ({ skillId: n.skillId, name: n.name || skillName(n.skillId), demandPct: pct(n.demand) }))
+        : [],
+      week: week
+        ? { week: week.week, focusSkillId: week.focusSkillId, focusSkillName: week.focusSkillName, proof: week.proof, source: week.source }
         : null,
-      latestProof: proof ? { skillId: proof.skillId, skillName: skillName(proof.skillId), source: proof.source, createdAt: proof.createdAt, ...(proof.url ? { url: proof.url } : {}) } : null,
+      pod: cpod
+        ? {
+            id: cpod.id,
+            name: cpod.name,
+            members: cpod.members.length,
+            project: cpod.project?.title ?? null,
+            merged: cpod.project?.merged ?? 0,
+            total: cpod.project?.total ?? 0,
+          }
+        : null,
+      latestProof: proof
+        ? {
+            skillId: proof.skillId,
+            skillName: skillName(proof.skillId),
+            source: proof.source,
+            createdAt: proof.createdAt,
+            ...(proof.url ? { url: proof.url } : {}),
+          }
+        : null,
     };
   },
   summarize(s: Snapshot) {
     const first = s.name.split(" ")[0] || s.userId;
-    const readiness = s.readinessNow === null ? "no Bridge Map yet" : `readiness ${pct(s.readinessNow)}% → ${pct(s.readinessProjected ?? s.readinessNow)}%`;
+    const readiness =
+      s.readinessNow === null ? "no Bridge Map yet" : `readiness ${pct(s.readinessNow)}% → ${pct(s.readinessProjected ?? s.readinessNow)}%`;
     const gaps = s.topGaps.length ? ` Top gaps: ${s.topGaps.map((g) => `${g.name} ${g.demandPct}%`).join(", ")}.` : "";
     const week = s.week ? ` Week ${s.week.week}: ${s.week.focusSkillName}.` : "";
     const pod = s.pod
@@ -140,7 +180,12 @@ const getBridgeMap = defineTool({
   description:
     "Use when you need the student's skill picture for their target role: what employers ask for vs what their degree and proof cover. Returns readiness now and projected, the top gaps (skill, % of job ads, trend, degree coverage), skills the degree covers later, and proven skills. For one skill's reasoning use explain_recommendation instead.",
   input: z.object({
-    roleId: z.string().regex(/^[a-z0-9-]+$/).max(40).optional().describe("Role id like \"ml-engineer\". Omit for the student's primary target role."),
+    roleId: z
+      .string()
+      .regex(/^[a-z0-9-]+$/)
+      .max(40)
+      .optional()
+      .describe('Role id like "ml-engineer". Omit for the student\'s primary target role.'),
     limit: z.number().int().min(1).max(10).default(5).describe("How many top gaps to return (1-10, default 5)."),
   }),
   effect: "read",
@@ -156,25 +201,46 @@ const getBridgeMap = defineTool({
       role: displayRole(roleId),
       readinessNow: map.readinessNow,
       readinessProjected: map.readinessProjected,
-      topGaps: gapNodes(map).slice(0, input.limit).map((n) => ({
-        skillId: n.skillId, name: n.name || skillName(n.skillId), demandPct: pct(n.demand),
-        ...(n.trend ? { trend: n.trend } : {}), degreeCoverage: degreeCoverage(n),
-      })),
-      comingInDegree: nodesWithStatus(map, "degree-upcoming").filter((n) => n.demand > 0).slice(0, 3).map((n) => ({
-        skillId: n.skillId, name: n.name || skillName(n.skillId), demandPct: pct(n.demand),
-        ...(n.upcomingLabel ? { when: n.upcomingLabel } : {}), ...(n.moduleCodes?.[0] ? { moduleCode: n.moduleCodes[0] } : {}),
-      })),
+      topGaps: gapNodes(map)
+        .slice(0, input.limit)
+        .map((n) => ({
+          skillId: n.skillId,
+          name: n.name || skillName(n.skillId),
+          demandPct: pct(n.demand),
+          ...(n.trend ? { trend: n.trend } : {}),
+          degreeCoverage: degreeCoverage(n),
+        })),
+      comingInDegree: nodesWithStatus(map, "degree-upcoming")
+        .filter((n) => n.demand > 0)
+        .slice(0, 3)
+        .map((n) => ({
+          skillId: n.skillId,
+          name: n.name || skillName(n.skillId),
+          demandPct: pct(n.demand),
+          ...(n.upcomingLabel ? { when: n.upcomingLabel } : {}),
+          ...(n.moduleCodes?.[0] ? { moduleCode: n.moduleCodes[0] } : {}),
+        })),
       proven: nodesWithStatus(map, "proven").map((n) => ({ skillId: n.skillId, name: n.name || skillName(n.skillId) })),
       counts: { proven: count("proven"), degreeDone: count("degree-done"), degreeUpcoming: count("degree-upcoming"), gap: count("gap") },
     };
   },
   summarize(m: BridgeMapView) {
     const gaps = m.topGaps.slice(0, 3).map((g, i) => {
-      const extra = i === 0 ? [`${g.demandPct}% of ads`, g.trend === "rising" ? "rising" : "", g.degreeCoverage === "no" ? "no module" : ""] : [`${g.demandPct}%`];
+      const extra =
+        i === 0
+          ? [`${g.demandPct}% of ads`, g.trend === "rising" ? "rising" : "", g.degreeCoverage === "no" ? "no module" : ""]
+          : [`${g.demandPct}%`];
       return `${g.name} (${extra.filter(Boolean).join(", ")})`;
     });
-    const later = m.comingInDegree[0] ? ` Degree covers later: ${m.comingInDegree[0].name}${m.comingInDegree[0].when ? ` (${m.comingInDegree[0].when})` : ""}.` : "";
-    const proven = m.proven.length ? ` Proven: ${m.proven.slice(0, 5).map((p) => p.name).join(", ")}.` : "";
+    const later = m.comingInDegree[0]
+      ? ` Degree covers later: ${m.comingInDegree[0].name}${m.comingInDegree[0].when ? ` (${m.comingInDegree[0].when})` : ""}.`
+      : "";
+    const proven = m.proven.length
+      ? ` Proven: ${m.proven
+          .slice(0, 5)
+          .map((p) => p.name)
+          .join(", ")}.`
+      : "";
     return `Readiness ${pct(m.readinessNow)}% → ${pct(m.readinessProjected)}% (${m.role}).${gaps.length ? ` Top gaps: ${gaps.join(", ")}.` : " No gaps left."}${later}${proven}`;
   },
 });
@@ -196,14 +262,20 @@ const getWeekPlan = defineTool({
     const [map, pod] = await Promise.all([loadBridgeMap(ctx.userId, roleId), resolvePod(ctx.userId)]);
     const plan = await loadWeekPlan(profile, roleId, map, pod);
     if (!plan) {
-      throw new ToolError("No roadmap and no skill gaps to plan from yet. Call get_bridge_map to check the student's map, or ask them to finish onboarding.", "not_found");
+      throw new ToolError(
+        "No roadmap and no skill gaps to plan from yet. Call get_bridge_map to check the student's map, or ask them to finish onboarding.",
+        "not_found",
+      );
     }
     return plan;
   },
   summarize(w: WeekPlan) {
     const open = w.tasks.filter((t) => !t.done);
     const hours = open.reduce((a, t) => a + (t.hours || 0), 0);
-    const tasks = open.slice(0, 3).map((t) => `${t.title} (${t.hours}h)`).join("; ");
+    const tasks = open
+      .slice(0, 3)
+      .map((t) => `${t.title} (${t.hours}h)`)
+      .join("; ");
     return `Week ${w.week}${w.totalWeeks ? ` of ${w.totalWeeks}` : ""}: ${w.focusSkillName}${w.isExamWeek ? " (exam week, lighter load)" : ""}. ${open.length} tasks, ~${hours}h: ${tasks}. Proof: ${w.proof}.${w.source === "fallback" ? " (Starter week from the top gap.)" : ""}`;
   },
 });
@@ -224,7 +296,7 @@ const explainRecommendation = defineTool({
   description:
     "Use when the student asks why a skill is (or isn't) on their plan. Returns the receipt for one skill: % of job ads, trend, whether a degree module covers it, its priority rank among gaps, and a one-sentence reason. Omit skillId to explain this week's focus skill.",
   input: z.object({
-    skillId: SkillIdZ.max(40).optional().describe("Kebab-case skill id like \"docker\" or \"pytorch\". Omit for this week's focus skill."),
+    skillId: SkillIdZ.max(40).optional().describe('Kebab-case skill id like "docker" or "pytorch". Omit for this week\'s focus skill.'),
   }),
   effect: "read",
   requiresApproval: false,
@@ -235,10 +307,13 @@ const explainRecommendation = defineTool({
     const map = await requireBridgeMap(ctx.userId, roleId);
     const week = await loadWeekPlan(profile, roleId, map, null);
     const skillId = input.skillId ?? week?.focusSkillId;
-    if (!skillId) throw new ToolError("No focus skill yet. Pass a skillId such as \"docker\".", "invalid_input");
+    if (!skillId) throw new ToolError('No focus skill yet. Pass a skillId such as "docker".', "invalid_input");
     const node = map.nodes.find((n) => n.skillId === skillId);
     if (!node) {
-      throw new ToolError(`${skillName(skillId)} isn't on the student's ${displayRole(roleId)} Bridge Map. Call get_bridge_map to see which skills are.`, "not_found");
+      throw new ToolError(
+        `${skillName(skillId)} isn't on the student's ${displayRole(roleId)} Bridge Map. Call get_bridge_map to see which skills are.`,
+        "not_found",
+      );
     }
     const rank = gapNodes(map).findIndex((n) => n.skillId === skillId);
     const receipt = week?.focusSkillId === skillId && week.receipt && week.source !== "fallback" ? week.receipt : receiptFor(node, roleId);
@@ -246,7 +321,12 @@ const explainRecommendation = defineTool({
   },
   summarize(e: Explanation) {
     const r = e.receipt;
-    const cover = r.coveredByDegree === "no" ? "not covered by a module" : r.coveredByDegree === "upcoming" ? `covered later by ${r.moduleCode ?? "a module"}` : `covered by ${r.moduleCode ?? "a module"}`;
+    const cover =
+      r.coveredByDegree === "no"
+        ? "not covered by a module"
+        : r.coveredByDegree === "upcoming"
+          ? `covered later by ${r.moduleCode ?? "a module"}`
+          : `covered by ${r.moduleCode ?? "a module"}`;
     const rank = e.priorityRank ? `, gap #${e.priorityRank} by demand` : "";
     return `${e.skillName}: ${r.demandPct}% of ads${r.trend ? `, ${r.trend}` : ""}, ${cover}${rank}. ${r.reason}`;
   },
@@ -276,8 +356,15 @@ const findPod = defineTool({
     try {
       return { userId: ctx.userId, pod: await compactPod(await matchPod({ userId: ctx.userId, runId: ctx.runId })) };
     } catch (e) {
-      if (e instanceof MatchNotFound) throw new ToolError(`No Keystone profile for "${ctx.userId}", so there's nothing to match on yet. Ask the student to finish onboarding.`, "not_found");
-      throw new ToolError("The Matchmaker couldn't form a pod right now (not enough other students yet). Try again later, or post in Community with ask_for_help.", "failed");
+      if (e instanceof MatchNotFound)
+        throw new ToolError(
+          `No Keystone profile for "${ctx.userId}", so there's nothing to match on yet. Ask the student to finish onboarding.`,
+          "not_found",
+        );
+      throw new ToolError(
+        "The Matchmaker couldn't form a pod right now (not enough other students yet). Try again later, or post in Community with ask_for_help.",
+        "failed",
+      );
     }
   },
   summarize({ pod: p, userId }: MyPod) {
@@ -335,11 +422,15 @@ const startPodProjectTool = defineTool({
   async run(input, ctx): Promise<StartedProject> {
     const pod = await requirePod(ctx.userId, input.podId);
     const result = await startPodProject(pod.id, ctx.runId);
-    if (!result) throw new ToolError(`Pod ${pod.id} disappeared before the project could be created. Call get_my_pod and try again.`, "not_found");
+    if (!result)
+      throw new ToolError(`Pod ${pod.id} disappeared before the project could be created. Call get_my_pod and try again.`, "not_found");
     const cpod = await compactPod(result.pod);
     const mine = nextIssueFor(cpod, ctx.userId);
     return {
-      podId: cpod.id, podName: cpod.name, created: result.created, project: cpod.project!,
+      podId: cpod.id,
+      podName: cpod.name,
+      created: result.created,
+      project: cpod.project!,
       yourIssue: mine ? { number: mine.number, title: mine.title, reviewer: mine.reviewer } : null,
     };
   },
@@ -376,7 +467,14 @@ const reviewMyPr = defineTool({
     }
   },
   summarize(r: PRReview) {
-    const topics = r.hints.map((h) => h.match(/^\*\*(.+?):?\*\*/)?.[1]?.replace(/[:?]$/, "").toLowerCase()).filter(Boolean) as string[];
+    const topics = r.hints
+      .map((h) =>
+        h
+          .match(/^\*\*(.+?):?\*\*/)?.[1]
+          ?.replace(/[:?]$/, "")
+          .toLowerCase(),
+      )
+      .filter(Boolean) as string[];
     const where = r.posted ? "posted on GitHub" : r.source === "demo" ? "demo review, not posted" : "not posted";
     const about = topics.length ? ` on ${list(topics)}` : r.hints[0] ? `: ${r.hints[0]}` : "";
     return `Tech Lead reviewed "${r.prTitle}" (${where}): ${r.hints.length} guiding questions${about}. Questions, not answers: the pod reviewer has the final say.`;
@@ -402,10 +500,18 @@ const recordMergedPr = defineTool({
     const pod = await requirePod(ctx.userId, input.podId);
     if (!pod.project) throw new ToolError(`${pod.name} has no project yet: call start_pod_project first.`, "not_found");
     try {
-      return await recordMergedPR({ podId: pod.id, issueIndex: input.issueIndex, ...(input.prUrl ? { prUrl: input.prUrl } : {}), runId: ctx.runId });
+      return await recordMergedPR({
+        podId: pod.id,
+        issueIndex: input.issueIndex,
+        ...(input.prUrl ? { prUrl: input.prUrl } : {}),
+        runId: ctx.runId,
+      });
     } catch (e) {
       if (e instanceof ProofNotFound) {
-        throw new ToolError(`${e.message} Issues are 0-based: call get_my_pod for the list (it has ${pod.project.issues.length}).`, "not_found");
+        throw new ToolError(
+          `${e.message} Issues are 0-based: call get_my_pod for the list (it has ${pod.project.issues.length}).`,
+          "not_found",
+        );
       }
       throw e;
     }
@@ -419,7 +525,16 @@ const recordMergedPr = defineTool({
 // ---------- 10. find_students_like_me ----------
 
 interface Journeys {
-  journeys: { id: string; userId: string; name: string; similarity: number; outcomeRole: string; openToChat: boolean; advice: string; highlights: string[] }[];
+  journeys: {
+    id: string;
+    userId: string;
+    name: string;
+    similarity: number;
+    outcomeRole: string;
+    openToChat: boolean;
+    advice: string;
+    highlights: string[];
+  }[];
   openToChat: number;
 }
 
@@ -436,14 +551,23 @@ const findStudentsLikeMe = defineTool({
     const similar = await similarForUser(ctx.userId, { limit: input.limit, runId: ctx.runId });
     if (!similar) throw new ToolError(`No Keystone profile for "${ctx.userId}". Ask the student to finish onboarding first.`, "not_found");
     const journeys = similar.map(({ trajectory: t, similarity }) => ({
-      id: t.id, userId: t.userId, name: t.name, similarity, outcomeRole: t.outcomeRole, openToChat: t.openToChat,
-      advice: t.advice, highlights: t.steps.slice(0, 3).map((s) => `Y${s.year} ${s.label}`),
+      id: t.id,
+      userId: t.userId,
+      name: t.name,
+      similarity,
+      outcomeRole: t.outcomeRole,
+      openToChat: t.openToChat,
+      advice: t.advice,
+      highlights: t.steps.slice(0, 3).map((s) => `Y${s.year} ${s.label}`),
     }));
     return { journeys, openToChat: journeys.filter((j) => j.openToChat).length };
   },
   summarize(r: Journeys) {
-    if (!r.journeys.length) return "No senior journeys to compare with yet. Try again later, or post a question in Community with ask_for_help.";
-    const items = r.journeys.map((j) => `${j.name} → ${j.outcomeRole} (${pct(j.similarity)}% similar${j.openToChat ? ", open to chat" : ""})`);
+    if (!r.journeys.length)
+      return "No senior journeys to compare with yet. Try again later, or post a question in Community with ask_for_help.";
+    const items = r.journeys.map(
+      (j) => `${j.name} → ${j.outcomeRole} (${pct(j.similarity)}% similar${j.openToChat ? ", open to chat" : ""})`,
+    );
     return `${r.journeys.length} journeys like yours: ${items.join("; ")}. ${r.openToChat} open to a 15-min chat (ask_for_help, kind chat-15).`;
   },
 });
@@ -469,7 +593,11 @@ const getMomentum = defineTool({
     const badges = await loadBadges(ctx.userId);
     if (!badges) throw new ToolError(`No Keystone profile for "${ctx.userId}". Ask the student to finish onboarding first.`, "not_found");
     const weeks = await loadMomentumWeeks(ctx.userId);
-    return { weeks: weeks.map((w) => ({ week: w.week, score: w.score, changePct: w.changePct })), latest: weeks[weeks.length - 1] ?? null, badges };
+    return {
+      weeks: weeks.map((w) => ({ week: w.week, score: w.score, changePct: w.changePct })),
+      latest: weeks[weeks.length - 1] ?? null,
+      badges,
+    };
   },
   summarize(m: Momentum) {
     const badges = m.badges.length ? ` Badges: ${m.badges.join(", ")}.` : "";
@@ -483,7 +611,11 @@ const getMomentum = defineTool({
 
 // ---------- 12. ask_for_help ----------
 
-const KIND_PHRASE: Record<HelpRequest["kind"], string> = { question: "question", "chat-15": "15-minute chat request", "code-review": "code review request" };
+const KIND_PHRASE: Record<HelpRequest["kind"], string> = {
+  question: "question",
+  "chat-15": "15-minute chat request",
+  "code-review": "code review request",
+};
 
 const askForHelp = defineTool({
   name: "ask_for_help",
@@ -499,9 +631,15 @@ const askForHelp = defineTool({
   requiresApproval: true,
   agent: "orchestrator",
   async run(input, ctx): Promise<HelpRequest> {
-    if (input.toUserId && input.toUserId === ctx.userId) throw new ToolError("toUserId is the student themselves: omit it to ask all helpers.", "invalid_input");
+    if (input.toUserId && input.toUserId === ctx.userId)
+      throw new ToolError("toUserId is the student themselves: omit it to ask all helpers.", "invalid_input");
     await requireProfile(ctx.userId);
-    return createHelpRequest({ fromUserId: ctx.userId, kind: input.kind, message: input.message, ...(input.toUserId ? { toUserId: input.toUserId } : {}) });
+    return createHelpRequest({
+      fromUserId: ctx.userId,
+      kind: input.kind,
+      message: input.message,
+      ...(input.toUserId ? { toUserId: input.toUserId } : {}),
+    });
   },
   summarize(h: HelpRequest) {
     const to = h.toUserId ? ` for ${h.toUserId}` : " for all helpers";
@@ -520,8 +658,7 @@ interface Guides {
 const findGuidesTool = defineTool({
   name: "find_guides",
   title: "Find practitioners to learn from",
-  description:
-    `Use when the student wants real practitioners or communities for their top gap. Returns up to 4 public guides (why each is relevant, a link, a suggested question, a draft message the student sends themselves). Each call uses one of ${GUIDES_DAILY_LIMIT} drafts a day, so don't call it twice in one conversation.`,
+  description: `Use when the student wants real practitioners or communities for their top gap. Returns up to 4 public guides (why each is relevant, a link, a suggested question, a draft message the student sends themselves). Each call uses one of ${GUIDES_DAILY_LIMIT} drafts a day, so don't call it twice in one conversation.`,
   input: NoInputZ,
   effect: "read",
   requiresApproval: false,
@@ -553,8 +690,19 @@ const findGuidesTool = defineTool({
 
 /** All 13 canonical Keystone tools, in the order of AGENT-PRINCIPLES.md. */
 export const TOOLS: AnyTool[] = [
-  getStudentSnapshot, getBridgeMap, getWeekPlan, explainRecommendation, findPod, getMyPod, startPodProjectTool,
-  reviewMyPr, recordMergedPr, findStudentsLikeMe, getMomentum, askForHelp, findGuidesTool,
+  getStudentSnapshot,
+  getBridgeMap,
+  getWeekPlan,
+  explainRecommendation,
+  findPod,
+  getMyPod,
+  startPodProjectTool,
+  reviewMyPr,
+  recordMergedPr,
+  findStudentsLikeMe,
+  getMomentum,
+  askForHelp,
+  findGuidesTool,
   // Keystone Labs features plug in here (lib/agents/tools/extra/*), so the Coach and MCP see them too.
   ...EXTRA_TOOLS,
 ];
@@ -581,7 +729,11 @@ export function formatIssues(err: z.ZodError): string {
  * Validates `args` against the tool's schema, enforces the human checkpoint, runs it and summarises the result.
  * Always throws ToolError (unknown_tool · invalid_input · needs_approval · the tool's own · failed).
  */
-export async function runTool(name: string, args: unknown, ctx: ToolContext): Promise<{ tool: AnyTool; output: unknown; observation: string }> {
+export async function runTool(
+  name: string,
+  args: unknown,
+  ctx: ToolContext,
+): Promise<{ tool: AnyTool; output: unknown; observation: string }> {
   const tool = getTool(name);
   if (!tool) throw new ToolError(`Unknown tool "${name}". Available: ${TOOLS.map((t) => t.name).join(", ")}.`, "unknown_tool");
   const parsed = tool.input.safeParse(args ?? {});
@@ -591,6 +743,9 @@ export async function runTool(name: string, args: unknown, ctx: ToolContext): Pr
     return { tool, output, observation: tool.summarize(output) };
   } catch (e) {
     if (e instanceof ToolError) throw e;
-    throw new ToolError(`${tool.title} failed unexpectedly. Try again in a moment; if it keeps failing, tell the student and suggest the Community help feed.`, "failed");
+    throw new ToolError(
+      `${tool.title} failed unexpectedly. Try again in a moment; if it keeps failing, tell the student and suggest the Community help feed.`,
+      "failed",
+    );
   }
 }

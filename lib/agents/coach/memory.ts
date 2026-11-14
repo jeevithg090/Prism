@@ -9,9 +9,16 @@ export const MEMORY_COLLECTION = "coach_memory";
 export const MAX_NOTES_PER_USER = 20;
 
 export type MemoryKind = MemoryNote["kind"];
-export interface ExtractedMemory { kind: MemoryKind; text: string }
+export interface ExtractedMemory {
+  kind: MemoryKind;
+  text: string;
+}
 
-const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+const norm = (s: string) =>
+  s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
 
 /** The student's notes, newest first (invalid rows are skipped). */
 export async function listMemory(userId: string): Promise<MemoryNote[]> {
@@ -64,23 +71,43 @@ function toSecondPerson(s: string): string {
 }
 
 function clean(fragment: string): string {
-  const cut = fragment.split(/[.!?;\n]|,\s*(?:but|so|and then|because|any|what|how|can|could|should|do|does|is|please|thanks)\b|\s+but\s+/i)[0] ?? "";
+  const cut =
+    fragment.split(/[.!?;\n]|,\s*(?:but|so|and then|because|any|what|how|can|could|should|do|does|is|please|thanks)\b|\s+but\s+/i)[0] ?? "";
   const words = cut.trim().replace(/\s+/g, " ").split(" ").slice(0, 14).join(" ");
   return toSecondPerson(words).replace(/[,\s]+$/, "");
 }
 
 // Sensitive things we never remember (privacy by design).
-const SENSITIVE = /@|\+?\d[\d\s-]{7,}\d|\b(password|passport|address|phone|religio\w*|ethnic\w*|pregnan\w*|disabilit\w*|diagnos\w*|medication|depress\w*|anxiety|sexual\w*|visa status)\b/i;
+const SENSITIVE =
+  /@|\+?\d[\d\s-]{7,}\d|\b(password|passport|address|phone|religio\w*|ethnic\w*|pregnan\w*|disabilit\w*|diagnos\w*|medication|depress\w*|anxiety|sexual\w*|visa status)\b/i;
 // "I want to …" that is really a request to the Coach, not a goal.
 const REQUEST_VERBS = /^(know|see|ask|check|find|start|get|review|talk|understand|try|look|hear|learn more about why|do this week|chat)\b/i;
 
 const RULES: { re: RegExp; kind: MemoryKind; render: (m: string) => string; noText?: boolean }[] = [
   { re: /\bi(?:'d| would)? (?:really |much |strongly )?prefer\s+(.+)/i, kind: "preference", render: (x) => `you prefer ${x}` },
   { re: /\bi learn (?:best|better) (.+)/i, kind: "preference", render: (x) => `you learn best ${x}` },
-  { re: /\bi(?:'m| am) (?:working|in) (?:a )?part[- ]time(?: job)?\b(.*)/i, kind: "preference", render: () => "you're working part-time, so keep weekly plans light", noText: true },
-  { re: /\bi (?:have|work) (?:a )?part[- ]time(?: job)?\b(.*)/i, kind: "preference", render: () => "you're working part-time, so keep weekly plans light", noText: true },
-  { re: /\bi (?:only )?have (?:about |around )?(\d{1,2}) hours? (?:a|per|each) week\b/i, kind: "preference", render: (x) => `you have about ${x} hours a week` },
-  { re: /\bi(?:'m| am)? ?(?:really )?(?:struggl(?:e|ing)|find it hard|have trouble|get stuck) (?:with |on )?(.+)/i, kind: "struggle", render: (x) => (/^to /.test(x) ? `you find it hard ${x}` : `you struggle with ${x}`) },
+  {
+    re: /\bi(?:'m| am) (?:working|in) (?:a )?part[- ]time(?: job)?\b(.*)/i,
+    kind: "preference",
+    render: () => "you're working part-time, so keep weekly plans light",
+    noText: true,
+  },
+  {
+    re: /\bi (?:have|work) (?:a )?part[- ]time(?: job)?\b(.*)/i,
+    kind: "preference",
+    render: () => "you're working part-time, so keep weekly plans light",
+    noText: true,
+  },
+  {
+    re: /\bi (?:only )?have (?:about |around )?(\d{1,2}) hours? (?:a|per|each) week\b/i,
+    kind: "preference",
+    render: (x) => `you have about ${x} hours a week`,
+  },
+  {
+    re: /\bi(?:'m| am)? ?(?:really )?(?:struggl(?:e|ing)|find it hard|have trouble|get stuck) (?:with |on )?(.+)/i,
+    kind: "struggle",
+    render: (x) => (/^to /.test(x) ? `you find it hard ${x}` : `you struggle with ${x}`),
+  },
   { re: /\bmy goal is (?:to )?(.+)/i, kind: "goal", render: (x) => `your goal is to ${x}` },
   { re: /\bi(?:'d| would) (?:really )?like to (.+)/i, kind: "goal", render: (x) => `you want to ${x}` },
   { re: /\bi (?:really )?want to (.+)/i, kind: "goal", render: (x) => `you want to ${x}` },

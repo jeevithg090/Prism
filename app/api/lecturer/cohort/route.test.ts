@@ -2,14 +2,22 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LecturerCohortZ } from "@/lib/schemas/lecturer";
 
 const { loadCohort, loadMap, loadProgramme, loadRoleDemand } = vi.hoisted(() => ({
-  loadCohort: vi.fn(), loadMap: vi.fn(), loadProgramme: vi.fn(), loadRoleDemand: vi.fn(),
+  loadCohort: vi.fn(),
+  loadMap: vi.fn(),
+  loadProgramme: vi.fn(),
+  loadRoleDemand: vi.fn(),
 }));
 vi.mock("@/lib/llm", () => ({ llmJSON: vi.fn(), LLMError: class extends Error {} }));
 vi.mock("@/lib/agents/cohort", () => ({ loadCohort, loadMap, loadProgramme, loadRoleDemand }));
 
 import { GET } from "./route";
 
-const profiles = (n: number) => Array.from({ length: n }, (_, i) => ({ id: `uid_${i}_zq`, programmeId: "uom-bsc-cs", dna: { targetRoles: [i < 7 ? "ml-engineer" : "data-analyst"] } }));
+const profiles = (n: number) =>
+  Array.from({ length: n }, (_, i) => ({
+    id: `uid_${i}_zq`,
+    programmeId: "uom-bsc-cs",
+    dna: { targetRoles: [i < 7 ? "ml-engineer" : "data-analyst"] },
+  }));
 
 beforeEach(() => {
   vi.clearAllMocks();

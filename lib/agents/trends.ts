@@ -21,8 +21,24 @@ const Z95 = 1.96;
 
 /** Skills the forecaster tracks (the ones that matter for the 3 roles and the demo story). */
 export const TREND_SKILLS: SkillId[] = [
-  "llm-evaluation", "llm-apps", "vector-databases", "mlops", "pytorch", "docker", "typescript", "kubernetes", "aws",
-  "python", "machine-learning", "ci-cd", "react", "sql", "pandas", "scikit-learn", "java", "tensorflow",
+  "llm-evaluation",
+  "llm-apps",
+  "vector-databases",
+  "mlops",
+  "pytorch",
+  "docker",
+  "typescript",
+  "kubernetes",
+  "aws",
+  "python",
+  "machine-learning",
+  "ci-cd",
+  "react",
+  "sql",
+  "pandas",
+  "scikit-learn",
+  "java",
+  "tensorflow",
 ];
 
 // ---------- pure maths ----------
@@ -40,7 +56,8 @@ export function olsFit(xs: number[], ys: number[]): OLSFit {
   if (n === 0 || n !== ys.length) return { slope: 0, intercept: 0, residualSE: 0, n, meanX: 0, sxx: 0 };
   const meanX = xs.reduce((a, b) => a + b, 0) / n;
   const meanY = ys.reduce((a, b) => a + b, 0) / n;
-  let sxx = 0, sxy = 0;
+  let sxx = 0,
+    sxy = 0;
   for (let i = 0; i < n; i++) {
     sxx += (xs[i] - meanX) ** 2;
     sxy += (xs[i] - meanX) * (ys[i] - meanY);
@@ -132,10 +149,19 @@ async function liveTrends(runId?: string, months = LIVE_MONTHS): Promise<TrendSe
     hnKey(months),
     async () => {
       const threads = await listWhoIsHiring(months);
-      if (runId) emit({ runId, agent: "trends", status: "progress", message: `Trend Forecaster: found ${threads.length} monthly hiring threads`, data: { threads: threads.length } });
+      if (runId)
+        emit({
+          runId,
+          agent: "trends",
+          status: "progress",
+          message: `Trend Forecaster: found ${threads.length} monthly hiring threads`,
+          data: { threads: threads.length },
+        });
       const withComments: { month: string; comments: string[] }[] = [];
       for (let i = 0; i < threads.length; i += 4) {
-        const batch = await Promise.all(threads.slice(i, i + 4).map(async (t) => ({ month: t.month, comments: await getComments(t.id).catch(() => []) })));
+        const batch = await Promise.all(
+          threads.slice(i, i + 4).map(async (t) => ({ month: t.month, comments: await getComments(t.id).catch(() => []) })),
+        );
         withComments.push(...batch);
       }
       const posts = withComments.reduce((a, t) => a + t.comments.length, 0);
@@ -148,12 +174,28 @@ async function liveTrends(runId?: string, months = LIVE_MONTHS): Promise<TrendSe
       loose: false,
       validate: (v) => !!v && typeof v === "object" && typeof (v as HNShares).shares === "object",
       onReplay: (rec) => {
-        if (runId) emit({ runId, agent: "trends", status: "progress", message: `Trend Forecaster: replayed ${rec.value.threads} monthly hiring threads from a real run (recorded ${formatRecordedAt(rec.recordedAt)})`, data: { threads: rec.value.threads, replay: true, recordedAt: rec.recordedAt } });
+        if (runId)
+          emit({
+            runId,
+            agent: "trends",
+            status: "progress",
+            message: `Trend Forecaster: replayed ${rec.value.threads} monthly hiring threads from a real run (recorded ${formatRecordedAt(rec.recordedAt)})`,
+            data: { threads: rec.value.threads, replay: true, recordedAt: rec.recordedAt },
+          });
       },
     },
   );
-  if (runId) emit({ runId, agent: "trends", status: "progress", message: `Trend Forecaster: read ${hn.posts} job posts across ${hn.months} months`, data: { posts: hn.posts, months: hn.months } });
-  const data = Object.entries(hn.shares).filter(([, h]) => h.length >= 6).map(([id, h]) => toSeries(id, h));
+  if (runId)
+    emit({
+      runId,
+      agent: "trends",
+      status: "progress",
+      message: `Trend Forecaster: read ${hn.posts} job posts across ${hn.months} months`,
+      data: { posts: hn.posts, months: hn.months },
+    });
+  const data = Object.entries(hn.shares)
+    .filter(([, h]) => h.length >= 6)
+    .map(([id, h]) => toSeries(id, h));
   liveMemo = { at: Date.now(), data };
   return data;
 }
@@ -164,7 +206,13 @@ async function buildTrends(runId?: string): Promise<TrendSeries[]> {
     try {
       return await liveTrends(runId);
     } catch {
-      if (runId) emit({ runId, agent: "trends", status: "progress", message: "Trend Forecaster: Hacker News didn't answer, so we used the recorded history" });
+      if (runId)
+        emit({
+          runId,
+          agent: "trends",
+          status: "progress",
+          message: "Trend Forecaster: Hacker News didn't answer, so we used the recorded history",
+        });
     }
   }
   // The projection is always recomputed from the history by forecast(), never copied from a file.
@@ -175,7 +223,7 @@ export async function getTrends(skillIds?: SkillId[], opts: { runId?: string; de
   const { runId } = opts;
   if (runId) emit({ runId, agent: "trends", status: "started", message: "Trend Forecaster: reading Hacker News hiring history" });
   const all = opts.demo
-    ? readJSON<TrendSeries[]>("data/fixtures/trends.json") ?? []
+    ? (readJSON<TrendSeries[]>("data/fixtures/trends.json") ?? [])
     : await withCache("trends", () => buildTrends(runId), { fixture: "trends.json" });
   const wanted = skillIds?.length ? new Set(skillIds) : null;
   const out = wanted ? all.filter((s) => wanted.has(s.skillId)) : all;
@@ -183,7 +231,9 @@ export async function getTrends(skillIds?: SkillId[], opts: { runId?: string; de
     const rising = out.filter((s) => s.label === "rising").sort((a, b) => b.growthPerYear - a.growthPerYear);
     const top = rising[0];
     emit({
-      runId, agent: "trends", status: "done",
+      runId,
+      agent: "trends",
+      status: "done",
       message: `Trend Forecaster: ${out.length} skills forecast, ${rising.length} rising${top ? ` · fastest ${top.skillId} +${Math.round(top.growthPerYear * 100)}%/yr` : ""}`,
       data: { skills: out.length, rising: rising.length, months: out[0]?.history.length ?? 0 },
     });

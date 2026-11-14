@@ -28,8 +28,7 @@ export function ReadinessPill({ userId, roleId, initial }: { userId: string; rol
     >
       <MiniRing value={map.readinessNow} />
       <span className="sr-only text-muted-foreground lg:not-sr-only">{role} ·</span>{" "}
-      <span className="font-mono font-semibold tabular-nums">{pct}%</span>{" "}
-      <span className="sr-only">ready. Open your Bridge Map</span>
+      <span className="font-mono font-semibold tabular-nums">{pct}%</span> <span className="sr-only">ready. Open your Bridge Map</span>
     </Link>
   );
 }
@@ -38,7 +37,18 @@ function MiniRing({ value }: { value: number }) {
   return (
     <svg viewBox="0 0 20 20" className="size-5 -rotate-90" aria-hidden focusable="false">
       <circle cx="10" cy="10" r="8" fill="none" strokeWidth="3" className="stroke-paper-3" />
-      <circle cx="10" cy="10" r="8" fill="none" strokeWidth="3" strokeLinecap="round" pathLength={100} strokeDasharray="100 100" strokeDashoffset={100 - Math.round(value * 100)} className="stroke-primary" />
+      <circle
+        cx="10"
+        cy="10"
+        r="8"
+        fill="none"
+        strokeWidth="3"
+        strokeLinecap="round"
+        pathLength={100}
+        strokeDasharray="100 100"
+        strokeDashoffset={100 - Math.round(value * 100)}
+        className="stroke-primary"
+      />
     </svg>
   );
 }
@@ -52,7 +62,11 @@ export function TopBar({ readiness }: { readiness?: React.ReactNode }) {
   return (
     <header className="sticky top-0 z-(--z-sticky-nav) border-b bg-background">
       <div className="mx-auto flex h-(--topbar-height) w-full max-w-7xl items-center gap-2 px-4 md:px-8">
-        <Link href="/dashboard" aria-label="Keystone dashboard" className="rounded-lg outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring md:hidden">
+        <Link
+          href="/dashboard"
+          aria-label="Keystone dashboard"
+          className="rounded-lg outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring md:hidden"
+        >
           <KeystoneMark />
         </Link>
         <PersonaSwitcher className="max-w-[11rem] sm:max-w-none" />

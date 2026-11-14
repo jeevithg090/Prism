@@ -8,8 +8,20 @@ import { FRESH_RUN_MS, SAMPLE_RUNS, samplesBefore } from "@/lib/agents/ledger-sa
 import { badRequest, internal, ok } from "@/lib/schemas/community";
 
 const AGENTS = [
-  "orchestrator", "syllabus", "skillmap", "market", "trends", "evidence", "roadmap",
-  "matchmaker", "architect", "techlead", "trajectories", "guides", "voice", "n8n",
+  "orchestrator",
+  "syllabus",
+  "skillmap",
+  "market",
+  "trends",
+  "evidence",
+  "roadmap",
+  "matchmaker",
+  "architect",
+  "techlead",
+  "trajectories",
+  "guides",
+  "voice",
+  "n8n",
 ] as const;
 
 const RunsQueryZ = z.object({
@@ -33,7 +45,9 @@ export async function GET(req: Request) {
     }
     if (process.env.DEMO_MODE === "true" || sp.get("samples") === "1") {
       const live = await listRuns({ runId, agent, limit });
-      const samples = samplesBefore(Date.now() - FRESH_RUN_MS).filter((e) => (!runId || e.runId === runId) && (!agent || e.agent === agent));
+      const samples = samplesBefore(Date.now() - FRESH_RUN_MS).filter(
+        (e) => (!runId || e.runId === runId) && (!agent || e.agent === agent),
+      );
       return ok([...live, ...samples].sort((a, b) => (a.startedAt < b.startedAt ? 1 : a.startedAt > b.startedAt ? -1 : 0)).slice(0, limit));
     }
     return ok(await listRuns({ runId, agent, limit }));

@@ -9,9 +9,7 @@ export const CoachReqZ = z.object({
   message: z.string().trim().min(1).max(2000),
   history: z.array(ChatTurnZ).max(20).optional(),
   /** Present when the human approves (or denies) a pending side-effecting tool call. */
-  approval: z
-    .object({ tool: z.string().min(1), args: z.unknown(), decision: z.enum(["approve", "deny"]) })
-    .optional(),
+  approval: z.object({ tool: z.string().min(1), args: z.unknown(), decision: z.enum(["approve", "deny"]) }).optional(),
 });
 export type CoachReq = z.infer<typeof CoachReqZ>;
 

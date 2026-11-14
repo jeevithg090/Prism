@@ -3,7 +3,6 @@
 import { useQuery } from "@tanstack/react-query";
 import type { ApiResult, BridgeMap, BridgeNode, RoleDemand, Roadmap, RoadmapWeek } from "@/lib/types";
 
-
 /** GET an ApiResult route. Returns null on 404 (the route or the record doesn't exist), throws otherwise. */
 export async function fetchOptional<T>(url: string): Promise<T | null> {
   const res = await fetch(url, { headers: { accept: "application/json" } });
@@ -93,11 +92,16 @@ export function useMarket(roleId: string) {
 
 /** Gaps ranked by demand for the target role (biggest first). */
 export function topGaps(map: BridgeMap, n = 3): BridgeNode[] {
-  return map.nodes.filter((x) => x.status === "gap").sort((a, b) => b.demand - a.demand).slice(0, n);
+  return map.nodes
+    .filter((x) => x.status === "gap")
+    .sort((a, b) => b.demand - a.demand)
+    .slice(0, n);
 }
 
 export function statusCounts(map: BridgeMap) {
-  let proven = 0, degree = 0, gaps = 0;
+  let proven = 0,
+    degree = 0,
+    gaps = 0;
   for (const n of map.nodes) {
     if (n.status === "proven") proven++;
     else if (n.status === "gap") gaps++;

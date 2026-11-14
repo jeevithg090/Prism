@@ -23,7 +23,10 @@ import { SkillDetailPanel, type PodIssueRef } from "./SkillDetailPanel";
 const DEMO_MAP = demoMapJson as unknown as BridgeMap;
 
 const TONE: Record<SkillStatus, string> = {
-  proven: "text-status-proven", "degree-done": "text-status-degree", "degree-upcoming": "text-status-degree", gap: "text-status-gap",
+  proven: "text-status-proven",
+  "degree-done": "text-status-degree",
+  "degree-upcoming": "text-status-degree",
+  gap: "text-status-gap",
 };
 
 export function MapSkeleton() {
@@ -40,12 +43,18 @@ export function MapSkeleton() {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_18rem] 2xl:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="rounded-2xl border bg-card p-6 shadow-sm">
           <Skeleton className="h-7 w-40" />
-          <div className="mt-4 flex flex-wrap gap-2">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-9 w-28 rounded-lg" />)}</div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {[0, 1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-9 w-28 rounded-lg" />
+            ))}
+          </div>
           <div className="mt-6 grid grid-cols-2 gap-6 md:grid-cols-4">
             {[4, 4, 9, 11].map((rows, c) => (
               <div key={c} className="space-y-3">
                 <Skeleton className="h-5 w-24" />
-                {Array.from({ length: rows }, (_, i) => <Skeleton key={i} className="h-5 rounded-full" style={{ width: `${88 - ((i * 13 + c * 7) % 40)}%` }} />)}
+                {Array.from({ length: rows }, (_, i) => (
+                  <Skeleton key={i} className="h-5 rounded-full" style={{ width: `${88 - ((i * 13 + c * 7) % 40)}%` }} />
+                ))}
               </div>
             ))}
           </div>
@@ -76,7 +85,12 @@ function Headline({ map, targetDate, demo }: { map: BridgeMap; targetDate?: stri
   const when = monthYear(targetDate);
   const stats: { label: string; value: number; hint: string; status: SkillStatus }[] = [
     { label: "Proven", value: c.proven, hint: "skills with proof", status: "proven" },
-    { label: "Degree covers", value: c["degree-done"] + c["degree-upcoming"], hint: `${c["degree-done"]} done, ${c["degree-upcoming"]} later`, status: "degree-done" },
+    {
+      label: "Degree covers",
+      value: c["degree-done"] + c["degree-upcoming"],
+      hint: `${c["degree-done"]} done, ${c["degree-upcoming"]} later`,
+      status: "degree-done",
+    },
     { label: "Gaps", value: c.gap, hint: gap ? "not in your degree" : "none left", status: "gap" },
   ];
   return (
@@ -88,20 +102,29 @@ function Headline({ map, targetDate, demo }: { map: BridgeMap; targetDate?: stri
       <ReadinessRing value={map.readinessNow} projected={map.readinessProjected} label="today" className="md:size-44 [&>div]:hidden" />
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-          <h2 id="readiness-h" className="text-xl font-semibold text-foreground">{roleTitle(map.roleId)} readiness</h2>
+          <h2 id="readiness-h" className="text-xl font-semibold text-foreground">
+            {roleTitle(map.roleId)} readiness
+          </h2>
           {demo && <DemoDataNote />}
         </div>
         <p className="mt-2 flex items-baseline gap-x-3 text-lg text-muted-foreground">
           <span className="inline-flex shrink-0 flex-col">
-            <span className="font-mono text-4xl leading-none font-semibold text-foreground tabular-nums md:text-5xl">{pctOf(map.readinessNow)}%</span>
+            <span className="font-mono text-4xl leading-none font-semibold text-foreground tabular-nums md:text-5xl">
+              {pctOf(map.readinessNow)}%
+            </span>
             <span className="mt-2 inline-flex items-baseline gap-2">
-              <span className="h-1.5 w-6 shrink-0 -translate-y-1 rounded-full bg-primary" aria-hidden />today
+              <span className="h-1.5 w-6 shrink-0 -translate-y-1 rounded-full bg-primary" aria-hidden />
+              today
             </span>
           </span>
-          <span className="self-start font-mono text-4xl leading-none text-muted-foreground md:pt-1" aria-hidden>→</span>
+          <span className="self-start font-mono text-4xl leading-none text-muted-foreground md:pt-1" aria-hidden>
+            →
+          </span>
           <span className="sr-only">, rising to</span>
           <span className="inline-flex min-w-0 max-w-[16rem] flex-col min-[1400px]:max-w-none">
-            <span className="font-mono text-4xl leading-none font-semibold text-foreground tabular-nums md:text-5xl">{pctOf(map.readinessProjected)}%</span>
+            <span className="font-mono text-4xl leading-none font-semibold text-foreground tabular-nums md:text-5xl">
+              {pctOf(map.readinessProjected)}%
+            </span>
             <span className="mt-2 inline-flex items-baseline gap-2">
               <span className="h-1.5 w-6 shrink-0 -translate-y-1 rounded-full bg-primary/30" aria-hidden />
               {when ? `by ${when}` : "by your target date"} if you follow your roadmap
@@ -110,7 +133,8 @@ function Headline({ map, targetDate, demo }: { map: BridgeMap; targetDate?: stri
         </p>
         {gap && (
           <p className="mt-5 max-w-[60ch] text-base text-pretty text-foreground md:text-lg">
-            Your biggest gap is <span className="font-semibold">{gap.name}</span>: {pctOf(gap.demand)}% of {roleName(map.roleId)} ads ask for it
+            Your biggest gap is <span className="font-semibold">{gap.name}</span>: {pctOf(gap.demand)}% of {roleName(map.roleId)} ads ask
+            for it
             {gap.moduleCodes.length ? "." : ", and no module covers it."}
           </p>
         )}
@@ -120,12 +144,20 @@ function Headline({ map, targetDate, demo }: { map: BridgeMap; targetDate?: stri
         {stats.map((s) => {
           const Icon = STATUS_META[s.status].icon;
           return (
-            <div key={s.label} className="grid min-w-0 content-start gap-x-4 gap-y-1 px-4 first:pl-0 last:pr-0 max-sm:grid-cols-[minmax(0,1fr)_auto] max-sm:items-center max-sm:px-0 max-sm:py-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center xl:px-0 xl:py-3 xl:first:pt-0 xl:last:pb-0">
+            <div
+              key={s.label}
+              className="grid min-w-0 content-start gap-x-4 gap-y-1 px-4 first:pl-0 last:pr-0 max-sm:grid-cols-[minmax(0,1fr)_auto] max-sm:items-center max-sm:px-0 max-sm:py-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center xl:px-0 xl:py-3 xl:first:pt-0 xl:last:pb-0"
+            >
               <dt className="flex items-center gap-1.5 text-sm font-medium text-foreground max-sm:col-start-1 max-sm:row-start-1 xl:col-start-1 xl:row-start-1">
-                <Icon className={cn("size-4 shrink-0", TONE[s.status])} aria-hidden />{s.label}
+                <Icon className={cn("size-4 shrink-0", TONE[s.status])} aria-hidden />
+                {s.label}
               </dt>
-              <dd className="order-first font-mono text-3xl leading-none font-semibold text-foreground tabular-nums max-sm:order-none max-sm:col-start-2 max-sm:row-span-2 max-sm:row-start-1 xl:order-none xl:col-start-2 xl:row-span-2 xl:row-start-1">{s.value}</dd>
-              <dd className="text-sm text-muted-foreground max-sm:col-start-1 max-sm:row-start-2 xl:col-start-1 xl:row-start-2">{s.hint}</dd>
+              <dd className="order-first font-mono text-3xl leading-none font-semibold text-foreground tabular-nums max-sm:order-none max-sm:col-start-2 max-sm:row-span-2 max-sm:row-start-1 xl:order-none xl:col-start-2 xl:row-span-2 xl:row-start-1">
+                {s.value}
+              </dd>
+              <dd className="text-sm text-muted-foreground max-sm:col-start-1 max-sm:row-start-2 xl:col-start-1 xl:row-start-2">
+                {s.hint}
+              </dd>
             </div>
           );
         })}
@@ -138,7 +170,9 @@ function SkillList({ nodes, selectedId, onPick }: { nodes: BridgeMap["nodes"]; s
   return (
     <section aria-labelledby="skill-list-h" className="rounded-2xl border bg-card shadow-sm">
       <div className="px-6 pt-5 pb-3">
-        <h2 id="skill-list-h" className="text-base font-semibold text-foreground">Skills in view</h2>
+        <h2 id="skill-list-h" className="text-base font-semibold text-foreground">
+          Skills in view
+        </h2>
         <p className="text-sm text-muted-foreground">Pick one to open it and find it on the graph.</p>
       </div>
       <ul className="relative max-h-80 divide-y overflow-y-auto border-t px-3 py-1">
@@ -154,7 +188,8 @@ function SkillList({ nodes, selectedId, onPick }: { nodes: BridgeMap["nodes"]; s
                 onClick={() => onPick(n.skillId)}
                 className={cn(
                   "my-0.5 flex min-h-10 w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-foreground transition-[background-color] duration-(--dur-short) disabled:cursor-not-allowed disabled:opacity-55",
-                  FOCUS, "focus-visible:-outline-offset-2",
+                  FOCUS,
+                  "focus-visible:-outline-offset-2",
                   on ? "bg-signal-soft font-semibold" : "hover:bg-muted",
                 )}
               >
@@ -191,8 +226,13 @@ export function BridgeMapView({ demo = false, skill }: { demo?: boolean; skill?:
     return (
       <div className="space-y-4">
         {activity.runId && (
-          <button type="button" onClick={() => activity.setOpen(true)} className={cn(buttonVariants({ variant: "link" }), "h-10 gap-2 px-0 text-base whitespace-nowrap")}>
-            <Workflow className="size-4" aria-hidden /><span className="whitespace-nowrap">Watch the agents build it</span>
+          <button
+            type="button"
+            onClick={() => activity.setOpen(true)}
+            className={cn(buttonVariants({ variant: "link" }), "h-10 gap-2 px-0 text-base whitespace-nowrap")}
+          >
+            <Workflow className="size-4" aria-hidden />
+            <span className="whitespace-nowrap">Watch the agents build it</span>
           </button>
         )}
         <MapSkeleton />
@@ -205,7 +245,11 @@ export function BridgeMapView({ demo = false, skill }: { demo?: boolean; skill?:
         icon={MapIcon}
         title="Your map is empty"
         body="Finish onboarding to build it: we read your syllabus, real job ads and your GitHub."
-        action={<Link href="/onboard" className={cn(buttonVariants({ size: "lg" }))}>Finish onboarding</Link>}
+        action={
+          <Link href="/onboard" className={cn(buttonVariants({ size: "lg" }))}>
+            Finish onboarding
+          </Link>
+        }
       />
     );
   }
@@ -228,11 +272,15 @@ export function BridgeMapView({ demo = false, skill }: { demo?: boolean; skill?:
   const skipped = rm?.skipped.find((s) => s.skillId === selected?.skillId);
   const summary = mapSummary(map, visible);
   const isDemo = useDemoData || demo || !!profile.data?.isDemo;
-  const pick = (id: string) => { setPicked(id); setFocusId(id); };
+  const pick = (id: string) => {
+    setPicked(id);
+    setFocusId(id);
+  };
   const toggle = (s: SkillStatus) =>
     setActive((prev) => {
       const next = new Set(prev);
-      if (next.has(s)) next.delete(s); else next.add(s);
+      if (next.has(s)) next.delete(s);
+      else next.add(s);
       return next;
     });
 
@@ -246,21 +294,44 @@ export function BridgeMapView({ demo = false, skill }: { demo?: boolean; skill?:
           </div>
           {view === "graph" ? (
             <div className="border-t px-1 pt-1 md:px-2">
-              <BridgeGraph nodes={visible} allNodes={nodes} edges={map.edges} selectedId={selected?.skillId} focusId={focusId} onSelect={pick} summary={summary} />
+              <BridgeGraph
+                nodes={visible}
+                allNodes={nodes}
+                edges={map.edges}
+                selectedId={selected?.skillId}
+                focusId={focusId}
+                onSelect={pick}
+                summary={summary}
+              />
             </div>
           ) : (
             <>
-              <MapListView nodes={visible} roleLabel={roleName(map.roleId)} selectedId={selected?.skillId} onSelect={(id) => setPicked(id)} />
-              <p className="sr-only" aria-live="polite">{summary}</p>
+              <MapListView
+                nodes={visible}
+                roleLabel={roleName(map.roleId)}
+                selectedId={selected?.skillId}
+                onSelect={(id) => setPicked(id)}
+              />
+              <p className="sr-only" aria-live="polite">
+                {summary}
+              </p>
             </>
           )}
           <MapLegend className="mt-5 border-t px-4 py-4 md:px-6" />
         </section>
-        <aside className="grid gap-6 self-start md:grid-cols-2 xl:sticky xl:top-[calc(var(--topbar-height)+var(--space-lg))] xl:grid-cols-1" aria-label="Skill details">
+        <aside
+          className="grid gap-6 self-start md:grid-cols-2 xl:sticky xl:top-[calc(var(--topbar-height)+var(--space-lg))] xl:grid-cols-1"
+          aria-label="Skill details"
+        >
           {selected && (
             <SkillDetailPanel
-              node={selected} roleId={map.roleId} uid={uid} evidence={evidence.data ?? []}
-              week={week} skipped={skipped} issue={issueFor(pods.data, uid, selected.skillId)}
+              node={selected}
+              roleId={map.roleId}
+              uid={uid}
+              evidence={evidence.data ?? []}
+              week={week}
+              skipped={skipped}
+              issue={issueFor(pods.data, uid, selected.skillId)}
             />
           )}
           <SkillList nodes={visible} selectedId={selected?.skillId} onPick={pick} />

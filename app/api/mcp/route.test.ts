@@ -4,19 +4,34 @@ const h = vi.hoisted(() => ({ startPodProject: vi.fn(), createHelpRequest: vi.fn
 
 vi.mock("@/lib/store", async () => (await import("@/tests/seededStore")).seededStoreModule());
 vi.mock("@/lib/llm", () => ({
-  llmJSON: vi.fn(async () => { throw new Error("no_key"); }),
-  llmText: vi.fn(async () => { throw new Error("no_key"); }),
-  embed: vi.fn(async () => { throw new Error("no_key"); }),
+  llmJSON: vi.fn(async () => {
+    throw new Error("no_key");
+  }),
+  llmText: vi.fn(async () => {
+    throw new Error("no_key");
+  }),
+  embed: vi.fn(async () => {
+    throw new Error("no_key");
+  }),
   cosine: vi.fn(() => 0),
   LLMError: class extends Error {},
 }));
 vi.mock("@/lib/graph/build", () => ({ loadGraph: vi.fn(async () => null) }));
 vi.mock("@/lib/n8n", () => ({ triggerWorkflow: vi.fn(async () => false) }));
-vi.mock("octokit", () => ({ Octokit: class { request = vi.fn(async () => { throw new Error("no network"); }); } }));
+vi.mock("octokit", () => ({
+  Octokit: class {
+    request = vi.fn(async () => {
+      throw new Error("no network");
+    });
+  },
+}));
 // Spies: approval-gated tools must never reach these over MCP.
 vi.mock("@/lib/community/projects", () => ({ startPodProject: h.startPodProject }));
 vi.mock("@/lib/community/help", () => ({ createHelpRequest: h.createHelpRequest }));
-vi.mock("@/lib/agents/proof", async (orig) => ({ ...(await orig<typeof import("@/lib/agents/proof")>()), recordMergedPR: h.recordMergedPR }));
+vi.mock("@/lib/agents/proof", async (orig) => ({
+  ...(await orig<typeof import("@/lib/agents/proof")>()),
+  recordMergedPR: h.recordMergedPR,
+}));
 
 import { DELETE, GET, POST } from "./route";
 import { APPROVAL_TEXT, MCP_PROTOCOL_VERSION } from "@/lib/agents/tools/mcp";
@@ -24,11 +39,13 @@ import { TOOLS } from "@/lib/agents/tools/registry";
 import { testStore } from "@/tests/seededStore";
 
 const rpc = (body: unknown, headers: Record<string, string> = {}) =>
-  POST(new Request("http://localhost:3000/api/mcp", {
-    method: "POST",
-    headers: { "content-type": "application/json", accept: "application/json, text/event-stream", ...headers },
-    body: typeof body === "string" ? body : JSON.stringify(body),
-  }));
+  POST(
+    new Request("http://localhost:3000/api/mcp", {
+      method: "POST",
+      headers: { "content-type": "application/json", accept: "application/json, text/event-stream", ...headers },
+      body: typeof body === "string" ? body : JSON.stringify(body),
+    }),
+  );
 const call = (name: string, args: Record<string, unknown> = {}, headers?: Record<string, string>) =>
   rpc({ jsonrpc: "2.0", id: 7, method: "tools/call", params: { name, arguments: args } }, headers);
 
@@ -44,12 +61,18 @@ afterEach(() => {
 
 describe("POST /api/mcp · lifecycle", () => {
   it("initialize returns the protocol version, tools capability, server info and instructions", async () => {
-    const res = await rpc({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "test", version: "1" } } });
+    const res = await rpc({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "initialize",
+      params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "test", version: "1" } },
+    });
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toContain("application/json");
     const body = await res.json();
     expect(body).toMatchObject({
-      jsonrpc: "2.0", id: 1,
+      jsonrpc: "2.0",
+      id: 1,
       result: {
         protocolVersion: MCP_PROTOCOL_VERSION,
         capabilities: { tools: { listChanged: false } },

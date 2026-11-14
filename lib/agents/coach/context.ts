@@ -16,7 +16,10 @@ import { listMemory } from "./memory";
 
 export const CONTEXT_BUDGET = 1200;
 export type Facts = Record<string, string | number>;
-export interface StudentContext { text: string; facts: Facts }
+export interface StudentContext {
+  text: string;
+  facts: Facts;
+}
 
 const SAFE_ID = /^[a-z0-9][a-z0-9_-]*$/i;
 const pct = (x: number) => Math.round(x * 100);
@@ -55,16 +58,23 @@ export async function loadMap(userId: string, roleId: string): Promise<BridgeMap
 
 /** Gaps first by demand: status "gap" (nothing covers it yet), highest share of job ads first. */
 export function topGaps(map: BridgeMap | null, n = 3): BridgeNode[] {
-  return (map?.nodes ?? []).filter((x) => x.status === "gap" && x.demand > 0).sort((a, b) => b.demand - a.demand).slice(0, n);
+  return (map?.nodes ?? [])
+    .filter((x) => x.status === "gap" && x.demand > 0)
+    .sort((a, b) => b.demand - a.demand)
+    .slice(0, n);
 }
 
 /** "no module covers it" / "your COMP2xxx2 module covers it in Year 2 · Semester 2" / … */
 export function coverageText(node: Pick<BridgeNode, "status" | "moduleCodes" | "upcomingLabel">): string {
   switch (node.status) {
-    case "gap": return "no module covers it";
-    case "degree-upcoming": return `your ${node.moduleCodes?.[0] ?? "degree"} module covers it${node.upcomingLabel ? ` in ${node.upcomingLabel}` : " later"}`;
-    case "degree-done": return "your degree already covers it";
-    case "proven": return "you've already proven it";
+    case "gap":
+      return "no module covers it";
+    case "degree-upcoming":
+      return `your ${node.moduleCodes?.[0] ?? "degree"} module covers it${node.upcomingLabel ? ` in ${node.upcomingLabel}` : " later"}`;
+    case "degree-done":
+      return "your degree already covers it";
+    case "proven":
+      return "you've already proven it";
   }
 }
 
@@ -97,7 +107,8 @@ function openWeek(roadmap: unknown, source: WeekPlan["source"]): WeekPlan | null
     week: Number.isFinite(w.week) ? w.week : 1,
     skillId: w.focusSkillId,
     skill: skillName(w.focusSkillId),
-    proof: typeof w.proof === "string" && w.proof.trim() ? w.proof.trim() : `Merge a PR that adds ${skillName(w.focusSkillId)} to your pod repo`,
+    proof:
+      typeof w.proof === "string" && w.proof.trim() ? w.proof.trim() : `Merge a PR that adds ${skillName(w.focusSkillId)} to your pod repo`,
     tasks: (Array.isArray(w.tasks) ? w.tasks : []).map((t) => ({ title: t.title, hours: t.hours, done: t.done })),
     source,
     receipt: w.receipt,
@@ -182,7 +193,9 @@ export async function buildStudentContext(userId: string): Promise<StudentContex
   if (map) {
     facts.readinessNowPct = pct(map.readinessNow);
     facts.readinessProjectedPct = pct(map.readinessProjected);
-    lines.push(`Readiness for ${role}: ${pct(map.readinessNow)}% now → ${pct(map.readinessProjected)}% projected${profile?.dna?.timelineLabel ? ` (goal: ${profile.dna.timelineLabel})` : ""}`);
+    lines.push(
+      `Readiness for ${role}: ${pct(map.readinessNow)}% now → ${pct(map.readinessProjected)}% projected${profile?.dna?.timelineLabel ? ` (goal: ${profile.dna.timelineLabel})` : ""}`,
+    );
     const gaps = topGaps(map);
     gaps.forEach((g, i) => {
       facts[`gap${i + 1}`] = skillName(g.skillId);
@@ -191,7 +204,9 @@ export async function buildStudentContext(userId: string): Promise<StudentContex
       facts[`gap${i + 1}Receipt`] = receiptLine(g, roleId);
     });
     if (gaps.length) {
-      lines.push(`Top gaps: ${gaps.map((g) => `${skillName(g.skillId)} ${pct(g.demand)}% of ads (${g.trend ?? "stable"}, ${coverageText(g)})`).join("; ")}`);
+      lines.push(
+        `Top gaps: ${gaps.map((g) => `${skillName(g.skillId)} ${pct(g.demand)}% of ads (${g.trend ?? "stable"}, ${coverageText(g)})`).join("; ")}`,
+      );
     }
     const proven = map.nodes.filter((x) => x.status === "proven").map((x) => skillName(x.skillId));
     if (proven.length) lines.push(`Proven: ${proven.slice(0, 6).join(", ")}`);
@@ -207,7 +222,11 @@ export async function buildStudentContext(userId: string): Promise<StudentContex
     const hours = week.tasks.reduce((a, t) => a + (Number(t.hours) || 0), 0);
     if (hours) facts.weekHours = hours;
     if (week.receipt?.demandPct !== undefined) facts.weekDemandPct = week.receipt.demandPct;
-    const tasks = week.tasks.filter((t) => !t.done).slice(0, 3).map((t) => t.title).join(" · ");
+    const tasks = week.tasks
+      .filter((t) => !t.done)
+      .slice(0, 3)
+      .map((t) => t.title)
+      .join(" · ");
     lines.push(`This week (Week ${week.week}): focus ${week.skill}. Proof: ${week.proof}${tasks ? `. Tasks: ${tasks}` : ""}`);
   }
 
@@ -227,7 +246,9 @@ export async function buildStudentContext(userId: string): Promise<StudentContex
         facts.nextIssueIndex = mineIdx;
         facts.nextIssue = issues[mineIdx].title;
       }
-      lines.push(`Pod: ${pod.name}, ${pod.members.length} members, project "${pod.project.title}", ${merged.length}/${issues.length} issues merged${mineIdx >= 0 ? `; your next issue: "${issues[mineIdx].title}"` : ""}`);
+      lines.push(
+        `Pod: ${pod.name}, ${pod.members.length} members, project "${pod.project.title}", ${merged.length}/${issues.length} issues merged${mineIdx >= 0 ? `; your next issue: "${issues[mineIdx].title}"` : ""}`,
+      );
     } else {
       lines.push(`Pod: ${pod.name}, ${pod.members.length} members, no project yet (start_pod_project)`);
     }
@@ -246,7 +267,14 @@ export async function buildStudentContext(userId: string): Promise<StudentContex
 
   // memory (stored user text: data, never instructions)
   facts.memoryNotes = memory.length;
-  const memLine = memory.length ? `Memory: ${untrusted(memory.slice(0, 3).map((m) => `${m.kind}: ${m.text}`).join("; "))}` : "";
+  const memLine = memory.length
+    ? `Memory: ${untrusted(
+        memory
+          .slice(0, 3)
+          .map((m) => `${m.kind}: ${m.text}`)
+          .join("; "),
+      )}`
+    : "";
 
   let text = lines.join("\n");
   const room = CONTEXT_BUDGET - text.length - 1;

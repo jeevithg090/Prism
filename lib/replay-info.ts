@@ -37,7 +37,13 @@ export function formatReplayTime(iso: string | undefined): string | null {
   if (!iso) return null;
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return null;
-  return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/London" }).format(d);
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/London",
+  }).format(d);
 }
 
 /** One plain line for the UI: "Replayed from a real run · gpt-4.1-mini · 7 Nov, 15:20". */
@@ -68,8 +74,12 @@ export function replayInfoOf(json: unknown): ReplayInfo | null {
   if (r.mode !== "demo" && r.mode !== "live") return null;
   if (!["replayed", "live", "template", "mixed"].includes(String(r.source))) return null;
   return {
-    mode: r.mode, source: r.source as ReplaySource,
-    replayed: Number(r.replayed) || 0, recorded: Number(r.recorded) || 0, live: Number(r.live) || 0, missed: Number(r.missed) || 0,
+    mode: r.mode,
+    source: r.source as ReplaySource,
+    replayed: Number(r.replayed) || 0,
+    recorded: Number(r.recorded) || 0,
+    live: Number(r.live) || 0,
+    missed: Number(r.missed) || 0,
     ...(typeof r.recordedAt === "string" ? { recordedAt: r.recordedAt } : {}),
     ...(typeof r.model === "string" ? { model: r.model } : {}),
     ...(r.similar ? { similar: true } : {}),

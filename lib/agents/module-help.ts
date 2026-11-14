@@ -35,11 +35,7 @@ export type ModuleHelpInput = {
 };
 
 /** Find students (not the viewer) who have proven a skill tied to a module code or concept. */
-export async function suggestHelpersForModule(
-  userId: string,
-  roleId: string,
-  moduleCodeOrConcept: string,
-): Promise<SkillHelp[]> {
+export async function suggestHelpersForModule(userId: string, roleId: string, moduleCodeOrConcept: string): Promise<SkillHelp[]> {
   try {
     if (!userId || !roleId || !moduleCodeOrConcept?.trim()) return [];
 
@@ -50,11 +46,7 @@ export async function suggestHelpersForModule(
     const qLower = q.toLowerCase();
 
     // Match nodes whose moduleCodes include the code, or whose skill name matches the concept.
-    const matched = map.nodes.filter(
-      (n) =>
-        n.moduleCodes.some((c) => c.toLowerCase() === qLower) ||
-        n.name.toLowerCase().includes(qLower),
-    );
+    const matched = map.nodes.filter((n) => n.moduleCodes.some((c) => c.toLowerCase() === qLower) || n.name.toLowerCase().includes(qLower));
     if (!matched.length) return [];
 
     const skills: { skillId: string; name: string; moduleCode: string }[] = [];

@@ -33,14 +33,14 @@ export default function TrajectoriesPage() {
     queryFn: () => apiGet<Similar[]>(`/api/trajectories/similar?userId=${encodeURIComponent(viewerId)}&limit=6${q ? `&${q}` : ""}`),
   });
 
-  const ask = React.useCallback((t: Trajectory) => { setAsking(t); setDialogOpen(true); }, []);
+  const ask = React.useCallback((t: Trajectory) => {
+    setAsking(t);
+    setDialogOpen(true);
+  }, []);
 
   return (
     <div className="space-y-8">
-      <PageHeader
-        title="Trajectories"
-        subtitle="Near-peer mentoring: see how students before you got where you want to go."
-      />
+      <PageHeader title="Trajectories" subtitle="Near-peer mentoring: see how students before you got where you want to go." />
 
       {all.isPending ? (
         <div aria-busy="true">
@@ -59,7 +59,11 @@ export default function TrajectoriesPage() {
           icon={Milestone}
           title="No journeys yet"
           body="Seniors can share theirs from their passport. Until then, you can explore demo journeys."
-          action={<Button size="lg" onClick={() => setDemo(true)}>Show demo journeys</Button>}
+          action={
+            <Button size="lg" onClick={() => setDemo(true)}>
+              Show demo journeys
+            </Button>
+          }
         />
       ) : (
         <JourneySankey trajectories={all.data} />
@@ -70,7 +74,12 @@ export default function TrajectoriesPage() {
         {similar.isPending ? (
           <div className="relative flex gap-6 overflow-hidden" aria-busy="true">
             <span className="sr-only">Finding students like you…</span>
-            {[0, 1, 2].map((i) => <Skeleton key={i} className="h-[440px] w-[85%] max-w-[360px] shrink-0 rounded-2xl sm:w-[340px] lg:w-auto lg:max-w-none lg:flex-1" />)}
+            {[0, 1, 2].map((i) => (
+              <Skeleton
+                key={i}
+                className="h-[440px] w-[85%] max-w-[360px] shrink-0 rounded-2xl sm:w-[340px] lg:w-auto lg:max-w-none lg:flex-1"
+              />
+            ))}
           </div>
         ) : similar.isError ? (
           <ErrorState
@@ -90,12 +99,7 @@ export default function TrajectoriesPage() {
         )}
       </section>
 
-      <AskChatDialog
-        trajectory={asking}
-        viewerId={viewerId}
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-      />
+      <AskChatDialog trajectory={asking} viewerId={viewerId} open={dialogOpen} onOpenChange={setDialogOpen} />
     </div>
   );
 }
@@ -104,7 +108,9 @@ function StudentsLikeYouHeader({ isDemo }: { isDemo: boolean }) {
   return (
     <div className="min-w-0">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <h2 id="like-you-title" className="text-xl font-semibold text-foreground">Students like you</h2>
+        <h2 id="like-you-title" className="text-xl font-semibold text-foreground">
+          Students like you
+        </h2>
         {isDemo && <DemoDataNote />}
       </div>
       <p className="mt-1 max-w-[62ch] text-pretty text-muted-foreground">
@@ -128,10 +134,7 @@ function CardRow({ items, onAsk }: { items: Similar[]; onAsk: (t: Trajectory) =>
         className="relative flex snap-x snap-mandatory gap-4 overflow-x-auto rounded-2xl pb-3 outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring lg:grid lg:grid-cols-[repeat(3,minmax(0,1fr))] lg:items-start lg:gap-6 lg:overflow-visible lg:pb-0"
       >
         {items.map(({ trajectory, similarity }) => (
-          <div
-            key={trajectory.id}
-            className="w-[85%] max-w-[360px] shrink-0 snap-start sm:w-[340px] lg:w-auto lg:max-w-none"
-          >
+          <div key={trajectory.id} className="w-[85%] max-w-[360px] shrink-0 snap-start sm:w-[340px] lg:w-auto lg:max-w-none">
             <TrajectoryCard trajectory={trajectory} similarity={similarity} onAsk={onAsk} showDemoNote={false} />
           </div>
         ))}

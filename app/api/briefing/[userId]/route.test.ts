@@ -9,7 +9,10 @@ vi.mock("@/lib/store", () => ({
   getStore: () => ({
     get: async (c: string, id: string) => structuredClone(h.docs.get(`${c}/${id}`) ?? null),
     list: async (c: string) => [...h.docs.entries()].filter(([k]) => k.startsWith(`${c}/`)).map(([, d]) => structuredClone(d)),
-    upsert: async (c: string, id: string, doc: unknown) => { h.docs.set(`${c}/${id}`, doc); return doc; },
+    upsert: async (c: string, id: string, doc: unknown) => {
+      h.docs.set(`${c}/${id}`, doc);
+      return doc;
+    },
     remove: async () => {},
   }),
 }));
@@ -31,7 +34,9 @@ beforeEach(() => {
   h.docs.set("profiles/priya", { id: "priya", name: "Priya Shah" });
   h.docs.set("pods/pod_demo01", structuredClone(podFixture));
 });
-afterEach(() => { process.env = { ...env }; });
+afterEach(() => {
+  process.env = { ...env };
+});
 
 describe("fixtures", () => {
   it("parse with their schemas", () => {
@@ -61,7 +66,7 @@ describe("GET /api/briefing/[userId]", () => {
     expect(data.script).toContain("up 18%");
     expect(data.script).toContain("Pod Orbit");
     // Market moves come from whichever market/trend data is present (now the real trends fixture).
-    expect(data.marketMoves.join(' ')).toMatch(/\d+%/);
+    expect(data.marketMoves.join(" ")).toMatch(/\d+%/);
     expect(h.llmText).not.toHaveBeenCalled();
   });
 });

@@ -28,29 +28,46 @@ export function PassportSkeleton() {
   return (
     <div role="status" aria-label="Loading the Skill Passport" className="space-y-8">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div className="space-y-3"><Skeleton className="h-10 w-64" /><Skeleton className="h-5 w-full max-w-xl" /></div>
+        <div className="space-y-3">
+          <Skeleton className="h-10 w-64" />
+          <Skeleton className="h-5 w-full max-w-xl" />
+        </div>
         <Skeleton className="h-11 w-36 rounded-xl" />
       </div>
       <div className="grid gap-6 rounded-2xl border bg-card p-6 shadow-sm md:grid-cols-[minmax(0,1fr)_auto]">
         <div className="space-y-5">
           <div className="flex items-center gap-4">
             <Skeleton className="size-16 shrink-0 rounded-full" />
-            <div className="flex-1 space-y-2"><Skeleton className="h-8 w-56 max-w-full" /><Skeleton className="h-6 w-72 max-w-full" /></div>
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-8 w-56 max-w-full" />
+              <Skeleton className="h-6 w-72 max-w-full" />
+            </div>
           </div>
-          <div className="grid gap-4 border-t pt-5 sm:grid-cols-3">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-11 w-full" />)}</div>
+          <div className="grid gap-4 border-t pt-5 sm:grid-cols-3">
+            {[0, 1, 2].map((i) => (
+              <Skeleton key={i} className="h-11 w-full" />
+            ))}
+          </div>
         </div>
         <Skeleton className="h-40 w-full rounded-xl md:w-72" />
       </div>
       <div className="space-y-4 rounded-2xl border bg-card p-6 shadow-sm">
         <Skeleton className="h-7 w-48" />
-        {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-14 w-full rounded-xl" />)}
+        {[0, 1, 2, 3].map((i) => (
+          <Skeleton key={i} className="h-14 w-full rounded-xl" />
+        ))}
       </div>
     </div>
   );
 }
 
 function initials(name: string) {
-  return name.split(/\s+/).map((w) => w.charAt(0)).slice(0, 2).join("").toUpperCase();
+  return name
+    .split(/\s+/)
+    .map((w) => w.charAt(0))
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 }
 
 /** The passport page itself: who, what they study, the verified stamp, and readiness for the role they want. */
@@ -63,15 +80,23 @@ function PassportHeader({ p }: { p: Passport }) {
           <div className="flex min-w-0 items-start gap-4">
             <Avatar className="size-16 shrink-0">
               {p.avatarUrl && <AvatarImage src={p.avatarUrl} alt={`${p.name}'s avatar`} />}
-              <AvatarFallback className="bg-muted text-xl font-semibold text-foreground" aria-hidden>{initials(p.name)}</AvatarFallback>
+              <AvatarFallback className="bg-muted text-xl font-semibold text-foreground" aria-hidden>
+                {initials(p.name)}
+              </AvatarFallback>
             </Avatar>
             <div className="min-w-0 space-y-2">
-              <h2 id="passport-name" className="text-2xl font-semibold text-balance break-words text-foreground md:text-3xl">{p.name}</h2>
+              <h2 id="passport-name" className="text-2xl font-semibold text-balance break-words text-foreground md:text-3xl">
+                {p.name}
+              </h2>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                 <VerifiedStamp />
                 {badges.length > 0 && (
                   <ul aria-label="Badges" className="flex flex-wrap gap-2">
-                    {badges.map((b) => <li key={b}><BadgePill badge={b as BadgeId} /></li>)}
+                    {badges.map((b) => (
+                      <li key={b}>
+                        <BadgePill badge={b as BadgeId} />
+                      </li>
+                    ))}
                   </ul>
                 )}
               </div>
@@ -98,10 +123,16 @@ function PassportHeader({ p }: { p: Passport }) {
         </div>
         {typeof p.readinessNow === "number" && (
           <div className="flex items-center gap-4 rounded-xl bg-muted p-4">
-            <ReadinessRing value={p.readinessNow} projected={p.readinessProjected} label={`${p.roleName ?? "Target role"} readiness`} className="md:size-32" />
+            <ReadinessRing
+              value={p.readinessNow}
+              projected={p.readinessProjected}
+              label={`${p.roleName ?? "Target role"} readiness`}
+              className="md:size-32"
+            />
             {typeof p.readinessProjected === "number" && (
               <p className="max-w-[16ch] text-sm text-pretty text-muted-foreground">
-                <span className="font-mono font-medium text-foreground tabular-nums">{Math.round(p.readinessProjected * 100)}%</span> projected with the roadmap
+                <span className="font-mono font-medium text-foreground tabular-nums">{Math.round(p.readinessProjected * 100)}%</span>{" "}
+                projected with the roadmap
               </p>
             )}
           </div>
@@ -146,7 +177,8 @@ export function PassportView({ userId }: { userId: string }) {
         description: r.isPublic ? "Anyone with the link can see your verified skills." : "Only you can see it now.",
       });
     },
-    onError: (e) => toast.error("We couldn't change who sees your passport", { description: e instanceof Error ? e.message : "Try again in a moment." }),
+    onError: (e) =>
+      toast.error("We couldn't change who sees your passport", { description: e instanceof Error ? e.message : "Try again in a moment." }),
   });
 
   if (!demo && q.isPending) return <PassportSkeleton />;
@@ -156,8 +188,16 @@ export function PassportView({ userId }: { userId: string }) {
       return (
         <>
           <PageHeader title="Skill Passport" subtitle={SUBTITLE} />
-          <EmptyState icon={Lock} title="This passport is private" body={`${err.message} Passports are private until their owner opts in.`}
-            action={<Link href="/dashboard" className={cn(buttonVariants({ size: "lg" }), "active:translate-y-px")}>Back to your dashboard</Link>} />
+          <EmptyState
+            icon={Lock}
+            title="This passport is private"
+            body={`${err.message} Passports are private until their owner opts in.`}
+            action={
+              <Link href="/dashboard" className={cn(buttonVariants({ size: "lg" }), "active:translate-y-px")}>
+                Back to your dashboard
+              </Link>
+            }
+          />
         </>
       );
     }
@@ -165,8 +205,16 @@ export function PassportView({ userId }: { userId: string }) {
       return (
         <>
           <PageHeader title="Skill Passport" subtitle={SUBTITLE} />
-          <EmptyState icon={UserX} title="We couldn't find this passport" body="Check the link, or ask for a new one."
-            action={<Link href="/dashboard" className={cn(buttonVariants({ size: "lg" }), "active:translate-y-px")}>Back to your dashboard</Link>} />
+          <EmptyState
+            icon={UserX}
+            title="We couldn't find this passport"
+            body="Check the link, or ask for a new one."
+            action={
+              <Link href="/dashboard" className={cn(buttonVariants({ size: "lg" }), "active:translate-y-px")}>
+                Back to your dashboard
+              </Link>
+            }
+          />
         </>
       );
     }
@@ -177,7 +225,10 @@ export function PassportView({ userId }: { userId: string }) {
           title="We couldn't load this passport"
           body="That's on us, not you. The evidence is safe."
           onRetry={() => void q.refetch()}
-          onUseDemo={() => { setDemo(DEMO_PASSPORT); toast("Showing the demo passport"); }}
+          onUseDemo={() => {
+            setDemo(DEMO_PASSPORT);
+            toast("Showing the demo passport");
+          }}
         />
       </>
     );
@@ -207,8 +258,12 @@ export function PassportView({ userId }: { userId: string }) {
       <PassportHeader p={p} />
       <VerifiedSkills skills={p.skills} isOwner={p.isOwner} moduleTitles={moduleTitles} />
       <div className="grid gap-6 lg:grid-cols-3 lg:items-start">
-        <div className="min-w-0 lg:col-span-2"><BuildLog userId={p.userId} /></div>
-        <div className="min-w-0 lg:sticky lg:top-[calc(var(--topbar-height)+1.5rem)]"><MomentumWidget userId={p.userId} /></div>
+        <div className="min-w-0 lg:col-span-2">
+          <BuildLog userId={p.userId} />
+        </div>
+        <div className="min-w-0 lg:sticky lg:top-[calc(var(--topbar-height)+1.5rem)]">
+          <MomentumWidget userId={p.userId} />
+        </div>
       </div>
     </div>
   );

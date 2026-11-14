@@ -6,7 +6,8 @@ const db = vi.hoisted(() => ({ rows: {} as Record<string, { doc: unknown; userId
 vi.mock("@/lib/store", () => ({
   getStore: () => ({
     get: async () => null,
-    list: async (c: string, f?: { userId?: string }) => (db.rows[c] ?? []).filter((r) => !f?.userId || r.userId === f.userId).map((r) => r.doc),
+    list: async (c: string, f?: { userId?: string }) =>
+      (db.rows[c] ?? []).filter((r) => !f?.userId || r.userId === f.userId).map((r) => r.doc),
     upsert: async () => undefined,
     remove: async () => undefined,
   }),

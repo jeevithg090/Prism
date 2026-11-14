@@ -10,7 +10,7 @@ export async function POST(req: Request) {
   try {
     body = await req.json();
   } catch {
-    return badRequest("Body must be JSON like {\"podId\":\"pod_demo01\",\"issueIndex\":0}");
+    return badRequest('Body must be JSON like {"podId":"pod_demo01","issueIndex":0}');
   }
   const parsed = ProjectMergeReqZ.safeParse(body);
   if (!parsed.success) return badRequest(parsed.error);

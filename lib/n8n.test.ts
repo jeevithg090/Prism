@@ -12,7 +12,9 @@ beforeEach(() => {
   process.env.N8N_WEBHOOK_BASE_URL = "https://n8n.test/webhook/";
   process.env.KEYSTONE_SHARED_SECRET = "s3cret";
 });
-afterEach(() => { process.env = { ...env }; });
+afterEach(() => {
+  process.env = { ...env };
+});
 
 describe("triggerWorkflow", () => {
   it("posts to ${base}/pod-kickoff with the shared secret and returns true on 200", async () => {
@@ -23,7 +25,9 @@ describe("triggerWorkflow", () => {
     expect((init.headers as Record<string, string>)["x-keystone-secret"]).toBe("s3cret");
     expect(JSON.parse(String(init.body))).toMatchObject({ podId: "pod_demo01" });
     expect(init.signal).toBeInstanceOf(AbortSignal);
-    expect(emit).toHaveBeenCalledWith(expect.objectContaining({ runId: "run_1", agent: "n8n", status: "done", message: "triggered pod-kickoff" }));
+    expect(emit).toHaveBeenCalledWith(
+      expect.objectContaining({ runId: "run_1", agent: "n8n", status: "done", message: "triggered pod-kickoff" }),
+    );
   });
   it("returns false on a non-2xx, a throw or a timeout", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response("no", { status: 500 }));
@@ -41,7 +45,9 @@ describe("triggerWorkflow", () => {
     expect(emit).toHaveBeenCalledWith(expect.objectContaining({ status: "progress" }));
   });
   it("knows the six workflow names", () => {
-    expect(["market-refresh", "monday-briefing", "pod-kickoff", "pod-nudge", "opportunity-watcher", "newcomer-welcome"].every(isWorkflowName)).toBe(true);
+    expect(
+      ["market-refresh", "monday-briefing", "pod-kickoff", "pod-nudge", "opportunity-watcher", "newcomer-welcome"].every(isWorkflowName),
+    ).toBe(true);
     expect(isWorkflowName("rm-rf")).toBe(false);
   });
 });

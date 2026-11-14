@@ -14,7 +14,11 @@ async function handlePOST(req: Request) {
   let runId: string | undefined;
   try {
     let body: unknown;
-    try { body = await req.json(); } catch { return badRequest("Send a JSON body with a userId."); }
+    try {
+      body = await req.json();
+    } catch {
+      return badRequest("Send a JSON body with a userId.");
+    }
     const parsed = RoadmapGenerateReqZ.safeParse(body);
     if (!parsed.success) return badRequest(parsed.error);
     const { userId } = parsed.data;
@@ -33,12 +37,21 @@ async function handlePOST(req: Request) {
     const demo = process.env.DEMO_MODE === "true";
     const [previous, pod] = await Promise.all([loadRoadmap(userId, roleId), podFor(userId)]);
     const roadmap = await generateRoadmap({
-      profile, map, pod, previous, runId,
-      programme: programmeFixture(profile.programmeId), roleDemand: marketFixture(roleId), trends: trendsFixture(),
-      polish: !demo, template: demo ? roadmapFixture(userId, roleId) : null,
+      profile,
+      map,
+      pod,
+      previous,
+      runId,
+      programme: programmeFixture(profile.programmeId),
+      roleDemand: marketFixture(roleId),
+      trends: trendsFixture(),
+      polish: !demo,
+      template: demo ? roadmapFixture(userId, roleId) : null,
     });
     emit({
-      runId, agent: "orchestrator", status: "done",
+      runId,
+      agent: "orchestrator",
+      status: "done",
       message: `Roadmap v${roadmap.version} ready · readiness ${pct(roadmap.readinessNow)} → ${pct(roadmap.readinessProjected)}`,
       data: { readinessNow: roadmap.readinessNow, readinessProjected: roadmap.readinessProjected, version: roadmap.version },
     });

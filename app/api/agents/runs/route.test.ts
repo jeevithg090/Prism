@@ -25,7 +25,11 @@ describe("GET /api/agents/runs", () => {
 
     const all = await (await get()).json();
     expect(all.ok).toBe(true);
-    expect(all.data.map((e: { agent: string; runId: string }) => `${e.runId}:${e.agent}`)).toEqual(["run_2:matchmaker", "run_1:guides", "run_1:matchmaker"]);
+    expect(all.data.map((e: { agent: string; runId: string }) => `${e.runId}:${e.agent}`)).toEqual([
+      "run_2:matchmaker",
+      "run_1:guides",
+      "run_1:matchmaker",
+    ]);
     expect(all.data[0]).toMatchObject({ status: "ok", usedFallback: false, purpose: "Form a pod", guardrails: [] });
 
     const byRun = await (await get("?runId=run_1")).json();

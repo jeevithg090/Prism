@@ -9,7 +9,7 @@ async function handlePOST(req: Request) {
   try {
     body = await req.json();
   } catch {
-    return badRequest("Request body must be JSON like {\"userId\":\"aisha\"}.");
+    return badRequest('Request body must be JSON like {"userId":"aisha"}.');
   }
   const parsed = PodMatchReqZ.safeParse(body);
   if (!parsed.success) return badRequest(parsed.error);

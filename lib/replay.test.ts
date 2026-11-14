@@ -5,13 +5,31 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 
 const create = vi.fn();
-vi.mock("openai", () => ({ default: class { chat = { completions: { create } }; embeddings = { create: vi.fn() }; } }));
+vi.mock("openai", () => ({
+  default: class {
+    chat = { completions: { create } };
+    embeddings = { create: vi.fn() };
+  },
+}));
 const emit = vi.fn();
 vi.mock("@/lib/agents/events", () => ({ emit }));
 
 import {
-  canonicalJSON, defaultRunMode, fillFromCookieHeader, hasRecording, listRecordings, looseReplayKey, modeFromCookieHeader, normaliseVolatile, replayKey,
-  replayOrRecord, replayOrRecordBinary, replayStats, strictFromCookieHeader, withReplayInfo, withReplayTrace,
+  canonicalJSON,
+  defaultRunMode,
+  fillFromCookieHeader,
+  hasRecording,
+  listRecordings,
+  looseReplayKey,
+  modeFromCookieHeader,
+  normaliseVolatile,
+  replayKey,
+  replayOrRecord,
+  replayOrRecordBinary,
+  replayStats,
+  strictFromCookieHeader,
+  withReplayInfo,
+  withReplayTrace,
 } from "./replay";
 import { replayInfoOf, replayNoteText } from "./replay-info";
 
@@ -37,8 +55,14 @@ const files = (dir: string) => (fs.existsSync(dir) ? fs.readdirSync(dir) : []);
 
 describe("replay keys", () => {
   it("ignore ISO timestamps, run ids, dates, times, random ids and durations", () => {
-    const a = { user: "Run run_a1B2c3D4e5 at 2026-11-07T14:02:11.123Z (week of 2026-11-02, 7 Nov 2026, 14:02). Pod pod_x8Kd02Q. {\"durationMs\":812}", n: 3 };
-    const b = { n: 3, user: "Run run_Zz9Yy8Xx7w at 2026-12-01T09:15:00Z (week of 2026-11-30, 1 Dec 2026, 09:15). Pod pod_Q7mm3Pz. {\"durationMs\":40}" };
+    const a = {
+      user: 'Run run_a1B2c3D4e5 at 2026-11-07T14:02:11.123Z (week of 2026-11-02, 7 Nov 2026, 14:02). Pod pod_x8Kd02Q. {"durationMs":812}',
+      n: 3,
+    };
+    const b = {
+      n: 3,
+      user: 'Run run_Zz9Yy8Xx7w at 2026-12-01T09:15:00Z (week of 2026-11-30, 1 Dec 2026, 09:15). Pod pod_Q7mm3Pz. {"durationMs":40}',
+    };
     expect(replayKey(a)).toBe(replayKey(b));
     expect(replayKey(a)).toMatch(/^[a-f0-9]{64}$/);
     expect(replayKey({ user: "Why Docker?" })).not.toBe(replayKey({ user: "Find me a pod" }));
@@ -75,12 +99,19 @@ describe("replay keys", () => {
 describe("replayOrRecord", () => {
   it("live mode calls fn and records {key, ns, recordedAt, meta, value}", async () => {
     const fn = vi.fn(async () => ({ answer: "Learn Docker" }));
-    const out = await replayOrRecord("llm", { user: "Why Docker?" }, fn, { meta: { agent: "orchestrator", schemaName: "coach_step", model: "gpt-4.1-mini" } });
+    const out = await replayOrRecord("llm", { user: "Why Docker?" }, fn, {
+      meta: { agent: "orchestrator", schemaName: "coach_step", model: "gpt-4.1-mini" },
+    });
     expect(out).toEqual({ answer: "Learn Docker" });
     expect(fn).toHaveBeenCalledTimes(1);
     const key = replayKey({ user: "Why Docker?" });
     const rec = JSON.parse(fs.readFileSync(path.join(bundle, "llm", `${key}.json`), "utf8"));
-    expect(rec).toMatchObject({ key, ns: "llm", meta: { agent: "orchestrator", schemaName: "coach_step", model: "gpt-4.1-mini" }, value: { answer: "Learn Docker" } });
+    expect(rec).toMatchObject({
+      key,
+      ns: "llm",
+      meta: { agent: "orchestrator", schemaName: "coach_step", model: "gpt-4.1-mini" },
+      value: { answer: "Learn Docker" },
+    });
     expect(Date.parse(rec.recordedAt)).not.toBeNaN();
   });
 
@@ -108,7 +139,9 @@ describe("replayOrRecord", () => {
   it("a demo miss without the key throws not_recorded so the caller's fallback runs", async () => {
     vi.stubEnv("KEYSTONE_DEFAULT_MODE", "demo");
     const fn = vi.fn(async () => ["x"]);
-    await expect(replayOrRecord("firecrawl", { op: "search", query: "never recorded" }, fn, { requires: ["FIRECRAWL_API_KEY"] })).rejects.toThrow("not_recorded");
+    await expect(
+      replayOrRecord("firecrawl", { op: "search", query: "never recorded" }, fn, { requires: ["FIRECRAWL_API_KEY"] }),
+    ).rejects.toThrow("not_recorded");
     expect(fn).not.toHaveBeenCalled();
   });
 
@@ -116,7 +149,9 @@ describe("replayOrRecord", () => {
     vi.stubEnv("KEYSTONE_DEFAULT_MODE", "demo");
     vi.stubEnv("FIRECRAWL_API_KEY", "fc-test");
     const fn = vi.fn(async () => [{ url: "https://example.com", title: "Example" }]);
-    await expect(replayOrRecord("firecrawl", { op: "search", query: "q" }, fn, { requires: ["FIRECRAWL_API_KEY"] })).resolves.toHaveLength(1);
+    await expect(replayOrRecord("firecrawl", { op: "search", query: "q" }, fn, { requires: ["FIRECRAWL_API_KEY"] })).resolves.toHaveLength(
+      1,
+    );
     expect(fn).toHaveBeenCalledTimes(1);
     expect(hasRecording("firecrawl", { op: "search", query: "q" })).toBe(true);
   });
@@ -126,8 +161,12 @@ describe("replayOrRecord", () => {
     vi.stubEnv("KEYSTONE_DEFAULT_MODE", "demo");
     await expect(replayOrRecord("llm", { user: "You are 41% ready" }, async () => "live")).resolves.toBe("recorded at 38%");
     const offline = { requires: ["OPENAI_API_KEY"] }; // unset here, so a miss can't call live
-    await expect(replayOrRecord("llm", { user: "You are 41% ready" }, async () => "live", { ...offline, loose: false })).rejects.toThrow("not_recorded");
-    await expect(replayOrRecord("llm", { user: "You are 38% ready" }, async () => "live", { ...offline, validate: () => false })).rejects.toThrow("not_recorded");
+    await expect(replayOrRecord("llm", { user: "You are 41% ready" }, async () => "live", { ...offline, loose: false })).rejects.toThrow(
+      "not_recorded",
+    );
+    await expect(
+      replayOrRecord("llm", { user: "You are 38% ready" }, async () => "live", { ...offline, validate: () => false }),
+    ).rejects.toThrow("not_recorded");
   });
 
   it("strict Demo (KEYSTONE_REPLAY_STRICT) never calls live, even with the key, and reports the miss", async () => {
@@ -136,7 +175,9 @@ describe("replayOrRecord", () => {
     vi.stubEnv("FIRECRAWL_API_KEY", "fc-test");
     const fn = vi.fn(async () => ["live"]);
     const onMiss = vi.fn();
-    const traced = withReplayTrace(() => replayOrRecord("firecrawl", { op: "search", query: "strict" }, fn, { requires: ["FIRECRAWL_API_KEY"], onMiss }));
+    const traced = withReplayTrace(() =>
+      replayOrRecord("firecrawl", { op: "search", query: "strict" }, fn, { requires: ["FIRECRAWL_API_KEY"], onMiss }),
+    );
     await expect(traced).rejects.toThrow("not_recorded");
     expect(fn).not.toHaveBeenCalled();
     expect(onMiss).toHaveBeenCalledWith(false);
@@ -154,25 +195,44 @@ describe("replayOrRecord", () => {
   });
 
   it("an alt key replays the same question recorded in another app state, only in Demo and only as a last resort", async () => {
-    await replayOrRecord("llm", { system: "pod: none", user: "Find me a pod" }, async () => "recorded before the pod", { alt: { user: "Find me a pod" } });
+    await replayOrRecord("llm", { system: "pod: none", user: "Find me a pod" }, async () => "recorded before the pod", {
+      alt: { user: "Find me a pod" },
+    });
     vi.stubEnv("KEYSTONE_DEFAULT_MODE", "demo");
     const offline = { requires: ["OPENAI_API_KEY"] };
     const traced = await withReplayTrace(() =>
-      replayOrRecord("llm", { system: "pod: Pod Orbit, 2 merged", user: "Find me a pod" }, async () => "live", { ...offline, alt: { user: "Find me a pod" } }));
+      replayOrRecord("llm", { system: "pod: Pod Orbit, 2 merged", user: "Find me a pod" }, async () => "live", {
+        ...offline,
+        alt: { user: "Find me a pod" },
+      }),
+    );
     expect(traced.value).toBe("recorded before the pod");
     expect(traced.events[0]).toMatchObject({ kind: "replayed", match: "alt" });
-    await expect(replayOrRecord("llm", { system: "pod: Pod Orbit", user: "Find me a pod" }, async () => "live", offline)).rejects.toThrow("not_recorded");
-    await expect(replayOrRecord("llm", { system: "x", user: "Why Docker?" }, async () => "live", { ...offline, alt: { user: "Why Docker?" } })).rejects.toThrow("not_recorded");
+    await expect(replayOrRecord("llm", { system: "pod: Pod Orbit", user: "Find me a pod" }, async () => "live", offline)).rejects.toThrow(
+      "not_recorded",
+    );
+    await expect(
+      replayOrRecord("llm", { system: "x", user: "Why Docker?" }, async () => "live", { ...offline, alt: { user: "Why Docker?" } }),
+    ).rejects.toThrow("not_recorded");
   });
 
   it("withReplayInfo adds where the answer came from to a JSON envelope and the x-keystone-replay header", async () => {
     await replayOrRecord("llm", { user: "Plan my week" }, async () => "real plan", { meta: { model: "gpt-4.1-mini" } });
     vi.stubEnv("KEYSTONE_DEFAULT_MODE", "demo");
-    const route = withReplayInfo(async (q: string) => Response.json({ ok: true, data: await replayOrRecord("llm", { user: q }, async () => "live", { requires: ["OPENAI_API_KEY"] }).catch(() => "template") }));
+    const route = withReplayInfo(async (q: string) =>
+      Response.json({
+        ok: true,
+        data: await replayOrRecord("llm", { user: q }, async () => "live", { requires: ["OPENAI_API_KEY"] }).catch(() => "template"),
+      }),
+    );
     const hit = await route("Plan my week");
     expect(hit.headers.get("x-keystone-replay")).toBe("replayed");
     const j = await hit.json();
-    expect(j).toMatchObject({ ok: true, data: "real plan", replay: { mode: "demo", source: "replayed", replayed: 1, missed: 0, model: "gpt-4.1-mini" } });
+    expect(j).toMatchObject({
+      ok: true,
+      data: "real plan",
+      replay: { mode: "demo", source: "replayed", replayed: 1, missed: 0, model: "gpt-4.1-mini" },
+    });
     expect(replayNoteText(replayInfoOf(j))).toMatch(/^Replayed from a real run · gpt-4\.1-mini · /);
     const miss = await route("Never recorded");
     expect(miss.headers.get("x-keystone-replay")).toBe("template");
@@ -256,7 +316,10 @@ describe("llm.ts through the replay store", () => {
     await expect(llm.llmJSON({ ...call, runId: "run_test02" })).resolves.toEqual({ skill: "docker" });
     expect(create).toHaveBeenCalledTimes(1);
     const msgs = emit.mock.calls.map(([e]) => e as { runId: string; message: string; data?: { replay?: boolean } });
-    expect(msgs.find((e) => e.runId === "run_test02")).toMatchObject({ message: expect.stringContaining("replayed from a real run"), data: { replay: true } });
+    expect(msgs.find((e) => e.runId === "run_test02")).toMatchObject({
+      message: expect.stringContaining("replayed from a real run"),
+      data: { replay: true },
+    });
   });
 
   it("a demo miss without a key still throws no_key, and DEMO_MODE=true never touches the store", async () => {

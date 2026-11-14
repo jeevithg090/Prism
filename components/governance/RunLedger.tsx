@@ -69,7 +69,11 @@ function Guardrails({ entry }: { entry: AgentRunEntry }) {
   if (!entry.guardrails.length) return <span className="text-sm text-muted-foreground">None needed</span>;
   return (
     <ul className="flex flex-wrap gap-1.5" aria-label="Guardrail results">
-      {entry.guardrails.map((g, i) => <li key={`${g.name}-${i}`} className="max-w-full"><GuardrailActionChip finding={g} /></li>)}
+      {entry.guardrails.map((g, i) => (
+        <li key={`${g.name}-${i}`} className="max-w-full">
+          <GuardrailActionChip finding={g} />
+        </li>
+      ))}
     </ul>
   );
 }
@@ -97,7 +101,9 @@ function Meta({ entry, count }: { entry: AgentRunEntry; count: number }) {
   return (
     <p className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-sm text-muted-foreground">
       <time dateTime={entry.startedAt}>{count > 1 && ago ? `Latest ${ago}` : ago}</time>
-      <span>Input <span className="font-mono">#{entry.inputDigest}</span></span>
+      <span>
+        Input <span className="font-mono">#{entry.inputDigest}</span>
+      </span>
       <Source entry={entry} />
     </p>
   );
@@ -117,10 +123,18 @@ export function RunLedger({ runs }: { runs: AgentRunEntry[] }) {
           <caption className="sr-only">Agent run ledger, newest first</caption>
           <thead className="text-sm text-muted-foreground">
             <tr className="border-b">
-              <th scope="col" className="w-48 py-3 pr-3 pl-6 font-medium">Agent</th>
-              <th scope="col" className="px-3 py-3 font-medium">Purpose</th>
-              <th scope="col" className="w-72 px-3 py-3 font-medium">Guardrails</th>
-              <th scope="col" className="w-52 py-3 pr-6 pl-3 font-medium">Human checkpoint</th>
+              <th scope="col" className="w-48 py-3 pr-3 pl-6 font-medium">
+                Agent
+              </th>
+              <th scope="col" className="px-3 py-3 font-medium">
+                Purpose
+              </th>
+              <th scope="col" className="w-72 px-3 py-3 font-medium">
+                Guardrails
+              </th>
+              <th scope="col" className="w-52 py-3 pr-6 pl-3 font-medium">
+                Human checkpoint
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -145,8 +159,12 @@ export function RunLedger({ runs }: { runs: AgentRunEntry[] }) {
                   <p className="text-base text-pretty text-foreground">{e.purpose}</p>
                   <Meta entry={e} count={count} />
                 </td>
-                <td className="px-3 py-4"><Guardrails entry={e} /></td>
-                <td className="py-4 pr-6 pl-3"><Checkpoint entry={e} /></td>
+                <td className="px-3 py-4">
+                  <Guardrails entry={e} />
+                </td>
+                <td className="py-4 pr-6 pl-3">
+                  <Checkpoint entry={e} />
+                </td>
               </tr>
             ))}
           </tbody>

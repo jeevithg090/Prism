@@ -19,7 +19,13 @@ export function demoPod(withProject = true): Pod {
     { title: "Add Docker support", assigneeUserId: "aisha", reviewerUserId: "priya", skillId: "docker", milestone: milestones[0] },
     { title: "Set up the Postgres schema", assigneeUserId: "mei", reviewerUserId: "tom", skillId: "sql", milestone: milestones[0] },
     { title: "CI pipeline with tests", assigneeUserId: "tom", reviewerUserId: "mei", skillId: "ci-cd", milestone: milestones[0] },
-    { title: "Fine-tune the captioning model", assigneeUserId: "aisha", reviewerUserId: "priya", skillId: "pytorch", milestone: milestones[1] },
+    {
+      title: "Fine-tune the captioning model",
+      assigneeUserId: "aisha",
+      reviewerUserId: "priya",
+      skillId: "pytorch",
+      milestone: milestones[1],
+    },
     { title: "Store captions in Postgres", assigneeUserId: "priya", reviewerUserId: "tom", skillId: "sql", milestone: milestones[1] },
     { title: "React demo page", assigneeUserId: "priya", reviewerUserId: "mei", skillId: "react", milestone: milestones[2] },
     { title: "Deploy to AWS", assigneeUserId: "mei", reviewerUserId: "tom", skillId: "aws", milestone: milestones[2] },
@@ -41,15 +47,39 @@ export function demoPod(withProject = true): Pod {
       { fromUserId: "aisha", toUserId: "mei", text: "Mei reviews your CI/CD; you review her Python." },
     ],
     project: withProject
-      ? { title: "VisionAid: accessible image captioning API", pitch: "An API that writes alt text for images.", milestones, issues, repoUrl: REPO }
+      ? {
+          title: "VisionAid: accessible image captioning API",
+          pitch: "An API that writes alt text for images.",
+          milestones,
+          issues,
+          repoUrl: REPO,
+        }
       : undefined,
   };
 }
 
 export function profile(id: string, name: string, extra: Partial<Profile> = {}): Profile {
   return {
-    id, name, programmeId: "uom-bsc-cs", year: 1, startedAt: "2026-09-21", badges: [], interests: [], availability: [],
-    dna: { targetRoles: ["ml-engineer"], timelineLabel: "", targetDate: "2027-09-01", hoursPerWeek: 6, theoryPractice: 50, formats: [], budget: "free", constraints: [], accessibility: [], language: "en" },
+    id,
+    name,
+    programmeId: "uom-bsc-cs",
+    year: 1,
+    startedAt: "2026-09-21",
+    badges: [],
+    interests: [],
+    availability: [],
+    dna: {
+      targetRoles: ["ml-engineer"],
+      timelineLabel: "",
+      targetDate: "2027-09-01",
+      hoursPerWeek: 6,
+      theoryPractice: 50,
+      formats: [],
+      budget: "free",
+      constraints: [],
+      accessibility: [],
+      language: "en",
+    },
     ...extra,
   };
 }

@@ -14,7 +14,7 @@ beforeEach(() => vi.clearAllMocks());
 afterEach(cleanup);
 
 describe("PodSummaryCard", () => {
-  it("shows \"You're not in a pod yet\" with a Find my pod link when the API returns []", async () => {
+  it('shows "You\'re not in a pod yet" with a Find my pod link when the API returns []', async () => {
     apiGet.mockImplementation(async (url: string) => (url.startsWith("/api/pods") ? [] : profileGet(url)));
     renderWithClient(<PodSummaryCard userId="aisha" />);
     expect(await screen.findByText("You're not in a pod yet")).toBeInTheDocument();

@@ -33,7 +33,10 @@ describe("llmJSON", () => {
   it("returns the structured-output result", async () => {
     const { llmJSON } = await fresh();
     create.mockResolvedValueOnce(reply('{"skill":"docker","weeks":2}'));
-    await expect(llmJSON({ agent: "roadmap", system: "s", user: "u", schema: Schema, schemaName: "plan" })).resolves.toEqual({ skill: "docker", weeks: 2 });
+    await expect(llmJSON({ agent: "roadmap", system: "s", user: "u", schema: Schema, schemaName: "plan" })).resolves.toEqual({
+      skill: "docker",
+      weeks: 2,
+    });
     expect(create.mock.calls[0][0].response_format.type).toBe("json_schema");
   });
 
@@ -43,7 +46,10 @@ describe("llmJSON", () => {
       .mockRejectedValueOnce(new Error("json_schema unsupported"))
       .mockResolvedValueOnce(reply('{"skill":"docker"}'))
       .mockResolvedValueOnce(reply('{"skill":"docker","weeks":3}'));
-    await expect(llmJSON({ agent: "roadmap", system: "s", user: "u", schema: Schema, schemaName: "plan" })).resolves.toEqual({ skill: "docker", weeks: 3 });
+    await expect(llmJSON({ agent: "roadmap", system: "s", user: "u", schema: Schema, schemaName: "plan" })).resolves.toEqual({
+      skill: "docker",
+      weeks: 3,
+    });
     expect(create).toHaveBeenCalledTimes(3);
     expect(create.mock.calls[2][0].messages[1].content).toContain("failed validation");
   });
@@ -51,7 +57,9 @@ describe("llmJSON", () => {
   it("throws LLMError when the JSON stays invalid", async () => {
     const { llmJSON, LLMError } = await fresh();
     create.mockResolvedValue(reply('{"nope":true}'));
-    await expect(llmJSON({ agent: "roadmap", system: "s", user: "u", schema: Schema, schemaName: "plan" })).rejects.toBeInstanceOf(LLMError);
+    await expect(llmJSON({ agent: "roadmap", system: "s", user: "u", schema: Schema, schemaName: "plan" })).rejects.toBeInstanceOf(
+      LLMError,
+    );
   });
 
   it("calls the model once per cacheKey", async () => {

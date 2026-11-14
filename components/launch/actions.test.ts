@@ -5,14 +5,21 @@ vi.mock("@/lib/store", () => ({
   getStore: () => ({
     get: async (c: string, id: string) => h.docs.get(`${c}/${id}`) ?? null,
     list: async (c: string) => [...h.docs.entries()].filter(([k]) => k.startsWith(`${c}/`)).map(([, d]) => d),
-    upsert: async (c: string, id: string, doc: unknown) => { h.docs.set(`${c}/${id}`, doc); return doc; },
+    upsert: async (c: string, id: string, doc: unknown) => {
+      h.docs.set(`${c}/${id}`, doc);
+      return doc;
+    },
     remove: async () => {},
   }),
 }));
 
 import { joinWaitlist } from "./actions";
 
-const form = (o: Record<string, string>) => { const f = new FormData(); Object.entries(o).forEach(([k, v]) => f.set(k, v)); return f; };
+const form = (o: Record<string, string>) => {
+  const f = new FormData();
+  Object.entries(o).forEach(([k, v]) => f.set(k, v));
+  return f;
+};
 const idle = { status: "idle" as const, message: "" };
 beforeEach(() => h.docs.clear());
 
@@ -29,7 +36,10 @@ describe("joinWaitlist", () => {
     expect(r.fieldErrors?.campus).toBeTruthy();
   });
   it("stores a normalised email once per address and counts the campus", async () => {
-    const r1 = await joinWaitlist(idle, form({ email: "  Aisha@Student.Manchester.ac.uk ", campus: "manchester", consent: "on", ambassador: "on" }));
+    const r1 = await joinWaitlist(
+      idle,
+      form({ email: "  Aisha@Student.Manchester.ac.uk ", campus: "manchester", consent: "on", ambassador: "on" }),
+    );
     expect(r1).toMatchObject({ status: "ok", campusCount: 1 });
     expect(r1.message).toContain("Manchester");
     expect(r1.message).toContain("ambassador");

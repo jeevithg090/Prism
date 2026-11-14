@@ -11,16 +11,27 @@ export function passportUrl(userId: string): string {
   return `${origin}/profile/${encodeURIComponent(userId)}`;
 }
 
-export function ShareControls({ userId, isOwner, isPublic, onToggle, saving }: {
-  userId: string; isOwner: boolean; isPublic: boolean; onToggle: (next: boolean) => void; saving: boolean;
+export function ShareControls({
+  userId,
+  isOwner,
+  isPublic,
+  onToggle,
+  saving,
+}: {
+  userId: string;
+  isOwner: boolean;
+  isPublic: boolean;
+  onToggle: (next: boolean) => void;
+  saving: boolean;
 }) {
   async function copy() {
     try {
       await navigator.clipboard.writeText(passportUrl(userId));
       toast.success("Link copied", {
-        description: isPublic || !isOwner
-          ? "Anyone with the link can see this passport."
-          : "Your passport is private, so only you can open the link. Turn on Public passport to share it.",
+        description:
+          isPublic || !isOwner
+            ? "Anyone with the link can see this passport."
+            : "Your passport is private, so only you can open the link. Turn on Public passport to share it.",
       });
     } catch {
       toast.error("Couldn't copy the link", { description: "Copy it from your browser's address bar instead." });
@@ -44,11 +55,21 @@ export function ShareControls({ userId, isOwner, isPublic, onToggle, saving }: {
               isPublic ? "bg-primary" : "bg-input",
             )}
           >
-            <span aria-hidden className={cn("inline-block size-5 rounded-full bg-card shadow-sm motion-safe:transition-transform motion-safe:duration-(--dur-short) motion-safe:ease-(--ease-out)", isPublic ? "translate-x-5 rtl:-translate-x-5" : "translate-x-0")} />
+            <span
+              aria-hidden
+              className={cn(
+                "inline-block size-5 rounded-full bg-card shadow-sm motion-safe:transition-transform motion-safe:duration-(--dur-short) motion-safe:ease-(--ease-out)",
+                isPublic ? "translate-x-5 rtl:-translate-x-5" : "translate-x-0",
+              )}
+            />
           </button>
           <div className="min-w-0">
             <p id="public-passport-label" className="flex items-center gap-1.5 text-sm font-medium">
-              {isPublic ? <Globe className="size-4 text-primary" aria-hidden /> : <Lock className="size-4 text-muted-foreground" aria-hidden />}
+              {isPublic ? (
+                <Globe className="size-4 text-primary" aria-hidden />
+              ) : (
+                <Lock className="size-4 text-muted-foreground" aria-hidden />
+              )}
               Public passport
             </p>
             <p id="public-passport-hint" className="text-sm text-muted-foreground">
