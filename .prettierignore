@@ -14,7 +14,5 @@ n8n/*.json
 package-lock.json
 next-env.d.ts
 
-# Prose and tool-managed files
+# Prose
 *.md
-.claude/
-.hallmark/
