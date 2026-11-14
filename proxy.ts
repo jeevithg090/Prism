@@ -5,7 +5,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { DEMO_UID, UID_COOKIE, UID_MAX_AGE_S, safeUserId } from "@/lib/session-cookie";
 
-const OPEN_PATHS = ["/onboard", "/launch", "/lecturer", "/governance", "/profile", "/api", "/_next"];
+// /opengraph-image is the social preview card: crawlers have no session, so it must never redirect.
+const OPEN_PATHS = ["/onboard", "/launch", "/lecturer", "/governance", "/profile", "/api", "/_next", "/opengraph-image"];
 const STATIC_FILE = /\.[a-z0-9]+$/i;
 
 export function isOpenPath(pathname: string): boolean {
