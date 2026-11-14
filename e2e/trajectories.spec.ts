@@ -26,10 +26,11 @@ test("journeys summary, outcome filter chips, and Ask for 15 minutes → toast",
   await expect(caption).not.toHaveText(allSummary ?? "");
   await expect(caption).toContainText(/software/i);
 
-  // The list view is the accessible alternative to the chart, on every screen size.
+  // The list view is the accessible alternative to the chart, on every screen size: a table from 640px up,
+  // and a "Journeys by path" list on phones, where a five-column table would scroll sideways.
   const toggle = journeys.getByRole("button", { name: /View as (list|chart)/ });
   if ((await toggle.textContent())?.includes("View as list")) await toggle.click();
-  await expect(journeys.getByRole("table")).toBeVisible();
+  await expect(journeys.getByRole("table").or(journeys.getByRole("list", { name: "Journeys by path" }))).toBeVisible();
   await all.click();
   await expectNoA11yViolations(page);
 
